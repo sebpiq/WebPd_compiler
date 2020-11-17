@@ -1,0 +1,32 @@
+{
+  "name": "@webpd/engine-js-eval",
+  "version": "0.1.0",
+  "description": "TODO",
+  "type": "module",
+  "scripts": {
+    "test-bail": "npm explore @webpd/shared -- npm run test-bail $(pwd)",
+    "test-watch": "npm explore @webpd/shared -- npm run test-watch $(pwd)",
+    "test-debug": "npm explore @webpd/shared -- npm run test-debug $(pwd)",
+    "prettier": "npm explore @webpd/shared -- npm run prettier $(pwd)/src",
+    "eslint": "npm explore @webpd/shared -- npm run eslint $(pwd)/src",
+    "all": "npm run test-bail && npm run prettier && npm run eslint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebpiq/WebPd_dsp-graph.git"
+  },
+  "author": "Sébastien Piquemal",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/sebpiq/WebPd_dsp-graph/issues"
+  },
+  "homepage": "https://github.com/sebpiq/WebPd_dsp-graph#readme",
+  "devDependencies": {
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^14.14.7",
+    "@webpd/shared": "file:../WebPd_shared"
+  },
+  "dependencies": {
+    "@webpd/engine-core": "file:../WebPd_engine-core"
+  }
+}
