@@ -1,18 +1,13 @@
-import { NodeDeclareState, NodeLoop, NodeSetup } from "../types"
+import { NodeLoop, NodeSetup } from "../types"
 
-const StateDeclaration = {
-    phase: '',
-    J: '',
-}
-
-export const declareState: NodeDeclareState = () => StateDeclaration
-
-export const setup: NodeSetup<typeof StateDeclaration> = (_, {state}, {sampleRate}) => `
-    let ${state.phase} = 0
-    let ${state.J} = 2 * Math.PI / ${sampleRate}
+export const setup: NodeSetup = (node, {state, ins, outs}, {sampleRate}) => `
+    let ${state('phase')} = 0
+    let ${state('J')} = 2 * Math.PI / ${sampleRate}
+    let ${ins('0')} = ${node.args.frequency}
+    let ${outs('0')} = 0
 `
 
-export const loop: NodeLoop<typeof StateDeclaration> = (_, {state, ins, outs}) => `
-    ${state.phase} += ${state.phase} * ${ins[0]}
-    ${outs[0]} = Math.cos(${state.phase})
+export const loop: NodeLoop = (_, {state, ins, outs}) => `
+    ${state('phase')} += ${state('J')} * ${ins('0')}
+    ${outs('0')} = Math.cos(${state('phase')})
 `

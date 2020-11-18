@@ -1,30 +1,30 @@
-import { EngineAttributes, EvalDspLoop, EvalDspSetup } from "@webpd/engine-core"
+import { EngineAttributes, EvalDspLoop, EvalDspSetup } from "@webpd/engine-core/src/types"
+
+export interface JsEvalEngineAttributes extends EngineAttributes {
+    engineOutputVariableNames: Array<string>
+}
 
 type GlobalVariableName = string
 
-export type NodeStateDeclaration = {[unprefiedAttrName: string]: string}
+type GlobalNameBuilder = (localVariableName: string) => GlobalVariableName
 
-export type NodeStateVariableNames = {[unprefixedAttrName: string]: GlobalVariableName}
-
-export interface NodeVariableNames<VariableNames extends NodeStateVariableNames> {
-    state: VariableNames
-    ins: Array<GlobalVariableName>
-    outs: Array<GlobalVariableName>
+export interface GlobalNameBuilders {
+    state: GlobalNameBuilder
+    ins: GlobalNameBuilder
+    outs: GlobalNameBuilder
 }
 
-export type NodeDeclareState = (node: PdDspGraph.Node) => NodeStateDeclaration
-
-export type NodeSetup<StateVariableNames extends NodeStateVariableNames> = (
+export type NodeSetup = (
     node: PdDspGraph.Node, 
-    nodeVariableNames: NodeVariableNames<StateVariableNames>, 
-    settings: EngineAttributes) => EvalDspSetup
+    nameBuilders: GlobalNameBuilders, 
+    settings: JsEvalEngineAttributes) => EvalDspSetup
 
-export type NodeLoop<StateVariableNames extends NodeStateVariableNames> = (
-    node: PdDspGraph.Node, nodeVariableNames: NodeVariableNames<StateVariableNames>, 
-    settings: EngineAttributes) => EvalDspLoop
+export type NodeLoop = (
+    node: PdDspGraph.Node, 
+    nameBuilders: GlobalNameBuilders, 
+    settings: JsEvalEngineAttributes) => EvalDspLoop
 
 export interface NodeImplementation {
-    declareState: NodeDeclareState
-    setup: NodeSetup<NodeStateVariableNames>
-    loop: NodeLoop<NodeStateVariableNames>
+    setup: NodeSetup
+    loop: NodeLoop
 }

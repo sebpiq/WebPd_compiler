@@ -1,9 +1,29 @@
-import { EngineAttributes, EvalDspLoop, EvalDspSetup, traverseGraph } from '@webpd/engine-core'
+import { EngineAttributes, EvalDspLoop, EvalDspSetup } from '@webpd/engine-core/src/types'
+import traverseGraph from '@webpd/engine-core/src/traverse-graph'
 import * as oscTilde from './nodes/osc~'
 import * as dacTilde from './nodes/dac~'
-import { NodeImplementation, NodeVariableNames, NodeStateVariableNames, NodeStateDeclaration } from './types'
+import { NodeImplementation, GlobalNameBuilders, JsEvalEngineAttributes } from './types'
 
-export default async (graph: PdDspGraph.Graph, registry: PdRegistry.Registry, settings: EngineAttributes): Promise<{loop: EvalDspLoop, setup: EvalDspSetup}> => {
+export default async (graph: PdDspGraph.Graph, registry: PdRegistry.Registry, settings: EngineAttributes) => {
+    const engineOutputVariableNames: JsEvalEngineAttributes["engineOutputVariableNames"] = []
+    for (let channel = 1; channel <= settings.channelCount; channel++) {
+        engineOutputVariableNames.push(`ENGINE_OUTPUT${channel}`)
+    }
+    const jsEvalSettings: JsEvalEngineAttributes = {
+        ...settings,
+        engineOutputVariableNames
+    }
+    const {setup, loop} = await generateSetupAndLoop(graph, registry, jsEvalSettings)
+    return `
+        ${setup}
+        return () => { 
+            ${loop}
+            return [${engineOutputVariableNames.join(', ')}]
+        }
+    `
+}
+
+export const generateSetupAndLoop = async (graph: PdDspGraph.Graph, registry: PdRegistry.Registry, jsEvalSettings: JsEvalEngineAttributes): Promise<{loop: EvalDspLoop, setup: EvalDspSetup}> => {
     const traversal = traverseGraph(graph, registry)
     let setup = ''
     let loop = ''
@@ -12,22 +32,10 @@ export default async (graph: PdDspGraph.Graph, registry: PdRegistry.Registry, se
         if (!nodeImplementation) {
             throw new Error(`node ${node.type} is not implemented`)
         }
-        const nodeState = nodeImplementation.declareState(node)
-        const nodeVariableNames = generateNodeVariableNames(nodeState, node, registry[node.type])
+        const nameBuilders = generateNameBuilders(node)
 
-        // Setup ins and outs
-        nodeVariableNames.ins.forEach(inletVarName => {
-            setup += `\nlet ${inletVarName} = 0`
-        })
-        nodeVariableNames.outs.forEach(outletVarName => {
-            setup += `\nlet ${outletVarName} = 0`
-        })
-        
-        // Setup state
-        setup += '\n' + nodeImplementation.setup(node, nodeVariableNames, settings)
-
-        // Add loop
-        loop += nodeImplementation.loop(node, nodeVariableNames, settings)
+        setup += '\n' + nodeImplementation.setup(node, nameBuilders, jsEvalSettings)
+        loop += nodeImplementation.loop(node, nameBuilders, jsEvalSettings)
 
         Object.entries(node.sinks).forEach(([outletId, sinkAddresses]) => {
             sinkAddresses.forEach(({ id: sinkNodeId, portlet: inletId }) => {
@@ -38,33 +46,23 @@ export default async (graph: PdDspGraph.Graph, registry: PdRegistry.Registry, se
     return Promise.resolve({setup, loop})
 }
 
-const generateNodeVariableNames = (
-    nodeStateDeclaration: NodeStateDeclaration, 
+const generateNameBuilders = (
     node: PdDspGraph.Node,
-    nodeTemplate: PdRegistry.NodeTemplate,
-) => {
-    const nodeVariableNames: NodeVariableNames<NodeStateVariableNames> = {
-        ins: [],
-        outs: [],
-        state: {}
-    }
-    Object.entries(nodeStateDeclaration).forEach(([localVariableName]) => {
-        nodeVariableNames.state[localVariableName] = `${node.id}_STATE_${localVariableName}`
+): GlobalNameBuilders =>
+    ({
+        ins: generateInletVariableName.bind(this, node.id),
+        outs: generateOutletVariableName.bind(this, node.id),
+        state: generateStateVariableName.bind(this, node.id),
     })
-    Object.entries(nodeTemplate.getInletsTemplate(node.args)).forEach(([inletId]) => {
-        nodeVariableNames.ins.push(generateInletVariableName(node.id, inletId))
-    })
-    Object.entries(nodeTemplate.getOutletsTemplate(node.args)).forEach(([outletId]) => {
-        nodeVariableNames.outs.push(generateOutletVariableName(node.id, outletId))
-    })
-    return nodeVariableNames
-}
 
 const generateInletVariableName = (nodeId: PdDspGraph.NodeId, inletId: PdSharedTypes.PortletId) => 
     `${nodeId}_INS_${inletId}`
 
 const generateOutletVariableName = (nodeId: PdDspGraph.NodeId, outletId: PdSharedTypes.PortletId) => 
     `${nodeId}_OUTS_${outletId}`
+
+const generateStateVariableName = (nodeId: PdDspGraph.NodeId, localVariableName: PdSharedTypes.PortletId) => 
+    `${nodeId}_STATE_${localVariableName}`
 
 const nodeImplementations: {[nodeType: string]: NodeImplementation} = {
     'osc~': oscTilde,
