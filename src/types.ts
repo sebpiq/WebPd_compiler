@@ -1,4 +1,8 @@
-import { EngineAttributes, EvalDspLoop, EvalDspSetup } from "@webpd/engine-core/src/types"
+import {
+    EngineAttributes,
+    EvalDspLoop,
+    EvalDspSetup,
+} from '@webpd/engine-core/src/types'
 
 export interface JsEvalEngineAttributes extends EngineAttributes {
     engineOutputVariableNames: Array<string>
@@ -15,14 +19,16 @@ export interface GlobalNameBuilders {
 }
 
 export type NodeSetup = (
-    node: PdDspGraph.Node, 
-    nameBuilders: GlobalNameBuilders, 
-    settings: JsEvalEngineAttributes) => EvalDspSetup
+    node: PdDspGraph.Node,
+    nameBuilders: GlobalNameBuilders,
+    settings: JsEvalEngineAttributes
+) => EvalDspSetup
 
 export type NodeLoop = (
-    node: PdDspGraph.Node, 
-    nameBuilders: GlobalNameBuilders, 
-    settings: JsEvalEngineAttributes) => EvalDspLoop
+    node: PdDspGraph.Node,
+    nameBuilders: GlobalNameBuilders,
+    settings: JsEvalEngineAttributes
+) => EvalDspLoop
 
 export interface NodeImplementation {
     setup: NodeSetup
