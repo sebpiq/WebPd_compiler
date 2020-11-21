@@ -6,6 +6,7 @@ import {
 
 export interface JsEvalEngineAttributes extends EngineAttributes {
     engineOutputVariableNames: Array<string>
+    engineArraysVariableName: string
 }
 
 type GlobalVariableName = string
@@ -33,4 +34,8 @@ export type NodeLoop = (
 export interface NodeImplementation {
     setup: NodeSetup
     loop: NodeLoop
+}
+
+export enum PortsNames {
+    SET_VARIABLE = 'setVariable'
 }

@@ -6,11 +6,14 @@ import {
 import traverseGraph from '@webpd/engine-core/src/traverse-graph'
 import * as oscTilde from './nodes/osc~'
 import * as dacTilde from './nodes/dac~'
+import * as tabplayTilde from './nodes/tabplay~'
 import {
     NodeImplementation,
     GlobalNameBuilders,
     JsEvalEngineAttributes,
+    PortsNames,
 } from './types'
+import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/EvalNode'
 
 export default async (
     graph: PdDspGraph.Graph,
@@ -21,20 +24,31 @@ export default async (
     for (let channel = 1; channel <= settings.channelCount; channel++) {
         engineOutputVariableNames.push(`ENGINE_OUTPUT${channel}`)
     }
+    
     const jsEvalSettings: JsEvalEngineAttributes = {
         ...settings,
         engineOutputVariableNames,
+        engineArraysVariableName: ENGINE_ARRAYS_VARIABLE_NAME,
     }
+
     const { setup, loop } = await generateSetupAndLoop(
         graph,
         registry,
         jsEvalSettings
     )
+    
     return `
         ${setup}
-        return () => { 
-            ${loop}
-            return [${engineOutputVariableNames.join(', ')}]
+        return {
+            loop: () => { 
+                ${loop}
+                return [${engineOutputVariableNames.join(', ')}]
+            },
+            ports: {
+                ${PortsNames.SET_VARIABLE}: (variableName, variableValue) => {
+                    eval(variableName + ' = variableValue')
+                }
+            }
         }
     `
 }
@@ -76,12 +90,12 @@ const generateNameBuilders = (node: PdDspGraph.Node): GlobalNameBuilders => ({
     state: generateStateVariableName.bind(this, node.id),
 })
 
-const generateInletVariableName = (
+export const generateInletVariableName = (
     nodeId: PdDspGraph.NodeId,
     inletId: PdSharedTypes.PortletId
 ) => `${nodeId}_INS_${inletId}`
 
-const generateOutletVariableName = (
+export const generateOutletVariableName = (
     nodeId: PdDspGraph.NodeId,
     outletId: PdSharedTypes.PortletId
 ) => `${nodeId}_OUTS_${outletId}`
@@ -94,4 +108,5 @@ const generateStateVariableName = (
 const nodeImplementations: { [nodeType: string]: NodeImplementation } = {
     'osc~': oscTilde,
     'dac~': dacTilde,
+    'tabplay~': tabplayTilde,
 }

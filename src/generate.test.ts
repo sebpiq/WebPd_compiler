@@ -7,6 +7,7 @@ describe('generate', () => {
         sampleRate: 44100,
         channelCount: 2,
         engineOutputVariableNames: ['ENGINE_OUTPUT1', 'ENGINE_OUTPUT2'],
+        engineArraysVariableName: 'ARRAYS'
     }
 
     const REGISTRY = makeRegistry({

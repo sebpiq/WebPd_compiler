@@ -1,17 +1,9 @@
 import * as evalEngine from '@webpd/engine-core/src/eval-engine'
-import generate from '../../../src/generate'
+import {createButton} from '@webpd/shared/example-helpers'
+import generate from '../../src/generate'
+import pEvent from 'p-event'
 
 const context = new AudioContext()
-
-const eventPromise = (element: HTMLElement, event: string) => {
-    return new Promise((resolve) => {
-        const eventListener = () => {
-            element.removeEventListener(event, eventListener)
-            resolve()
-        }
-        element.addEventListener(event, eventListener)
-    })
-}
 
 const registry: PdRegistry.Registry = {
     'osc~': {
@@ -76,17 +68,15 @@ const main = async () => {
         sampleRate: context.sampleRate, 
         channelCount: 2,
     })
-    const button = document.createElement('button')
-    button.innerHTML = 'START'
-    document.body.appendChild(button)
-    await eventPromise(button, 'click')
+    const button = createButton('Start')
+    await pEvent(button, 'click')
     engine = await evalEngine.init(engine)
 
     const dspFunction = await generate(graph, registry, {
         sampleRate: 44100,
         channelCount: 2,
     })
-    await evalEngine.run(engine, dspFunction)
+    await evalEngine.run(engine, dspFunction, {})
     return engine
 }
 
