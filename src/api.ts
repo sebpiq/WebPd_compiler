@@ -6,7 +6,7 @@ import { PortsNames } from './types'
 export const sendMessage = (
     engine: Engine,
     nodeId: PdDspGraph.NodeId,
-    inletId: PdSharedTypes.PortletId,
+    inletId: PdDspGraph.PortletId,
     message: PdSharedTypes.ControlValue
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)

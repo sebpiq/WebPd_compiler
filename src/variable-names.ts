@@ -8,15 +8,15 @@ export default (node: PdDspGraph.Node): VariableNameGenerators => ({
 
 export const generateInletVariableName = (
     nodeId: PdDspGraph.NodeId,
-    inletId: PdSharedTypes.PortletId
+    inletId: PdDspGraph.PortletId
 ) => `${nodeId}_INS_${inletId}`
 
 export const generateOutletVariableName = (
     nodeId: PdDspGraph.NodeId,
-    outletId: PdSharedTypes.PortletId
+    outletId: PdDspGraph.PortletId
 ) => `${nodeId}_OUTS_${outletId}`
 
 const generateStateVariableName = (
     nodeId: PdDspGraph.NodeId,
-    localVariableName: PdSharedTypes.PortletId
+    localVariableName: PdDspGraph.PortletId
 ) => `${nodeId}_STATE_${localVariableName}`

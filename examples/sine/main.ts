@@ -20,7 +20,7 @@ const graph: PdDspGraph.Graph = {
         type: 'osc~',
         args: oscLeftArgs,
         sinks: {
-            '0': [{nodeId: 'dac', portlet: '0'}]
+            '0': [{nodeId: 'dac', portletId: '0'}]
         },
         sources: {},
         inlets: DEFAULT_REGISTRY['osc~'].buildInlets(oscLeftArgs),
@@ -31,7 +31,7 @@ const graph: PdDspGraph.Graph = {
         type: 'osc~',
         args: oscRightArgs,
         sinks: {
-            '0': [{nodeId: 'dac', portlet: '1'}]
+            '0': [{nodeId: 'dac', portletId: '1'}]
         },
         sources: {},
         inlets: DEFAULT_REGISTRY['osc~'].buildInlets(oscRightArgs),
@@ -43,8 +43,8 @@ const graph: PdDspGraph.Graph = {
         args: {},
         sinks: {},
         sources: {
-            '0': [{nodeId: 'oscLeft', portlet: '0'}],
-            '1': [{nodeId: 'oscRight', portlet: '1'}],
+            '0': [{nodeId: 'oscLeft', portletId: '0'}],
+            '1': [{nodeId: 'oscRight', portletId: '1'}],
         },
         isEndSink: true,
         inlets: DEFAULT_REGISTRY['dac~'].buildInlets({}),

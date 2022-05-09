@@ -58,8 +58,8 @@
 //         },
 //         sinks: {
 //             '0': [
-//                 {id: 'dac', portlet: '0'},
-//                 {id: 'dac', portlet: '1'}
+//                 {id: 'dac', portletId: '0'},
+//                 {id: 'dac', portletId: '1'}
 //             ]
 //         },
 //         sources: {}
@@ -70,8 +70,8 @@
 //         args: {},
 //         sinks: {},
 //         sources: {
-//             '0': {id: 'player', portlet: '0'},
-//             '1': {id: 'player', portlet: '0'},
+//             '0': {id: 'player', portletId: '0'},
+//             '1': {id: 'player', portletId: '0'},
 //         }
 //     }
 // }

@@ -18,7 +18,7 @@ type GenericInletValue =
 export const setInlet = (
     dspEngine: DspEngine,
     nodeId: PdDspGraph.NodeId,
-    inletId: PdSharedTypes.PortletId,
+    inletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)

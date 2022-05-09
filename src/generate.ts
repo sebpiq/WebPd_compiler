@@ -153,7 +153,7 @@ export const generateLoop = async (
                 node.id,
                 outletId
             )
-            sinks.forEach(({ nodeId: sinkNodeId, portlet: inletId }) => {
+            sinks.forEach(({ nodeId: sinkNodeId, portletId: inletId }) => {
                 const inletVariableName = generateInletVariableName(
                     sinkNodeId,
                     inletId
