@@ -24,11 +24,15 @@ export const loop: NodeCodeGenerator = (node, { state, ins, outs }) => {
     // Take only the last received frequency message (first in the list)
     let phaseComputation = ''
     if (_hasSignalFrequencyInput(node)) {
-        phaseComputation = `${state('phase')} += ${state('J')} * ${ins('0_signal')}`
+        phaseComputation = `${state('phase')} += ${state('J')} * ${ins(
+            '0_signal'
+        )}`
     } else {
         phaseComputation = `
             if (${ins('0_control')}.length) {
-                ${state('currentFrequency')} = ${ins('0_control')}[${ins('0_control')}.length - 1][0]
+                ${state('currentFrequency')} = ${ins('0_control')}[${ins(
+            '0_control'
+        )}.length - 1][0]
             }
             ${state('phase')} += ${state('J')} * ${state('currentFrequency')}
         `
@@ -40,4 +44,5 @@ export const loop: NodeCodeGenerator = (node, { state, ins, outs }) => {
     `
 }
 
-const _hasSignalFrequencyInput = (node: PdDspGraph.Node) => node.sources['0_signal'] && node.sources['0_signal'].length
+const _hasSignalFrequencyInput = (node: PdDspGraph.Node) =>
+    node.sources['0_signal'] && node.sources['0_signal'].length

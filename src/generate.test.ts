@@ -1,14 +1,18 @@
 import assert from 'assert'
 import generate, { generateLoop, generateSetup } from './generate'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { JsEvalEngineAttributes, NodeImplementations, VariableNameGenerators } from './types'
+import {
+    JsEvalEngineAttributes,
+    NodeImplementations,
+    VariableNameGenerators,
+} from './types'
 
 describe('generate', () => {
     const JS_EVAL_SETTINGS = {
         sampleRate: 44100,
         channelCount: 2,
         engineOutputVariableNames: ['ENGINE_OUTPUT1', 'ENGINE_OUTPUT2'],
-        engineArraysVariableName: 'ARRAYS'
+        engineArraysVariableName: 'ARRAYS',
     }
 
     const normalizeCode = (rawCode: string) => {
@@ -20,9 +24,7 @@ describe('generate', () => {
     }
 
     describe('default', () => {
-
         it('should generate the full function as a string', async () => {
-
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     setup: () => `// [osc~] setup`,
@@ -31,9 +33,9 @@ describe('generate', () => {
                 'dac~': {
                     setup: () => `// [dac~] setup`,
                     loop: () => `// [dac~] loop`,
-                }
+                },
             }
-    
+
             const graph = makeGraph({
                 osc: {
                     type: 'osc~',
@@ -43,17 +45,24 @@ describe('generate', () => {
                     sinks: {
                         0: [['dac', '0']],
                     },
-                    inlets: {'0_control': {type: 'control'}},
-                    outlets: {'0': {type: 'signal'}}
+                    inlets: { '0_control': { type: 'control' } },
+                    outlets: { '0': { type: 'signal' } },
                 },
                 dac: {
                     type: 'dac~',
-                    inlets: {'0': {type: 'signal'}, '1': {type: 'signal'}},
+                    inlets: {
+                        '0': { type: 'signal' },
+                        '1': { type: 'signal' },
+                    },
                     isEndSink: true,
                 },
             })
-            const dspFunction = await generate(graph, nodeImplementations, JS_EVAL_SETTINGS)
-    
+            const dspFunction = await generate(
+                graph,
+                nodeImplementations,
+                JS_EVAL_SETTINGS
+            )
+
             assert.strictEqual(
                 normalizeCode(dspFunction),
                 normalizeCode(`
@@ -100,12 +109,18 @@ describe('generate', () => {
                     args: {
                         frequency: 440,
                     },
-                    inlets: {'0_control': {type: 'control'}, '0_signal': {type: 'signal'}},
-                    outlets: {'0': {type: 'signal'}}
+                    inlets: {
+                        '0_control': { type: 'control' },
+                        '0_signal': { type: 'signal' },
+                    },
+                    outlets: { '0': { type: 'signal' } },
                 },
                 dac: {
                     type: 'dac~',
-                    inlets: {'0': {type: 'signal'}, '1': {type: 'signal'}},
+                    inlets: {
+                        '0': { type: 'signal' },
+                        '1': { type: 'signal' },
+                    },
                     outlets: {},
                 },
             })
@@ -115,18 +130,19 @@ describe('generate', () => {
                     setup: (
                         node: PdDspGraph.Node,
                         _: VariableNameGenerators,
-                        settings: JsEvalEngineAttributes,
-                    ) => `// [osc~] frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
-                    loop: () => ``
+                        settings: JsEvalEngineAttributes
+                    ) =>
+                        `// [osc~] frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
+                    loop: () => ``,
                 },
                 'dac~': {
                     setup: (
                         _: PdDspGraph.Node,
                         __: VariableNameGenerators,
-                        settings: JsEvalEngineAttributes,
+                        settings: JsEvalEngineAttributes
                     ) => `// [dac~] channelCount ${settings.channelCount}`,
-                    loop: () => ``
-                }
+                    loop: () => ``,
+                },
             }
 
             const setup = await generateSetup(
@@ -157,30 +173,31 @@ describe('generate', () => {
     })
 
     describe('generateLoop', () => {
-
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
-            'msg': {
+            msg: {
                 setup: () => ``,
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes,
-                ) => `// [msg] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+                    settings: JsEvalEngineAttributes
+                ) =>
+                    `// [msg] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             '+': {
                 setup: () => ``,
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes,
-                ) => `// [+] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+                    settings: JsEvalEngineAttributes
+                ) =>
+                    `// [+] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
-            'print': {
+            print: {
                 setup: () => ``,
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    __: JsEvalEngineAttributes,
+                    __: JsEvalEngineAttributes
                 ) => `// [print] : value "${node.args.value}"`,
             },
             'osc~': {
@@ -188,25 +205,27 @@ describe('generate', () => {
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes,
-                ) => `// [osc~] : frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
+                    settings: JsEvalEngineAttributes
+                ) =>
+                    `// [osc~] : frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
             },
             '+~': {
                 setup: () => ``,
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes,
-                ) => `// [+~] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+                    settings: JsEvalEngineAttributes
+                ) =>
+                    `// [+~] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             'dac~': {
                 setup: () => ``,
                 loop: (
                     _: PdDspGraph.Node,
                     __: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes,
+                    settings: JsEvalEngineAttributes
                 ) => `// [dac~] : channelCount ${settings.channelCount}`,
-            }
+            },
         }
 
         it('should generate the loop function, pass around control messages, and cleanup control inlets and outlets', async () => {
@@ -214,12 +233,15 @@ describe('generate', () => {
                 msg: {
                     type: 'msg',
                     sinks: {
-                        '0': [['plus', '0'], ['print', '0']],
+                        '0': [
+                            ['plus', '0'],
+                            ['print', '0'],
+                        ],
                     },
                     args: {
                         value: 2,
                     },
-                    outlets: {'0': {type: 'control'}}
+                    outlets: { '0': { type: 'control' } },
                 },
                 plus: {
                     type: '+',
@@ -229,15 +251,15 @@ describe('generate', () => {
                     args: {
                         value: 1,
                     },
-                    inlets: {'0': {type: 'control'}},
-                    outlets: {'0': {type: 'control'}}
+                    inlets: { '0': { type: 'control' } },
+                    outlets: { '0': { type: 'control' } },
                 },
                 print: {
                     type: 'print',
                     args: {
                         value: 'bla',
                     },
-                    inlets: {'0': {type: 'control'}},
+                    inlets: { '0': { type: 'control' } },
                 },
             })
 
@@ -286,12 +308,15 @@ describe('generate', () => {
                 osc: {
                     type: 'osc~',
                     sinks: {
-                        '0': [['plus', '0'], ['dac', '0']],
+                        '0': [
+                            ['plus', '0'],
+                            ['dac', '0'],
+                        ],
                     },
                     args: {
                         frequency: 440,
                     },
-                    outlets: {'0': {type: 'signal'}}
+                    outlets: { '0': { type: 'signal' } },
                 },
                 plus: {
                     type: '+~',
@@ -301,15 +326,18 @@ describe('generate', () => {
                     args: {
                         value: 110,
                     },
-                    inlets: {'0': {type: 'signal'}},
-                    outlets: {'0': {type: 'signal'}}
+                    inlets: { '0': { type: 'signal' } },
+                    outlets: { '0': { type: 'signal' } },
                 },
                 dac: {
                     type: 'dac~',
                     args: {
                         value: 'bla',
                     },
-                    inlets: {'0': {type: 'signal'}, '1': {type: 'signal'}},
+                    inlets: {
+                        '0': { type: 'signal' },
+                        '1': { type: 'signal' },
+                    },
                 },
             })
 

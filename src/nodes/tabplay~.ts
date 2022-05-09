@@ -3,7 +3,7 @@ import { NodeCodeGenerator } from '../types'
 export const setup: NodeCodeGenerator = (
     node,
     { state, ins, outs },
-    {engineArraysVariableName}
+    { engineArraysVariableName }
 ) => `
     let ${state('array')} = new Float32Array(0)
     let ${state('readPosition')} = 0
@@ -13,14 +13,20 @@ export const setup: NodeCodeGenerator = (
     let ${outs('0')} = 0
 
     const ${state('funcSetArrayName')} = (arrayName) => {
-        ${state('array')} = ${engineArraysVariableName}[arrayName] || new Float32Array(0)
+        ${state(
+            'array'
+        )} = ${engineArraysVariableName}[arrayName] || new Float32Array(0)
         ${state('readPosition')} = ${state('array')}.length
         ${state('readUntil')} = ${state('array')}.length
     }
 
     const ${state('funcPlay')} = (startPosition, sampleCount) => {
         ${state('readPosition')} = startPosition
-        ${state('readUntil')} = sampleCount !== undefined ? Math.min(startPosition + sampleCount, ${state('array')}.length) : ${state('array')}.length
+        ${state(
+            'readUntil'
+        )} = sampleCount !== undefined ? Math.min(startPosition + sampleCount, ${state(
+    'array'
+)}.length) : ${state('array')}.length
     }
 
     const ${state('funcHandleMessage')} = () => {

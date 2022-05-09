@@ -1,9 +1,7 @@
-import {
-    EngineAttributes,
-} from '@webpd/engine-core/src/types'
+import { EngineAttributes } from '@webpd/engine-core/src/types'
 
 export enum PortsNames {
-    SET_VARIABLE = 'setVariable'
+    SET_VARIABLE = 'setVariable',
 }
 
 // JS Code stored in string variable for later evaluation.
@@ -12,7 +10,9 @@ export type Code = string
 // All variables are global in generated code
 export type GlobalVariableName = string
 
-export type VariableNameGenerator = (localVariableName: string) => GlobalVariableName
+export type VariableNameGenerator = (
+    localVariableName: string
+) => GlobalVariableName
 
 export interface JsEvalEngineAttributes extends EngineAttributes {
     engineOutputVariableNames: Array<string>
@@ -36,4 +36,4 @@ export interface NodeImplementation {
     loop: NodeCodeGenerator
 }
 
-export type NodeImplementations = {[nodeType: string]: NodeImplementation}
+export type NodeImplementations = { [nodeType: string]: NodeImplementation }

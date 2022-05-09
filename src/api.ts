@@ -1,12 +1,12 @@
-import { callPort } from "@webpd/engine-core/src/eval-engine";
-import { Engine } from "@webpd/engine-core/src/types";
-import { generateInletVariableName } from "./variable-names";
-import { PortsNames } from "./types";
+import { callPort } from '@webpd/engine-core/src/eval-engine'
+import { Engine } from '@webpd/engine-core/src/types'
+import { generateInletVariableName } from './variable-names'
+import { PortsNames } from './types'
 
 export const sendMessage = (
-    engine: Engine, 
+    engine: Engine,
     nodeId: PdDspGraph.NodeId,
-    inletId: PdSharedTypes.PortletId, 
+    inletId: PdSharedTypes.PortletId,
     message: PdSharedTypes.ControlValue
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)

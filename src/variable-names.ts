@@ -1,4 +1,4 @@
-import { VariableNameGenerators } from "./types"
+import { VariableNameGenerators } from './types'
 
 export default (node: PdDspGraph.Node): VariableNameGenerators => ({
     ins: generateInletVariableName.bind(this, node.id),
