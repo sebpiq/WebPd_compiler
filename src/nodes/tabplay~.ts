@@ -1,6 +1,6 @@
-import { NodeLoop, NodeSetup } from '../types'
+import { NodeCodeGenerator } from '../types'
 
-export const setup: NodeSetup = (
+export const setup: NodeCodeGenerator = (
     node,
     { state, ins, outs },
     {engineArraysVariableName}
@@ -24,27 +24,27 @@ export const setup: NodeSetup = (
     }
 
     const ${state('funcHandleMessage')} = () => {
-        if (${ins('0')}.length === 0) {
-        } else if (${ins('0')}[0] === 'set') {
-            ${state('funcSetArrayName')}(${ins('0')}[1])
+        let inMessage = ${ins('0')}.shift()
+        if (inMessage.length === 0) {
+        } else if (inMessage[0] === 'set') {
+            ${state('funcSetArrayName')}(inMessage[1])
             
-        } else if (${ins('0')}[0] === 'bang') {
+        } else if (inMessage[0] === 'bang') {
             ${state('funcPlay')}(0)
     
-        } else if (${ins('0')}.length === 1) {
-            ${state('funcPlay')}(${ins('0')}[0])
+        } else if (inMessage.length === 1) {
+            ${state('funcPlay')}(inMessage[0])
     
-        } else if (${ins('0')}.length === 2) {
-            ${state('funcPlay')}(${ins('0')}[0], ${ins('0')}[1])
+        } else if (inMessage.length === 2) {
+            ${state('funcPlay')}(inMessage[0], inMessage[1])
         }
-        ${ins('0')} = []
     }
 
     ${state('funcSetArrayName')}("${node.args.arrayName}")
 `
 
-export const loop: NodeLoop = (_, { state, ins, outs }) => `
-    ${state('funcHandleMessage')}()
+export const loop: NodeCodeGenerator = (_, { state, ins, outs }) => `
+    ${ins('0')}.forEach(v => ${state('funcHandleMessage')}(v))
 
     if (${state('readPosition')} < ${state('readUntil')}) {
         ${outs('0')} = ${state('array')}[${state('readPosition')}]

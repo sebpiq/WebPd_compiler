@@ -1,25 +1,18 @@
-import {
-    EngineAttributes,
-    EvalDspLoop,
-    EvalDspSetup,
-} from '@webpd/engine-core/src/types'
-import traverseGraph from '@webpd/engine-core/src/traverse-graph'
-import * as oscTilde from './nodes/osc~'
-import * as dacTilde from './nodes/dac~'
-import * as tabplayTilde from './nodes/tabplay~'
-import {
-    NodeImplementation,
-    GlobalNameBuilders,
-    JsEvalEngineAttributes,
-    PortsNames,
-} from './types'
-import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/EvalNode'
+import { DspEngineString } from '@webpd/engine-core/src/eval-engine/types'
+import traverseGraph, { GraphTraversal } from '@webpd/engine-core/src/traverse-graph'
+import { Code, GlobalVariableName, JsEvalEngineAttributes } from './types'
+import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/eval-engine/constants'
+import { EngineAttributes } from '@webpd/engine-core/src/types'
+import { NodeImplementations, PortsNames } from './types'
+import variableNames, { generateInletVariableName, generateOutletVariableName } from './variable-names'
+
+const ITER_OUTLET_VARIABLE_NAME = 'o'
 
 export default async (
     graph: PdDspGraph.Graph,
-    registry: PdRegistry.Registry,
+    nodeImplementations: NodeImplementations,
     settings: EngineAttributes
-) => {
+): Promise<DspEngineString> => {
     const engineOutputVariableNames: JsEvalEngineAttributes['engineOutputVariableNames'] = []
     for (let channel = 1; channel <= settings.channelCount; channel++) {
         engineOutputVariableNames.push(`ENGINE_OUTPUT${channel}`)
@@ -31,17 +24,23 @@ export default async (
         engineArraysVariableName: ENGINE_ARRAYS_VARIABLE_NAME,
     }
 
-    const { setup, loop } = await generateSetupAndLoop(
-        graph,
-        registry,
+    const setupCode = await generateSetup(
+        traverseGraph(graph),
+        nodeImplementations,
         jsEvalSettings
     )
-    
+
+    const loopCode = await generateLoop(
+        traverseGraph(graph),
+        nodeImplementations,
+        jsEvalSettings
+    )
+
     return `
-        ${setup}
+        ${setupCode}
         return {
             loop: () => { 
-                ${loop}
+                ${loopCode}
                 return [${engineOutputVariableNames.join(', ')}]
             },
             ports: {
@@ -53,60 +52,132 @@ export default async (
     `
 }
 
-export const generateSetupAndLoop = async (
-    graph: PdDspGraph.Graph,
-    registry: PdRegistry.Registry,
+export const generateSetup = async (
+    graphTraversal: GraphTraversal,
+    nodeImplementations: NodeImplementations,
     jsEvalSettings: JsEvalEngineAttributes
-): Promise<{ loop: EvalDspLoop; setup: EvalDspSetup }> => {
-    const traversal = traverseGraph(graph, registry)
-    let setup = ''
-    let loop = ''
-    for (let node of traversal) {
-        const nodeImplementation = nodeImplementations[node.type]
-        if (!nodeImplementation) {
-            throw new Error(`node ${node.type} is not implemented`)
+): Promise<Code> => {
+    let code: Code = `
+        let ${ITER_OUTLET_VARIABLE_NAME} = 0
+        ${jsEvalSettings.engineOutputVariableNames.map(n => `let ${n} = 0`).join('\n')}
+    `
+    const initializedPortletVariables: Set<GlobalVariableName> = new Set()
+    const initializePortletVariable = (
+        portletType: PdSharedTypes.PortletType,
+        variableName: GlobalVariableName,
+    ) => {
+        if (!initializedPortletVariables.has(variableName)) {
+            if (portletType === 'control') {
+                code += `\nlet ${variableName} = []`
+            } else {
+                code += `\nlet ${variableName} = 0`
+            }
         }
-        const nameBuilders = generateNameBuilders(node)
-
-        setup +=
-            '\n' + nodeImplementation.setup(node, nameBuilders, jsEvalSettings)
-        loop += nodeImplementation.loop(node, nameBuilders, jsEvalSettings)
-
-        Object.entries(node.sinks).forEach(([outletId, sinkAddresses]) => {
-            sinkAddresses.forEach(({ id: sinkNodeId, portlet: inletId }) => {
-                loop += `\n${generateInletVariableName(
-                    sinkNodeId,
-                    inletId
-                )} = ${generateOutletVariableName(node.id, outletId)}`
-            })
-        })
     }
-    return Promise.resolve({ setup, loop })
+
+    for (let node of graphTraversal) {
+        // Initialize portlet variables
+        Object.entries(node.inlets).forEach(([inletId, inlet]) => {
+            initializePortletVariable(inlet.type, generateInletVariableName(
+                node.id, 
+                inletId
+            ))
+        })
+        Object.entries(node.outlets).forEach(([outletId, outlet]) => {
+            initializePortletVariable(outlet.type, generateOutletVariableName(
+                node.id, 
+                outletId
+            ))
+        })
+
+        // Custom setup code for node
+        const nodeImplementation = _getNodeImplementation(nodeImplementations, node.type)
+        code +=
+            '\n' + nodeImplementation.setup(node, variableNames(node), jsEvalSettings)
+    }
+    
+    return Promise.resolve(code)
 }
 
-const generateNameBuilders = (node: PdDspGraph.Node): GlobalNameBuilders => ({
-    ins: generateInletVariableName.bind(this, node.id),
-    outs: generateOutletVariableName.bind(this, node.id),
-    state: generateStateVariableName.bind(this, node.id),
-})
+export const generateLoop = async (
+    graphTraversal: GraphTraversal,
+    nodeImplementations: NodeImplementations,
+    jsEvalSettings: JsEvalEngineAttributes
+): Promise<Code> => {
+    let computeCode: Code = ''
+    let cleanupCode: Code = ''
+    const cleanedUpControlVariables: Set<GlobalVariableName> = new Set()
+    const cleanUpControlVariable = (
+        portletType: PdSharedTypes.PortletType,
+        variableName: GlobalVariableName,
+    ) => {
+        if (portletType === 'control') {
+            if (!cleanedUpControlVariables.has(variableName)) {
+                cleanupCode += `
+                    if (${variableName}.length) {
+                        ${variableName} = []
+                    }
+                `
+                cleanedUpControlVariables.add(variableName)
+            }   
+        }
+    }
 
-export const generateInletVariableName = (
-    nodeId: PdDspGraph.NodeId,
-    inletId: PdSharedTypes.PortletId
-) => `${nodeId}_INS_${inletId}`
+    for (let node of graphTraversal) {
+        const nodeImplementation = _getNodeImplementation(nodeImplementations, node.type)
+        const variableNameGenerators = variableNames(node)
 
-export const generateOutletVariableName = (
-    nodeId: PdDspGraph.NodeId,
-    outletId: PdSharedTypes.PortletId
-) => `${nodeId}_OUTS_${outletId}`
+        // 1. computation of output
+        computeCode += nodeImplementation.loop(node, variableNameGenerators, jsEvalSettings)
 
-const generateStateVariableName = (
-    nodeId: PdDspGraph.NodeId,
-    localVariableName: PdSharedTypes.PortletId
-) => `${nodeId}_STATE_${localVariableName}`
+        Object.entries(node.sinks).forEach(([outletId, sinks]) => {
+            const outletVariableName = generateOutletVariableName(
+                node.id, 
+                outletId
+            )
+            sinks.forEach(({ nodeId: sinkNodeId, portlet: inletId }) => {
+                const inletVariableName = generateInletVariableName(
+                    sinkNodeId,
+                    inletId
+                )
 
-const nodeImplementations: { [nodeType: string]: NodeImplementation } = {
-    'osc~': oscTilde,
-    'dac~': dacTilde,
-    'tabplay~': tabplayTilde,
+                // 2. transfer output to all connected sinks downstream
+                if (node.outlets[outletId].type === 'control') {
+                    computeCode += `
+                        for (${ITER_OUTLET_VARIABLE_NAME} = 0; ${ITER_OUTLET_VARIABLE_NAME} < ${outletVariableName}.length; ${ITER_OUTLET_VARIABLE_NAME}++) {
+                            ${inletVariableName}.push(${outletVariableName}[${ITER_OUTLET_VARIABLE_NAME}])
+                        }
+                    `
+                } else {
+                    computeCode += `\n${inletVariableName} = ${generateOutletVariableName(node.id, outletId)}`
+                }
+            })
+        })
+
+        // Cleaning up control variables
+        Object.entries(node.inlets).forEach(([inletId, inlet]) => {
+            cleanUpControlVariable(inlet.type, generateInletVariableName(
+                node.id, 
+                inletId
+            ))
+        })
+        Object.entries(node.outlets).forEach(([outletId, outlet]) => {
+            cleanUpControlVariable(outlet.type, generateOutletVariableName(
+                node.id,
+                outletId
+            ))
+        })
+
+        computeCode += '\n'
+    }
+
+    return Promise.resolve(computeCode + '\n' + cleanupCode)
+}
+
+const _getNodeImplementation = (nodeImplementations: NodeImplementations, nodeType: PdSharedTypes.NodeType) => {
+    const nodeImplementation = nodeImplementations[nodeType]
+    if (!nodeImplementation) {
+        throw new Error(`node ${nodeType} is not implemented`)
+    }
+    return nodeImplementation
 }

@@ -1,6 +1,7 @@
 import assert from 'assert'
-import generate, { generateSetupAndLoop } from './generate'
-import { makeGraph, makeRegistry } from '@webpd/shared/test-helpers'
+import generate, { generateLoop, generateSetup } from './generate'
+import { makeGraph } from '@webpd/shared/test-helpers'
+import { JsEvalEngineAttributes, NodeImplementations, VariableNameGenerators } from './types'
 
 describe('generate', () => {
     const JS_EVAL_SETTINGS = {
@@ -10,18 +11,6 @@ describe('generate', () => {
         engineArraysVariableName: 'ARRAYS'
     }
 
-    const REGISTRY = makeRegistry({
-        'osc~': {
-            inletTypes: ['control', 'signal'],
-            outletTypes: ['signal'],
-        },
-        'dac~': {
-            isSink: true,
-            inletTypes: ['signal', 'signal'],
-            outletTypes: [],
-        },
-    })
-
     const normalizeCode = (rawCode: string) => {
         const lines = rawCode
             .split('\n')
@@ -30,124 +19,317 @@ describe('generate', () => {
         return lines.join('\n')
     }
 
-    it('should generate the full function as a string', async () => {
-        const graph = makeGraph({
-            osc: {
-                type: 'osc~',
-                args: {
-                    frequency: 440,
-                },
-                sinks: {
-                    0: [['dac', '0']],
-                },
-            },
-            dac: {
-                type: 'dac~',
-            },
-        })
-        const dspFunction = await generate(graph, REGISTRY, JS_EVAL_SETTINGS)
+    describe('default', () => {
 
-        assert.strictEqual(
-            normalizeCode(dspFunction),
-            normalizeCode(`
-            let osc_STATE_phase = 0
-            let osc_STATE_J = 2 * Math.PI / 44100
-            let osc_INS_0 = 440
-            let osc_OUTS_0 = 0
-            
-            let dac_INS_0 = 0
-            let dac_INS_1 = 0
-        
-            return () => {
-                osc_STATE_phase += osc_STATE_phase * osc_INS_0
-                osc_OUTS_0 = Math.cos(osc_STATE_phase)
-    
-                dac_INS_0 = osc_OUTS_0
-    
-                ENGINE_OUTPUT1 = dac_INS_0
-                ENGINE_OUTPUT2 = dac_INS_1
-                
-                return [ENGINE_OUTPUT1, ENGINE_OUTPUT2]
+        it('should generate the full function as a string', async () => {
+
+            const nodeImplementations: NodeImplementations = {
+                'osc~': {
+                    setup: () => `// [osc~] setup`,
+                    loop: () => `// [osc~] loop`,
+                },
+                'dac~': {
+                    setup: () => `// [dac~] setup`,
+                    loop: () => `// [dac~] loop`,
+                }
             }
-        `)
-        )
-    })
-
-    describe('generateSetupAndLoop', () => {
-        it('should generate the setup / loop function', async () => {
+    
             const graph = makeGraph({
-                oscFreqMod: {
+                osc: {
                     type: 'osc~',
-                    sinks: {
-                        0: [['oscMain', '0']],
-                    },
                     args: {
                         frequency: 440,
                     },
-                },
-                oscMain: {
-                    type: 'osc~',
                     sinks: {
                         0: [['dac', '0']],
                     },
-                    args: {
-                        frequency: 550,
-                    },
+                    inlets: {'0_control': {type: 'control'}},
+                    outlets: {'0': {type: 'signal'}}
                 },
                 dac: {
                     type: 'dac~',
+                    inlets: {'0': {type: 'signal'}, '1': {type: 'signal'}},
+                    isEndSink: true,
                 },
             })
-            const registry = makeRegistry({
+            const dspFunction = await generate(graph, nodeImplementations, JS_EVAL_SETTINGS)
+    
+            assert.strictEqual(
+                normalizeCode(dspFunction),
+                normalizeCode(`
+                let o = 0
+                let ENGINE_OUTPUT1 = 0
+                let ENGINE_OUTPUT2 = 0
+                
+                let osc_INS_0_control = []
+                let osc_OUTS_0 = 0
+                // [osc~] setup
+                
+                let dac_INS_0 = 0
+                let dac_INS_1 = 0
+                // [dac~] setup
+
+                return {
+                    loop: () => { 
+                        // [osc~] loop
+                        dac_INS_0 = osc_OUTS_0
+                        // [dac~] loop
+
+                        if (osc_INS_0_control.length) {
+                            osc_INS_0_control = []
+                        }
+                        
+                        return [ENGINE_OUTPUT1, ENGINE_OUTPUT2]
+                    },
+                    ports: {
+                        setVariable: (variableName, variableValue) => {
+                            eval(variableName + ' = variableValue')
+                        }
+                    }
+                }
+            `)
+            )
+        })
+    })
+
+    describe('generateSetup', () => {
+        it('should generate the setup function', async () => {
+            const graph = makeGraph({
+                osc: {
+                    type: 'osc~',
+                    args: {
+                        frequency: 440,
+                    },
+                    inlets: {'0_control': {type: 'control'}, '0_signal': {type: 'signal'}},
+                    outlets: {'0': {type: 'signal'}}
+                },
+                dac: {
+                    type: 'dac~',
+                    inlets: {'0': {type: 'signal'}, '1': {type: 'signal'}},
+                    outlets: {},
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    inletTypes: ['control', 'signal'],
-                    outletTypes: ['signal'],
+                    setup: (
+                        node: PdDspGraph.Node,
+                        _: VariableNameGenerators,
+                        settings: JsEvalEngineAttributes,
+                    ) => `// [osc~] frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
+                    loop: () => ``
                 },
                 'dac~': {
-                    isSink: true,
-                    inletTypes: ['signal', 'signal'],
-                    outletTypes: [],
-                },
-            })
-            const { setup, loop } = await generateSetupAndLoop(
-                graph,
-                registry,
+                    setup: (
+                        _: PdDspGraph.Node,
+                        __: VariableNameGenerators,
+                        settings: JsEvalEngineAttributes,
+                    ) => `// [dac~] channelCount ${settings.channelCount}`,
+                    loop: () => ``
+                }
+            }
+
+            const setup = await generateSetup(
+                [graph.osc, graph.dac],
+                nodeImplementations,
                 JS_EVAL_SETTINGS
             )
 
             assert.strictEqual(
                 normalizeCode(setup),
                 normalizeCode(`
-                let oscFreqMod_STATE_phase = 0
-                let oscFreqMod_STATE_J = 2 * Math.PI / 44100
-                let oscFreqMod_INS_0 = 440
-                let oscFreqMod_OUTS_0 = 0
+                let o = 0
+                let ENGINE_OUTPUT1 = 0
+                let ENGINE_OUTPUT2 = 0
 
-                let oscMain_STATE_phase = 0
-                let oscMain_STATE_J = 2 * Math.PI / 44100
-                let oscMain_INS_0 = 550
-                let oscMain_OUTS_0 = 0
+                let osc_INS_0_control = []
+                let osc_INS_0_signal = 0
+                let osc_OUTS_0 = 0
+                // [osc~] frequency 440 ; sample rate 44100
                 
                 let dac_INS_0 = 0
                 let dac_INS_1 = 0
+                // [dac~] channelCount 2
+                
             `)
+            )
+        })
+    })
+
+    describe('generateLoop', () => {
+
+        const NODE_IMPLEMENTATIONS: NodeImplementations = {
+            'msg': {
+                setup: () => ``,
+                loop: (
+                    node: PdDspGraph.Node,
+                    _: VariableNameGenerators,
+                    settings: JsEvalEngineAttributes,
+                ) => `// [msg] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+            },
+            '+': {
+                setup: () => ``,
+                loop: (
+                    node: PdDspGraph.Node,
+                    _: VariableNameGenerators,
+                    settings: JsEvalEngineAttributes,
+                ) => `// [+] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+            },
+            'print': {
+                setup: () => ``,
+                loop: (
+                    node: PdDspGraph.Node,
+                    _: VariableNameGenerators,
+                    __: JsEvalEngineAttributes,
+                ) => `// [print] : value "${node.args.value}"`,
+            },
+            'osc~': {
+                setup: () => ``,
+                loop: (
+                    node: PdDspGraph.Node,
+                    _: VariableNameGenerators,
+                    settings: JsEvalEngineAttributes,
+                ) => `// [osc~] : frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
+            },
+            '+~': {
+                setup: () => ``,
+                loop: (
+                    node: PdDspGraph.Node,
+                    _: VariableNameGenerators,
+                    settings: JsEvalEngineAttributes,
+                ) => `// [+~] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+            },
+            'dac~': {
+                setup: () => ``,
+                loop: (
+                    _: PdDspGraph.Node,
+                    __: VariableNameGenerators,
+                    settings: JsEvalEngineAttributes,
+                ) => `// [dac~] : channelCount ${settings.channelCount}`,
+            }
+        }
+
+        it('should generate the loop function, pass around control messages, and cleanup control inlets and outlets', async () => {
+            const graph = makeGraph({
+                msg: {
+                    type: 'msg',
+                    sinks: {
+                        '0': [['plus', '0'], ['print', '0']],
+                    },
+                    args: {
+                        value: 2,
+                    },
+                    outlets: {'0': {type: 'control'}}
+                },
+                plus: {
+                    type: '+',
+                    sinks: {
+                        '0': [['print', '0']],
+                    },
+                    args: {
+                        value: 1,
+                    },
+                    inlets: {'0': {type: 'control'}},
+                    outlets: {'0': {type: 'control'}}
+                },
+                print: {
+                    type: 'print',
+                    args: {
+                        value: 'bla',
+                    },
+                    inlets: {'0': {type: 'control'}},
+                },
+            })
+
+            const loop = await generateLoop(
+                [graph.msg, graph.plus, graph.print],
+                NODE_IMPLEMENTATIONS,
+                JS_EVAL_SETTINGS
             )
 
             assert.strictEqual(
                 normalizeCode(loop),
                 normalizeCode(`
-                oscFreqMod_STATE_phase += oscFreqMod_STATE_phase * oscFreqMod_INS_0
-                oscFreqMod_OUTS_0 = Math.cos(oscFreqMod_STATE_phase)
+                // [msg] : value 2 ; sample rate 44100
+                for (o = 0; o < msg_OUTS_0.length; o++) {
+                    plus_INS_0.push(msg_OUTS_0[o])
+                }
+                for (o = 0; o < msg_OUTS_0.length; o++) {
+                    print_INS_0.push(msg_OUTS_0[o])
+                }
+
+                // [+] : value 1 ; sample rate 44100
+                for (o = 0; o < plus_OUTS_0.length; o++) {
+                    print_INS_0.push(plus_OUTS_0[o])
+                }
+
+                // [print] : value "bla"
+
+                if (msg_OUTS_0.length) {
+                    msg_OUTS_0 = []
+                }
+                if (plus_INS_0.length) {
+                    plus_INS_0 = []
+                }
+                if (plus_OUTS_0.length) {
+                    plus_OUTS_0 = []
+                }
+                if (print_INS_0.length) {
+                    print_INS_0 = []
+                }
+            `)
+            )
+        })
+
+        it('should generate the loop function and pass around signal', async () => {
+            const graph = makeGraph({
+                osc: {
+                    type: 'osc~',
+                    sinks: {
+                        '0': [['plus', '0'], ['dac', '0']],
+                    },
+                    args: {
+                        frequency: 440,
+                    },
+                    outlets: {'0': {type: 'signal'}}
+                },
+                plus: {
+                    type: '+~',
+                    sinks: {
+                        '0': [['dac', '1']],
+                    },
+                    args: {
+                        value: 110,
+                    },
+                    inlets: {'0': {type: 'signal'}},
+                    outlets: {'0': {type: 'signal'}}
+                },
+                dac: {
+                    type: 'dac~',
+                    args: {
+                        value: 'bla',
+                    },
+                    inlets: {'0': {type: 'signal'}, '1': {type: 'signal'}},
+                },
+            })
+
+            const loop = await generateLoop(
+                [graph.osc, graph.plus, graph.dac],
+                NODE_IMPLEMENTATIONS,
+                JS_EVAL_SETTINGS
+            )
+
+            assert.strictEqual(
+                normalizeCode(loop),
+                normalizeCode(`
+                // [osc~] : frequency 440 ; sample rate 44100
+                plus_INS_0 = osc_OUTS_0
+                dac_INS_0 = osc_OUTS_0
             
-                oscMain_INS_0 = oscFreqMod_OUTS_0
+                // [+~] : value 110 ; sample rate 44100
+                dac_INS_1 = plus_OUTS_0
 
-                oscMain_STATE_phase += oscMain_STATE_phase * oscMain_INS_0
-                oscMain_OUTS_0 = Math.cos(oscMain_STATE_phase)
-
-                dac_INS_0 = oscMain_OUTS_0
-
-                ENGINE_OUTPUT1 = dac_INS_0
-                ENGINE_OUTPUT2 = dac_INS_1
+                // [dac~] : channelCount 2
             `)
             )
         })

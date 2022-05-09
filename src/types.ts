@@ -1,41 +1,39 @@
 import {
     EngineAttributes,
-    EvalDspLoop,
-    EvalDspSetup,
 } from '@webpd/engine-core/src/types'
+
+export enum PortsNames {
+    SET_VARIABLE = 'setVariable'
+}
+
+// JS Code stored in string variable for later evaluation.
+export type Code = string
+
+// All variables are global in generated code
+export type GlobalVariableName = string
+
+export type VariableNameGenerator = (localVariableName: string) => GlobalVariableName
 
 export interface JsEvalEngineAttributes extends EngineAttributes {
     engineOutputVariableNames: Array<string>
     engineArraysVariableName: string
 }
 
-type GlobalVariableName = string
+export type NodeCodeGenerator = (
+    node: PdDspGraph.Node,
+    variableNameGenerators: VariableNameGenerators,
+    settings: JsEvalEngineAttributes
+) => Code
 
-type GlobalNameBuilder = (localVariableName: string) => GlobalVariableName
-
-export interface GlobalNameBuilders {
-    state: GlobalNameBuilder
-    ins: GlobalNameBuilder
-    outs: GlobalNameBuilder
+export interface VariableNameGenerators {
+    state: VariableNameGenerator
+    ins: VariableNameGenerator
+    outs: VariableNameGenerator
 }
-
-export type NodeSetup = (
-    node: PdDspGraph.Node,
-    nameBuilders: GlobalNameBuilders,
-    settings: JsEvalEngineAttributes
-) => EvalDspSetup
-
-export type NodeLoop = (
-    node: PdDspGraph.Node,
-    nameBuilders: GlobalNameBuilders,
-    settings: JsEvalEngineAttributes
-) => EvalDspLoop
 
 export interface NodeImplementation {
-    setup: NodeSetup
-    loop: NodeLoop
+    setup: NodeCodeGenerator
+    loop: NodeCodeGenerator
 }
 
-export enum PortsNames {
-    SET_VARIABLE = 'setVariable'
-}
+export type NodeImplementations = {[nodeType: string]: NodeImplementation}

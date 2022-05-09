@@ -2,54 +2,40 @@ import * as evalEngine from '@webpd/engine-core/src/eval-engine'
 import {createButton} from '@webpd/shared/example-helpers'
 import generate from '../../src/generate'
 import pEvent from 'p-event'
+import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
+import NODE_IMPLEMENTATIONS from '../../src/nodes'
 
 const context = new AudioContext()
 
-const registry: PdRegistry.Registry = {
-    'osc~': {
-        getInletsTemplate: () => ({
-            '0': {type: 'signal'}
-        }),
-        getOutletsTemplate: () => ({
-            '0': {type: 'signal'}
-        }),
-        isSink: () => false,
-        inflateArgs: (pdJsonArgs: PdJson.ObjectArgs) => ({
-            frequency: pdJsonArgs[0]
-        })
-    },
-    'dac~': {
-        getInletsTemplate: () => ({'0': {type: 'signal'}, '1': {type: 'signal'}}),
-        getOutletsTemplate: () => ({}),
-        isSink: () => true,
-        inflateArgs: (pdJsonArgs: PdJson.ObjectArgs) => ({
-            frequency: pdJsonArgs[0]
-        })
-    },
+const oscLeftArgs = {
+    frequency: 440
+}
+const oscRightArgs = {
+    frequency: 330
 }
 
 const graph: PdDspGraph.Graph = {
     'oscLeft': {
         id: 'oscLeft',
         type: 'osc~',
-        args: {
-            frequency: 440
-        },
+        args: oscLeftArgs,
         sinks: {
-            '0': [{id: 'dac', portlet: '0'}]
+            '0': [{nodeId: 'dac', portlet: '0'}]
         },
-        sources: {}
+        sources: {},
+        inlets: DEFAULT_REGISTRY['osc~'].buildInlets(oscLeftArgs),
+        outlets: DEFAULT_REGISTRY['osc~'].buildOutlets(oscLeftArgs)
     },
     'oscRight': {
         id: 'oscRight',
         type: 'osc~',
-        args: {
-            frequency: 330
-        },
+        args: oscRightArgs,
         sinks: {
-            '0': [{id: 'dac', portlet: '1'}]
+            '0': [{nodeId: 'dac', portlet: '1'}]
         },
-        sources: {}
+        sources: {},
+        inlets: DEFAULT_REGISTRY['osc~'].buildInlets(oscRightArgs),
+        outlets: DEFAULT_REGISTRY['osc~'].buildOutlets(oscRightArgs)
     },
     'dac': {
         id: 'dac',
@@ -57,9 +43,12 @@ const graph: PdDspGraph.Graph = {
         args: {},
         sinks: {},
         sources: {
-            '0': {id: 'oscLeft', portlet: '0'},
-            '1': {id: 'oscRight', portlet: '1'},
-        }
+            '0': [{nodeId: 'oscLeft', portlet: '0'}],
+            '1': [{nodeId: 'oscRight', portlet: '1'}],
+        },
+        isEndSink: true,
+        inlets: DEFAULT_REGISTRY['dac~'].buildInlets({}),
+        outlets: DEFAULT_REGISTRY['dac~'].buildOutlets({})
     }
 }
 
@@ -72,10 +61,11 @@ const main = async () => {
     await pEvent(button, 'click')
     engine = await evalEngine.init(engine)
 
-    const dspFunction = await generate(graph, registry, {
+    const dspFunction = await generate(graph, NODE_IMPLEMENTATIONS, {
         sampleRate: 44100,
         channelCount: 2,
     })
+    console.log(dspFunction)
     await evalEngine.run(engine, dspFunction, {})
     return engine
 }

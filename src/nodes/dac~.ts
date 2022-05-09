@@ -1,14 +1,8 @@
-import { NodeLoop, NodeSetup } from '../types'
+import { NodeCodeGenerator } from '../types'
 
-export const setup: NodeSetup = (_, { ins }, { channelCount }) => {
-    let setupStr = ''
-    for (let ch = 0; ch < channelCount; ch++) {
-        setupStr += `\nlet ${ins(`${ch}`)} = 0`
-    }
-    return setupStr
-}
+export const setup: NodeCodeGenerator = () => ``
 
-export const loop: NodeLoop = (
+export const loop: NodeCodeGenerator = (
     _,
     { ins },
     { engineOutputVariableNames, channelCount }
