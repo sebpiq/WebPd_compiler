@@ -53,4 +53,59 @@ describe('tabplay~', () => {
             { '0': 0, '1': [] },
         ])
     })
+
+    it('should read from sample when receiving float', async () => {
+        ;(globalThis as any)[ENGINE_ARRAYS_VARIABLE_NAME] = {
+            myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
+        }
+        const frames = await generateFramesForNode(
+            { type: 'tabplay~', args: { arrayName: 'myArray' } },
+            [
+                {}, // frame 1
+                {
+                    // frame 2
+                    '0': [[3]],
+                },
+                {}, // frame 3
+                {}, // frame 4
+                {}, // frame 5
+                {}, // frame 6
+            ]
+            
+        )
+        assert.deepStrictEqual(frames, [
+            { '0': 0, '1': [] },
+            { '0': 0.4, '1': [] },
+            { '0': 0.5, '1': [] },
+            { '0': 0.6, '1': [] },
+            { '0': 0.7, '1': [['bang']] },
+            { '0': 0, '1': [] },
+        ])
+    })
+
+    it('should read from sample to sample when receiving 2 floats', async () => {
+        ;(globalThis as any)[ENGINE_ARRAYS_VARIABLE_NAME] = {
+            myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
+        }
+        const frames = await generateFramesForNode(
+            { type: 'tabplay~', args: { arrayName: 'myArray' } },
+            [
+                {}, // frame 1
+                {
+                    // frame 2
+                    '0': [[3, 2]],
+                },
+                {}, // frame 3
+                {}, // frame 4
+            ]
+            
+        )
+        assert.deepStrictEqual(frames, [
+            { '0': 0, '1': [] },
+            { '0': 0.4, '1': [] },
+            { '0': 0.5, '1': [['bang']] },
+            { '0': 0, '1': [] }
+        ])
+    })
+
 })
