@@ -2,6 +2,7 @@ import { EngineAttributes } from '@webpd/engine-core/src/types'
 
 export enum PortsNames {
     SET_VARIABLE = 'setVariable',
+    GET_VARIABLE = 'getVariable',
 }
 
 // JS Code stored in string variable for later evaluation.

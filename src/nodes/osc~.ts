@@ -20,6 +20,7 @@ export const setup: NodeCodeGenerator = (
     `
 }
 
+// TODO: right inlet, reset phase
 export const loop: NodeCodeGenerator = (node, { state, ins, outs }) => {
     // Take only the last received frequency message (first in the list)
     let phaseComputation = ''

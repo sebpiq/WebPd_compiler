@@ -2,15 +2,12 @@ import { NodeCodeGenerator } from '../types'
 
 export const setup: NodeCodeGenerator = (
     node,
-    { state, ins, outs },
+    { state, ins },
     { engineArraysVariableName }
 ) => `
     let ${state('array')} = new Float32Array(0)
     let ${state('readPosition')} = 0
     let ${state('readUntil')} = 0
-
-    let ${ins('0')} = []
-    let ${outs('0')} = 0
 
     const ${state('funcSetArrayName')} = (arrayName) => {
         ${state(
@@ -24,9 +21,9 @@ export const setup: NodeCodeGenerator = (
         ${state('readPosition')} = startPosition
         ${state(
             'readUntil'
-        )} = sampleCount !== undefined ? Math.min(startPosition + sampleCount, ${state(
-    'array'
-)}.length) : ${state('array')}.length
+        )} = sampleCount !== undefined ? 
+            Math.min(startPosition + sampleCount, ${state('array')}.length) 
+            : ${state('array')}.length
     }
 
     const ${state('funcHandleMessage')} = () => {
@@ -50,10 +47,17 @@ export const setup: NodeCodeGenerator = (
 `
 
 export const loop: NodeCodeGenerator = (_, { state, ins, outs }) => `
-    ${ins('0')}.forEach(v => ${state('funcHandleMessage')}(v))
+    while (${ins('0')}.length) {
+        ${state('funcHandleMessage')}()
+    }
 
     if (${state('readPosition')} < ${state('readUntil')}) {
         ${outs('0')} = ${state('array')}[${state('readPosition')}]
         ${state('readPosition')}++
+        if (${state('readPosition')} >= ${state('readUntil')}) {
+            ${outs('1')}.push(['bang'])
+        }
+    } else {
+        ${outs('0')} = 0
     }
 `

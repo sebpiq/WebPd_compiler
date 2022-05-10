@@ -91,6 +91,9 @@ describe('generate', () => {
                         return [ENGINE_OUTPUT1, ENGINE_OUTPUT2]
                     },
                     ports: {
+                        getVariable: (variableName) => {
+                            return eval(variableName)
+                        },
                         setVariable: (variableName, variableValue) => {
                             eval(variableName + ' = variableValue')
                         }

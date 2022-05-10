@@ -49,6 +49,9 @@ export default async (
                 return [${engineOutputVariableNames.join(', ')}]
             },
             ports: {
+                ${PortsNames.GET_VARIABLE}: (variableName) => {
+                    return eval(variableName)
+                },
                 ${PortsNames.SET_VARIABLE}: (variableName, variableValue) => {
                     eval(variableName + ' = variableValue')
                 }

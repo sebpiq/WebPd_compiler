@@ -16,7 +16,7 @@ export const generateOutletVariableName = (
     outletId: PdDspGraph.PortletId
 ) => `${nodeId}_OUTS_${outletId}`
 
-const generateStateVariableName = (
+export const generateStateVariableName = (
     nodeId: PdDspGraph.NodeId,
     localVariableName: PdDspGraph.PortletId
 ) => `${nodeId}_STATE_${localVariableName}`
