@@ -19,9 +19,7 @@ export const setup: NodeCodeGenerator = (
 
     const ${state('funcPlay')} = (startPosition, sampleCount) => {
         ${state('readPosition')} = startPosition
-        ${state(
-            'readUntil'
-        )} = sampleCount !== undefined ? 
+        ${state('readUntil')} = sampleCount !== undefined ? 
             Math.min(startPosition + sampleCount, ${state('array')}.length) 
             : ${state('array')}.length
     }
