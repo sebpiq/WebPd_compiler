@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('path')
 
 module.exports = {
     mode: 'development',
@@ -13,13 +13,13 @@ module.exports = {
         ],
     },
     resolve: {
-        extensions: [ '.ts', '.js' ],
+        extensions: ['.ts', '.js'],
     },
     output: {
         filename: 'example-bundle.js',
         path: path.resolve(__dirname, 'www', 'build'),
     },
     watch: true,
-    devtool: "source-map",
-    mode: 'development'
+    devtool: 'source-map',
+    mode: 'development',
 }

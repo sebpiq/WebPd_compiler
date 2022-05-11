@@ -10,5 +10,5 @@ export const sendMessage = (
     message: PdSharedTypes.ControlValue
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)
-    callPort(engine, PortsNames.SET_VARIABLE, [inletVariableName, message])
+    callPort(engine, PortsNames.SET_VARIABLE, [inletVariableName, [message]])
 }
