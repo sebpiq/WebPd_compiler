@@ -1,4 +1,5 @@
 import * as evalEngine from '@webpd/engine-core/src/eval-engine'
+import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/eval-engine/constants'
 import { createButton } from '@webpd/shared/example-helpers'
 import compile from '../../src/compile'
 import pEvent from 'p-event'
@@ -64,6 +65,7 @@ const main = async () => {
     const code = await compile(graph, NODE_IMPLEMENTATIONS, {
         sampleRate: 44100,
         channelCount: 2,
+        arraysVariableName: ENGINE_ARRAYS_VARIABLE_NAME,
     })
     await evalEngine.run(engine, code, {})
     return engine
