@@ -61,12 +61,11 @@ const main = async () => {
     await pEvent(button, 'click')
     engine = await evalEngine.init(engine)
 
-    const dspFunction = await generate(graph, NODE_IMPLEMENTATIONS, {
+    const code = await generate(graph, NODE_IMPLEMENTATIONS, {
         sampleRate: 44100,
         channelCount: 2,
     })
-    console.log(dspFunction)
-    await evalEngine.run(engine, dspFunction, {})
+    await evalEngine.run(engine, code, {})
     return engine
 }
 

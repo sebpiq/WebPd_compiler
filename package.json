@@ -34,6 +34,7 @@
     "webpack-cli": "^4.2.0"
   },
   "dependencies": {
-    "@webpd/engine-core": "file:../WebPd_engine-core"
+    "@webpd/engine-core": "file:../WebPd_engine-core",
+    "@webpd/dsp-graph": "file:../WebPd_dsp-graph"
   }
 }

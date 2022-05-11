@@ -2,17 +2,29 @@ import assert from 'assert'
 import generate, { generateLoop, generateSetup } from './generate'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import {
-    JsEvalEngineAttributes,
+    ProcessorSettings,
     NodeImplementations,
     VariableNameGenerators,
+    PortsNames,
 } from './types'
+import { buildSignalProcessor } from '@webpd/engine-core/src/eval-engine/utils'
+import {
+    EngineSettings,
+    SignalProcessor,
+} from '@webpd/engine-core/src/eval-engine/types'
 
 describe('generate', () => {
-    const JS_EVAL_SETTINGS = {
+    const ENGINE_SETTINGS: EngineSettings = {
         sampleRate: 44100,
         channelCount: 2,
-        engineOutputVariableNames: ['ENGINE_OUTPUT1', 'ENGINE_OUTPUT2'],
-        engineArraysVariableName: 'ARRAYS',
+    }
+
+    const PROCESSOR_SETTINGS: ProcessorSettings = {
+        ...ENGINE_SETTINGS,
+        variableNames: {
+            output: ['PROCESSOR_OUTPUT1', 'PROCESSOR_OUTPUT2'],
+            arrays: 'ARRAYS',
+        },
     }
 
     const normalizeCode = (rawCode: string) => {
@@ -57,18 +69,19 @@ describe('generate', () => {
                     isEndSink: true,
                 },
             })
-            const dspFunction = await generate(
+
+            const code = await generate(
                 graph,
                 nodeImplementations,
-                JS_EVAL_SETTINGS
+                ENGINE_SETTINGS
             )
 
             assert.strictEqual(
-                normalizeCode(dspFunction),
+                normalizeCode(code),
                 normalizeCode(`
                 let o = 0
-                let ENGINE_OUTPUT1 = 0
-                let ENGINE_OUTPUT2 = 0
+                let PROCESSOR_OUTPUT1 = 0
+                let PROCESSOR_OUTPUT2 = 0
                 
                 let osc_INS_0_control = []
                 let osc_OUTS_0 = 0
@@ -88,7 +101,7 @@ describe('generate', () => {
                             osc_INS_0_control = []
                         }
                         
-                        return [ENGINE_OUTPUT1, ENGINE_OUTPUT2]
+                        return [PROCESSOR_OUTPUT1, PROCESSOR_OUTPUT2]
                     },
                     ports: {
                         getVariable: (variableName) => {
@@ -100,6 +113,51 @@ describe('generate', () => {
                     }
                 }
             `)
+            )
+        })
+
+        it('should be a signal processor', async () => {
+            const nodeImplementations: NodeImplementations = {
+                'osc~': {
+                    setup: () => `// [osc~] setup`,
+                    loop: () => `// [osc~] loop`,
+                },
+            }
+
+            const graph = makeGraph({
+                osc: {
+                    type: 'osc~',
+                    args: {
+                        frequency: 440,
+                    },
+                    inlets: { '0_control': { type: 'control' } },
+                    outlets: { '0': { type: 'signal' } },
+                },
+            })
+
+            const code = await generate(
+                graph,
+                nodeImplementations,
+                ENGINE_SETTINGS
+            )
+
+            const modelProcessor: SignalProcessor = {
+                loop: () => new Float32Array(),
+                ports: {
+                    [PortsNames.GET_VARIABLE]: () => null,
+                    [PortsNames.SET_VARIABLE]: () => null,
+                },
+            }
+
+            const processor = buildSignalProcessor(code)
+
+            assert.deepStrictEqual(
+                Object.keys(processor),
+                Object.keys(modelProcessor)
+            )
+            assert.deepStrictEqual(
+                Object.keys(processor.ports),
+                Object.keys(modelProcessor.ports)
             )
         })
     })
@@ -133,7 +191,7 @@ describe('generate', () => {
                     setup: (
                         node: PdDspGraph.Node,
                         _: VariableNameGenerators,
-                        settings: JsEvalEngineAttributes
+                        settings: ProcessorSettings
                     ) =>
                         `// [osc~] frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
                     loop: () => ``,
@@ -142,7 +200,7 @@ describe('generate', () => {
                     setup: (
                         _: PdDspGraph.Node,
                         __: VariableNameGenerators,
-                        settings: JsEvalEngineAttributes
+                        settings: ProcessorSettings
                     ) => `// [dac~] channelCount ${settings.channelCount}`,
                     loop: () => ``,
                 },
@@ -151,15 +209,15 @@ describe('generate', () => {
             const setup = await generateSetup(
                 [graph.osc, graph.dac],
                 nodeImplementations,
-                JS_EVAL_SETTINGS
+                PROCESSOR_SETTINGS
             )
 
             assert.strictEqual(
                 normalizeCode(setup),
                 normalizeCode(`
                 let o = 0
-                let ENGINE_OUTPUT1 = 0
-                let ENGINE_OUTPUT2 = 0
+                let PROCESSOR_OUTPUT1 = 0
+                let PROCESSOR_OUTPUT2 = 0
 
                 let osc_INS_0_control = []
                 let osc_INS_0_signal = 0
@@ -182,7 +240,7 @@ describe('generate', () => {
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes
+                    settings: ProcessorSettings
                 ) =>
                     `// [msg] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
@@ -191,7 +249,7 @@ describe('generate', () => {
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes
+                    settings: ProcessorSettings
                 ) =>
                     `// [+] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
@@ -200,7 +258,7 @@ describe('generate', () => {
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    __: JsEvalEngineAttributes
+                    __: ProcessorSettings
                 ) => `// [print] : value "${node.args.value}"`,
             },
             'osc~': {
@@ -208,7 +266,7 @@ describe('generate', () => {
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes
+                    settings: ProcessorSettings
                 ) =>
                     `// [osc~] : frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
             },
@@ -217,7 +275,7 @@ describe('generate', () => {
                 loop: (
                     node: PdDspGraph.Node,
                     _: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes
+                    settings: ProcessorSettings
                 ) =>
                     `// [+~] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
@@ -226,7 +284,7 @@ describe('generate', () => {
                 loop: (
                     _: PdDspGraph.Node,
                     __: VariableNameGenerators,
-                    settings: JsEvalEngineAttributes
+                    settings: ProcessorSettings
                 ) => `// [dac~] : channelCount ${settings.channelCount}`,
             },
         }
@@ -269,7 +327,7 @@ describe('generate', () => {
             const loop = await generateLoop(
                 [graph.msg, graph.plus, graph.print],
                 NODE_IMPLEMENTATIONS,
-                JS_EVAL_SETTINGS
+                PROCESSOR_SETTINGS
             )
 
             assert.strictEqual(
@@ -347,7 +405,7 @@ describe('generate', () => {
             const loop = await generateLoop(
                 [graph.osc, graph.plus, graph.dac],
                 NODE_IMPLEMENTATIONS,
-                JS_EVAL_SETTINGS
+                PROCESSOR_SETTINGS
             )
 
             assert.strictEqual(

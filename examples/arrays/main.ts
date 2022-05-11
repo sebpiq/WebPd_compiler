@@ -1,120 +1,79 @@
-// import * as evalEngine from '@webpd/engine-core/src/eval-engine/index'
-// import {createButton} from '@webpd/shared/example-helpers'
-// import generate from '../../src/generate'
-// import pEvent from 'p-event'
-// import { sendMessage } from '../../src/api'
+import * as evalEngine from '@webpd/engine-core/src/eval-engine'
+import {createButton} from '@webpd/shared/example-helpers'
+import generate from '../../src/generate'
+import pEvent from 'p-event'
+import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
+import NODE_IMPLEMENTATIONS from '../../src/nodes'
+import { sendMessage } from '../../src/api'
+import { Engine } from '@webpd/engine-core/src/eval-engine/types'
 
-// const context = new AudioContext()
+const SAMPLE_URL = '/sample.mp3'
+const CONTEXT = new AudioContext()
+const TABPLAY_ID = 'tabplay'
+const SAMPLE_ARRAY_NAME = 'SAMPLE'
 
-// const arraySize = 2056 * 64
+const tabplayArgs = {arrayName: SAMPLE_ARRAY_NAME}
+const graph: PdDspGraph.Graph = {
+    'tabplay': {
+        id: TABPLAY_ID,
+        type: 'tabplay~',
+        args: tabplayArgs,
+        sinks: {
+            '0': [{nodeId: 'dac', portletId: '0'}]
+        },
+        sources: {},
+        inlets: DEFAULT_REGISTRY['osc~'].buildInlets(tabplayArgs),
+        outlets: DEFAULT_REGISTRY['osc~'].buildOutlets(tabplayArgs)
+    },
+    'dac': {
+        id: 'dac',
+        type: 'dac~',
+        args: {},
+        sinks: {},
+        sources: {
+            '0': [{nodeId: 'oscLeft', portletId: '0'}],
+            '1': [{nodeId: 'oscRight', portletId: '1'}],
+        },
+        isEndSink: true,
+        inlets: DEFAULT_REGISTRY['dac~'].buildInlets({}),
+        outlets: DEFAULT_REGISTRY['dac~'].buildOutlets({})
+    }
+}
 
-// const noiseArray = new Float32Array(arraySize)
-// for (let i = 0; i < arraySize; i++) {
-//     const gain = (arraySize - i) / arraySize
-//     noiseArray[i] = gain * (Math.random() * 2 - 1)
-// }
+const loadSample = async (audioContext: AudioContext) => {
+    const response = await fetch(SAMPLE_URL)
+    const audioData = await response.arrayBuffer()
+    const audioBuffer = await audioContext.decodeAudioData(audioData)
+    const arrays: Array<Float32Array> = []
+    for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
+        arrays.push(audioBuffer.getChannelData(ch))
+    }
+    return arrays
+}
 
-// const sawtoothArray = new Float32Array(arraySize)
-// for (let i = 0; i < arraySize; i++) {
-//     const accelFactor = 0.5 + (0.5 * i / arraySize)
-//     const gain = (arraySize - i) / arraySize
-//     sawtoothArray[i] = gain * (-1 + 2 * (i % (512 * accelFactor)) / (512 * accelFactor))
-// }
+const bangTabPlay = (engine: Engine) => {
+    sendMessage(engine, TABPLAY_ID, '0', ['bang'])
+}
 
-// const arrays = {
-//     noise: noiseArray,
-//     sawtooth: sawtoothArray,
-// }
+const main = async () => {
+    let engine = await evalEngine.create(CONTEXT, {
+        sampleRate: CONTEXT.sampleRate, 
+        channelCount: 2,
+    })
+    const button = createButton('Start')
+    const sampleArrays = await loadSample(CONTEXT)
+    await pEvent(button, 'click')
+    engine = await evalEngine.init(engine)
 
-// const registry: PdRegistry.Registry = {
-//     'tabplay~': {
-//         buildInlets: () => ({
-//             '0': {type: 'control'}
-//         }),
-//         buildOutlets: () => ({
-//             '0': {type: 'signal'}
-//         }),
-//         isSink: () => false,
-//         inflateArgs: (pdJsonArgs: PdJson.ObjectArgs) => ({
-//             arrayName: pdJsonArgs[0]
-//         })
-//     },
-//     'dac~': {
-//         buildInlets: () => ({'0': {type: 'signal'}, '1': {type: 'signal'}}),
-//         buildOutlets: () => ({}),
-//         isSink: () => true,
-//         inflateArgs: (pdJsonArgs: PdJson.ObjectArgs) => ({
-//             frequency: pdJsonArgs[0]
-//         })
-//     },
-// }
+    const code = await generate(graph, NODE_IMPLEMENTATIONS, {
+        sampleRate: 44100,
+        channelCount: 2,
+    })
+    await evalEngine.run(engine, code, { [SAMPLE_ARRAY_NAME]: sampleArrays[0] })
+    return engine
+}
 
-// const graph: PdDspGraph.Graph = {
-//     'player': {
-//         id: 'player',
-//         type: 'tabplay~',
-//         args: {
-//             arrayName: 'noise'
-//         },
-//         sinks: {
-//             '0': [
-//                 {id: 'dac', portletId: '0'},
-//                 {id: 'dac', portletId: '1'}
-//             ]
-//         },
-//         sources: {}
-//     },
-//     'dac': {
-//         id: 'dac',
-//         type: 'dac~',
-//         args: {},
-//         sinks: {},
-//         sources: {
-//             '0': {id: 'player', portletId: '0'},
-//             '1': {id: 'player', portletId: '0'},
-//         }
-//     }
-// }
-
-// const main = async () => {
-//     let engine = await evalEngine.create(context, {
-//         sampleRate: context.sampleRate, 
-//         channelCount: 2,
-//     })
-//     const startButton = createButton('Start')
-//     await pEvent(startButton, 'click')
-//     engine = await evalEngine.init(engine)
-
-//     const dspFunction = await generate(graph, registry, {
-//         sampleRate: 44100,
-//         channelCount: 2,
-//     })
-//     await evalEngine.run(engine, dspFunction, arrays)
-
-//     const playButton = createButton('Play All')
-//     playButton.onclick = () =>
-//         sendMessage(engine, 'player', '0', ['bang'])
-
-//     const playHalfButton = createButton('Play Half to End')
-//     playHalfButton.onclick = () =>
-//         sendMessage(engine, 'player', '0', [Math.round(0.5 * arraySize)])
-
-//     const playMiddleButton = createButton('Play Middle')
-//     playMiddleButton.onclick = () =>
-//         sendMessage(engine, 'player', '0', [Math.round(0.25 * arraySize), Math.round(0.5 * arraySize)])
-
-//     const setNoiseButton = createButton('Noise Array')
-//     setNoiseButton.onclick = () =>
-//         sendMessage(engine, 'player', '0', ['set', 'noise'])
-
-//     const setSawToothButton = createButton('Sawtooth Array')
-//     setSawToothButton.onclick = () =>
-//         sendMessage(engine, 'player', '0', ['set', 'sawtooth'])
-
-//     return engine
-// }
-
-// main().then((engine) => {
-//     console.log('app started')
-//     ;(window as any).webPdEngine = engine
-// })
+main().then((engine) => {
+    console.log('app started')
+    ;(window as any).webPdEngine = engine
+})

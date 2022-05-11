@@ -1,9 +1,6 @@
-import {
-    buildDspEngine,
-    NodeSummary,
-} from '@webpd/engine-core/src/eval-engine/test-helpers'
+import { buildSignalProcessor } from '@webpd/engine-core/src/eval-engine/utils'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
-import { DspEngine } from '@webpd/engine-core/src/eval-engine/types'
+import { SignalProcessor } from '@webpd/engine-core/src/eval-engine/types'
 import generate from './generate'
 import NODE_IMPLEMENTATIONS from './nodes'
 import { NodeImplementations, PortsNames } from './types'
@@ -12,27 +9,29 @@ import {
     generateStateVariableName,
 } from './variable-names'
 
+type NodeSummary = Pick<PdDspGraph.Node, 'type' | 'args'>
+
 type GenericInletValue =
     | PdSharedTypes.SignalValue
     | Array<PdSharedTypes.ControlValue>
 
-const setEngineNodeInlet = (
-    dspEngine: DspEngine,
+const setNodeInlet = (
+    processor: SignalProcessor,
     nodeId: PdDspGraph.NodeId,
     inletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)
-    dspEngine.ports[PortsNames.SET_VARIABLE](inletVariableName, value)
+    processor.ports[PortsNames.SET_VARIABLE](inletVariableName, value)
 }
 
-const getEngineNodeState = (
-    dspEngine: DspEngine,
+const getNodeState = (
+    processor: SignalProcessor,
     nodeId: PdDspGraph.NodeId,
     name: string
 ) => {
     const variableName = generateStateVariableName(nodeId, name)
-    return dspEngine.ports[PortsNames.GET_VARIABLE](variableName)
+    return processor.ports[PortsNames.GET_VARIABLE](variableName)
 }
 
 type Frame = {
@@ -92,7 +91,7 @@ export const generateFramesForNode = async (
         recorderNode: recorderNode,
     }
 
-    // --------------- Generating implementation for testing recorder & dsp engine
+    // --------------- Generating implementation for testing recorder & processor
     const nodeImplementations: NodeImplementations = {
         ...NODE_IMPLEMENTATIONS,
         'testing-recorder': {
@@ -120,25 +119,25 @@ export const generateFramesForNode = async (
         },
     }
 
-    const dspEngineString = await generate(graph, nodeImplementations, {
+    const code = await generate(graph, nodeImplementations, {
         sampleRate: 44100,
         channelCount: 2,
     })
-    const dspEngine = buildDspEngine(dspEngineString)
+    const processor = buildSignalProcessor(code)
 
     // --------------- Generate frames
     const outputFrames: Array<Frame> = []
     inputFrames.map((inputFrame) => {
         Object.entries(inputFrame).forEach(([inletId, value]) =>
-            setEngineNodeInlet(dspEngine, testNode.id, inletId, value)
+            setNodeInlet(processor, testNode.id, inletId, value)
         )
 
-        dspEngine.loop()
+        processor.loop()
 
         const outputFrame: Frame = {}
         Object.keys(recorderNode.inlets).forEach((inletId) => {
-            outputFrame[inletId] = getEngineNodeState(
-                dspEngine,
+            outputFrame[inletId] = getNodeState(
+                processor,
                 recorderNode.id,
                 'mem' + inletId
             )

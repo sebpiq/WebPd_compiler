@@ -71,7 +71,6 @@ describe('tabplay~', () => {
                 {}, // frame 5
                 {}, // frame 6
             ]
-            
         )
         assert.deepStrictEqual(frames, [
             { '0': 0, '1': [] },
@@ -98,14 +97,12 @@ describe('tabplay~', () => {
                 {}, // frame 3
                 {}, // frame 4
             ]
-            
         )
         assert.deepStrictEqual(frames, [
             { '0': 0, '1': [] },
             { '0': 0.4, '1': [] },
             { '0': 0.5, '1': [['bang']] },
-            { '0': 0, '1': [] }
+            { '0': 0, '1': [] },
         ])
     })
-
 })

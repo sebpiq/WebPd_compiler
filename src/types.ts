@@ -1,29 +1,29 @@
-import { EngineAttributes } from '@webpd/engine-core/src/types'
+import {
+    Code,
+    EngineSettings,
+    GlobalVariableName,
+} from '@webpd/engine-core/src/eval-engine/types'
 
 export enum PortsNames {
     SET_VARIABLE = 'setVariable',
     GET_VARIABLE = 'getVariable',
 }
 
-// JS Code stored in string variable for later evaluation.
-export type Code = string
-
-// All variables are global in generated code
-export type GlobalVariableName = string
-
 export type VariableNameGenerator = (
     localVariableName: string
 ) => GlobalVariableName
 
-export interface JsEvalEngineAttributes extends EngineAttributes {
-    engineOutputVariableNames: Array<string>
-    engineArraysVariableName: string
+export interface ProcessorSettings extends EngineSettings {
+    variableNames: {
+        arrays: string
+        output: Array<string>
+    }
 }
 
 export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
     variableNameGenerators: VariableNameGenerators,
-    settings: JsEvalEngineAttributes
+    settings: ProcessorSettings
 ) => Code
 
 export interface VariableNameGenerators {

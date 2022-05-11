@@ -1,5 +1,5 @@
 import { callPort } from '@webpd/engine-core/src/eval-engine'
-import { Engine } from '@webpd/engine-core/src/types'
+import { Engine } from '@webpd/engine-core/src/eval-engine/types'
 import { generateInletVariableName } from './variable-names'
 import { PortsNames } from './types'
 

@@ -3,16 +3,16 @@ import { NodeCodeGenerator } from '../types'
 export const setup: NodeCodeGenerator = (
     node,
     { state, ins },
-    { engineArraysVariableName }
+    { variableNames }
 ) => `
     let ${state('array')} = new Float32Array(0)
     let ${state('readPosition')} = 0
     let ${state('readUntil')} = 0
 
     const ${state('funcSetArrayName')} = (arrayName) => {
-        ${state(
-            'array'
-        )} = ${engineArraysVariableName}[arrayName] || new Float32Array(0)
+        ${state('array')} = ${
+    variableNames.arrays
+}[arrayName] || new Float32Array(0)
         ${state('readPosition')} = ${state('array')}.length
         ${state('readUntil')} = ${state('array')}.length
     }

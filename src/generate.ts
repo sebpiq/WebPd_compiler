@@ -1,10 +1,16 @@
-import { DspEngineString } from '@webpd/engine-core/src/eval-engine/types'
-import traverseGraph, {
+import {
+    Code,
+    GlobalVariableName,
+    SignalProcessorCode,
+} from '@webpd/engine-core/src/eval-engine/types'
+import {
     GraphTraversal,
-} from '@webpd/engine-core/src/traverse-graph'
-import { Code, GlobalVariableName, JsEvalEngineAttributes } from './types'
+    breadthFirst,
+} from '@webpd/dsp-graph/src/graph-traversal'
+import { getOutlet } from '@webpd/dsp-graph/src/graph-getters'
+import { ProcessorSettings } from './types'
 import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/eval-engine/constants'
-import { EngineAttributes } from '@webpd/engine-core/src/types'
+import { EngineSettings } from '@webpd/engine-core/src/eval-engine/types'
 import { NodeImplementations, PortsNames } from './types'
 import variableNames, {
     generateInletVariableName,
@@ -16,29 +22,31 @@ const ITER_OUTLET_VARIABLE_NAME = 'o'
 export default async (
     graph: PdDspGraph.Graph,
     nodeImplementations: NodeImplementations,
-    settings: EngineAttributes
-): Promise<DspEngineString> => {
-    const engineOutputVariableNames: JsEvalEngineAttributes['engineOutputVariableNames'] = []
-    for (let channel = 1; channel <= settings.channelCount; channel++) {
-        engineOutputVariableNames.push(`ENGINE_OUTPUT${channel}`)
+    engineSettings: EngineSettings
+): Promise<SignalProcessorCode> => {
+    const outputVariableNames: ProcessorSettings['variableNames']['output'] = []
+    for (let channel = 1; channel <= engineSettings.channelCount; channel++) {
+        outputVariableNames.push(`PROCESSOR_OUTPUT${channel}`)
     }
 
-    const jsEvalSettings: JsEvalEngineAttributes = {
-        ...settings,
-        engineOutputVariableNames,
-        engineArraysVariableName: ENGINE_ARRAYS_VARIABLE_NAME,
+    const processorSettings: ProcessorSettings = {
+        ...engineSettings,
+        variableNames: {
+            output: outputVariableNames,
+            arrays: ENGINE_ARRAYS_VARIABLE_NAME,
+        },
     }
 
     const setupCode = await generateSetup(
-        traverseGraph(graph),
+        breadthFirst(graph),
         nodeImplementations,
-        jsEvalSettings
+        processorSettings
     )
 
     const loopCode = await generateLoop(
-        traverseGraph(graph),
+        breadthFirst(graph),
         nodeImplementations,
-        jsEvalSettings
+        processorSettings
     )
 
     return `
@@ -46,7 +54,7 @@ export default async (
         return {
             loop: () => { 
                 ${loopCode}
-                return [${engineOutputVariableNames.join(', ')}]
+                return [${outputVariableNames.join(', ')}]
             },
             ports: {
                 ${PortsNames.GET_VARIABLE}: (variableName) => {
@@ -63,11 +71,11 @@ export default async (
 export const generateSetup = async (
     graphTraversal: GraphTraversal,
     nodeImplementations: NodeImplementations,
-    jsEvalSettings: JsEvalEngineAttributes
+    processorSettings: ProcessorSettings
 ): Promise<Code> => {
     let code: Code = `
         let ${ITER_OUTLET_VARIABLE_NAME} = 0
-        ${jsEvalSettings.engineOutputVariableNames
+        ${processorSettings.variableNames.output
             .map((n) => `let ${n} = 0`)
             .join('\n')}
     `
@@ -107,7 +115,11 @@ export const generateSetup = async (
         )
         code +=
             '\n' +
-            nodeImplementation.setup(node, variableNames(node), jsEvalSettings)
+            nodeImplementation.setup(
+                node,
+                variableNames(node),
+                processorSettings
+            )
     }
 
     return Promise.resolve(code)
@@ -116,7 +128,7 @@ export const generateSetup = async (
 export const generateLoop = async (
     graphTraversal: GraphTraversal,
     nodeImplementations: NodeImplementations,
-    jsEvalSettings: JsEvalEngineAttributes
+    processorSettings: ProcessorSettings
 ): Promise<Code> => {
     let computeCode: Code = ''
     let cleanupCode: Code = ''
@@ -148,7 +160,7 @@ export const generateLoop = async (
         computeCode += nodeImplementation.loop(
             node,
             variableNameGenerators,
-            jsEvalSettings
+            processorSettings
         )
 
         Object.entries(node.sinks).forEach(([outletId, sinks]) => {
@@ -163,7 +175,7 @@ export const generateLoop = async (
                 )
 
                 // 2. transfer output to all connected sinks downstream
-                if (node.outlets[outletId].type === 'control') {
+                if (getOutlet(node, outletId).type === 'control') {
                     computeCode += `
                         for (${ITER_OUTLET_VARIABLE_NAME} = 0; ${ITER_OUTLET_VARIABLE_NAME} < ${outletVariableName}.length; ${ITER_OUTLET_VARIABLE_NAME}++) {
                             ${inletVariableName}.push(${outletVariableName}[${ITER_OUTLET_VARIABLE_NAME}])
