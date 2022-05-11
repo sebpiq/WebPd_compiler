@@ -1,5 +1,5 @@
 {
-  "name": "@webpd/engine-js-eval",
+  "name": "@webpd/compiler-js",
   "version": "0.1.0",
   "description": "TODO",
   "type": "module",
