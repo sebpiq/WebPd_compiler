@@ -1,7 +1,7 @@
 import { buildSignalProcessor } from '@webpd/engine-core/src/eval-engine/utils'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
 import { SignalProcessor } from '@webpd/engine-core/src/eval-engine/types'
-import generate from './generate'
+import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'
 import { NodeImplementations, PortsNames } from './types'
 import {
@@ -119,7 +119,7 @@ export const generateFramesForNode = async (
         },
     }
 
-    const code = await generate(graph, nodeImplementations, {
+    const code = await compile(graph, nodeImplementations, {
         sampleRate: 44100,
         channelCount: 2,
     })

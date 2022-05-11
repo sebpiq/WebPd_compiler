@@ -1,6 +1,6 @@
 import * as evalEngine from '@webpd/engine-core/src/eval-engine'
 import { createButton } from '@webpd/shared/example-helpers'
-import generate from '../../src/generate'
+import compile from '../../src/compile'
 import pEvent from 'p-event'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
 import NODE_IMPLEMENTATIONS from '../../src/nodes'
@@ -61,7 +61,7 @@ const main = async () => {
     await pEvent(button, 'click')
     engine = await evalEngine.init(engine)
 
-    const code = await generate(graph, NODE_IMPLEMENTATIONS, {
+    const code = await compile(graph, NODE_IMPLEMENTATIONS, {
         sampleRate: 44100,
         channelCount: 2,
     })
