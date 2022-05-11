@@ -1,6 +1,5 @@
 import { buildSignalProcessor } from '@webpd/engine-core/src/eval-engine/utils'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
-import { SignalProcessor } from '@webpd/engine-core/src/eval-engine/types'
 import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'
 import { NodeImplementations, PortsNames } from './types'
@@ -16,7 +15,7 @@ type GenericInletValue =
     | Array<PdSharedTypes.ControlValue>
 
 const setNodeInlet = (
-    processor: SignalProcessor,
+    processor: PdEngine.SignalProcessor,
     nodeId: PdDspGraph.NodeId,
     inletId: PdDspGraph.PortletId,
     value: GenericInletValue
@@ -26,7 +25,7 @@ const setNodeInlet = (
 }
 
 const getNodeState = (
-    processor: SignalProcessor,
+    processor: PdEngine.SignalProcessor,
     nodeId: PdDspGraph.NodeId,
     name: string
 ) => {
@@ -122,6 +121,7 @@ export const generateFramesForNode = async (
     const code = await compile(graph, nodeImplementations, {
         sampleRate: 44100,
         channelCount: 2,
+        arraysVariableName: TEST_ARRAYS_VARIABLE_NAME,
     })
     const processor = buildSignalProcessor(code)
 
@@ -147,3 +147,6 @@ export const generateFramesForNode = async (
 
     return outputFrames
 }
+
+export const TEST_ARRAYS_VARIABLE_NAME: PdEngine.CodeVariableName =
+    'WEBPD_ARRAYS'

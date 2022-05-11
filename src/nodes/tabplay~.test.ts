@@ -1,10 +1,12 @@
-import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/eval-engine/constants'
 import assert from 'assert'
-import { generateFramesForNode } from '../test-helpers'
+import {
+    generateFramesForNode,
+    TEST_ARRAYS_VARIABLE_NAME,
+} from '../test-helpers'
 
 describe('tabplay~', () => {
     it('should change array when sent set', async () => {
-        ;(globalThis as any)[ENGINE_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
             myArray: [1, 2, 3],
         }
         const frames = await generateFramesForNode(
@@ -29,7 +31,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from beginning to end when receiving bang', async () => {
-        ;(globalThis as any)[ENGINE_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
             myArray: [11, 22, 33],
         }
         const frames = await generateFramesForNode(
@@ -55,7 +57,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from sample when receiving float', async () => {
-        ;(globalThis as any)[ENGINE_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
         const frames = await generateFramesForNode(
@@ -83,7 +85,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from sample to sample when receiving 2 floats', async () => {
-        ;(globalThis as any)[ENGINE_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
         const frames = await generateFramesForNode(

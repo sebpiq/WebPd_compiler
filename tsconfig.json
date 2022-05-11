@@ -4,7 +4,6 @@
         "src",
         "examples",
         "@types/**/*.d.ts",
-        "node_modules/@webpd/shared/types/*.ts",
-        "node_modules/@webpd/engine-core/**/*.d.ts"
+        "node_modules/@webpd/shared/types/*.ts"
     ]
 }

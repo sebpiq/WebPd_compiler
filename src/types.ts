@@ -1,9 +1,3 @@
-import {
-    Code,
-    EngineSettings,
-    GlobalVariableName,
-} from '@webpd/engine-core/src/eval-engine/types'
-
 export enum PortsNames {
     SET_VARIABLE = 'setVariable',
     GET_VARIABLE = 'getVariable',
@@ -11,9 +5,9 @@ export enum PortsNames {
 
 export type VariableNameGenerator = (
     localVariableName: string
-) => GlobalVariableName
+) => PdEngine.CodeVariableName
 
-export interface ProcessorSettings extends EngineSettings {
+export interface CodeGeneratorSettings extends PdEngine.Settings {
     variableNames: {
         arrays: string
         output: Array<string>
@@ -23,8 +17,8 @@ export interface ProcessorSettings extends EngineSettings {
 export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
     variableNameGenerators: VariableNameGenerators,
-    settings: ProcessorSettings
-) => Code
+    settings: CodeGeneratorSettings
+) => PdEngine.Code
 
 export interface VariableNameGenerators {
     state: VariableNameGenerator
@@ -38,3 +32,7 @@ export interface NodeImplementation {
 }
 
 export type NodeImplementations = { [nodeType: string]: NodeImplementation }
+
+export interface CompilerSettings extends PdEngine.Settings {
+    arraysVariableName: PdEngine.CodeVariableName
+}

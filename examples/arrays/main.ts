@@ -4,8 +4,9 @@ import compile from '../../src/compile'
 import pEvent from 'p-event'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
 import NODE_IMPLEMENTATIONS from '../../src/nodes'
-import { sendMessage } from '../../src/api'
 import { Engine } from '@webpd/engine-core/src/eval-engine/types'
+import { setInlet } from '../../src/api'
+import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/eval-engine/constants'
 
 const SAMPLE_URL = '/sample.mp3'
 const CONTEXT = new AudioContext()
@@ -67,8 +68,8 @@ const loadSample = async (audioContext: AudioContext) => {
 }
 
 const bangTabPlay = (engine: Engine) => {
-    sendMessage(engine, TABPLAY_LEFT_ID, '0', ['bang'])
-    sendMessage(engine, TABPLAY_RIGHT_ID, '0', ['bang'])
+    evalEngine.callPort(engine, ...setInlet(TABPLAY_LEFT_ID, '0', ['bang']))
+    evalEngine.callPort(engine, ...setInlet(TABPLAY_RIGHT_ID, '0', ['bang']))
 }
 
 const main = async () => {
@@ -84,6 +85,7 @@ const main = async () => {
     const code = await compile(graph, NODE_IMPLEMENTATIONS, {
         sampleRate: 44100,
         channelCount: 2,
+        arraysVariableName: ENGINE_ARRAYS_VARIABLE_NAME,
     })
     console.log(code)
     await evalEngine.run(engine, code, {
