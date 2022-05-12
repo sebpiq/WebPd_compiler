@@ -1,12 +1,12 @@
-import * as evalEngine from '@webpd/engine-core/src/eval-engine'
+import * as evalEngine from '@webpd/engine-live-eval/src'
 import { createButton } from '@webpd/shared/example-helpers'
 import compile from '../../src/compile'
 import pEvent from 'p-event'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
 import NODE_IMPLEMENTATIONS from '../../src/nodes'
-import { Engine } from '@webpd/engine-core/src/eval-engine/types'
+import { Engine } from '@webpd/engine-live-eval/src/types'
 import { setInlet } from '../../src/api'
-import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-core/src/eval-engine/constants'
+import { ENGINE_ARRAYS_VARIABLE_NAME } from '@webpd/engine-live-eval/src/constants'
 
 const SAMPLE_URL = '/sample.mp3'
 const CONTEXT = new AudioContext()

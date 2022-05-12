@@ -1,4 +1,4 @@
-import { buildSignalProcessor } from '@webpd/engine-core/src/eval-engine/utils'
+import { buildSignalProcessor } from '@webpd/engine-live-eval/src/utils'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
 import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'

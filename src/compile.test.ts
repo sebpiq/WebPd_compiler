@@ -8,7 +8,7 @@ import {
     PortsNames,
     CompilerSettings,
 } from './types'
-import { buildSignalProcessor } from '@webpd/engine-core/src/eval-engine/utils'
+import { buildSignalProcessor } from '@webpd/engine-live-eval/src/utils'
 
 describe('compile', () => {
     const COMPILER_SETTINGS: CompilerSettings = {
