@@ -78,6 +78,8 @@ describe('compile', () => {
                 normalizeCode(code),
                 normalizeCode(`
                 let o = 0
+                let frame = -1
+                const isNumber = (v) => typeof v === 'number'
                 let PROCESSOR_OUTPUT1 = 0
                 let PROCESSOR_OUTPUT2 = 0
                 
@@ -91,6 +93,7 @@ describe('compile', () => {
 
                 return {
                     loop: () => { 
+                        frame++
                         // [osc~] loop
                         dac_INS_0 = osc_OUTS_0
                         // [dac~] loop
@@ -214,6 +217,8 @@ describe('compile', () => {
                 normalizeCode(setup),
                 normalizeCode(`
                 let o = 0
+                let frame = -1
+                const isNumber = (v) => typeof v === 'number'
                 let PROCESSOR_OUTPUT1 = 0
                 let PROCESSOR_OUTPUT2 = 0
 
@@ -331,6 +336,7 @@ describe('compile', () => {
             assert.strictEqual(
                 normalizeCode(loop),
                 normalizeCode(`
+                frame++
                 // [msg] : value 2 ; sample rate 44100
                 for (o = 0; o < msg_OUTS_0.length; o++) {
                     plus_INS_0.push(msg_OUTS_0[o])
@@ -409,6 +415,7 @@ describe('compile', () => {
             assert.strictEqual(
                 normalizeCode(loop),
                 normalizeCode(`
+                frame++
                 // [osc~] : frequency 440 ; sample rate 44100
                 plus_INS_0 = osc_OUTS_0
                 dac_INS_0 = osc_OUTS_0

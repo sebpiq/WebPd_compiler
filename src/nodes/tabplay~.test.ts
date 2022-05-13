@@ -1,12 +1,9 @@
 import assert from 'assert'
-import {
-    generateFramesForNode,
-    TEST_ARRAYS_VARIABLE_NAME,
-} from '../test-helpers'
+import { generateFramesForNode, COMPILE_SETTINGS } from '../test-helpers'
 
 describe('tabplay~', () => {
     it('should change array when sent set', async () => {
-        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [1, 2, 3],
         }
         const frames = await generateFramesForNode(
@@ -31,7 +28,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from beginning to end when receiving bang', async () => {
-        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [11, 22, 33],
         }
         const frames = await generateFramesForNode(
@@ -57,7 +54,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from sample when receiving float', async () => {
-        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
         const frames = await generateFramesForNode(
@@ -85,7 +82,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from sample to sample when receiving 2 floats', async () => {
-        ;(globalThis as any)[TEST_ARRAYS_VARIABLE_NAME] = {
+        ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
         const frames = await generateFramesForNode(

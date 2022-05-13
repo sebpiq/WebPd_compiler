@@ -63,8 +63,7 @@ const main = async () => {
     engine = await evalEngine.init(engine)
 
     const code = await compile(graph, NODE_IMPLEMENTATIONS, {
-        sampleRate: 44100,
-        channelCount: 2,
+        ...engine.settings,
         arraysVariableName: ENGINE_ARRAYS_VARIABLE_NAME,
     })
     await evalEngine.run(engine, code, {})

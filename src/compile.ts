@@ -9,8 +9,7 @@ import variableNames, {
     generateInletVariableName,
     generateOutletVariableName,
 } from './variable-names'
-
-const ITER_OUTLET_VARIABLE_NAME = 'o'
+import { VARIABLE_NAMES } from './constants'
 
 export default async (
     graph: PdDspGraph.Graph,
@@ -45,7 +44,7 @@ export default async (
     return `
         ${setupCode}
         return {
-            loop: () => { 
+            loop: () => {
                 ${loopCode}
                 return [${outputVariableNames.join(', ')}]
             },
@@ -67,7 +66,9 @@ export const compileSetup = async (
     codeGeneratorSettings: CodeGeneratorSettings
 ): Promise<PdEngine.Code> => {
     let code: PdEngine.Code = `
-        let ${ITER_OUTLET_VARIABLE_NAME} = 0
+        let ${VARIABLE_NAMES.iterOutlet} = 0
+        let ${VARIABLE_NAMES.frame} = -1
+        const ${VARIABLE_NAMES.isNumber} = (v) => typeof v === 'number'
         ${codeGeneratorSettings.variableNames.output
             .map((n) => `let ${n} = 0`)
             .join('\n')}
@@ -123,7 +124,9 @@ export const compileLoop = async (
     nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
 ): Promise<PdEngine.Code> => {
-    let computeCode: PdEngine.Code = ''
+    let computeCode: PdEngine.Code = `
+        ${VARIABLE_NAMES.frame}++
+    `
     let cleanupCode: PdEngine.Code = ''
     const cleanedUpControlVariables: Set<PdEngine.CodeVariableName> = new Set()
     const cleanUpControlVariable = (
@@ -170,8 +173,8 @@ export const compileLoop = async (
                 // 2. transfer output to all connected sinks downstream
                 if (getOutlet(node, outletId).type === 'control') {
                     computeCode += `
-                        for (${ITER_OUTLET_VARIABLE_NAME} = 0; ${ITER_OUTLET_VARIABLE_NAME} < ${outletVariableName}.length; ${ITER_OUTLET_VARIABLE_NAME}++) {
-                            ${inletVariableName}.push(${outletVariableName}[${ITER_OUTLET_VARIABLE_NAME}])
+                        for (${VARIABLE_NAMES.iterOutlet} = 0; ${VARIABLE_NAMES.iterOutlet} < ${outletVariableName}.length; ${VARIABLE_NAMES.iterOutlet}++) {
+                            ${inletVariableName}.push(${outletVariableName}[${VARIABLE_NAMES.iterOutlet}])
                         }
                     `
                 } else {

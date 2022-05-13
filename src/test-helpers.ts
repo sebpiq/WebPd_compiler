@@ -118,11 +118,7 @@ export const generateFramesForNode = async (
         },
     }
 
-    const code = await compile(graph, nodeImplementations, {
-        sampleRate: 44100,
-        channelCount: 2,
-        arraysVariableName: TEST_ARRAYS_VARIABLE_NAME,
-    })
+    const code = await compile(graph, nodeImplementations, COMPILE_SETTINGS)
     const processor = buildSignalProcessor(code)
 
     // --------------- Generate frames
@@ -148,5 +144,8 @@ export const generateFramesForNode = async (
     return outputFrames
 }
 
-export const TEST_ARRAYS_VARIABLE_NAME: PdEngine.CodeVariableName =
-    'WEBPD_ARRAYS'
+export const COMPILE_SETTINGS = {
+    sampleRate: 44100,
+    channelCount: 2,
+    arraysVariableName: 'WEBPD_ARRAYS',
+}

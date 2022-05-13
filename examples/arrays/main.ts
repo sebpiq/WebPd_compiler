@@ -12,21 +12,39 @@ const SAMPLE_URL = '/sample.mp3'
 const CONTEXT = new AudioContext()
 const TABPLAY_LEFT_ID = 'tabplayLeft'
 const TABPLAY_RIGHT_ID = 'tabplayRight'
+const METRO_ID = 'metro'
 const SAMPLE_LEFT_ARRAY_NAME = 'SAMPLE_LEFT'
 const SAMPLE_RIGHT_ARRAY_NAME = 'SAMPLE_RIGHT'
 
+const metroArgs = { rate: 2200 }
 const tabplayLeftArgs = { arrayName: SAMPLE_LEFT_ARRAY_NAME }
 const tabplayRightArgs = { arrayName: SAMPLE_RIGHT_ARRAY_NAME }
 
 const graph: PdDspGraph.Graph = {
+    [METRO_ID]: {
+        id: METRO_ID,
+        type: 'metro',
+        args: metroArgs,
+        sinks: {
+            '0': [
+                { nodeId: TABPLAY_LEFT_ID, portletId: '0' }, 
+                { nodeId: TABPLAY_RIGHT_ID, portletId: '0' },
+            ],
+        },
+        sources: {},
+        inlets: DEFAULT_REGISTRY['metro'].buildInlets(metroArgs),
+        outlets: DEFAULT_REGISTRY['metro'].buildOutlets(metroArgs),
+    },
     [TABPLAY_LEFT_ID]: {
         id: TABPLAY_LEFT_ID,
         type: 'tabplay~',
         args: tabplayLeftArgs,
+        sources: {
+            '0': [{ nodeId: METRO_ID, portletId: '0' }],
+        },
         sinks: {
             '0': [{ nodeId: 'dac', portletId: '0' }],
         },
-        sources: {},
         inlets: DEFAULT_REGISTRY['tabplay~'].buildInlets(tabplayLeftArgs),
         outlets: DEFAULT_REGISTRY['tabplay~'].buildOutlets(tabplayLeftArgs),
     },
@@ -34,10 +52,12 @@ const graph: PdDspGraph.Graph = {
         id: TABPLAY_RIGHT_ID,
         type: 'tabplay~',
         args: tabplayRightArgs,
+        sources: {
+            '0': [{ nodeId: METRO_ID, portletId: '0' }],
+        },
         sinks: {
             '0': [{ nodeId: 'dac', portletId: '1' }],
         },
-        sources: {},
         inlets: DEFAULT_REGISTRY['tabplay~'].buildInlets(tabplayRightArgs),
         outlets: DEFAULT_REGISTRY['tabplay~'].buildOutlets(tabplayRightArgs),
     },
@@ -67,9 +87,12 @@ const loadSample = async (audioContext: AudioContext) => {
     return arrays
 }
 
-const bangTabPlay = (engine: Engine) => {
-    evalEngine.callPort(engine, ...setInlet(TABPLAY_LEFT_ID, '0', ['bang']))
-    evalEngine.callPort(engine, ...setInlet(TABPLAY_RIGHT_ID, '0', ['bang']))
+const startMetro = (engine: Engine) => {
+    evalEngine.callPort(engine, ...setInlet(METRO_ID, '0', ['bang']))
+}
+
+const stopMetro = (engine: Engine) => {
+    evalEngine.callPort(engine, ...setInlet(METRO_ID, '0', ['stop']))
 }
 
 const main = async () => {
@@ -83,17 +106,18 @@ const main = async () => {
 
     engine = await evalEngine.init(engine)
     const code = await compile(graph, NODE_IMPLEMENTATIONS, {
-        sampleRate: 44100,
-        channelCount: 2,
+        ...engine.settings,
         arraysVariableName: ENGINE_ARRAYS_VARIABLE_NAME,
     })
-    console.log(code)
     await evalEngine.run(engine, code, {
         [SAMPLE_LEFT_ARRAY_NAME]: sampleArrays[0],
         [SAMPLE_RIGHT_ARRAY_NAME]: sampleArrays[1],
     })
-    const bangButton = createButton('Bang [tabplay~]')
-    bangButton.onclick = () => bangTabPlay(engine)
+
+    const startMetroButton = createButton('Start metro')
+    startMetroButton.onclick = () => startMetro(engine)
+    const stopMetroButton = createButton('Stop metro')
+    stopMetroButton.onclick = () => stopMetro(engine)
 
     return engine
 }

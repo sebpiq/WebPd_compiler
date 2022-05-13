@@ -27,6 +27,7 @@ export const setup: NodeCodeGenerator = (
     const ${state('funcHandleMessage')} = () => {
         let inMessage = ${ins('0')}.shift()
         if (inMessage.length === 0) {
+
         } else if (inMessage[0] === 'set') {
             ${state('funcSetArrayName')}(inMessage[1])
             
@@ -38,6 +39,9 @@ export const setup: NodeCodeGenerator = (
     
         } else if (inMessage.length === 2) {
             ${state('funcPlay')}(inMessage[0], inMessage[1])
+            
+        } else {
+            // TODO : error handling
         }
     }
 
