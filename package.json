@@ -2,7 +2,6 @@
   "name": "@webpd/compiler-js",
   "version": "0.1.0",
   "description": "TODO",
-  "type": "module",
   "scripts": {
     "test-bail": "npm explore @webpd/shared -- npm run test-bail $(pwd)",
     "test-watch": "npm explore @webpd/shared -- npm run test-watch $(pwd)",

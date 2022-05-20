@@ -1,5 +1,5 @@
 import * as evalEngine from '@webpd/engine-live-eval/src'
-import { createButton } from '@webpd/shared/example-helpers'
+import { createButton } from '@webpd/shared/src/example-helpers'
 import compile from '../../src/compile'
 import pEvent from 'p-event'
 import DEFAULT_REGISTRY from '@webpd/dsp-graph/src/default-registry'
