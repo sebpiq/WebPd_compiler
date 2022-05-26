@@ -2,7 +2,12 @@
   "name": "@webpd/compiler-js",
   "version": "0.1.0",
   "description": "TODO",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "sideEffects": false,
   "scripts": {
+    "rollup": "npx rollup --config node_modules/@webpd/shared/rollup.config.ts --configPlugin typescript",
     "test-bail": "npm explore @webpd/shared -- npm run test-bail $(pwd)",
     "test-watch": "npm explore @webpd/shared -- npm run test-watch $(pwd)",
     "test-debug": "npm explore @webpd/shared -- npm run test-debug $(pwd)",
@@ -21,10 +26,13 @@
   },
   "homepage": "https://github.com/sebpiq/WebPd_dsp-graph#readme",
   "devDependencies": {
+    "@rollup/plugin-typescript": "^8.3.2",
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.14.7",
     "@webpd/engine-live-eval": "file:../WebPd_engine-live-eval",
-    "@webpd/shared": "file:../WebPd_shared"
+    "@webpd/shared": "file:../WebPd_shared",
+    "rollup": "^2.74.1",
+    "rollup-plugin-dts": "^4.2.1"
   },
   "dependencies": {
     "@webpd/dsp-graph": "file:../WebPd_dsp-graph"

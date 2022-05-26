@@ -1,8 +1,4 @@
-import {
-    GraphTraversal,
-    breadthFirst,
-} from '@webpd/dsp-graph/src/graph-traversal'
-import { getOutlet } from '@webpd/dsp-graph/src/graph-getters'
+import { traversal, getters } from '@webpd/dsp-graph'
 import { CodeGeneratorSettings, CompilerSettings } from './types'
 import { NodeImplementations, PortsNames } from './types'
 import variableNames, {
@@ -30,13 +26,13 @@ export default async (
     }
 
     const setupCode = await compileSetup(
-        breadthFirst(graph),
+        traversal.breadthFirst(graph),
         nodeImplementations,
         codeGeneratorSettings
     )
 
     const loopCode = await compileLoop(
-        breadthFirst(graph),
+        traversal.breadthFirst(graph),
         nodeImplementations,
         codeGeneratorSettings
     )
@@ -61,7 +57,7 @@ export default async (
 }
 
 export const compileSetup = async (
-    graphTraversal: GraphTraversal,
+    graphTraversal: PdDspGraph.GraphTraversal,
     nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
 ): Promise<PdEngine.Code> => {
@@ -120,7 +116,7 @@ export const compileSetup = async (
 }
 
 export const compileLoop = async (
-    graphTraversal: GraphTraversal,
+    graphTraversal: PdDspGraph.GraphTraversal,
     nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
 ): Promise<PdEngine.Code> => {
@@ -171,7 +167,7 @@ export const compileLoop = async (
                 )
 
                 // 2. transfer output to all connected sinks downstream
-                if (getOutlet(node, outletId).type === 'control') {
+                if (getters.getOutlet(node, outletId).type === 'control') {
                     computeCode += `
                         for (${VARIABLE_NAMES.iterOutlet} = 0; ${VARIABLE_NAMES.iterOutlet} < ${outletVariableName}.length; ${VARIABLE_NAMES.iterOutlet}++) {
                             ${inletVariableName}.push(${outletVariableName}[${VARIABLE_NAMES.iterOutlet}])

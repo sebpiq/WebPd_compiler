@@ -55,14 +55,14 @@ describe('compile', () => {
                     sinks: {
                         0: [['dac', '0']],
                     },
-                    inlets: { '0_control': { type: 'control' } },
-                    outlets: { '0': { type: 'signal' } },
+                    inlets: { '0_control': { id: '0_control', type: 'control' } },
+                    outlets: { '0': { id: '0', type: 'signal' } },
                 },
                 dac: {
                     type: 'dac~',
                     inlets: {
-                        '0': { type: 'signal' },
-                        '1': { type: 'signal' },
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'signal' },
                     },
                     isEndSink: true,
                 },
@@ -131,8 +131,8 @@ describe('compile', () => {
                     args: {
                         frequency: 440,
                     },
-                    inlets: { '0_control': { type: 'control' } },
-                    outlets: { '0': { type: 'signal' } },
+                    inlets: { '0_control': { id: '0_control', type: 'control' } },
+                    outlets: { '0': { id: '0', type: 'signal' } },
                 },
             })
 
@@ -172,16 +172,16 @@ describe('compile', () => {
                         frequency: 440,
                     },
                     inlets: {
-                        '0_control': { type: 'control' },
-                        '0_signal': { type: 'signal' },
+                        '0_control': { id: '0_control', type: 'control' },
+                        '0_signal': { id: '0_signal', type: 'signal' },
                     },
-                    outlets: { '0': { type: 'signal' } },
+                    outlets: { '0': { id: '0', type: 'signal' } },
                 },
                 dac: {
                     type: 'dac~',
                     inlets: {
-                        '0': { type: 'signal' },
-                        '1': { type: 'signal' },
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'signal' },
                     },
                     outlets: {},
                 },
@@ -305,7 +305,7 @@ describe('compile', () => {
                     args: {
                         value: 2,
                     },
-                    outlets: { '0': { type: 'control' } },
+                    outlets: { '0': { id: '0', type: 'control' } },
                 },
                 plus: {
                     type: '+',
@@ -315,15 +315,15 @@ describe('compile', () => {
                     args: {
                         value: 1,
                     },
-                    inlets: { '0': { type: 'control' } },
-                    outlets: { '0': { type: 'control' } },
+                    inlets: { '0': { id: '0', type: 'control' } },
+                    outlets: { '0': { id: '0', type: 'control' } },
                 },
                 print: {
                     type: 'print',
                     args: {
                         value: 'bla',
                     },
-                    inlets: { '0': { type: 'control' } },
+                    inlets: { '0': { id: '0', type: 'control' } },
                 },
             })
 
@@ -381,7 +381,7 @@ describe('compile', () => {
                     args: {
                         frequency: 440,
                     },
-                    outlets: { '0': { type: 'signal' } },
+                    outlets: { '0': { id: '0', type: 'signal' } },
                 },
                 plus: {
                     type: '+~',
@@ -391,8 +391,8 @@ describe('compile', () => {
                     args: {
                         value: 110,
                     },
-                    inlets: { '0': { type: 'signal' } },
-                    outlets: { '0': { type: 'signal' } },
+                    inlets: { '0': { id: '0', type: 'signal' } },
+                    outlets: { '0': { id: '0', type: 'signal' } },
                 },
                 dac: {
                     type: 'dac~',
@@ -400,8 +400,8 @@ describe('compile', () => {
                         value: 'bla',
                     },
                     inlets: {
-                        '0': { type: 'signal' },
-                        '1': { type: 'signal' },
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'signal' },
                     },
                 },
             })
