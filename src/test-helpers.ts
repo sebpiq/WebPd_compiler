@@ -1,5 +1,5 @@
 import { buildSignalProcessor } from '@webpd/engine-live-eval/src/utils'
-import {NODE_BUILDERS} from '@webpd/dsp-graph'
+import { NODE_BUILDERS } from '@webpd/dsp-graph'
 import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'
 import { NodeImplementations, PortsNames } from './types'
@@ -44,9 +44,9 @@ export const generateFramesForNode = async (
     inputFrames: Array<Frame>
 ): Promise<Array<Frame>> => {
     // --------------- Generating test graph
-    const { inlets: testNodeInlets, outlets: testNodeOutlets } = NODE_BUILDERS[nodeSummary.type].build(
-        nodeSummary.args
-    )
+    const { inlets: testNodeInlets, outlets: testNodeOutlets } = NODE_BUILDERS[
+        nodeSummary.type
+    ].build(nodeSummary.args)
 
     const recorderNodeSources: PdDspGraph.ConnectionEndpointMap = {}
     const testNodeSinks: PdDspGraph.ConnectionEndpointMap = {}

@@ -9,14 +9,29 @@ export default (node: PdDspGraph.Node): VariableNameGenerators => ({
 export const generateInletVariableName = (
     nodeId: PdDspGraph.NodeId,
     inletId: PdDspGraph.PortletId
-) => `${nodeId}_INS_${inletId}`
+) => `${assertValidNamePart(nodeId)}_INS_${assertValidNamePart(inletId)}`
 
 export const generateOutletVariableName = (
     nodeId: PdDspGraph.NodeId,
     outletId: PdDspGraph.PortletId
-) => `${nodeId}_OUTS_${outletId}`
+) => `${assertValidNamePart(nodeId)}_OUTS_${assertValidNamePart(outletId)}`
 
 export const generateStateVariableName = (
     nodeId: PdDspGraph.NodeId,
     localVariableName: PdDspGraph.PortletId
-) => `${nodeId}_STATE_${localVariableName}`
+) =>
+    `${assertValidNamePart(nodeId)}_STATE_${assertValidNamePart(
+        localVariableName
+    )}`
+
+export const assertValidNamePart = (namePart: string) => {
+    const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)
+    if (isInvalid) {
+        throw new Error(
+            `Invalid variable name for code generation "${namePart}"`
+        )
+    }
+    return namePart
+}
+
+const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/

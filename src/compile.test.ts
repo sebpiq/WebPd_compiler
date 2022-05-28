@@ -55,7 +55,9 @@ describe('compile', () => {
                     sinks: {
                         0: [['dac', '0']],
                     },
-                    inlets: { '0_control': { id: '0_control', type: 'control' } },
+                    inlets: {
+                        '0_control': { id: '0_control', type: 'control' },
+                    },
                     outlets: { '0': { id: '0', type: 'signal' } },
                 },
                 dac: {
@@ -131,7 +133,9 @@ describe('compile', () => {
                     args: {
                         frequency: 440,
                     },
-                    inlets: { '0_control': { id: '0_control', type: 'control' } },
+                    inlets: {
+                        '0_control': { id: '0_control', type: 'control' },
+                    },
                     outlets: { '0': { id: '0', type: 'signal' } },
                 },
             })

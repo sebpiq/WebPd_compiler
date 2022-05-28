@@ -71,7 +71,7 @@ export const compileSetup = async (
     `
     const initializedPortletVariables: Set<PdEngine.CodeVariableName> = new Set()
     const initializePortletVariable = (
-        portletType: PdSharedTypes.PortletType,
+        portletType: PdDspGraph.PortletType,
         variableName: PdEngine.CodeVariableName
     ) => {
         if (!initializedPortletVariables.has(variableName)) {
@@ -126,7 +126,7 @@ export const compileLoop = async (
     let cleanupCode: PdEngine.Code = ''
     const cleanedUpControlVariables: Set<PdEngine.CodeVariableName> = new Set()
     const cleanUpControlVariable = (
-        portletType: PdSharedTypes.PortletType,
+        portletType: PdDspGraph.PortletType,
         variableName: PdEngine.CodeVariableName
     ) => {
         if (portletType === 'control') {
