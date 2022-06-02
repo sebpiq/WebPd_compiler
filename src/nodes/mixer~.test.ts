@@ -6,10 +6,10 @@ describe('mixer~', () => {
         const frames = await generateFramesForNode(
             { type: 'mixer~', args: { channels: 3 } },
             [
-                {'0': 10, '1': 1, '2': 0.1},
-                {'0': 20, '1': 2, '2': 0.2},
-                {'0': 30, '1': 3, '2': 0.3},
-            ],
+                { '0': 10, '1': 1, '2': 0.1 },
+                { '0': 20, '1': 2, '2': 0.2 },
+                { '0': 30, '1': 3, '2': 0.3 },
+            ]
         )
         assert.deepStrictEqual(frames, [
             { '0': 11.1 },

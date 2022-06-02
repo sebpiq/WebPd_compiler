@@ -6,10 +6,10 @@ describe('+~', () => {
         const frames = await generateFramesForNode(
             { type: '+~', args: { value: 1 }, connectedSources: ['1_signal'] },
             [
-                {'0': 1, '1_signal': 0.1},
-                {'0': 2, '1_signal': 0.2},
-                {'0': 3, '1_signal': 0.3},
-            ],
+                { '0': 1, '1_signal': 0.1 },
+                { '0': 2, '1_signal': 0.2 },
+                { '0': 3, '1_signal': 0.3 },
+            ]
         )
         assert.deepStrictEqual(frames, [
             { '0': 1.1 },
@@ -20,14 +20,18 @@ describe('+~', () => {
 
     it('should work with control messages to inlet 1', async () => {
         const frames = await generateFramesForNode(
-            { type: '+~', args: { value: 10 }, connectedSources: ['1_control'] },
+            {
+                type: '+~',
+                args: { value: 10 },
+                connectedSources: ['1_control'],
+            },
             [
-                {'0': 1},
-                {'0': 2, '1_control': [[0.1]]},
-                {'0': 3},
-                {'0': 4, '1_control': [[0.2]]},
-                {'0': 5},
-            ],
+                { '0': 1 },
+                { '0': 2, '1_control': [[0.1]] },
+                { '0': 3 },
+                { '0': 4, '1_control': [[0.2]] },
+                { '0': 5 },
+            ]
         )
         assert.deepStrictEqual(frames, [
             { '0': 11 },

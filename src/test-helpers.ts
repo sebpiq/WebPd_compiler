@@ -10,8 +10,8 @@ import {
 } from './variable-names'
 
 interface NodeSummary {
-    type: PdDspGraph.Node["type"]
-    args: PdDspGraph.Node["args"]
+    type: PdDspGraph.Node['type']
+    args: PdDspGraph.Node['args']
     connectedSources?: Array<PdDspGraph.PortletId>
 }
 
@@ -79,17 +79,15 @@ export const generateFramesForNode = async (
     })
 
     if (nodeSummary.connectedSources) {
-        nodeSummary.connectedSources.forEach(portletId => {
+        nodeSummary.connectedSources.forEach((portletId) => {
             testNodeSources[portletId] = [
-                { nodeId: 'fakeSourceNode', portletId }
+                { nodeId: 'fakeSourceNode', portletId },
             ]
-            fakeSourceNodeSinks[portletId] = [
-                { nodeId: 'testNode', portletId }
-            ]
+            fakeSourceNodeSinks[portletId] = [{ nodeId: 'testNode', portletId }]
         })
     }
 
-    // Fake source, only useful for simultating connections 
+    // Fake source, only useful for simultating connections
     // to the node we want to test
     const fakeSourceNode: PdDspGraph.Node = {
         id: 'fakeSourceNode',
@@ -135,7 +133,7 @@ export const generateFramesForNode = async (
         // This is a dummy node, it's only useful to fake connections
         'fake-source-node': {
             setup: () => ``,
-            loop: () => ``
+            loop: () => ``,
         },
         'recorder-node': {
             // Generate one memory variable per outlet of test node
@@ -174,10 +172,14 @@ export const generateFramesForNode = async (
 
             // We set the outlets of fake source node, because if inlets are connected,
             // the loop will copy over simulation values set just above.
-            // !!! setting value is done by reference, so we need to copy the array 
+            // !!! setting value is done by reference, so we need to copy the array
             // to not assign the same the inlet
-            setNodeOutlet(processor, fakeSourceNode.id, inletId, 
-                Array.isArray(value) ? value.slice(0) : value)
+            setNodeOutlet(
+                processor,
+                fakeSourceNode.id,
+                inletId,
+                Array.isArray(value) ? value.slice(0) : value
+            )
         })
 
         processor.loop()

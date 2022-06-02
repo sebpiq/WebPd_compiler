@@ -14,13 +14,13 @@ export const setup: NodeCodeGenerator = (node, { state, ins }) => {
 
 export const loop: NodeCodeGenerator = (node, { state, ins, outs }) => {
     if (_hasSignalRightInput(node)) {
-        return `${outs('0')} = ${ins('0')} + ${ins('1_signal')}`
+        return `${outs('0')} = ${ins('0')} * ${ins('1_signal')}`
     } else {
         return `
             if (${ins('1_control')}.length) {
                 ${state('value')} = ${ins('1_control')}.pop()[0]
             }
-            ${outs('0')} = ${ins('0')} + ${state('value')}
+            ${outs('0')} = ${ins('0')} * ${state('value')}
         `
     }
 }
