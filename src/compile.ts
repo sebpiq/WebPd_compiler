@@ -37,6 +37,8 @@ export default async (
         codeGeneratorSettings
     )
 
+    // !!! The `SET_VARIABLE` port passes values by reference, therefore calling it twice on several
+    // variables with the same array as `variableValue` for example might have unexpected effects.
     return `
         ${setupCode}
         return {

@@ -31,9 +31,7 @@ export const loop: NodeCodeGenerator = (node, { state, ins, outs }) => {
     } else {
         phaseComputation = `
             if (${ins('0_control')}.length) {
-                ${state('currentFrequency')} = ${ins('0_control')}[${ins(
-            '0_control'
-        )}.length - 1][0]
+                ${state('currentFrequency')} = ${ins('0_control')}.pop()
             }
             ${state('phase')} += ${state('J')} * ${state('currentFrequency')}
         `

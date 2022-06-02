@@ -5,10 +5,15 @@ import NODE_IMPLEMENTATIONS from './nodes'
 import { NodeImplementations, PortsNames } from './types'
 import {
     generateInletVariableName,
+    generateOutletVariableName,
     generateStateVariableName,
 } from './variable-names'
 
-type NodeSummary = Pick<PdDspGraph.Node, 'type' | 'args'>
+interface NodeSummary {
+    type: PdDspGraph.Node["type"]
+    args: PdDspGraph.Node["args"]
+    connectedSources?: Array<PdDspGraph.PortletId>
+}
 
 type GenericInletValue =
     | PdSharedTypes.SignalValue
@@ -22,6 +27,16 @@ const setNodeInlet = (
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)
     processor.ports[PortsNames.SET_VARIABLE](inletVariableName, value)
+}
+
+const setNodeOutlet = (
+    processor: PdEngine.SignalProcessor,
+    nodeId: PdDspGraph.NodeId,
+    outletId: PdDspGraph.PortletId,
+    value: GenericInletValue
+) => {
+    const outletVariableName = generateOutletVariableName(nodeId, outletId)
+    processor.ports[PortsNames.SET_VARIABLE](outletVariableName, value)
 }
 
 const getNodeState = (
@@ -44,12 +59,15 @@ export const generateFramesForNode = async (
     inputFrames: Array<Frame>
 ): Promise<Array<Frame>> => {
     // --------------- Generating test graph
+    //   [fakeSourceNode] -> [testNode] -> [recorderNode]
     const { inlets: testNodeInlets, outlets: testNodeOutlets } = NODE_BUILDERS[
         nodeSummary.type
     ].build(nodeSummary.args)
 
-    const recorderNodeSources: PdDspGraph.ConnectionEndpointMap = {}
+    const fakeSourceNodeSinks: PdDspGraph.ConnectionEndpointMap = {}
+    const testNodeSources: PdDspGraph.ConnectionEndpointMap = {}
     const testNodeSinks: PdDspGraph.ConnectionEndpointMap = {}
+    const recorderNodeSources: PdDspGraph.ConnectionEndpointMap = {}
 
     Object.entries(testNodeOutlets).forEach(([outletId]) => {
         testNodeSinks[outletId] = [
@@ -60,11 +78,34 @@ export const generateFramesForNode = async (
         ]
     })
 
+    if (nodeSummary.connectedSources) {
+        nodeSummary.connectedSources.forEach(portletId => {
+            testNodeSources[portletId] = [
+                { nodeId: 'fakeSourceNode', portletId }
+            ]
+            fakeSourceNodeSinks[portletId] = [
+                { nodeId: 'testNode', portletId }
+            ]
+        })
+    }
+
+    // Fake source, only useful for simultating connections 
+    // to the node we want to test
+    const fakeSourceNode: PdDspGraph.Node = {
+        id: 'fakeSourceNode',
+        type: 'fake-source-node',
+        args: {},
+        sources: {},
+        sinks: fakeSourceNodeSinks,
+        inlets: {},
+        outlets: testNodeInlets,
+    }
+
     // Node to test
     const testNode: PdDspGraph.Node = {
         ...nodeSummary,
         id: 'testNode',
-        sources: {},
+        sources: testNodeSources,
         sinks: testNodeSinks,
         inlets: testNodeInlets,
         outlets: testNodeOutlets,
@@ -73,7 +114,7 @@ export const generateFramesForNode = async (
     // Node to record output of testNode
     const recorderNode: PdDspGraph.Node = {
         id: 'recorderNode',
-        type: 'testing-recorder',
+        type: 'recorder-node',
         args: {},
         sources: recorderNodeSources,
         sinks: {},
@@ -83,14 +124,20 @@ export const generateFramesForNode = async (
     }
 
     const graph: PdDspGraph.Graph = {
-        testNode: testNode,
-        recorderNode: recorderNode,
+        testNode,
+        recorderNode,
+        fakeSourceNode,
     }
 
     // --------------- Generating implementation for testing recorder & processor
     const nodeImplementations: NodeImplementations = {
         ...NODE_IMPLEMENTATIONS,
-        'testing-recorder': {
+        // This is a dummy node, it's only useful to fake connections
+        'fake-source-node': {
+            setup: () => ``,
+            loop: () => ``
+        },
+        'recorder-node': {
             // Generate one memory variable per outlet of test node
             setup: (_, { state }) =>
                 Object.keys(recorderNode.inlets)
@@ -121,9 +168,17 @@ export const generateFramesForNode = async (
     // --------------- Generate frames
     const outputFrames: Array<Frame> = []
     inputFrames.map((inputFrame) => {
-        Object.entries(inputFrame).forEach(([inletId, value]) =>
+        Object.entries(inputFrame).forEach(([inletId, value]) => {
+            // We set the inlets with our simulation values.
             setNodeInlet(processor, testNode.id, inletId, value)
-        )
+
+            // We set the outlets of fake source node, because if inlets are connected,
+            // the loop will copy over simulation values set just above.
+            // !!! setting value is done by reference, so we need to copy the array 
+            // to not assign the same the inlet
+            setNodeOutlet(processor, fakeSourceNode.id, inletId, 
+                Array.isArray(value) ? value.slice(0) : value)
+        })
 
         processor.loop()
 
