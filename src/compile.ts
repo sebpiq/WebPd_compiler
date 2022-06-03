@@ -7,11 +7,11 @@ import variableNames, {
 } from './variable-names'
 import { VARIABLE_NAMES } from './constants'
 
-export default async (
+export default (
     graph: PdDspGraph.Graph,
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
-): Promise<PdEngine.SignalProcessorCode> => {
+): PdEngine.SignalProcessorCode => {
     const outputVariableNames: CodeGeneratorSettings['variableNames']['output'] = []
     for (let channel = 1; channel <= compilerSettings.channelCount; channel++) {
         outputVariableNames.push(`PROCESSOR_OUTPUT${channel}`)
@@ -25,13 +25,13 @@ export default async (
         },
     }
 
-    const setupCode = await compileSetup(
+    const setupCode = compileSetup(
         traversal.breadthFirst(graph),
         nodeImplementations,
         codeGeneratorSettings
     )
 
-    const loopCode = await compileLoop(
+    const loopCode = compileLoop(
         traversal.breadthFirst(graph),
         nodeImplementations,
         codeGeneratorSettings
@@ -58,11 +58,11 @@ export default async (
     `
 }
 
-export const compileSetup = async (
+export const compileSetup = (
     graphTraversal: PdDspGraph.GraphTraversal,
     nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
-): Promise<PdEngine.Code> => {
+): PdEngine.Code => {
     let code: PdEngine.Code = `
         let ${VARIABLE_NAMES.iterOutlet} = 0
         let ${VARIABLE_NAMES.frame} = -1
@@ -114,14 +114,14 @@ export const compileSetup = async (
             )
     }
 
-    return Promise.resolve(code)
+    return code
 }
 
-export const compileLoop = async (
+export const compileLoop = (
     graphTraversal: PdDspGraph.GraphTraversal,
     nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
-): Promise<PdEngine.Code> => {
+): PdEngine.Code => {
     let computeCode: PdEngine.Code = `
         ${VARIABLE_NAMES.frame}++
     `
@@ -201,7 +201,7 @@ export const compileLoop = async (
         computeCode += '\n'
     }
 
-    return Promise.resolve(computeCode + '\n' + cleanupCode)
+    return computeCode + '\n' + cleanupCode
 }
 
 const _getNodeImplementation = (
