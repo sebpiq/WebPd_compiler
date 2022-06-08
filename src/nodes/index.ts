@@ -6,9 +6,11 @@ import * as metro from './metro'
 import * as plusTilde from './+~'
 import * as starTilde from './*~'
 import * as mixerTilde from './mixer~'
+import * as noiseTilde from './noise~'
 
 const NODE_IMPLEMENTATIONS: NodeImplementations = {
     'osc~': oscTilde,
+    'noise~': noiseTilde,
     '+~': plusTilde,
     '*~': starTilde,
     'mixer~': mixerTilde,
