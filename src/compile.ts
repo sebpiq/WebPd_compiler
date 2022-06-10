@@ -122,6 +122,7 @@ export const compileLoop = (
     nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
 ): PdEngine.Code => {
+    const traversalNodeIds = graphTraversal.map((node) => node.id)
     let computeCode: PdEngine.Code = `
         ${VARIABLE_NAMES.frame}++
     `
@@ -163,6 +164,9 @@ export const compileLoop = (
                 outletId
             )
             sinks.forEach(({ nodeId: sinkNodeId, portletId: inletId }) => {
+                if (!traversalNodeIds.includes(sinkNodeId)) {
+                    return
+                }
                 const inletVariableName = generateInletVariableName(
                     sinkNodeId,
                     inletId

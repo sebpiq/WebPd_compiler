@@ -34,7 +34,7 @@ describe('compile', () => {
     }
 
     describe('default', () => {
-        it('should compile the full function as a string', async () => {
+        it('should compile the full function as a string', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     setup: () => `// [osc~] setup`,
@@ -70,11 +70,7 @@ describe('compile', () => {
                 },
             })
 
-            const code = await compile(
-                graph,
-                nodeImplementations,
-                COMPILER_SETTINGS
-            )
+            const code = compile(graph, nodeImplementations, COMPILER_SETTINGS)
 
             assert.strictEqual(
                 normalizeCode(code),
@@ -119,7 +115,7 @@ describe('compile', () => {
             )
         })
 
-        it('should be a signal processor', async () => {
+        it('should be a signal processor', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     setup: () => `// [osc~] setup`,
@@ -140,11 +136,7 @@ describe('compile', () => {
                 },
             })
 
-            const code = await compile(
-                graph,
-                nodeImplementations,
-                COMPILER_SETTINGS
-            )
+            const code = compile(graph, nodeImplementations, COMPILER_SETTINGS)
 
             const modelProcessor: PdEngine.SignalProcessor = {
                 loop: () => new Float32Array(),
@@ -168,7 +160,7 @@ describe('compile', () => {
     })
 
     describe('compileSetup', () => {
-        it('should compile the setup function', async () => {
+        it('should compile the setup function', () => {
             const graph = makeGraph({
                 osc: {
                     type: 'osc~',
@@ -211,7 +203,7 @@ describe('compile', () => {
                 },
             }
 
-            const setup = await compileSetup(
+            const setup = compileSetup(
                 [graph.osc, graph.dac],
                 nodeImplementations,
                 CODE_GENERATOR_SETTINGS
@@ -296,7 +288,7 @@ describe('compile', () => {
             },
         }
 
-        it('should compile the loop function, pass around control messages, and cleanup control inlets and outlets', async () => {
+        it('should compile the loop function, pass around control messages, and cleanup control inlets and outlets', () => {
             const graph = makeGraph({
                 msg: {
                     type: 'msg',
@@ -331,7 +323,7 @@ describe('compile', () => {
                 },
             })
 
-            const loop = await compileLoop(
+            const loop = compileLoop(
                 [graph.msg, graph.plus, graph.print],
                 NODE_IMPLEMENTATIONS,
                 CODE_GENERATOR_SETTINGS
@@ -372,7 +364,7 @@ describe('compile', () => {
             )
         })
 
-        it('should compile the loop function and pass around signal', async () => {
+        it('should compile the loop function and pass around signal', () => {
             const graph = makeGraph({
                 osc: {
                     type: 'osc~',
@@ -410,7 +402,7 @@ describe('compile', () => {
                 },
             })
 
-            const loop = await compileLoop(
+            const loop = compileLoop(
                 [graph.osc, graph.plus, graph.dac],
                 NODE_IMPLEMENTATIONS,
                 CODE_GENERATOR_SETTINGS
@@ -427,6 +419,62 @@ describe('compile', () => {
                 // [+~] : value 110 ; sample rate 44100
                 dac_INS_1 = plus_OUTS_0
 
+                // [dac~] : channelCount 2
+            `)
+            )
+        })
+
+        it('should omit operations for nodes not connected to an end sink, even if their source is', () => {
+            const graph = makeGraph({
+                // [osc~] is connected to end sink [dac~] AND to [+~]
+                // But [+~] isn't connected to [dac~] and therefore should be entirely
+                // omited from compilation.
+                osc: {
+                    type: 'osc~',
+                    sinks: {
+                        '0': [
+                            ['plus', '0'],
+                            ['dac', '0'],
+                        ],
+                    },
+                    args: {
+                        frequency: 440,
+                    },
+                    outlets: { '0': { id: '0', type: 'signal' } },
+                },
+                plus: {
+                    type: '+~',
+                    sinks: {},
+                    args: {
+                        value: 110,
+                    },
+                    inlets: { '0': { id: '0', type: 'signal' } },
+                    outlets: { '0': { id: '0', type: 'signal' } },
+                },
+                dac: {
+                    type: 'dac~',
+                    args: {
+                        value: 'bla',
+                    },
+                    inlets: {
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'signal' },
+                    },
+                },
+            })
+
+            const loop = compileLoop(
+                [graph.osc, graph.dac],
+                NODE_IMPLEMENTATIONS,
+                CODE_GENERATOR_SETTINGS
+            )
+
+            assert.strictEqual(
+                normalizeCode(loop),
+                normalizeCode(`
+                frame++
+                // [osc~] : frequency 440 ; sample rate 44100
+                dac_INS_0 = osc_OUTS_0
                 // [dac~] : channelCount 2
             `)
             )

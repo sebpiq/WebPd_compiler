@@ -3,6 +3,7 @@ import * as oscTilde from './osc~'
 import * as dacTilde from './dac~'
 import * as tabplayTilde from './tabplay~'
 import * as metro from './metro'
+import * as loadbang from './loadbang'
 import * as plusTilde from './+~'
 import * as starTilde from './*~'
 import * as mixerTilde from './mixer~'
@@ -16,6 +17,7 @@ const NODE_IMPLEMENTATIONS: NodeImplementations = {
     'mixer~': mixerTilde,
     'dac~': dacTilde,
     'tabplay~': tabplayTilde,
+    loadbang: loadbang,
     metro: metro,
 }
 
