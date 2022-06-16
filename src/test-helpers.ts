@@ -54,10 +54,10 @@ type Frame = {
         | PdSharedTypes.SignalValue
 }
 
-export const generateFramesForNode = async (
+export const generateFramesForNode = (
     nodeSummary: NodeSummary,
     inputFrames: Array<Frame>
-): Promise<Array<Frame>> => {
+): Array<Frame> => {
     // --------------- Generating test graph
     //   [fakeSourceNode] -> [testNode] -> [recorderNode]
     const { inlets: testNodeInlets, outlets: testNodeOutlets } = NODE_BUILDERS[
@@ -160,7 +160,7 @@ export const generateFramesForNode = async (
         },
     }
 
-    const code = await compile(graph, nodeImplementations, COMPILE_SETTINGS)
+    const code = compile(graph, nodeImplementations, COMPILE_SETTINGS)
     const processor = buildSignalProcessor(code)
 
     // --------------- Generate frames

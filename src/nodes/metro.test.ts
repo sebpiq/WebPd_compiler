@@ -2,8 +2,8 @@ import assert from 'assert'
 import { COMPILE_SETTINGS, generateFramesForNode } from '../test-helpers'
 
 describe('metro', () => {
-    it('should start metro at rate passed as arg', async () => {
-        const frames = await generateFramesForNode(
+    it('should start metro at rate passed as arg', () => {
+        const frames = generateFramesForNode(
             {
                 type: 'metro',
                 args: { rate: (2 * 1000) / COMPILE_SETTINGS.sampleRate },
@@ -28,8 +28,8 @@ describe('metro', () => {
         ])
     })
 
-    it('should start metro when sent 1', async () => {
-        const frames = await generateFramesForNode(
+    it('should start metro when sent 1', () => {
+        const frames = generateFramesForNode(
             {
                 type: 'metro',
                 args: { rate: (1 * 1000) / COMPILE_SETTINGS.sampleRate },
@@ -48,8 +48,8 @@ describe('metro', () => {
         ])
     })
 
-    it('should start metro at rate passed to inlet 1', async () => {
-        const frames = await generateFramesForNode(
+    it('should start metro at rate passed to inlet 1', () => {
+        const frames = generateFramesForNode(
             {
                 type: 'metro',
                 args: { rate: (2 * 1000) / COMPILE_SETTINGS.sampleRate },
@@ -77,8 +77,8 @@ describe('metro', () => {
         ])
     })
 
-    it('should stop metro when receiving stop', async () => {
-        const frames = await generateFramesForNode(
+    it('should stop metro when receiving stop', () => {
+        const frames = generateFramesForNode(
             {
                 type: 'metro',
                 args: { rate: (1 * 1000) / COMPILE_SETTINGS.sampleRate },
@@ -102,8 +102,8 @@ describe('metro', () => {
         ])
     })
 
-    it('should stop metro when receiving 0', async () => {
-        const frames = await generateFramesForNode(
+    it('should stop metro when receiving 0', () => {
+        const frames = generateFramesForNode(
             {
                 type: 'metro',
                 args: { rate: (1 * 1000) / COMPILE_SETTINGS.sampleRate },

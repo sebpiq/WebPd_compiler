@@ -2,8 +2,8 @@ import assert from 'assert'
 import { generateFramesForNode } from '../test-helpers'
 
 describe('mixer~', () => {
-    it('should sum incoming signals together', async () => {
-        const frames = await generateFramesForNode(
+    it('should sum incoming signals together', () => {
+        const frames = generateFramesForNode(
             { type: 'mixer~', args: { channels: 3 } },
             [
                 { '0': 10, '1': 1, '2': 0.1 },

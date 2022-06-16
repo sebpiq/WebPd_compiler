@@ -1,5 +1,6 @@
 import { NodeCodeGenerator } from '../types'
 
+// ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = (
     node,
     { state, ins },
@@ -48,6 +49,7 @@ export const setup: NodeCodeGenerator = (
     ${state('funcSetArrayName')}("${node.args.arrayName}")
 `
 
+// ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (_, { state, ins, outs }) => `
     while (${ins('0')}.length) {
         ${state('funcHandleMessage')}()

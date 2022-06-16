@@ -2,11 +2,11 @@ import assert from 'assert'
 import { generateFramesForNode, COMPILE_SETTINGS } from '../test-helpers'
 
 describe('tabplay~', () => {
-    it('should change array when sent set', async () => {
+    it('should change array when sent set', () => {
         ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [1, 2, 3],
         }
-        const frames = await generateFramesForNode(
+        const frames = generateFramesForNode(
             { type: 'tabplay~', args: { arrayName: 'UNKNOWN_ARRAY' } },
             [
                 {}, // frame 1
@@ -27,11 +27,11 @@ describe('tabplay~', () => {
         ])
     })
 
-    it('should read from beginning to end when receiving bang', async () => {
+    it('should read from beginning to end when receiving bang', () => {
         ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [11, 22, 33],
         }
-        const frames = await generateFramesForNode(
+        const frames = generateFramesForNode(
             { type: 'tabplay~', args: { arrayName: 'myArray' } },
             [
                 {}, // frame 1
@@ -53,11 +53,11 @@ describe('tabplay~', () => {
         ])
     })
 
-    it('should read from sample when receiving float', async () => {
+    it('should read from sample when receiving float', () => {
         ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
-        const frames = await generateFramesForNode(
+        const frames = generateFramesForNode(
             { type: 'tabplay~', args: { arrayName: 'myArray' } },
             [
                 {}, // frame 1
@@ -81,11 +81,11 @@ describe('tabplay~', () => {
         ])
     })
 
-    it('should read from sample to sample when receiving 2 floats', async () => {
+    it('should read from sample to sample when receiving 2 floats', () => {
         ;(globalThis as any)[COMPILE_SETTINGS.arraysVariableName] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
-        const frames = await generateFramesForNode(
+        const frames = generateFramesForNode(
             { type: 'tabplay~', args: { arrayName: 'myArray' } },
             [
                 {}, // frame 1

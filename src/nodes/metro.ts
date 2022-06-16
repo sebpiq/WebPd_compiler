@@ -1,6 +1,7 @@
 import { VARIABLE_NAMES } from '../constants'
 import { NodeCodeGenerator } from '../types'
 
+// ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = (
     { args },
     { state, ins },
@@ -60,6 +61,7 @@ export const setup: NodeCodeGenerator = (
         }
     `
 
+// ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (_, { state, ins, outs }) => `
     while (${ins('1')}.length) {
         ${state('funcHandleMessage1')}()
