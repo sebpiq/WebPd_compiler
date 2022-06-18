@@ -40,10 +40,7 @@ const loopSignal: NodeCodeGenerator = (_, { state, ins, outs }) => `
 `
 
 // Take only the last received frequency message (first in the list)
-const loopControl: NodeCodeGenerator = (
-    _,
-    { state, ins, outs },
-) => `
+const loopControl: NodeCodeGenerator = (_, { state, ins, outs }) => `
     if (${ins('0_control')}.length) {
         ${state('currentFrequency')} = ${ins('0_control')}.pop()
         ${state('refreshK')}()

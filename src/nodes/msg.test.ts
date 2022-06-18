@@ -8,12 +8,16 @@ describe('msg', () => {
                 type: 'msg',
                 args: { template: [123, 'hello'] },
             },
-            [
-                {'0': [['bang'], ['blabla'], ['quoi?', 456]]},
-            ]
+            [{ '0': [['bang'], ['blabla'], ['quoi?', 456]] }]
         )
         assert.deepStrictEqual(frames, [
-            { '0': [[123, 'hello'], [123, 'hello'], [123, 'hello']] },
+            {
+                '0': [
+                    [123, 'hello'],
+                    [123, 'hello'],
+                    [123, 'hello'],
+                ],
+            },
         ])
     })
 
@@ -24,11 +28,21 @@ describe('msg', () => {
                 args: { template: [123, '$2', '$1'] },
             },
             [
-                {'0': [['wow', 'hehe', 'hoho'], ['blabla', 456]]},
+                {
+                    '0': [
+                        ['wow', 'hehe', 'hoho'],
+                        ['blabla', 456],
+                    ],
+                },
             ]
         )
         assert.deepStrictEqual(frames, [
-            { '0': [[123, 'hehe', 'wow'], [123, 456, 'blabla']] },
+            {
+                '0': [
+                    [123, 'hehe', 'wow'],
+                    [123, 456, 'blabla'],
+                ],
+            },
         ])
     })
 
@@ -39,12 +53,21 @@ describe('msg', () => {
                 args: { template: ['hello_$2', '$1', 'greetings'] },
             },
             [
-                {'0': [['earth', 'saturn'], ['satan', 666]]},
+                {
+                    '0': [
+                        ['earth', 'saturn'],
+                        ['satan', 666],
+                    ],
+                },
             ]
         )
         assert.deepStrictEqual(frames, [
-            { '0': [['hello_saturn', 'earth', 'greetings'], ['hello_666', 'satan', 'greetings']] },
+            {
+                '0': [
+                    ['hello_saturn', 'earth', 'greetings'],
+                    ['hello_666', 'satan', 'greetings'],
+                ],
+            },
         ])
     })
-
 })

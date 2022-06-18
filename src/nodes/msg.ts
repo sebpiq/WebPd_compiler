@@ -10,41 +10,41 @@ export const setup: NodeCodeGenerator = () => ``
 //     [56, '$1', 'bla', '$2-$1']
 //     transfer([89, 'bli']); // [56, 89, 'bla', 'bli-89']
 //
-export const loop: NodeCodeGenerator = (
-    node,
-    { ins, outs },
-) => {
+export const loop: NodeCodeGenerator = (node, { ins, outs }) => {
     let outElements: Array<PdEngine.Code> = []
     const template = node.args.template as Array<PdDspGraph.NodeArgument>
 
     // Creates an array of transfer functions `inVal -> outVal`.
-    template.forEach(templateElem => {
+    template.forEach((templateElem) => {
         if (typeof templateElem === 'string') {
-            const matchDollar = DOLLAR_VAR_RE.exec(templateElem);
+            const matchDollar = DOLLAR_VAR_RE.exec(templateElem)
 
             // If the transfer is a dollar var :
             //      ['bla', 789] - ['$1'] -> ['bla']
             //      ['bla', 789] - ['$2'] -> [789]
             if (matchDollar && matchDollar[0] === templateElem) {
-                 // -1, because $1 corresponds to value 0.
-                const inIndex = parseInt(matchDollar[1], 10) - 1;
+                // -1, because $1 corresponds to value 0.
+                const inIndex = parseInt(matchDollar[1], 10) - 1
                 outElements.push(`inMessage[${inIndex}]`)
-    
-            // If the transfer is a string containing dollar var :
-            //      ['bla', 789] - ['bla$2'] -> ['bla789']
+
+                // If the transfer is a string containing dollar var :
+                //      ['bla', 789] - ['bla$2'] -> ['bla789']
             } else if (matchDollar) {
                 const dollarVars: Array<[string, number]> = []
                 let matched: RegExpMatchArray
-                while (matched = DOLLAR_VAR_RE_GLOB.exec(templateElem)) {
+                while ((matched = DOLLAR_VAR_RE_GLOB.exec(templateElem))) {
                     // position -1, because $1 corresponds to value 0.
                     dollarVars.push([matched[0], parseInt(matched[1], 10) - 1])
                 }
 
-                outElements.push(`"${templateElem}"${
-                    dollarVars.map(([placeholder, inIndex]) => 
-                        `.replace("${placeholder}", inMessage[${inIndex}])`)}`)
+                outElements.push(
+                    `"${templateElem}"${dollarVars.map(
+                        ([placeholder, inIndex]) =>
+                            `.replace("${placeholder}", inMessage[${inIndex}])`
+                    )}`
+                )
 
-            // Else the input doesn't matter
+                // Else the input doesn't matter
             } else {
                 outElements.push(`"${templateElem}"`)
             }
@@ -63,4 +63,4 @@ export const loop: NodeCodeGenerator = (
 
 // ------------------------------------------------------------------- //
 const DOLLAR_VAR_RE = /\$(\d+)/
-const DOLLAR_VAR_RE_GLOB = /\$(\d+)/g;
+const DOLLAR_VAR_RE_GLOB = /\$(\d+)/g
