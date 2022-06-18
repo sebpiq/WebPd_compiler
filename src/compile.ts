@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
+ *
+ * BSD Simplified License.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ *
+ * See https://github.com/sebpiq/WebPd_pd-parser for documentation
+ *
+ */
+
 import { traversal, getters } from '@webpd/dsp-graph'
 import { CodeGeneratorSettings, CompilerSettings } from './types'
 import { NodeImplementations, PortsNames } from './types'
@@ -6,34 +17,50 @@ import variableNames, {
     generateOutletVariableName,
 } from './variable-names'
 import { VARIABLE_NAMES } from './constants'
+import { Compilation } from './compilation'
 
 export default (
     graph: PdDspGraph.Graph,
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): PdEngine.SignalProcessorCode => {
+    const compilation = new Compilation(
+        graph,
+        nodeImplementations,
+        compilerSettings
+    )
+    return compile(compilation)
+}
+
+export const compile = (
+    compilation: Compilation
+): PdEngine.SignalProcessorCode => {
     const outputVariableNames: CodeGeneratorSettings['variableNames']['output'] = []
-    for (let channel = 1; channel <= compilerSettings.channelCount; channel++) {
+    for (
+        let channel = 1;
+        channel <= compilation.settings.channelCount;
+        channel++
+    ) {
         outputVariableNames.push(`PROCESSOR_OUTPUT${channel}`)
     }
 
     const codeGeneratorSettings: CodeGeneratorSettings = {
-        ...compilerSettings,
+        ...compilation.settings,
         variableNames: {
             output: outputVariableNames,
-            arrays: compilerSettings.arraysVariableName,
+            arrays: compilation.settings.arraysVariableName,
         },
     }
 
     const setupCode = compileSetup(
-        traversal.breadthFirst(graph),
-        nodeImplementations,
+        compilation,
+        traversal.breadthFirst(compilation.graph),
         codeGeneratorSettings
     )
 
     const loopCode = compileLoop(
-        traversal.breadthFirst(graph),
-        nodeImplementations,
+        compilation,
+        traversal.breadthFirst(compilation.graph),
         codeGeneratorSettings
     )
 
@@ -59,8 +86,8 @@ export default (
 }
 
 export const compileSetup = (
+    compilation: Compilation,
     graphTraversal: PdDspGraph.GraphTraversal,
-    nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
 ): PdEngine.Code => {
     let code: PdEngine.Code = `
@@ -101,10 +128,7 @@ export const compileSetup = (
         })
 
         // Custom setup code for node
-        const nodeImplementation = _getNodeImplementation(
-            nodeImplementations,
-            node.type
-        )
+        const nodeImplementation = compilation.getNodeImplementation(node.type)
         code +=
             '\n' +
             nodeImplementation.setup(
@@ -118,8 +142,8 @@ export const compileSetup = (
 }
 
 export const compileLoop = (
+    compilation: Compilation,
     graphTraversal: PdDspGraph.GraphTraversal,
-    nodeImplementations: NodeImplementations,
     codeGeneratorSettings: CodeGeneratorSettings
 ): PdEngine.Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
@@ -145,10 +169,7 @@ export const compileLoop = (
     }
 
     for (let node of graphTraversal) {
-        const nodeImplementation = _getNodeImplementation(
-            nodeImplementations,
-            node.type
-        )
+        const nodeImplementation = compilation.getNodeImplementation(node.type)
         const variableNameGenerators = variableNames(node)
 
         // 1. computation of output
@@ -206,15 +227,4 @@ export const compileLoop = (
     }
 
     return computeCode + '\n' + cleanupCode
-}
-
-const _getNodeImplementation = (
-    nodeImplementations: NodeImplementations,
-    nodeType: PdSharedTypes.NodeType
-) => {
-    const nodeImplementation = nodeImplementations[nodeType]
-    if (!nodeImplementation) {
-        throw new Error(`node ${nodeType} is not implemented`)
-    }
-    return nodeImplementation
 }

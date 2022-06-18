@@ -9,6 +9,7 @@ import {
     CompilerSettings,
 } from './types'
 import { buildSignalProcessor } from '@webpd/engine-live-eval/src/utils'
+import { Compilation } from './compilation'
 
 describe('compile', () => {
     const COMPILER_SETTINGS: CompilerSettings = {
@@ -203,9 +204,15 @@ describe('compile', () => {
                 },
             }
 
-            const setup = compileSetup(
-                [graph.osc, graph.dac],
+            const compilation = new Compilation(
+                graph,
                 nodeImplementations,
+                COMPILER_SETTINGS
+            )
+
+            const setup = compileSetup(
+                compilation,
+                [graph.osc, graph.dac],
                 CODE_GENERATOR_SETTINGS
             )
 
@@ -323,9 +330,15 @@ describe('compile', () => {
                 },
             })
 
-            const loop = compileLoop(
-                [graph.msg, graph.plus, graph.print],
+            const compilation = new Compilation(
+                graph,
                 NODE_IMPLEMENTATIONS,
+                COMPILER_SETTINGS
+            )
+
+            const loop = compileLoop(
+                compilation,
+                [graph.msg, graph.plus, graph.print],
                 CODE_GENERATOR_SETTINGS
             )
 
@@ -402,9 +415,15 @@ describe('compile', () => {
                 },
             })
 
-            const loop = compileLoop(
-                [graph.osc, graph.plus, graph.dac],
+            const compilation = new Compilation(
+                graph,
                 NODE_IMPLEMENTATIONS,
+                COMPILER_SETTINGS
+            )
+
+            const loop = compileLoop(
+                compilation,
+                [graph.osc, graph.plus, graph.dac],
                 CODE_GENERATOR_SETTINGS
             )
 
@@ -463,9 +482,15 @@ describe('compile', () => {
                 },
             })
 
-            const loop = compileLoop(
-                [graph.osc, graph.dac],
+            const compilation = new Compilation(
+                graph,
                 NODE_IMPLEMENTATIONS,
+                COMPILER_SETTINGS
+            )
+
+            const loop = compileLoop(
+                compilation,
+                [graph.osc, graph.dac],
                 CODE_GENERATOR_SETTINGS
             )
 
