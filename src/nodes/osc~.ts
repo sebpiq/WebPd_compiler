@@ -43,7 +43,6 @@ const loopSignal: NodeCodeGenerator = (_, { state, ins, outs }) => `
 const loopControl: NodeCodeGenerator = (
     _,
     { state, ins, outs },
-    { sampleRate }
 ) => `
     if (${ins('0_control')}.length) {
         ${state('currentFrequency')} = ${ins('0_control')}.pop()

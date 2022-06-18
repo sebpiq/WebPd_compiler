@@ -7,6 +7,7 @@ import * as loadbang from './loadbang'
 import binopTilde from './binop~'
 import * as mixerTilde from './mixer~'
 import * as noiseTilde from './noise~'
+import * as msg from './msg'
 
 const NODE_IMPLEMENTATIONS: NodeImplementations = {
     ...binopTilde,
@@ -16,6 +17,7 @@ const NODE_IMPLEMENTATIONS: NodeImplementations = {
     'dac~': dacTilde,
     'tabplay~': tabplayTilde,
     loadbang: loadbang,
+    msg: msg,
     metro: metro,
 }
 
