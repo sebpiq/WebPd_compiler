@@ -2,9 +2,7 @@ import assert from 'assert'
 import compile, { compileLoop, compileSetup } from './compile'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import {
-    CodeGeneratorSettings,
     NodeImplementations,
-    VariableNameGenerators,
     PortsNames,
     CompilerSettings,
 } from './types'
@@ -16,14 +14,6 @@ describe('compile', () => {
         sampleRate: 44100,
         channelCount: 2,
         arraysVariableName: 'ARRAYS',
-    }
-
-    const CODE_GENERATOR_SETTINGS: CodeGeneratorSettings = {
-        ...COMPILER_SETTINGS,
-        variableNames: {
-            output: ['PROCESSOR_OUTPUT1', 'PROCESSOR_OUTPUT2'],
-            arrays: 'ARRAYS',
-        },
     }
 
     const normalizeCode = (rawCode: string) => {
@@ -187,18 +177,18 @@ describe('compile', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     setup: (
-                        node: PdDspGraph.Node,
-                        _: VariableNameGenerators,
-                        settings: CodeGeneratorSettings
+                        node,
+                        _,
+                        settings
                     ) =>
                         `// [osc~] frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
                     loop: () => ``,
                 },
                 'dac~': {
                     setup: (
-                        _: PdDspGraph.Node,
-                        __: VariableNameGenerators,
-                        settings: CodeGeneratorSettings
+                        _,
+                        __,
+                        settings
                     ) => `// [dac~] channelCount ${settings.channelCount}`,
                     loop: () => ``,
                 },
@@ -213,7 +203,6 @@ describe('compile', () => {
             const setup = compileSetup(
                 compilation,
                 [graph.osc, graph.dac],
-                CODE_GENERATOR_SETTINGS
             )
 
             assert.strictEqual(
@@ -244,53 +233,53 @@ describe('compile', () => {
             msg: {
                 setup: () => ``,
                 loop: (
-                    node: PdDspGraph.Node,
-                    _: VariableNameGenerators,
-                    settings: CodeGeneratorSettings
+                    node,
+                    _,
+                    settings,
                 ) =>
                     `// [msg] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             '+': {
                 setup: () => ``,
                 loop: (
-                    node: PdDspGraph.Node,
-                    _: VariableNameGenerators,
-                    settings: CodeGeneratorSettings
+                    node,
+                    _,
+                    settings,
                 ) =>
                     `// [+] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             print: {
                 setup: () => ``,
                 loop: (
-                    node: PdDspGraph.Node,
-                    _: VariableNameGenerators,
-                    __: CodeGeneratorSettings
+                    node,
+                    _,
+                    __,
                 ) => `// [print] : value "${node.args.value}"`,
             },
             'osc~': {
                 setup: () => ``,
                 loop: (
-                    node: PdDspGraph.Node,
-                    _: VariableNameGenerators,
-                    settings: CodeGeneratorSettings
+                    node,
+                    _,
+                    settings,
                 ) =>
                     `// [osc~] : frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
             },
             '+~': {
                 setup: () => ``,
                 loop: (
-                    node: PdDspGraph.Node,
-                    _: VariableNameGenerators,
-                    settings: CodeGeneratorSettings
+                    node,
+                    _,
+                    settings,
                 ) =>
                     `// [+~] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             'dac~': {
                 setup: () => ``,
                 loop: (
-                    _: PdDspGraph.Node,
-                    __: VariableNameGenerators,
-                    settings: CodeGeneratorSettings
+                    _,
+                    __,
+                    settings,
                 ) => `// [dac~] : channelCount ${settings.channelCount}`,
             },
         }
@@ -339,7 +328,6 @@ describe('compile', () => {
             const loop = compileLoop(
                 compilation,
                 [graph.msg, graph.plus, graph.print],
-                CODE_GENERATOR_SETTINGS
             )
 
             assert.strictEqual(
@@ -424,7 +412,6 @@ describe('compile', () => {
             const loop = compileLoop(
                 compilation,
                 [graph.osc, graph.plus, graph.dac],
-                CODE_GENERATOR_SETTINGS
             )
 
             assert.strictEqual(
@@ -491,7 +478,6 @@ describe('compile', () => {
             const loop = compileLoop(
                 compilation,
                 [graph.osc, graph.dac],
-                CODE_GENERATOR_SETTINGS
             )
 
             assert.strictEqual(

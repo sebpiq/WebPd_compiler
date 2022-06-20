@@ -8,6 +8,7 @@ import {
     generateOutletVariableName,
     generateStateVariableName,
 } from './variable-names'
+import { renderCode } from './code-helpers'
 
 interface NodeSummary {
     type: PdDspGraph.Node['type']
@@ -69,12 +70,12 @@ export const generateFramesForNode = (
     const testNodeSinks: PdDspGraph.ConnectionEndpointMap = {}
     const recorderNodeSources: PdDspGraph.ConnectionEndpointMap = {}
 
-    Object.entries(testNodeOutlets).forEach(([outletId]) => {
-        testNodeSinks[outletId] = [
-            { nodeId: 'recorderNode', portletId: outletId },
+    Object.values(testNodeOutlets).forEach(outlet => {
+        testNodeSinks[outlet.id] = [
+            { nodeId: 'recorderNode', portletId: outlet.id },
         ]
-        recorderNodeSources[outletId] = [
-            { nodeId: 'testNode', portletId: outletId },
+        recorderNodeSources[outlet.id] = [
+            { nodeId: 'testNode', portletId: outlet.id },
         ]
     })
 
@@ -138,25 +139,14 @@ export const generateFramesForNode = (
         'recorder-node': {
             // Generate one memory variable per outlet of test node
             setup: (_, { state }) =>
-                Object.keys(recorderNode.inlets)
-                    .map(
-                        (inletId) => `
-                let ${state('mem' + inletId)} = null
-            `
-                    )
-                    .join('\n'),
+                renderCode`${Object.keys(recorderNode.inlets)
+                    .map((inletId) => `let ${state['mem' + inletId]} = null`)}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.
             loop: (_, { state, ins }) =>
-                Object.keys(recorderNode.inlets)
-                    .map(
-                        (inletId) => `
-                ${state('mem' + inletId)} = ${ins(inletId)}.slice ? ${ins(
-                            inletId
-                        )}.slice(0) : ${ins(inletId)}
-            `
-                    )
-                    .join('\n'),
+                renderCode`${Object.keys(recorderNode.inlets)
+                    .map((inletId) => `${state['mem' + inletId]} = ${ins[inletId]}.slice ? ${ins[inletId]}.slice(0) : ${ins[inletId]}`)}`,
+            stateVariables: Object.keys(recorderNode.inlets).map((inletId) => 'mem' + inletId),
         },
     }
 

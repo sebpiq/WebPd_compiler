@@ -65,9 +65,9 @@ export const loop: NodeCodeGenerator = (node, { ins, outs }) => {
     })
 
     return `
-        while (${ins('0')}.length) {
-            const inMessage = ${ins('0')}.shift()
-            ${outs('0')}.push([${outElements.join(', ')}])
+        while (${ins.$0}.length) {
+            const inMessage = ${ins.$0}.shift()
+            ${outs.$0}.push([${outElements.join(', ')}])
         }
     `
 }

@@ -18,12 +18,12 @@ export const setup: NodeCodeGenerator = () => ``
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (
     _,
-    { ins },
-    { variableNames, channelCount }
+    { ins, globs },
+    { channelCount }
 ) => {
     let loopStr = ''
     for (let ch = 0; ch < channelCount; ch++) {
-        loopStr += `\n${variableNames.output[ch]} = ${ins(`${ch}`)}`
+        loopStr += `\n${globs.output[ch]} = ${ins[`${ch}`]}`
     }
     return loopStr
 }
