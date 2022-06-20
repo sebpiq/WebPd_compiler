@@ -9,7 +9,11 @@
  *
  */
 
-import { NodeCodeGenerator, NodeImplementation, NodeImplementations } from '../types'
+import {
+    NodeCodeGenerator,
+    NodeImplementation,
+    NodeImplementations,
+} from '../types'
 
 // ------------------------------ setup ------------------------------ //
 export const makeSetup = (): NodeCodeGenerator => (...args) => {

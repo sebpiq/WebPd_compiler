@@ -9,11 +9,10 @@
  *
  */
 
-import assert from "assert"
-import { createNamespace, renderCode } from "./code-helpers"
+import assert from 'assert'
+import { createNamespace, renderCode } from './code-helpers'
 
 describe('code-helpers', () => {
-
     describe('renderCode', () => {
         it('should render code lines with arbitrary depth', () => {
             const code = renderCode`bla
@@ -34,7 +33,7 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
         })
 
         it('should create automatic $ alias for keys starting with a number', () => {
-            const namespace: {[key: string]: string} = createNamespace({
+            const namespace: { [key: string]: string } = createNamespace({
                 '0': 'blabla',
                 '0_bla': 'bloblo',
             })
@@ -43,7 +42,7 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
         })
 
         it('should throw error when trying to access unknown key', () => {
-            const namespace: {[key: string]: string} = createNamespace({
+            const namespace: { [key: string]: string } = createNamespace({
                 bla: '1',
                 hello: '2',
             })
@@ -51,11 +50,14 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
         })
 
         it('should not prevent from using JSON stringify', () => {
-            const namespace: {[key: string]: string} = createNamespace({
+            const namespace: { [key: string]: string } = createNamespace({
                 bla: '1',
                 hello: '2',
             })
-            assert.deepStrictEqual(JSON.stringify(namespace), '{"bla":"1","hello":"2"}')
+            assert.deepStrictEqual(
+                JSON.stringify(namespace),
+                '{"bla":"1","hello":"2"}'
+            )
         })
     })
 })

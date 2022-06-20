@@ -13,7 +13,10 @@ type CodeLines = Array<CodeLines | PdEngine.Code>
 
 // Helper to render code.
 // Allows to pass templated strings with arrays and arrays of arrays of codelines, adding new lines automatically.
-export const renderCode = (strings: TemplateStringsArray, ...codeLines: CodeLines): PdEngine.Code => {
+export const renderCode = (
+    strings: TemplateStringsArray,
+    ...codeLines: CodeLines
+): PdEngine.Code => {
     let rendered: string = ''
     for (let i = 0; i < strings.length; i++) {
         rendered += strings[i]
@@ -24,7 +27,9 @@ export const renderCode = (strings: TemplateStringsArray, ...codeLines: CodeLine
     return rendered
 }
 
-const renderCodeLines = (codeLines: CodeLines | PdEngine.Code): PdEngine.Code => {
+const renderCodeLines = (
+    codeLines: CodeLines | PdEngine.Code
+): PdEngine.Code => {
     if (Array.isArray(codeLines)) {
         return codeLines.map(renderCodeLines).join('\n')
     }
@@ -40,7 +45,7 @@ export const createNamespace = <T extends Object>(namespace: T) => {
                     return (target as any)[key.slice(1)]
                 }
 
-                // Whitelist some fields that are undefined but accessed at 
+                // Whitelist some fields that are undefined but accessed at
                 // some point or another by our code.
                 if (['toJSON'].includes(key)) {
                     return undefined
@@ -48,6 +53,6 @@ export const createNamespace = <T extends Object>(namespace: T) => {
                 throw new Error(`Namespace doesn't know key "${String(key)}"`)
             }
             return (target as any)[key]
-        }
+        },
     })
 }

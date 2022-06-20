@@ -70,7 +70,7 @@ export const generateFramesForNode = (
     const testNodeSinks: PdDspGraph.ConnectionEndpointMap = {}
     const recorderNodeSources: PdDspGraph.ConnectionEndpointMap = {}
 
-    Object.values(testNodeOutlets).forEach(outlet => {
+    Object.values(testNodeOutlets).forEach((outlet) => {
         testNodeSinks[outlet.id] = [
             { nodeId: 'recorderNode', portletId: outlet.id },
         ]
@@ -139,14 +139,21 @@ export const generateFramesForNode = (
         'recorder-node': {
             // Generate one memory variable per outlet of test node
             setup: (_, { state }) =>
-                renderCode`${Object.keys(recorderNode.inlets)
-                    .map((inletId) => `let ${state['mem' + inletId]} = null`)}`,
+                renderCode`${Object.keys(recorderNode.inlets).map(
+                    (inletId) => `let ${state['mem' + inletId]} = null`
+                )}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.
             loop: (_, { state, ins }) =>
-                renderCode`${Object.keys(recorderNode.inlets)
-                    .map((inletId) => `${state['mem' + inletId]} = ${ins[inletId]}.slice ? ${ins[inletId]}.slice(0) : ${ins[inletId]}`)}`,
-            stateVariables: Object.keys(recorderNode.inlets).map((inletId) => 'mem' + inletId),
+                renderCode`${Object.keys(recorderNode.inlets).map(
+                    (inletId) =>
+                        `${state['mem' + inletId]} = ${ins[inletId]}.slice ? ${
+                            ins[inletId]
+                        }.slice(0) : ${ins[inletId]}`
+                )}`,
+            stateVariables: Object.keys(recorderNode.inlets).map(
+                (inletId) => 'mem' + inletId
+            ),
         },
     }
 

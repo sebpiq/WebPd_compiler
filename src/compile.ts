@@ -34,15 +34,12 @@ export const compile = (
     // !!! The `SET_VARIABLE` port passes values by reference, therefore calling it twice on several
     // variables with the same array as `variableValue` for example might have unexpected effects.
     return renderCode`
-        ${compileSetup(
-            compilation,
-            traversal.breadthFirst(compilation.graph),
-        )}
+        ${compileSetup(compilation, traversal.breadthFirst(compilation.graph))}
         return {
             loop: () => {
                 ${compileLoop(
                     compilation,
-                    traversal.breadthFirst(compilation.graph),
+                    traversal.breadthFirst(compilation.graph)
                 )}
                 return [${compilation.variableNames.g.output.join(', ')}]
             },
@@ -60,36 +57,36 @@ export const compile = (
 
 export const compileSetup = (
     compilation: Compilation,
-    graphTraversal: PdDspGraph.GraphTraversal,
+    graphTraversal: PdDspGraph.GraphTraversal
 ): PdEngine.Code => {
     const globs = compilation.variableNames.g
     return renderCode`
         let ${globs.iterOutlet} = 0
         let ${globs.frame} = -1
         const ${globs.isNumber} = (v) => typeof v === 'number'
-        ${globs.output
-            .map((n) => `let ${n} = 0`)
-        }
+        ${globs.output.map((n) => `let ${n} = 0`)}
 
-        ${graphTraversal.map(node => {
-            const {ins, outs} = compilation.variableNames.n[node.id]
+        ${graphTraversal.map((node) => {
+            const { ins, outs } = compilation.variableNames.n[node.id]
             return [
-                Object.values(node.inlets).map(inlet => inlet.type === 'control' ? 
-                    `let ${ins[inlet.id]} = []`: 
-                    `let ${ins[inlet.id]} = 0`
+                Object.values(node.inlets).map((inlet) =>
+                    inlet.type === 'control'
+                        ? `let ${ins[inlet.id]} = []`
+                        : `let ${ins[inlet.id]} = 0`
                 ),
-                Object.values(node.outlets).map(outlet => outlet.type === 'control' ? 
-                    `let ${outs[outlet.id]} = []`: 
-                    `let ${outs[outlet.id]} = 0`
+                Object.values(node.outlets).map((outlet) =>
+                    outlet.type === 'control'
+                        ? `let ${outs[outlet.id]} = []`
+                        : `let ${outs[outlet.id]} = 0`
                 ),
                 compilation.getNodeImplementation(node.type).setup(
                     node,
                     {
-                        ...compilation.variableNames.n[node.id], 
-                        globs: globs
+                        ...compilation.variableNames.n[node.id],
+                        globs: globs,
                     },
                     compilation.settings
-                )
+                ),
             ]
         })}
     `
@@ -97,14 +94,14 @@ export const compileSetup = (
 
 export const compileLoop = (
     compilation: Compilation,
-    graphTraversal: PdDspGraph.GraphTraversal,
+    graphTraversal: PdDspGraph.GraphTraversal
 ): PdEngine.Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const globs = compilation.variableNames.g
     return renderCode`
         ${globs.frame}++
 
-        ${graphTraversal.map(node => [
+        ${graphTraversal.map((node) => [
             // 1. Node loop implementation
             compilation.getNodeImplementation(node.type).loop(
                 node,
@@ -116,44 +113,57 @@ export const compileLoop = (
             ),
 
             // 2. Node outs to sinks ins
-            traversal.listConnectionsOut(node)
+            traversal
+                .listConnectionsOut(node)
                 // Make sure we omit nodes that are not connected to an end sink
-                .filter(([_, { nodeId: sinkNodeId }]) => 
-                    traversalNodeIds.includes(sinkNodeId))
-                .map(([
-                    { portletId: outletId }, 
-                    { nodeId: sinkNodeId, portletId: inletId }
-                ]) => {
-                    const {outs: sourceOuts} = compilation.variableNames.n[node.id]
-                    const {ins: sinkIns} = compilation.variableNames.n[sinkNodeId]
-                    return getters.getOutlet(node, outletId).type === 'control' ? `
+                .filter(([_, { nodeId: sinkNodeId }]) =>
+                    traversalNodeIds.includes(sinkNodeId)
+                )
+                .map(
+                    ([
+                        { portletId: outletId },
+                        { nodeId: sinkNodeId, portletId: inletId },
+                    ]) => {
+                        const {
+                            outs: sourceOuts,
+                        } = compilation.variableNames.n[node.id]
+                        const { ins: sinkIns } = compilation.variableNames.n[
+                            sinkNodeId
+                        ]
+                        return getters.getOutlet(node, outletId).type ===
+                            'control'
+                            ? `
                         for (${globs.iterOutlet} = 0; ${globs.iterOutlet} < ${sourceOuts[outletId]}.length; ${globs.iterOutlet}++) {
                             ${sinkIns[inletId]}.push(${sourceOuts[outletId]}[${globs.iterOutlet}])
-                        }`:
-                        `${sinkIns[inletId]} = ${sourceOuts[outletId]}`
+                        }`
+                            : `${sinkIns[inletId]} = ${sourceOuts[outletId]}`
                     }
                 ),
-
         ])}
 
-        ${// 3. Control inlets / outlets cleanup 
-            graphTraversal.map(node => {
-                const {ins, outs} = compilation.variableNames.n[node.id]
+        ${
+            // 3. Control inlets / outlets cleanup
+            graphTraversal.map((node) => {
+                const { ins, outs } = compilation.variableNames.n[node.id]
                 return [
                     Object.values(node.inlets)
-                        .filter(inlet => inlet.type === 'control')
-                        .map(inlet => `
+                        .filter((inlet) => inlet.type === 'control')
+                        .map(
+                            (inlet) => `
                             if (${ins[inlet.id]}.length) {
                                 ${ins[inlet.id]} = []
                             }
-                        `),
+                        `
+                        ),
                     Object.values(node.outlets)
-                        .filter(outlet => outlet.type === 'control')
-                        .map(outlet => `
+                        .filter((outlet) => outlet.type === 'control')
+                        .map(
+                            (outlet) => `
                             if (${outs[outlet.id]}.length) {
                                 ${outs[outlet.id]} = []
                             }
-                        `)
+                        `
+                        ),
                 ]
             })
         }

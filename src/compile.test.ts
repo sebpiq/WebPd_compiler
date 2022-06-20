@@ -1,11 +1,7 @@
 import assert from 'assert'
 import compile, { compileLoop, compileSetup } from './compile'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import {
-    NodeImplementations,
-    PortsNames,
-    CompilerSettings,
-} from './types'
+import { NodeImplementations, PortsNames, CompilerSettings } from './types'
 import { buildSignalProcessor } from '@webpd/engine-live-eval/src/utils'
 import { Compilation } from './compilation'
 
@@ -176,20 +172,13 @@ describe('compile', () => {
 
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    setup: (
-                        node,
-                        _,
-                        settings
-                    ) =>
+                    setup: (node, _, settings) =>
                         `// [osc~] frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
                     loop: () => ``,
                 },
                 'dac~': {
-                    setup: (
-                        _,
-                        __,
-                        settings
-                    ) => `// [dac~] channelCount ${settings.channelCount}`,
+                    setup: (_, __, settings) =>
+                        `// [dac~] channelCount ${settings.channelCount}`,
                     loop: () => ``,
                 },
             }
@@ -200,10 +189,7 @@ describe('compile', () => {
                 COMPILER_SETTINGS
             )
 
-            const setup = compileSetup(
-                compilation,
-                [graph.osc, graph.dac],
-            )
+            const setup = compileSetup(compilation, [graph.osc, graph.dac])
 
             assert.strictEqual(
                 normalizeCode(setup),
@@ -232,55 +218,33 @@ describe('compile', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
             msg: {
                 setup: () => ``,
-                loop: (
-                    node,
-                    _,
-                    settings,
-                ) =>
+                loop: (node, _, settings) =>
                     `// [msg] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             '+': {
                 setup: () => ``,
-                loop: (
-                    node,
-                    _,
-                    settings,
-                ) =>
+                loop: (node, _, settings) =>
                     `// [+] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             print: {
                 setup: () => ``,
-                loop: (
-                    node,
-                    _,
-                    __,
-                ) => `// [print] : value "${node.args.value}"`,
+                loop: (node, _, __) =>
+                    `// [print] : value "${node.args.value}"`,
             },
             'osc~': {
                 setup: () => ``,
-                loop: (
-                    node,
-                    _,
-                    settings,
-                ) =>
+                loop: (node, _, settings) =>
                     `// [osc~] : frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
             },
             '+~': {
                 setup: () => ``,
-                loop: (
-                    node,
-                    _,
-                    settings,
-                ) =>
+                loop: (node, _, settings) =>
                     `// [+~] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
             },
             'dac~': {
                 setup: () => ``,
-                loop: (
-                    _,
-                    __,
-                    settings,
-                ) => `// [dac~] : channelCount ${settings.channelCount}`,
+                loop: (_, __, settings) =>
+                    `// [dac~] : channelCount ${settings.channelCount}`,
             },
         }
 
@@ -325,10 +289,11 @@ describe('compile', () => {
                 COMPILER_SETTINGS
             )
 
-            const loop = compileLoop(
-                compilation,
-                [graph.msg, graph.plus, graph.print],
-            )
+            const loop = compileLoop(compilation, [
+                graph.msg,
+                graph.plus,
+                graph.print,
+            ])
 
             assert.strictEqual(
                 normalizeCode(loop),
@@ -409,10 +374,11 @@ describe('compile', () => {
                 COMPILER_SETTINGS
             )
 
-            const loop = compileLoop(
-                compilation,
-                [graph.osc, graph.plus, graph.dac],
-            )
+            const loop = compileLoop(compilation, [
+                graph.osc,
+                graph.plus,
+                graph.dac,
+            ])
 
             assert.strictEqual(
                 normalizeCode(loop),
@@ -475,10 +441,7 @@ describe('compile', () => {
                 COMPILER_SETTINGS
             )
 
-            const loop = compileLoop(
-                compilation,
-                [graph.osc, graph.dac],
-            )
+            const loop = compileLoop(compilation, [graph.osc, graph.dac])
 
             assert.strictEqual(
                 normalizeCode(loop),

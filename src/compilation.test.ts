@@ -1,11 +1,12 @@
 import { makeGraph } from '@webpd/shared/test-helpers'
-import {
-    NodeImplementations,
-    CompilerSettings,
-} from './types'
+import { NodeImplementations, CompilerSettings } from './types'
 import { Compilation } from './compilation'
 import assert from 'assert'
-import { generateInletVariableName, generateOutletVariableName, generateStateVariableName } from './variable-names'
+import {
+    generateInletVariableName,
+    generateOutletVariableName,
+    generateStateVariableName,
+} from './variable-names'
 
 describe('compilation', () => {
     const COMPILER_SETTINGS: CompilerSettings = {
@@ -20,7 +21,7 @@ describe('compilation', () => {
                 'osc~': {
                     setup: () => `// [osc~] setup`,
                     loop: () => `// [osc~] loop`,
-                    stateVariables: ['phase', 'currentThing', 'k']
+                    stateVariables: ['phase', 'currentThing', 'k'],
                 },
                 'dac~': {
                     setup: () => `// [dac~] setup`,
@@ -32,12 +33,12 @@ describe('compilation', () => {
                 myOsc: {
                     type: 'osc~',
                     inlets: {
-                        '0': {type: 'signal', id: '0'},
-                        '1': {type: 'control', id: '1'},
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'control', id: '1' },
                     },
                     outlets: {
-                        '0': {type: 'signal', id: '0'},
-                        '1': {type: 'control', id: '1'},
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'control', id: '1' },
                     },
                 },
                 myDac: {
@@ -45,30 +46,40 @@ describe('compilation', () => {
                 },
             })
 
-            const compilation = new Compilation(graph, nodeImplementations, COMPILER_SETTINGS)
+            const compilation = new Compilation(
+                graph,
+                nodeImplementations,
+                COMPILER_SETTINGS
+            )
 
-            assert.deepStrictEqual(JSON.parse(JSON.stringify({...compilation.variableNames.n})), {
-                myOsc: {
-                    ins: {
-                        '0': generateInletVariableName('myOsc', '0'),
-                        '1': generateInletVariableName('myOsc', '1'),
+            assert.deepStrictEqual(
+                JSON.parse(JSON.stringify({ ...compilation.variableNames.n })),
+                {
+                    myOsc: {
+                        ins: {
+                            '0': generateInletVariableName('myOsc', '0'),
+                            '1': generateInletVariableName('myOsc', '1'),
+                        },
+                        outs: {
+                            '0': generateOutletVariableName('myOsc', '0'),
+                            '1': generateOutletVariableName('myOsc', '1'),
+                        },
+                        state: {
+                            phase: generateStateVariableName('myOsc', 'phase'),
+                            currentThing: generateStateVariableName(
+                                'myOsc',
+                                'currentThing'
+                            ),
+                            k: generateStateVariableName('myOsc', 'k'),
+                        },
                     },
-                    outs: {
-                        '0': generateOutletVariableName('myOsc', '0'),
-                        '1': generateOutletVariableName('myOsc', '1'),
+                    myDac: {
+                        ins: {},
+                        outs: {},
+                        state: {},
                     },
-                    state: {
-                        'phase': generateStateVariableName('myOsc', 'phase'),
-                        'currentThing': generateStateVariableName('myOsc', 'currentThing'),
-                        'k': generateStateVariableName('myOsc', 'k'),
-                    },
-                },
-                myDac: {
-                    ins: {},
-                    outs: {},
-                    state: {},
-                },
-            })
+                }
+            )
         })
     })
 
@@ -77,7 +88,7 @@ describe('compilation', () => {
             'osc~': {
                 setup: () => `// [osc~] setup`,
                 loop: () => `// [osc~] loop`,
-                stateVariables: ['phase']
+                stateVariables: ['phase'],
             },
         }
 
@@ -85,20 +96,29 @@ describe('compilation', () => {
             myOsc: {
                 type: 'osc~',
                 inlets: {
-                    '0': {type: 'signal', id: '0'},
+                    '0': { type: 'signal', id: '0' },
                 },
                 outlets: {
-                    '0': {type: 'signal', id: '0'},
+                    '0': { type: 'signal', id: '0' },
                 },
             },
         })
 
-        const compilation = new Compilation(graph, nodeImplementations, COMPILER_SETTINGS)
+        const compilation = new Compilation(
+            graph,
+            nodeImplementations,
+            COMPILER_SETTINGS
+        )
 
         assert.throws(() => compilation.variableNames.n.unknownNode)
-        assert.throws(() => compilation.variableNames.n.myOsc.ins['unknown portlet'])
-        assert.throws(() => compilation.variableNames.n.myOsc.outs['unknown portlet'])
-        assert.throws(() => compilation.variableNames.n.myOsc.state['unknown var'])
+        assert.throws(
+            () => compilation.variableNames.n.myOsc.ins['unknown portlet']
+        )
+        assert.throws(
+            () => compilation.variableNames.n.myOsc.outs['unknown portlet']
+        )
+        assert.throws(
+            () => compilation.variableNames.n.myOsc.state['unknown var']
+        )
     })
-
 })
