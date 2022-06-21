@@ -31,6 +31,7 @@ export default (
 export const compile = (
     compilation: Compilation
 ): PdEngine.SignalProcessorCode => {
+    const globs = compilation.variableNames.g
     // !!! The `SET_VARIABLE` port passes values by reference, therefore calling it twice on several
     // variables with the same array as `variableValue` for example might have unexpected effects.
     return renderCode`
@@ -41,7 +42,7 @@ export const compile = (
                     compilation,
                     traversal.breadthFirst(compilation.graph)
                 )}
-                return [${compilation.variableNames.g.output.join(', ')}]
+                return [${globs.output.join(', ')}]
             },
             ports: {
                 ${PortsNames.GET_VARIABLE}: (variableName) => {

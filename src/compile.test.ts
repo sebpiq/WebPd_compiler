@@ -2,7 +2,6 @@ import assert from 'assert'
 import compile, { compileLoop, compileSetup } from './compile'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations, PortsNames, CompilerSettings } from './types'
-import { buildSignalProcessor } from '@webpd/engine-live-eval/src/utils'
 import { Compilation } from './compilation'
 
 describe('compile', () => {
@@ -133,7 +132,7 @@ describe('compile', () => {
                 },
             }
 
-            const processor = buildSignalProcessor(code)
+            const processor = new Function(code)()
 
             assert.deepStrictEqual(
                 Object.keys(processor),

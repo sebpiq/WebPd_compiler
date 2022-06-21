@@ -10,18 +10,8 @@
  */
 
 import { createNamespace } from './code-helpers'
-import {
-    CompilerSettings,
-    NodeImplementation,
-    NodeImplementations,
-    NodeVariableNames,
-    VariableNames,
-} from './types'
-import {
-    generateInletVariableName,
-    generateOutletVariableName,
-    generateStateVariableName,
-} from './variable-names'
+import { CompilerSettings, NodeImplementation, NodeImplementations, NodeVariableNames, VariableNames } from './types'
+import { generateInletVariableName, generateOutletVariableName, generateStateVariableName } from './variable-names'
 
 export class Compilation {
     readonly graph: PdDspGraph.Graph
@@ -37,66 +27,31 @@ export class Compilation {
         this.graph = graph
         this.nodeImplementations = nodeImplementations
         this.settings = settings
-
+        
         const outputVariableNames: Array<string> = []
         for (let ch = 1; ch <= settings.channelCount; ch++) {
             outputVariableNames.push(`PROCESSOR_OUTPUT${ch}`)
         }
         this.variableNames = {
-            n: createNamespace(
-                Object.values(graph).reduce<VariableNames['n']>(
-                    (nodeMap, node) => {
-                        const nodeImplementation = this.getNodeImplementation(
-                            node.type
-                        )
-                        const nodeStateVariables =
-                            nodeImplementation.stateVariables || []
-                        nodeMap[node.id] = {
-                            ins: createNamespace(
-                                Object.values(node.inlets).reduce<
-                                    NodeVariableNames['ins']
-                                >((nameMap, portlet) => {
-                                    nameMap[
-                                        portlet.id
-                                    ] = generateInletVariableName(
-                                        node.id,
-                                        portlet.id
-                                    )
-                                    return nameMap
-                                }, {})
-                            ),
-                            outs: createNamespace(
-                                Object.values(node.outlets).reduce<
-                                    NodeVariableNames['outs']
-                                >((nameMap, portlet) => {
-                                    nameMap[
-                                        portlet.id
-                                    ] = generateOutletVariableName(
-                                        node.id,
-                                        portlet.id
-                                    )
-                                    return nameMap
-                                }, {})
-                            ),
-                            state: createNamespace(
-                                nodeStateVariables.reduce<
-                                    NodeVariableNames['state']
-                                >((nameMap, stateVariable) => {
-                                    nameMap[
-                                        stateVariable
-                                    ] = generateStateVariableName(
-                                        node.id,
-                                        stateVariable
-                                    )
-                                    return nameMap
-                                }, {})
-                            ),
-                        }
-                        return nodeMap
-                    },
-                    {}
-                )
-            ),
+            n: createNamespace(Object.values(graph).reduce<VariableNames["n"]>((nodeMap, node) => {
+                const nodeImplementation = this.getNodeImplementation(node.type)
+                const nodeStateVariables = nodeImplementation.stateVariables || []
+                nodeMap[node.id] = {
+                    ins: createNamespace(Object.values(node.inlets).reduce<NodeVariableNames['ins']>((nameMap, portlet) => {
+                        nameMap[portlet.id] = generateInletVariableName(node.id, portlet.id)
+                        return nameMap
+                    }, {})),
+                    outs: createNamespace(Object.values(node.outlets).reduce<NodeVariableNames['outs']>((nameMap, portlet) => {
+                        nameMap[portlet.id] = generateOutletVariableName(node.id, portlet.id)
+                        return nameMap
+                    }, {})),
+                    state: createNamespace(nodeStateVariables.reduce<NodeVariableNames['state']>((nameMap, stateVariable) => {
+                        nameMap[stateVariable] = generateStateVariableName(node.id, stateVariable)
+                        return nameMap
+                    }, {})),
+                }
+                return nodeMap
+            }, {})),
             g: {
                 output: outputVariableNames,
                 arrays: settings.arraysVariableName,
@@ -107,13 +62,12 @@ export class Compilation {
         }
     }
 
-    getNodeImplementation = (
-        nodeType: PdSharedTypes.NodeType
-    ): NodeImplementation => {
+    getNodeImplementation = (nodeType: PdSharedTypes.NodeType): NodeImplementation => {
         const nodeImplementation = this.nodeImplementations[nodeType]
         if (!nodeImplementation) {
             throw new Error(`node ${nodeType} is not implemented`)
         }
         return nodeImplementation
     }
+
 }

@@ -1,4 +1,3 @@
-import { buildSignalProcessor } from '@webpd/engine-live-eval/src/utils'
 import { NODE_BUILDERS } from '@webpd/dsp-graph'
 import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'
@@ -158,7 +157,7 @@ export const generateFramesForNode = (
     }
 
     const code = compile(graph, nodeImplementations, COMPILE_SETTINGS)
-    const processor = buildSignalProcessor(code)
+    const processor = new Function(code)()
 
     // --------------- Generate frames
     const outputFrames: Array<Frame> = []
