@@ -12,10 +12,10 @@
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ setup ------------------------------ //
-export const setup: NodeCodeGenerator = (node, { state, ins, globs }) => `
+export const setup: NodeCodeGenerator = (node, { state, ins, globs, MACROS }) => `
     let ${state.array} = new Float32Array(0)
-    let ${state.readPosition} = 0
-    let ${state.readUntil} = 0
+    ${MACROS.declareInt(state.readPosition, 0)}
+    ${MACROS.declareInt(state.readUntil, 0)}
 
     const ${state.funcSetArrayName} = (arrayName) => {
         ${state.array} = ${globs.arrays}[arrayName] || new Float32Array(0)

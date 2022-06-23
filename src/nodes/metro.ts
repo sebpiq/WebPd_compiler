@@ -14,23 +14,18 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 // ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = (
     { args },
-    { state, ins, globs },
+    { state, ins, globs, MACROS },
     { sampleRate }
 ) =>
     // TODO : more complex ways to set rate
     // Time units are all expressed in frames here
     `
-        let ${state.rate} = 0
-        let ${state.nextTick} = -1
-        let ${state.realNextTick} = -1
+        ${MACROS.declareSignal(state.rate, 0)}
+        ${MACROS.declareSignal(state.nextTick, -1)}
+        ${MACROS.declareSignal(state.realNextTick, -1)}
 
         const ${state.funcSetRate} = (rate) => {
             ${state.rate} = rate / 1000 * ${sampleRate}
-        }
-
-        const ${state.funcRefreshNextTick} = () => {
-            ${state.realNextTick} = ${state.realNextTick} + ${state.rate}
-            ${state.nextTick} = Math.round(${state.realNextTick})
         }
 
         const ${state.funcHandleMessage0} = () => {
@@ -41,7 +36,7 @@ export const setup: NodeCodeGenerator = (
                 ${state.nextTick} = 0
                 ${state.realNextTick} = 0
                 
-            } else if (${globs.isNumber}(inMessage[0]) || inMessage[0] === 'bang') {
+            } else if (isNumber(inMessage[0]) || inMessage[0] === 'bang') {
                 ${state.nextTick} = ${globs.frame}
                 ${state.realNextTick} = ${globs.frame}
         
@@ -52,7 +47,7 @@ export const setup: NodeCodeGenerator = (
 
         const ${state.funcHandleMessage1} = () => {
             let inMessage = ${ins.$1}.shift()
-            if (inMessage.length === 1 && ${globs.isNumber}(inMessage[0])) {
+            if (inMessage.length === 1 && isNumber(inMessage[0])) {
                 ${state.funcSetRate}(inMessage[0])
                 
             } else {
@@ -60,22 +55,22 @@ export const setup: NodeCodeGenerator = (
             }
         }
 
-        if (${globs.isNumber}(${args.rate})) {
-            ${state.funcSetRate}(${args.rate})
-        }
+        ${args.rate !== undefined ? 
+            `${state.funcSetRate}(${args.rate})`: ''}
     `
 
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { state, ins, outs }) => `
+export const loop: NodeCodeGenerator = (_, { state, ins, outs, globs }) => `
     while (${ins.$1}.length) {
         ${state.funcHandleMessage1}()
     }
     while (${ins.$0}.length) {
         ${state.funcHandleMessage0}()
     }
-    if (frame === ${state.nextTick}) {
+    if (${globs.frame} === ${state.nextTick}) {
         ${outs.$0}.push(['bang'])
-        ${state.funcRefreshNextTick}()
+        ${state.realNextTick} = ${state.realNextTick} + ${state.rate}
+        ${state.nextTick} = Math.round(${state.realNextTick})
     }
 `
 
@@ -85,7 +80,6 @@ export const stateVariables: NodeImplementation['stateVariables'] = [
     'nextTick',
     'realNextTick',
     'funcSetRate',
-    'funcRefreshNextTick',
     'funcHandleMessage0',
     'funcHandleMessage1',
 ]

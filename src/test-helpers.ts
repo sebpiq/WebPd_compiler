@@ -1,7 +1,18 @@
+/*
+ * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
+ *
+ * BSD Simplified License.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ *
+ * See https://github.com/sebpiq/WebPd_pd-parser for documentation
+ *
+ */
+
 import { NODE_BUILDERS } from '@webpd/dsp-graph'
 import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'
-import { NodeImplementations, PortsNames } from './types'
+import { CompilerSettings, NodeImplementations, PortsNames } from './types'
 import {
     generateInletVariableName,
     generateOutletVariableName,
@@ -156,8 +167,10 @@ export const generateFramesForNode = (
         },
     }
 
-    const code = compile(graph, nodeImplementations, COMPILE_SETTINGS)
+    const code = compile(graph, nodeImplementations, COMPILER_SETTINGS)
     const processor = new Function(code)()
+    // blockSize = 1
+    processor.configure(1)
 
     // --------------- Generate frames
     const outputFrames: Array<Frame> = []
@@ -194,8 +207,9 @@ export const generateFramesForNode = (
     return outputFrames
 }
 
-export const COMPILE_SETTINGS = {
+export const COMPILER_SETTINGS: CompilerSettings = {
     sampleRate: 44100,
     channelCount: 2,
     arraysVariableName: 'WEBPD_ARRAYS',
+    target: 'javascript'
 }

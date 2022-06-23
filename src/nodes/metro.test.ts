@@ -10,14 +10,14 @@
  */
 
 import assert from 'assert'
-import { COMPILE_SETTINGS, generateFramesForNode } from '../test-helpers'
+import { COMPILER_SETTINGS, generateFramesForNode } from '../test-helpers'
 
 describe('metro', () => {
     it('should start metro at rate passed as arg', () => {
         const frames = generateFramesForNode(
             {
                 type: 'metro',
-                args: { rate: (2 * 1000) / COMPILE_SETTINGS.sampleRate },
+                args: { rate: (2 * 1000) / COMPILER_SETTINGS.sampleRate },
             },
             [
                 {}, // frame 1
@@ -43,7 +43,7 @@ describe('metro', () => {
         const frames = generateFramesForNode(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILE_SETTINGS.sampleRate },
+                args: { rate: (1 * 1000) / COMPILER_SETTINGS.sampleRate },
             },
             [
                 {
@@ -63,7 +63,7 @@ describe('metro', () => {
         const frames = generateFramesForNode(
             {
                 type: 'metro',
-                args: { rate: (2 * 1000) / COMPILE_SETTINGS.sampleRate },
+                args: { rate: (2 * 1000) / COMPILER_SETTINGS.sampleRate },
             },
             [
                 {
@@ -73,7 +73,7 @@ describe('metro', () => {
                 {}, // frame 2
                 {
                     // frame 3
-                    '1': [[1000 / COMPILE_SETTINGS.sampleRate]],
+                    '1': [[1000 / COMPILER_SETTINGS.sampleRate]],
                 },
                 {}, // frame 4
                 {}, // frame 5
@@ -92,7 +92,7 @@ describe('metro', () => {
         const frames = generateFramesForNode(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILE_SETTINGS.sampleRate },
+                args: { rate: (1 * 1000) / COMPILER_SETTINGS.sampleRate },
             },
             [
                 {
@@ -117,7 +117,7 @@ describe('metro', () => {
         const frames = generateFramesForNode(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILE_SETTINGS.sampleRate },
+                args: { rate: (1 * 1000) / COMPILER_SETTINGS.sampleRate },
             },
             [
                 {

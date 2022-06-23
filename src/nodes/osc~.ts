@@ -19,18 +19,18 @@ export const setup: NodeCodeGenerator = (...args) => {
 
 const setupSignal: NodeCodeGenerator = (
     node,
-    { ins, state },
+    { ins, state, MACROS },
     { sampleRate }
 ) => `
-    let ${state.phase} = 0
-    let ${state.J} = 2 * Math.PI / ${sampleRate}
-    ${ins.$0_signal} = ${node.args.frequency} || 0
+    ${MACROS.declareSignal(state.phase, 0)}
+    ${MACROS.declareSignal(state.J, `2 * Math.PI / ${sampleRate}`)}
+    ${ins.$0_signal} = ${node.args.frequency || 0}
 `
 
-const setupControl: NodeCodeGenerator = (node, { state }, { sampleRate }) => `
-    let ${state.phase} = 0
-    let ${state.currentFrequency} = (${node.args.frequency} || 0)
-    let ${state.K} = 0
+const setupControl: NodeCodeGenerator = (node, { state, MACROS }, { sampleRate }) => `
+    ${MACROS.declareSignal(state.phase, 0)}
+    ${MACROS.declareSignal(state.currentFrequency, node.args.frequency as number || 0)}
+    ${MACROS.declareSignal(state.K, 0)}
     const ${state.refreshK} = () => 
         ${state.K} = ${state.currentFrequency} * 2 * Math.PI / ${sampleRate}
     ${state.refreshK}()

@@ -10,7 +10,9 @@
  */
 
 import { createNamespace } from './code-helpers'
-import { CompilerSettings, NodeImplementation, NodeImplementations, NodeVariableNames, VariableNames } from './types'
+import AS_MACROS from './macros/assemblyscript'
+import JS_MACROS from './macros/javascript'
+import { CodeMacros, CompilerSettings, CompilerSettingsWithDefaults, NodeImplementation, NodeImplementations, NodeVariableNames, VariableNames } from './types'
 import { generateInletVariableName, generateOutletVariableName, generateStateVariableName } from './variable-names'
 
 export class Compilation {
@@ -26,12 +28,8 @@ export class Compilation {
     ) {
         this.graph = graph
         this.nodeImplementations = nodeImplementations
-        this.settings = settings
+        this.settings = validateSettings(settings)
         
-        const outputVariableNames: Array<string> = []
-        for (let ch = 1; ch <= settings.channelCount; ch++) {
-            outputVariableNames.push(`PROCESSOR_OUTPUT${ch}`)
-        }
         this.variableNames = {
             n: createNamespace(Object.values(graph).reduce<VariableNames["n"]>((nodeMap, node) => {
                 const nodeImplementation = this.getNodeImplementation(node.type)
@@ -53,12 +51,24 @@ export class Compilation {
                 return nodeMap
             }, {})),
             g: {
-                output: outputVariableNames,
                 arrays: settings.arraysVariableName,
-                iterOutlet: 'o',
-                frame: 'frame',
-                isNumber: 'isNumber',
+                iterOutlet: 'O',
+                iterFrame: 'F',
+                frame: 'FRAME',
+                blockSize: 'BLOCK_SIZE',
+                output: 'OUTPUT',
             },
+        }
+    }
+
+    getMacros(): CodeMacros {
+        let unwrappedMacros = this.settings.target === 'javascript' ? JS_MACROS : AS_MACROS
+        return {
+            declareInt: unwrappedMacros.declareInt.bind(undefined, this),
+            declareIntConst: unwrappedMacros.declareIntConst.bind(undefined, this),
+            declareSignal: unwrappedMacros.declareSignal.bind(undefined, this),
+            declareMessageArray: unwrappedMacros.declareMessageArray.bind(undefined, this),
+            fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(undefined, this),
         }
     }
 
@@ -69,5 +79,20 @@ export class Compilation {
         }
         return nodeImplementation
     }
-
 }
+
+export const validateSettings = (settings: CompilerSettings): CompilerSettingsWithDefaults => {
+    if (settings.target === 'assemblyscript') {
+        const bitDepth = settings.bitDepth || 32
+        if (![32, 64].includes(bitDepth)) {
+            throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
+        }
+        return {
+            ...settings,
+            bitDepth
+        }
+    }
+    return settings
+}
+
+class InvalidSettingsError extends Error {}

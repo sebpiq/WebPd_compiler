@@ -9,6 +9,7 @@ describe('compile', () => {
         sampleRate: 44100,
         channelCount: 2,
         arraysVariableName: 'ARRAYS',
+        target: 'javascript'
     }
 
     const normalizeCode = (rawCode: string) => {
@@ -61,11 +62,11 @@ describe('compile', () => {
             assert.strictEqual(
                 normalizeCode(code),
                 normalizeCode(`
-                let o = 0
-                let frame = -1
                 const isNumber = (v) => typeof v === 'number'
-                let PROCESSOR_OUTPUT1 = 0
-                let PROCESSOR_OUTPUT2 = 0
+                let F = 0
+                let O = 0
+                let FRAME = -1
+                let BLOCK_SIZE = 0
                 
                 let osc_INS_0_control = []
                 let osc_OUTS_0 = 0
@@ -76,17 +77,20 @@ describe('compile', () => {
                 // [dac~] setup
 
                 return {
-                    loop: () => { 
-                        frame++
-                        // [osc~] loop
-                        dac_INS_0 = osc_OUTS_0
-                        // [dac~] loop
+                    configure: (aBlockSize) => {
+                        BLOCK_SIZE = aBlockSize
+                    },
+                    loop: (OUTPUT) => {
+                        for (F = 0; F < BLOCK_SIZE; F++) {
+                            FRAME++
+                            // [osc~] loop
+                            dac_INS_0 = osc_OUTS_0
+                            // [dac~] loop
 
-                        if (osc_INS_0_control.length) {
-                            osc_INS_0_control = []
+                            if (osc_INS_0_control.length) {
+                                osc_INS_0_control = []
+                            }
                         }
-                        
-                        return [PROCESSOR_OUTPUT1, PROCESSOR_OUTPUT2]
                     },
                     ports: {
                         getVariable: (variableName) => {
@@ -125,6 +129,7 @@ describe('compile', () => {
             const code = compile(graph, nodeImplementations, COMPILER_SETTINGS)
 
             const modelProcessor: PdEngine.SignalProcessor = {
+                configure: (_: number) => {},
                 loop: () => new Float32Array(),
                 ports: {
                     [PortsNames.GET_VARIABLE]: () => null,
@@ -193,11 +198,10 @@ describe('compile', () => {
             assert.strictEqual(
                 normalizeCode(setup),
                 normalizeCode(`
-                let o = 0
-                let frame = -1
-                const isNumber = (v) => typeof v === 'number'
-                let PROCESSOR_OUTPUT1 = 0
-                let PROCESSOR_OUTPUT2 = 0
+                let F = 0
+                let O = 0
+                let FRAME = -1
+                let BLOCK_SIZE = 0
 
                 let osc_INS_0_control = []
                 let osc_INS_0_signal = 0
@@ -297,18 +301,17 @@ describe('compile', () => {
             assert.strictEqual(
                 normalizeCode(loop),
                 normalizeCode(`
-                frame++
                 // [msg] : value 2 ; sample rate 44100
-                for (o = 0; o < msg_OUTS_0.length; o++) {
-                    plus_INS_0.push(msg_OUTS_0[o])
+                for (O = 0; O < msg_OUTS_0.length; O++) {
+                    plus_INS_0.push(msg_OUTS_0[O])
                 }
-                for (o = 0; o < msg_OUTS_0.length; o++) {
-                    print_INS_0.push(msg_OUTS_0[o])
+                for (O = 0; O < msg_OUTS_0.length; O++) {
+                    print_INS_0.push(msg_OUTS_0[O])
                 }
 
                 // [+] : value 1 ; sample rate 44100
-                for (o = 0; o < plus_OUTS_0.length; o++) {
-                    print_INS_0.push(plus_OUTS_0[o])
+                for (O = 0; O < plus_OUTS_0.length; O++) {
+                    print_INS_0.push(plus_OUTS_0[O])
                 }
 
                 // [print] : value "bla"
@@ -382,7 +385,6 @@ describe('compile', () => {
             assert.strictEqual(
                 normalizeCode(loop),
                 normalizeCode(`
-                frame++
                 // [osc~] : frequency 440 ; sample rate 44100
                 plus_INS_0 = osc_OUTS_0
                 dac_INS_0 = osc_OUTS_0
@@ -445,7 +447,6 @@ describe('compile', () => {
             assert.strictEqual(
                 normalizeCode(loop),
                 normalizeCode(`
-                frame++
                 // [osc~] : frequency 440 ; sample rate 44100
                 dac_INS_0 = osc_OUTS_0
                 // [dac~] : channelCount 2

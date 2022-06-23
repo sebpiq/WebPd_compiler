@@ -3,6 +3,14 @@ export enum PortsNames {
     GET_VARIABLE = 'getVariable',
 }
 
+export interface CodeMacros {
+    declareInt: (name: PdEngine.CodeVariableName, value: number | string) => PdEngine.Code,
+    declareIntConst: (name: PdEngine.CodeVariableName, value: number | string) => PdEngine.Code,
+    declareSignal: (name: PdEngine.CodeVariableName, value: number | string) => PdEngine.Code,
+    declareMessageArray: (name: PdEngine.CodeVariableName) => PdEngine.Code,
+    fillInLoopOutput: (channel: number, value: PdEngine.CodeVariableName) => PdEngine.Code,
+}
+
 export interface NodeVariableNames {
     ins: { [portletId: PdDspGraph.PortletId]: PdEngine.CodeVariableName }
     outs: { [portletId: PdDspGraph.PortletId]: PdEngine.CodeVariableName }
@@ -14,11 +22,12 @@ export interface VariableNames {
     n: { [nodeId: PdDspGraph.NodeId]: NodeVariableNames }
     // Namespace for global variables
     g: {
-        output: Array<string>
         arrays: string
         iterOutlet: string
+        iterFrame: string
         frame: string
-        isNumber: string
+        blockSize: string
+        output: string
     }
 }
 
@@ -28,7 +37,7 @@ export type VariableNameGenerator = (
 
 export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
-    variableNames: NodeVariableNames & { globs: VariableNames['g'] },
+    variableNames: NodeVariableNames & { globs: VariableNames['g'], MACROS: CodeMacros },
     settings: CompilerSettings
 ) => PdEngine.Code
 
@@ -40,8 +49,28 @@ export interface NodeImplementation {
 
 export type NodeImplementations = { [nodeType: string]: NodeImplementation }
 
-export interface CompilerSettings extends PdEngine.Settings {
+interface BaseCompilerSettings extends PdEngine.Settings {
     // Name of variable that olds the collection of data arrays
     // so they can be made accessible to nodes that need them.
     arraysVariableName: PdEngine.CodeVariableName
 }
+
+interface AssemblyScriptCompilerOptions {
+    bitDepth: 32 | 64
+}
+
+interface BaseAssemblyScriptCompilerSettings extends BaseCompilerSettings {
+    target: 'assemblyscript'
+}
+
+interface BaseJavaScriptCompilerSettings extends BaseCompilerSettings {
+    target: 'javascript'
+}
+
+type AssemblyScriptCompilerSettings = BaseAssemblyScriptCompilerSettings & Partial<AssemblyScriptCompilerOptions>
+type JavaScriptCompilerSettings = BaseJavaScriptCompilerSettings
+export type CompilerSettings = AssemblyScriptCompilerSettings | JavaScriptCompilerSettings
+
+export type AssemblyScriptCompilerSettingsWithDefaults = BaseAssemblyScriptCompilerSettings & AssemblyScriptCompilerOptions
+export type JavaScriptCompilerSettingsWithDefaults = JavaScriptCompilerSettings
+export type CompilerSettingsWithDefaults = AssemblyScriptCompilerSettingsWithDefaults | JavaScriptCompilerSettingsWithDefaults

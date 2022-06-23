@@ -18,12 +18,12 @@ export const setup: NodeCodeGenerator = () => ``
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (
     _,
-    { ins, globs },
+    { ins, MACROS },
     { channelCount }
 ) => {
     let loopStr = ''
-    for (let ch = 0; ch < channelCount; ch++) {
-        loopStr += `\n${globs.output[ch]} = ${ins[`${ch}`]}`
+    for (let channel = 0; channel < channelCount; channel++) {
+        loopStr += `\n${MACROS.fillInLoopOutput(channel, ins[`${channel}`])}`
     }
     return loopStr
 }

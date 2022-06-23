@@ -1,6 +1,6 @@
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations, CompilerSettings } from './types'
-import { Compilation } from './compilation'
+import { Compilation, validateSettings } from './compilation'
 import assert from 'assert'
 import {
     generateInletVariableName,
@@ -13,6 +13,7 @@ describe('compilation', () => {
         sampleRate: 44100,
         channelCount: 2,
         arraysVariableName: 'ARRAYS',
+        target: 'javascript',
     }
 
     describe('Compilation', () => {
@@ -81,44 +82,82 @@ describe('compilation', () => {
                 }
             )
         })
-    })
 
-    it('should throw error for unknown namespaces', () => {
-        const nodeImplementations: NodeImplementations = {
-            'osc~': {
-                setup: () => `// [osc~] setup`,
-                loop: () => `// [osc~] loop`,
-                stateVariables: ['phase'],
-            },
-        }
-
-        const graph = makeGraph({
-            myOsc: {
-                type: 'osc~',
-                inlets: {
-                    '0': { type: 'signal', id: '0' },
+        it('should throw error for unknown namespaces', () => {
+            const nodeImplementations: NodeImplementations = {
+                'osc~': {
+                    setup: () => `// [osc~] setup`,
+                    loop: () => `// [osc~] loop`,
+                    stateVariables: ['phase'],
                 },
-                outlets: {
-                    '0': { type: 'signal', id: '0' },
+            }
+    
+            const graph = makeGraph({
+                myOsc: {
+                    type: 'osc~',
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
                 },
-            },
+            })
+    
+            const compilation = new Compilation(
+                graph,
+                nodeImplementations,
+                COMPILER_SETTINGS
+            )
+    
+            assert.throws(() => compilation.variableNames.n.unknownNode)
+            assert.throws(
+                () => compilation.variableNames.n.myOsc.ins['unknown portlet']
+            )
+            assert.throws(
+                () => compilation.variableNames.n.myOsc.outs['unknown portlet']
+            )
+            assert.throws(
+                () => compilation.variableNames.n.myOsc.state['unknown var']
+            )
+        })
+    
+        it('should bind the macros to pass compilation as first argument', () => {
+            const graph = makeGraph({})
+            const nodeImplementations: NodeImplementations = {}
+            const compilation = new Compilation(
+                graph,
+                nodeImplementations,
+                {
+                    ...COMPILER_SETTINGS,
+                    target: 'javascript',
+                }
+            )
+            const MACROS = compilation.getMacros()
+            assert.strictEqual(MACROS.declareInt('bla', 12), 'let bla = 12')
         })
 
-        const compilation = new Compilation(
-            graph,
-            nodeImplementations,
-            COMPILER_SETTINGS
-        )
+    })
 
-        assert.throws(() => compilation.variableNames.n.unknownNode)
-        assert.throws(
-            () => compilation.variableNames.n.myOsc.ins['unknown portlet']
-        )
-        assert.throws(
-            () => compilation.variableNames.n.myOsc.outs['unknown portlet']
-        )
-        assert.throws(
-            () => compilation.variableNames.n.myOsc.state['unknown var']
-        )
+    describe('validateSettings', () => {
+        it('should validate settings and set defaults', () => {
+            const settings = validateSettings({
+                target: 'assemblyscript',
+                channelCount: 2,
+                sampleRate: 44100,
+                arraysVariableName: 'ARRAYS'
+            })
+            assert.strictEqual((settings as any).bitDepth, 32)
+        })
+
+        it('should throw error if settings invalid', () => {
+            assert.throws(() => validateSettings({
+                target: 'assemblyscript',
+                channelCount: 2,
+                sampleRate: 44100,
+                bitDepth: 666,
+                arraysVariableName: 'ARRAYS'
+            } as any))
+        })
     })
 })

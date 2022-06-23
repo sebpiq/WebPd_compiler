@@ -24,8 +24,8 @@ export const makeSetup = (): NodeCodeGenerator => (...args) => {
 const setupSignal: NodeCodeGenerator = (node, { ins }) =>
     `${ins.$1_signal} = ${node.args.value} || 0`
 
-const setupControl: NodeCodeGenerator = (node, { state }) =>
-    `let ${state.value} = ${node.args.value} || 0`
+const setupControl: NodeCodeGenerator = (node, { state, MACROS }) =>
+    `${MACROS.declareSignal(state.rightOp, (node.args.value as string) || 0)}`
 
 // ------------------------------- loop ------------------------------ //
 export const makeLoop = (operator: string): NodeCodeGenerator => {
@@ -49,12 +49,12 @@ const makeLoopControl = (operator: string): NodeCodeGenerator => (
     { ins, outs, state }
 ) => `
         if (${ins.$1_control}.length) {
-            ${state.value} = ${ins.$1_control}.pop()[0]
+            ${state.rightOp} = ${ins.$1_control}.pop()[0]
         }
-        ${outs.$0} = ${ins.$0} ${operator} ${state.value}`
+        ${outs.$0} = ${ins.$0} ${operator} ${state.rightOp}`
 
 // ------------------------------------------------------------------- //
-export const stateVariables: NodeImplementation['stateVariables'] = ['value']
+export const stateVariables: NodeImplementation['stateVariables'] = ['rightOp']
 
 const _hasSignalInput = (node: PdDspGraph.Node) =>
     node.sources['1_signal'] && node.sources['1_signal'].length

@@ -10,11 +10,11 @@
  */
 
 import assert from 'assert'
-import { generateFramesForNode, COMPILE_SETTINGS } from '../test-helpers'
+import { generateFramesForNode, COMPILER_SETTINGS } from '../test-helpers'
 
 describe('osc~', () => {
     it('should work with signal frequency', () => {
-        const { sampleRate } = COMPILE_SETTINGS
+        const { sampleRate } = COMPILER_SETTINGS
         const J = (2 * Math.PI) / sampleRate
         const frames = generateFramesForNode(
             {
@@ -42,7 +42,7 @@ describe('osc~', () => {
     })
 
     it('should work with control frequency', () => {
-        const { sampleRate } = COMPILE_SETTINGS
+        const { sampleRate } = COMPILER_SETTINGS
         const J = (2 * Math.PI) / sampleRate
 
         const frames = generateFramesForNode(
