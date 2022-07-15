@@ -10,20 +10,25 @@
  */
 
 import { Compilation } from "../compilation"
+import { CodeVariableName } from "../types"
 
-const declareInt = (_: Compilation, name: PdEngine.CodeVariableName, value: number | string) => 
+const declareInt = (_: Compilation, name: CodeVariableName, value: number | string) => 
     `let ${name} = ${value.toString()}`
 
-const declareIntConst = (_: Compilation, name: PdEngine.CodeVariableName, value: number | string) => 
+const declareIntConst = (_: Compilation, name: CodeVariableName, value: number | string) => 
     `const ${name} = ${value.toString()}`
 
-const declareSignal = (_: Compilation, name: PdEngine.CodeVariableName, value: number | string) => 
+const declareFloat = (_: Compilation, name: CodeVariableName, value: number | string) => 
     `let ${name} = ${value.toString()}`
 
-const declareMessageArray = (_: Compilation, name: PdEngine.CodeVariableName) => 
+const declareFloatArray = (_: Compilation, name: CodeVariableName, size: number) => {
+    return `let ${name} = new Float32Array(${size})`
+}
+
+const declareMessageArray = (_: Compilation, name: CodeVariableName) => 
     `let ${name} = []`
 
-const fillInLoopOutput = (compilation: Compilation, channel: number, value: PdEngine.CodeVariableName) => {
+const fillInLoopOutput = (compilation: Compilation, channel: number, value: CodeVariableName) => {
     const globs = compilation.variableNames.g
     return `${globs.output}[${channel}][${globs.iterFrame}] = ${value}`
 }
@@ -31,7 +36,8 @@ const fillInLoopOutput = (compilation: Compilation, channel: number, value: PdEn
 const MACROS = {
     declareInt,
     declareIntConst,
-    declareSignal,
+    declareFloat,
+    declareFloatArray,
     declareMessageArray,
     fillInLoopOutput
 }

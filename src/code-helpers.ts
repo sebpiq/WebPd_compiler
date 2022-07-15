@@ -9,14 +9,16 @@
  *
  */
 
-type CodeLines = Array<CodeLines | PdEngine.Code>
+import { Code } from "./types"
+
+type CodeLines = Array<CodeLines | Code>
 
 // Helper to render code.
 // Allows to pass templated strings with arrays and arrays of arrays of codelines, adding new lines automatically.
 export const renderCode = (
     strings: TemplateStringsArray,
     ...codeLines: CodeLines
-): PdEngine.Code => {
+): Code => {
     let rendered: string = ''
     for (let i = 0; i < strings.length; i++) {
         rendered += strings[i]
@@ -28,8 +30,8 @@ export const renderCode = (
 }
 
 const renderCodeLines = (
-    codeLines: CodeLines | PdEngine.Code
-): PdEngine.Code => {
+    codeLines: CodeLines | Code
+): Code => {
     if (Array.isArray(codeLines)) {
         return codeLines.map(renderCodeLines).join('\n')
     }

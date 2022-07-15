@@ -12,13 +12,14 @@
 import { NODE_BUILDERS } from '@webpd/dsp-graph'
 import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'
-import { CompilerSettings, NodeImplementations, PortsNames } from './types'
+import { Code, CompilerSettings, NodeImplementations, JavaScriptEngine } from './types'
 import {
     generateInletVariableName,
     generateOutletVariableName,
     generateStateVariableName,
 } from './variable-names'
 import { renderCode } from './code-helpers'
+import asc from 'assemblyscript/asc'
 
 interface NodeSummary {
     type: PdDspGraph.Node['type']
@@ -30,33 +31,68 @@ type GenericInletValue =
     | PdSharedTypes.SignalValue
     | Array<PdSharedTypes.ControlValue>
 
+export const round = (v: number, decimals: number = 3) => 
+    Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals)
+
+export const compileAssemblyScript = async (code: Code) => {
+    const { error, binary, stderr } = await asc.compileString(code, {
+        optimizeLevel: 3,
+        runtime: "stub",
+        exportRuntime: true,
+    })
+    if (error) {
+        throw new Error(stderr.toString())
+    }
+
+    const wasmModule = await WebAssembly.instantiate(binary.buffer, {
+        env: {
+            // memory,
+            abort: function() {},
+            seed() {
+                // ~lib/builtins/seed() => f64
+                return (() => {
+                  // @external.js
+                  return Date.now() * Math.random()
+                })()
+            },
+            // log: function(a) { console.log(a) }
+            // "console.log"(pointer: number) {
+            //     // ~lib/bindings/dom/console.log(~lib/string/String) => void
+            //     const text = liftString(wasmModule.instance.exports as any, pointer);
+            //     console.log(text);
+            // },
+        },
+    })
+    return wasmModule
+}
+
 const setNodeInlet = (
-    processor: PdEngine.SignalProcessor,
+    engine: JavaScriptEngine,
     nodeId: PdDspGraph.NodeId,
     inletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)
-    processor.ports[PortsNames.SET_VARIABLE](inletVariableName, value)
+    engine.ports[`write_${inletVariableName}`](value)
 }
 
 const setNodeOutlet = (
-    processor: PdEngine.SignalProcessor,
+    engine: JavaScriptEngine,
     nodeId: PdDspGraph.NodeId,
     outletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const outletVariableName = generateOutletVariableName(nodeId, outletId)
-    processor.ports[PortsNames.SET_VARIABLE](outletVariableName, value)
+    engine.ports[`write_${outletVariableName}`](value)
 }
 
 const getNodeState = (
-    processor: PdEngine.SignalProcessor,
+    engine: JavaScriptEngine,
     nodeId: PdDspGraph.NodeId,
     name: string
 ) => {
     const variableName = generateStateVariableName(nodeId, name)
-    return processor.ports[PortsNames.GET_VARIABLE](variableName)
+    return engine.ports[`read_${variableName}`]()
 }
 
 type Frame = {
@@ -138,7 +174,7 @@ export const generateFramesForNode = (
         fakeSourceNode,
     }
 
-    // --------------- Generating implementation for testing recorder & processor
+    // --------------- Generating implementation for testing recorder & engine
     const nodeImplementations: NodeImplementations = {
         ...NODE_IMPLEMENTATIONS,
         // This is a dummy node, it's only useful to fake connections
@@ -148,18 +184,19 @@ export const generateFramesForNode = (
         },
         'recorder-node': {
             // Generate one memory variable per outlet of test node
-            setup: (_, { state }) =>
-                renderCode`${Object.keys(recorderNode.inlets).map(
-                    (inletId) => `let ${state['mem' + inletId]} = null`
+            setup: (_, { state, MACROS }) =>
+                renderCode`${Object.values(recorderNode.inlets).map(
+                    (inlet) => inlet.type === "signal" ? 
+                        MACROS.declareFloat(state['mem' + inlet.id], 0): 
+                        MACROS.declareMessageArray(state['mem' + inlet.id])
                 )}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.
             loop: (_, { state, ins }) =>
-                renderCode`${Object.keys(recorderNode.inlets).map(
-                    (inletId) =>
-                        `${state['mem' + inletId]} = ${ins[inletId]}.slice ? ${
-                            ins[inletId]
-                        }.slice(0) : ${ins[inletId]}`
+                renderCode`${Object.values(recorderNode.inlets).map(
+                    (inlet) => inlet.type === "signal" ? 
+                        `${state['mem' + inlet.id]} = ${ins[inlet.id]}`:
+                        `${state['mem' + inlet.id]} = ${ins[inlet.id]}.slice(0)`
                 )}`,
             stateVariables: Object.keys(recorderNode.inlets).map(
                 (inletId) => 'mem' + inletId
@@ -167,36 +204,57 @@ export const generateFramesForNode = (
         },
     }
 
-    const code = compile(graph, nodeImplementations, COMPILER_SETTINGS)
-    const processor = new Function(code)()
+    // Create ports to access variables 
+    const ports: CompilerSettings["ports"] = {}
+    inputFrames.map((inputFrame) => {
+        Object.keys(inputFrame).forEach(inletId => {
+            const inlet = testNode.inlets[inletId]
+            const portType = inlet.type === 'signal' ? 'float': 'messages'
+            const inletVariableName = generateInletVariableName(testNode.id, inletId)
+            ports[inletVariableName] = {access: 'w', type: portType}
+            const outletVariableName = generateOutletVariableName(fakeSourceNode.id, inletId)
+            ports[outletVariableName] = {access: 'w', type: portType}
+        })
+        Object.entries(recorderNode.inlets).forEach(([inletId, inlet]) => {
+            const variableName = generateStateVariableName(recorderNode.id, 'mem' + inletId)
+            ports[variableName] = {access: 'r', type: inlet.type === 'signal' ? 'float': 'messages'}
+        })
+    })
+
+    const code = compile(graph, nodeImplementations, {
+        ...COMPILER_SETTINGS,
+        ports
+    })
+    const engine = new Function(code)()
+
     // blockSize = 1
-    processor.configure(1)
+    engine.configure(1)
 
     // --------------- Generate frames
     const outputFrames: Array<Frame> = []
     inputFrames.map((inputFrame) => {
         Object.entries(inputFrame).forEach(([inletId, value]) => {
             // We set the inlets with our simulation values.
-            setNodeInlet(processor, testNode.id, inletId, value)
+            setNodeInlet(engine, testNode.id, inletId, value)
 
             // We set the outlets of fake source node, because if inlets are connected,
             // the loop will copy over simulation values set just above.
             // !!! setting value is done by reference, so we need to copy the array
             // to not assign the same the inlet
             setNodeOutlet(
-                processor,
+                engine,
                 fakeSourceNode.id,
                 inletId,
                 Array.isArray(value) ? value.slice(0) : value
             )
         })
 
-        processor.loop()
+        engine.loop()
 
         const outputFrame: Frame = {}
         Object.keys(recorderNode.inlets).forEach((inletId) => {
             outputFrame[inletId] = getNodeState(
-                processor,
+                engine,
                 recorderNode.id,
                 'mem' + inletId
             )

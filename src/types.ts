@@ -1,25 +1,73 @@
-export enum PortsNames {
-    SET_VARIABLE = 'setVariable',
-    GET_VARIABLE = 'getVariable',
+import { ArrayBufferOfIntegersPointer, InternalPointer, StringPointer } from "./macros/assemblyscript-types"
+
+// Code stored in string variable for later evaluation.
+export type Code = string
+
+// Name of a variable in generated code
+export type CodeVariableName = string
+
+// JavaScript Code that allows to create a JavaScriptEngine when evaled
+export type JavaScriptEngineCode = Code
+export interface JavaScriptEngine {
+    configure: (blockSize: number) => void
+    loop: () => Float32Array
+    ports: { [portName: string]: (...args: any) => any }
+}
+
+// AssemblyScript Code that allows to create an AssemblyScriptWasmEngine when compiled 
+// with the AssemblyScript compiler
+export type AssemblyScriptEngineCode = Code
+export interface AssemblyScriptWasmEngine {
+    configure: (blockSize: number) => void
+    loop: () => Float32Array
+    memory: WebAssembly.Memory
+    
+    MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
+    MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
+
+    createMessage: (templatePointer: ArrayBufferOfIntegersPointer) => InternalPointer
+    getMessageDatumTypes: (messagePointer: InternalPointer) => ArrayBufferOfIntegersPointer
+    createMessageArray: () => InternalPointer
+    pushMessageToArray: (messageArrayPointer: InternalPointer, messagePointer: InternalPointer) => void
+    writeStringDatum: (
+        messagePointer: InternalPointer,
+        datumIndex: number,
+        stringPointer: StringPointer,
+    ) => void
+    writeFloatDatum: (
+        messagePointer: InternalPointer,
+        datumIndex: number,
+        value: number,
+    ) => void
+    readStringDatum: (
+        messagePointer: InternalPointer, 
+        datumIndex: number,
+    ) => StringPointer
+    readFloatDatum: (
+        messagePointer: InternalPointer, 
+        datumIndex: number,
+    ) => number
 }
 
 export interface CodeMacros {
-    declareInt: (name: PdEngine.CodeVariableName, value: number | string) => PdEngine.Code,
-    declareIntConst: (name: PdEngine.CodeVariableName, value: number | string) => PdEngine.Code,
-    declareSignal: (name: PdEngine.CodeVariableName, value: number | string) => PdEngine.Code,
-    declareMessageArray: (name: PdEngine.CodeVariableName) => PdEngine.Code,
-    fillInLoopOutput: (channel: number, value: PdEngine.CodeVariableName) => PdEngine.Code,
+    declareInt: (name: CodeVariableName, value: number | string) => Code
+    declareIntConst: (name: CodeVariableName, value: number | string) => Code
+    declareFloat: (name: CodeVariableName, value: number | string) => Code
+    declareFloatArray: (name: CodeVariableName, size: number) => Code
+    declareMessageArray: (name: CodeVariableName) => Code
+    fillInLoopOutput: (channel: number, value: CodeVariableName) => Code
 }
 
 export interface NodeVariableNames {
-    ins: { [portletId: PdDspGraph.PortletId]: PdEngine.CodeVariableName }
-    outs: { [portletId: PdDspGraph.PortletId]: PdEngine.CodeVariableName }
-    state: { [key: string]: PdEngine.CodeVariableName }
+    ins: { [portletId: PdDspGraph.PortletId]: CodeVariableName }
+    outs: { [portletId: PdDspGraph.PortletId]: CodeVariableName }
+    state: { [key: string]: CodeVariableName }
 }
 
 export interface VariableNames {
     // Namespace for individual nodes
     n: { [nodeId: PdDspGraph.NodeId]: NodeVariableNames }
+
     // Namespace for global variables
     g: {
         arrays: string
@@ -33,13 +81,13 @@ export interface VariableNames {
 
 export type VariableNameGenerator = (
     localVariableName: string
-) => PdEngine.CodeVariableName
+) => CodeVariableName
 
 export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
     variableNames: NodeVariableNames & { globs: VariableNames['g'], MACROS: CodeMacros },
     settings: CompilerSettings
-) => PdEngine.Code
+) => Code
 
 export interface NodeImplementation {
     setup: NodeCodeGenerator
@@ -49,15 +97,27 @@ export interface NodeImplementation {
 
 export type NodeImplementations = { [nodeType: string]: NodeImplementation }
 
-interface BaseCompilerSettings extends PdEngine.Settings {
+interface BaseCompilerSettings {
+    sampleRate: number
+    channelCount: number
     // Name of variable that olds the collection of data arrays
     // so they can be made accessible to nodes that need them.
-    arraysVariableName: PdEngine.CodeVariableName
+    arraysVariableName: CodeVariableName
+}
+
+interface CompilerOptions {
+    // Ports allowing to read / write variables from the engine
+    ports: {[variableName: CodeVariableName]: {
+        access: 'r' | 'w' | 'rw',
+        type: 'float' | 'messages'
+    }}
 }
 
 interface AssemblyScriptCompilerOptions {
     bitDepth: 32 | 64
 }
+
+interface JavaScriptCompilerOptions {}
 
 interface BaseAssemblyScriptCompilerSettings extends BaseCompilerSettings {
     target: 'assemblyscript'
@@ -67,10 +127,28 @@ interface BaseJavaScriptCompilerSettings extends BaseCompilerSettings {
     target: 'javascript'
 }
 
-type AssemblyScriptCompilerSettings = BaseAssemblyScriptCompilerSettings & Partial<AssemblyScriptCompilerOptions>
-type JavaScriptCompilerSettings = BaseJavaScriptCompilerSettings
-export type CompilerSettings = AssemblyScriptCompilerSettings | JavaScriptCompilerSettings
+type AssemblyScriptCompilerSettings = 
+    BaseAssemblyScriptCompilerSettings 
+    & Partial<AssemblyScriptCompilerOptions> 
+    & Partial<CompilerOptions>
+type JavaScriptCompilerSettings = 
+    BaseJavaScriptCompilerSettings 
+    & Partial<JavaScriptCompilerOptions> 
+    & Partial<CompilerOptions>
 
-export type AssemblyScriptCompilerSettingsWithDefaults = BaseAssemblyScriptCompilerSettings & AssemblyScriptCompilerOptions
-export type JavaScriptCompilerSettingsWithDefaults = JavaScriptCompilerSettings
-export type CompilerSettingsWithDefaults = AssemblyScriptCompilerSettingsWithDefaults | JavaScriptCompilerSettingsWithDefaults
+// External type of settings passed to the compilation by library user
+export type CompilerSettings = 
+    AssemblyScriptCompilerSettings | JavaScriptCompilerSettings
+
+export type AssemblyScriptCompilerSettingsWithDefaults = 
+    BaseAssemblyScriptCompilerSettings 
+    & AssemblyScriptCompilerOptions
+    & CompilerOptions
+export type JavaScriptCompilerSettingsWithDefaults = 
+    BaseJavaScriptCompilerSettings 
+    & JavaScriptCompilerOptions
+    & CompilerOptions
+
+// Internal type of setting after validation and settings defaults
+export type CompilerSettingsWithDefaults = 
+    AssemblyScriptCompilerSettingsWithDefaults | JavaScriptCompilerSettingsWithDefaults

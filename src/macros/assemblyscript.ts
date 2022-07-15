@@ -10,23 +10,29 @@
  */
 
 import { Compilation } from "../compilation"
-import { AssemblyScriptCompilerSettingsWithDefaults } from "../types"
+import { AssemblyScriptCompilerSettingsWithDefaults, CodeVariableName } from "../types"
 
-const declareInt = (_: Compilation, name: PdEngine.CodeVariableName, value: number | string) => 
+const declareInt = (_: Compilation, name: CodeVariableName, value: number | string) => 
     `let ${name}: i32 = i32(${value.toString()})`
 
-const declareIntConst = (_: Compilation, name: PdEngine.CodeVariableName, value: number | string) => 
+const declareIntConst = (_: Compilation, name: CodeVariableName, value: number | string) => 
     `const ${name}: i32 = i32(${value.toString()})`
 
-const declareSignal = (compilation: Compilation, name: PdEngine.CodeVariableName, value: number | string) => {
+const declareFloat = (compilation: Compilation, name: CodeVariableName, value: number | string) => {
     const settings = compilation.settings as AssemblyScriptCompilerSettingsWithDefaults
     return `let ${name}: f${settings.bitDepth} = ${value.toString()}`
 }
 
-const declareMessageArray = (_: Compilation, name: PdEngine.CodeVariableName) => 
+const declareFloatArray = (compilation: Compilation, name: CodeVariableName, size: number) => {
+    const settings = compilation.settings as AssemblyScriptCompilerSettingsWithDefaults
+    const FloatArrayType = settings.bitDepth === 32 ? 'Float32Array': 'Float64Array'
+    return `let ${name}: ${FloatArrayType} = new ${FloatArrayType}(${size})`
+}
+
+const declareMessageArray = (_: Compilation, name: CodeVariableName) => 
     `let ${name}: Message[] = []`
 
-const fillInLoopOutput = (compilation: Compilation, channel: number, value: PdEngine.CodeVariableName) => {
+const fillInLoopOutput = (compilation: Compilation, channel: number, value: CodeVariableName) => {
     const globs = compilation.variableNames.g
     return `${globs.output}[${globs.iterFrame} + ${globs.blockSize} * ${channel}] = ${value}`
 }
@@ -34,7 +40,8 @@ const fillInLoopOutput = (compilation: Compilation, channel: number, value: PdEn
 const MACROS = {
     declareInt,
     declareIntConst,
-    declareSignal,
+    declareFloat,
+    declareFloatArray,
     declareMessageArray,
     fillInLoopOutput,
 }

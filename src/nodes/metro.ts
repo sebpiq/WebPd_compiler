@@ -20,9 +20,9 @@ export const setup: NodeCodeGenerator = (
     // TODO : more complex ways to set rate
     // Time units are all expressed in frames here
     `
-        ${MACROS.declareSignal(state.rate, 0)}
-        ${MACROS.declareSignal(state.nextTick, -1)}
-        ${MACROS.declareSignal(state.realNextTick, -1)}
+        ${MACROS.declareFloat(state.rate, 0)}
+        ${MACROS.declareFloat(state.nextTick, -1)}
+        ${MACROS.declareFloat(state.realNextTick, -1)}
 
         const ${state.funcSetRate} = (rate) => {
             ${state.rate} = rate / 1000 * ${sampleRate}

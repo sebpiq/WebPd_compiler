@@ -13,7 +13,7 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = (node, { state, ins, globs, MACROS }) => `
-    let ${state.array} = new Float32Array(0)
+    ${MACROS.declareFloatArray(state.array, 0)}
     ${MACROS.declareInt(state.readPosition, 0)}
     ${MACROS.declareInt(state.readUntil, 0)}
 

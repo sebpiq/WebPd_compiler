@@ -10,8 +10,8 @@
  */
 
 import { traversal, getters } from '@webpd/dsp-graph'
-import { CompilerSettings } from './types'
-import { NodeImplementations, PortsNames } from './types'
+import { CompilerSettings, JavaScriptEngineCode, AssemblyScriptEngineCode, Code } from './types'
+import { NodeImplementations } from './types'
 import { Compilation } from './compilation'
 import { renderCode } from './code-helpers'
 
@@ -19,7 +19,7 @@ export default (
     graph: PdDspGraph.Graph,
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
-): PdEngine.SignalProcessorCode => {
+): JavaScriptEngineCode | AssemblyScriptEngineCode => {
     const compilation = new Compilation(
         graph,
         nodeImplementations,
@@ -30,11 +30,12 @@ export default (
 
 export const compile = (
     compilation: Compilation
-): PdEngine.SignalProcessorCode => {
+): JavaScriptEngineCode | AssemblyScriptEngineCode => {
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
 
     if (compilation.settings.target === 'javascript') {
+        const {ports} = compilation.settings
         // !!! The `SET_VARIABLE` port passes values by reference, therefore calling it twice on several
         // variables with the same array as `variableValue` for example might have unexpected effects.
         return renderCode`
@@ -43,8 +44,8 @@ export const compile = (
             ${compileSetup(compilation, graphTraversal)}
 
             return {
-                configure: (aBlockSize) => {
-                    ${globs.blockSize} = aBlockSize
+                configure: (blockSize) => {
+                    ${globs.blockSize} = blockSize
                 },
                 loop: (${globs.output}) => {
                     for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
@@ -53,24 +54,35 @@ export const compile = (
                     }
                 },
                 ports: {
-                    ${PortsNames.GET_VARIABLE}: (variableName) => {
-                        return eval(variableName)
-                    },
-                    ${PortsNames.SET_VARIABLE}: (variableName, variableValue) => {
-                        eval(variableName + ' = variableValue')
-                    }
+                    ${Object.entries(ports).map(([variableName, spec]) => {
+                        const portsCode: Array<Code> = []
+                        if (spec.access.includes('r')) {
+                            portsCode.push(`read_${variableName}: () => ${variableName},`)
+                        }
+                        if (spec.access.includes('w')) {
+                            portsCode.push(`write_${variableName}: (value) => ${variableName} = value,`)
+                        }
+                        return portsCode
+                    })}
                 }
             }
         `
     } else if (compilation.settings.target === 'assemblyscript') {
+        const {channelCount, bitDepth, ports} = compilation.settings
+        const MACROS = compilation.getMacros()
+        const FloatArrayType = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
+        const FloatType = bitDepth === 32 ? 'f32' : 'f64'
+
         return renderCode`
-            let ${globs.output}: Float64Array
+            type Message = DataView
+
+            ${MACROS.declareFloatArray(globs.output, 0)}
         
             ${compileSetup(compilation, graphTraversal)}
 
-            export function configure(aBlockSize: i32): Float64Array {
-                ${globs.blockSize} = aBlockSize
-                ${globs.output} = new Float64Array(${globs.blockSize} * ${compilation.settings.channelCount.toString()})
+            export function configure(blockSize: i32): ${FloatArrayType} {
+                ${globs.blockSize} = blockSize
+                ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
                 return ${globs.output}
             }
 
@@ -80,6 +92,41 @@ export const compile = (
                     ${compileLoop(compilation, graphTraversal)}
                 }
             }
+
+            ${Object.entries(ports).map(([variableName, spec]) => {
+                const portsCode: Array<Code> = []
+                if (spec.access.includes('r')) {
+                    if (spec.type === 'float') {
+                        portsCode.push(`
+                            export function read_${variableName}(): ${FloatType} { 
+                                return ${variableName} 
+                            }
+                        `)
+                    } else {
+                        portsCode.push(`
+                            export function read_${variableName}(): Message[] { 
+                                return ${variableName} 
+                            }
+                        `)
+                    }
+                }
+                if (spec.access.includes('w')) {
+                    if (spec.type === 'float') {
+                        portsCode.push(`
+                            export function write_${variableName}(value: ${FloatType}): void { 
+                                ${variableName} = value
+                            }
+                        `)
+                    } else {
+                        portsCode.push(`
+                            export function write_${variableName}(messages: Message[]): void { 
+                                ${variableName} = messages
+                            }
+                        `)
+                    }
+                }
+                return portsCode
+            })}
         `
     }
 }
@@ -87,7 +134,7 @@ export const compile = (
 export const compileSetup = (
     compilation: Compilation,
     graphTraversal: PdDspGraph.GraphTraversal
-): PdEngine.Code => {
+): Code => {
     const globs = compilation.variableNames.g
     const MACROS = compilation.getMacros()
     return renderCode`
@@ -102,12 +149,12 @@ export const compileSetup = (
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'control'
                         ? `${MACROS.declareMessageArray(ins[inlet.id])}`
-                        : `${MACROS.declareSignal(ins[inlet.id], 0)}`
+                        : `${MACROS.declareFloat(ins[inlet.id], 0)}`
                 ),
                 Object.values(node.outlets).map((outlet) =>
                     outlet.type === 'control'
                         ? `${MACROS.declareMessageArray(outs[outlet.id])}`
-                        : `${MACROS.declareSignal(outs[outlet.id], 0)}`
+                        : `${MACROS.declareFloat(outs[outlet.id], 0)}`
                 ),
                 compilation.getNodeImplementation(node.type).setup(
                     node,
@@ -126,7 +173,7 @@ export const compileSetup = (
 export const compileLoop = (
     compilation: Compilation,
     graphTraversal: PdDspGraph.GraphTraversal
-): PdEngine.Code => {
+): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const globs = compilation.variableNames.g
     return renderCode`${[

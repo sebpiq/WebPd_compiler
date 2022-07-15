@@ -1,15 +1,27 @@
 import assert from 'assert'
 import compile, { compileLoop, compileSetup } from './compile'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { NodeImplementations, PortsNames, CompilerSettings } from './types'
+import { NodeImplementations, CompilerSettings, JavaScriptEngine, AssemblyScriptWasmEngine } from './types'
 import { Compilation } from './compilation'
+import { compileAssemblyScript, round } from './test-helpers'
+import {jest} from '@jest/globals'
 
 describe('compile', () => {
-    const COMPILER_SETTINGS: CompilerSettings = {
+    jest.setTimeout(10000)
+
+    const COMPILER_SETTINGS_JS: CompilerSettings = {
         sampleRate: 44100,
         channelCount: 2,
         arraysVariableName: 'ARRAYS',
         target: 'javascript'
+    }
+
+    const COMPILER_SETTINGS_AS: CompilerSettings = {
+        sampleRate: 44100,
+        channelCount: 2,
+        arraysVariableName: 'ARRAYS',
+        target: 'assemblyscript',
+        bitDepth: 32
     }
 
     const normalizeCode = (rawCode: string) => {
@@ -21,132 +33,309 @@ describe('compile', () => {
     }
 
     describe('default', () => {
-        it('should compile the full function as a string', () => {
-            const nodeImplementations: NodeImplementations = {
-                'osc~': {
-                    setup: () => `// [osc~] setup`,
-                    loop: () => `// [osc~] loop`,
-                },
-                'dac~': {
-                    setup: () => `// [dac~] setup`,
-                    loop: () => `// [dac~] loop`,
-                },
-            }
+        
+        const NODE_IMPLEMENTATIONS: NodeImplementations = {
+            'osc~': {
+                setup: () => `// [osc~] setup`,
+                loop: () => `// [osc~] loop`,
+            },
+            'dac~': {
+                setup: () => `// [dac~] setup`,
+                loop: () => `// [dac~] loop`,
+            },
+        }
 
-            const graph = makeGraph({
-                osc: {
-                    type: 'osc~',
-                    args: {
-                        frequency: 440,
+        describe('target: javascript', () => {
+
+            it('should compile the full function as a string', () => {
+                const graph = makeGraph({
+                    osc: {
+                        type: 'osc~',
+                        args: {
+                            frequency: 440,
+                        },
+                        sinks: {
+                            0: [['dac', '0']],
+                        },
+                        inlets: {
+                            '0_control': { id: '0_control', type: 'control' },
+                        },
+                        outlets: { '0': { id: '0', type: 'signal' } },
                     },
-                    sinks: {
-                        0: [['dac', '0']],
+                    dac: {
+                        type: 'dac~',
+                        inlets: {
+                            '0': { id: '0', type: 'signal' },
+                            '1': { id: '1', type: 'signal' },
+                        },
+                        isEndSink: true,
                     },
-                    inlets: {
-                        '0_control': { id: '0_control', type: 'control' },
-                    },
-                    outlets: { '0': { id: '0', type: 'signal' } },
-                },
-                dac: {
-                    type: 'dac~',
-                    inlets: {
-                        '0': { id: '0', type: 'signal' },
-                        '1': { id: '1', type: 'signal' },
-                    },
-                    isEndSink: true,
-                },
+                })
+    
+                const code = compile(graph, NODE_IMPLEMENTATIONS, COMPILER_SETTINGS_JS)
+    
+                assert.strictEqual(
+                    normalizeCode(code),
+                    normalizeCode(`
+                    const isNumber = (v) => typeof v === 'number'
+                    let F = 0
+                    let O = 0
+                    let FRAME = -1
+                    let BLOCK_SIZE = 0
+                    
+                    let osc_INS_0_control = []
+                    let osc_OUTS_0 = 0
+                    // [osc~] setup
+                    
+                    let dac_INS_0 = 0
+                    let dac_INS_1 = 0
+                    // [dac~] setup
+    
+                    return {
+                        configure: (blockSize) => {
+                            BLOCK_SIZE = blockSize
+                        },
+                        loop: (OUTPUT) => {
+                            for (F = 0; F < BLOCK_SIZE; F++) {
+                                FRAME++
+                                // [osc~] loop
+                                dac_INS_0 = osc_OUTS_0
+                                // [dac~] loop
+    
+                                if (osc_INS_0_control.length) {
+                                    osc_INS_0_control = []
+                                }
+                            }
+                        },
+                        ports: {
+                        }
+                    }
+                `)
+                )
             })
+    
+            it('should create the specified ports', () => {
+                const code = compile({}, NODE_IMPLEMENTATIONS, {
+                    ...COMPILER_SETTINGS_JS,
+                    ports: {
+                        'bla': {access: 'r', type: 'float'},
+                        'blo': {access: 'w', type: 'messages'},
+                        'bli': {access: 'rw', type: 'float'},
+                        'blu': {access: 'rw', type: 'messages'},
+                    }
+                })
+                const engine: JavaScriptEngine = new Function(`
+                    let bla = 1
+                    let blo = [['bang']]
+                    let bli = 2
+                    let blu = [[123.123, 'bang']]
+                    ${code}
+                `)()
+              
 
-            const code = compile(graph, nodeImplementations, COMPILER_SETTINGS)
+                assert.deepStrictEqual(
+                    Object.keys(engine.ports), 
+                    ['read_bla', 'write_blo', 'read_bli', 'write_bli', 'read_blu', 'write_blu']
+                )
 
-            assert.strictEqual(
-                normalizeCode(code),
-                normalizeCode(`
-                const isNumber = (v) => typeof v === 'number'
-                let F = 0
-                let O = 0
-                let FRAME = -1
-                let BLOCK_SIZE = 0
-                
-                let osc_INS_0_control = []
-                let osc_OUTS_0 = 0
-                // [osc~] setup
-                
-                let dac_INS_0 = 0
-                let dac_INS_1 = 0
-                // [dac~] setup
+                assert.strictEqual(engine.ports.read_bla(), 1)
 
-                return {
-                    configure: (aBlockSize) => {
-                        BLOCK_SIZE = aBlockSize
+                assert.strictEqual(engine.ports.read_bli(), 2)
+                engine.ports.write_bli(666.666)
+                assert.strictEqual(engine.ports.read_bli(), 666.666)
+
+                const blu = engine.ports.read_blu()
+                assert.deepStrictEqual(blu, [[123.123, 'bang']])
+                blu.push(['I am blu'])
+                assert.deepStrictEqual(engine.ports.read_blu(), [[123.123, 'bang'], ['I am blu']])
+                engine.ports.write_blu([['blurg']])
+                assert.deepStrictEqual(engine.ports.read_blu(), [['blurg']])
+            })
+    
+            it('should be a JavaScript engine when evaled', () => {
+                const graph = makeGraph({
+                    osc: {
+                        type: 'osc~',
+                        args: {
+                            frequency: 440,
+                        },
+                        inlets: {
+                            '0_control': { id: '0_control', type: 'control' },
+                        },
+                        outlets: { '0': { id: '0', type: 'signal' } },
                     },
-                    loop: (OUTPUT) => {
+                })
+    
+                const code = compile(graph, NODE_IMPLEMENTATIONS, COMPILER_SETTINGS_JS)
+    
+                const modelEngine: JavaScriptEngine = {
+                    configure: (_: number) => {},
+                    loop: () => new Float32Array(),
+                    ports: {},
+                }
+    
+                const engine = new Function(code)()
+    
+                assert.deepStrictEqual(
+                    Object.keys(engine),
+                    Object.keys(modelEngine)
+                )
+            })
+        })
+    
+        describe('target: assemblyscript', () => {
+            it('should compile the full function as a string', () => {
+                const nodeImplementations: NodeImplementations = {
+                    'osc~': {
+                        setup: () => `// [osc~] setup`,
+                        loop: () => `// [osc~] loop`,
+                    },
+                    'dac~': {
+                        setup: () => `// [dac~] setup`,
+                        loop: () => `// [dac~] loop`,
+                    },
+                }
+    
+                const graph = makeGraph({
+                    osc: {
+                        type: 'osc~',
+                        args: {
+                            frequency: 440,
+                        },
+                        sinks: {
+                            0: [['dac', '0']],
+                        },
+                        inlets: {
+                            '0_control': { id: '0_control', type: 'control' },
+                        },
+                        outlets: { '0': { id: '0', type: 'signal' } },
+                    },
+                    dac: {
+                        type: 'dac~',
+                        inlets: {
+                            '0': { id: '0', type: 'signal' },
+                            '1': { id: '1', type: 'signal' },
+                        },
+                        isEndSink: true,
+                    },
+                })
+    
+                const code = compile(graph, nodeImplementations, COMPILER_SETTINGS_AS)
+    
+                assert.strictEqual(
+                    normalizeCode(code),
+                    normalizeCode(`
+                    let OUTPUT: Float32Array = new Float32Array(0)
+                    let F: i32 = i32(0)
+                    let O: i32 = i32(0)
+                    let FRAME: i32 = i32(-1)
+                    let BLOCK_SIZE: i32 = i32(0)            
+                    
+                    let osc_INS_0_control: Message[] = []
+                    let osc_OUTS_0: f32 = 0
+                    // [osc~] setup
+                    
+                    let dac_INS_0: f32 = 0
+                    let dac_INS_1: f32 = 0
+                    // [dac~] setup
+    
+                    export function configure(blockSize: i32): Float32Array {
+                        BLOCK_SIZE = blockSize
+                        OUTPUT = new Float32Array(BLOCK_SIZE * 2)
+                        return OUTPUT                
+                    }
+    
+                    export function loop(): void {
                         for (F = 0; F < BLOCK_SIZE; F++) {
                             FRAME++
                             // [osc~] loop
                             dac_INS_0 = osc_OUTS_0
                             // [dac~] loop
-
+    
                             if (osc_INS_0_control.length) {
                                 osc_INS_0_control = []
                             }
                         }
-                    },
-                    ports: {
-                        getVariable: (variableName) => {
-                            return eval(variableName)
-                        },
-                        setVariable: (variableName, variableValue) => {
-                            eval(variableName + ' = variableValue')
-                        }
                     }
-                }
-            `)
-            )
-        })
+                `)
+                )
+            })
+    
+            it('should create the specified ports', async () => {
+                const code = compile({}, NODE_IMPLEMENTATIONS, {
+                    ...COMPILER_SETTINGS_AS,
+                    ports: {
+                        'bla': {access: 'r', type: 'float'},
+                        // 'blo': {access: 'w', type: 'messages'},
+                        'bli': {access: 'rw', type: 'float'},
+                        // 'blu': {access: 'rw', type: 'messages'},
+                    }
+                })
+                const module = await compileAssemblyScript(`
+                    let bla: f32 = 1
+                    // let blo: Message[] = [['bang']]
+                    let bli: f32 = 2
+                    // let blu: Message[] = [[123.123, 'bang']]
+                    ${code}
+                `)
+                const moduleExports = (module as any).instance.exports
+                // assert.deepStrictEqual(
+                //     Object.keys(moduleExports), 
+                //     ['loop', 'configure', 'read_bla', 'write_blo', 'read_bli', 'write_bli', 'read_blu', 'write_blu']
+                // )
 
-        it('should be a signal processor', () => {
-            const nodeImplementations: NodeImplementations = {
-                'osc~': {
-                    setup: () => `// [osc~] setup`,
-                    loop: () => `// [osc~] loop`,
-                },
-            }
+                assert.strictEqual(moduleExports.read_bla(), 1)
 
-            const graph = makeGraph({
-                osc: {
-                    type: 'osc~',
-                    args: {
-                        frequency: 440,
-                    },
-                    inlets: {
-                        '0_control': { id: '0_control', type: 'control' },
-                    },
-                    outlets: { '0': { id: '0', type: 'signal' } },
-                },
+                assert.strictEqual(moduleExports.read_bli(), 2)
+                moduleExports.write_bli(666.666)
+                assert.strictEqual(round(moduleExports.read_bli()), 666.666)
+
+                // assert.deepStrictEqual(moduleExports.read_blu(), [[123.123, 'bang']])
+                // moduleExports.write_blu([['blurg']])
+                // assert.deepStrictEqual(moduleExports.read_blu(), [['blurg']])
             })
 
-            const code = compile(graph, nodeImplementations, COMPILER_SETTINGS)
-
-            const modelProcessor: PdEngine.SignalProcessor = {
-                configure: (_: number) => {},
-                loop: () => new Float32Array(),
-                ports: {
-                    [PortsNames.GET_VARIABLE]: () => null,
-                    [PortsNames.SET_VARIABLE]: () => null,
-                },
-            }
-
-            const processor = new Function(code)()
-
-            assert.deepStrictEqual(
-                Object.keys(processor),
-                Object.keys(modelProcessor)
-            )
-            assert.deepStrictEqual(
-                Object.keys(processor.ports),
-                Object.keys(modelProcessor.ports)
-            )
+            it('should be a wasm engine when compiled', async () => {
+                const nodeImplementations: NodeImplementations = {
+                    'osc~': {
+                        setup: () => `// [osc~] setup`,
+                        loop: () => `// [osc~] loop`,
+                    },
+                }
+    
+                const graph = makeGraph({
+                    osc: {
+                        type: 'osc~',
+                        args: {
+                            frequency: 440,
+                        },
+                        inlets: {
+                            '0_control': { id: '0_control', type: 'control' },
+                        },
+                        outlets: { '0': { id: '0', type: 'signal' } },
+                    },
+                })
+    
+                const code = compile(graph, nodeImplementations, COMPILER_SETTINGS_AS)
+    
+                const modelModule: AssemblyScriptWasmEngine = {
+                    configure: (_: number) => {},
+                    loop: () => new Float32Array(),
+                    memory: new WebAssembly.Memory({initial: 128}),
+                    createMessage: () => 0,
+                    createMessageArray: () => 0,
+                    pushMessageToArray: (_: number, __: number) => undefined,
+                    MESSAGE_DATUM_TYPE_FLOAT: new WebAssembly.Global(0 as any),
+                    MESSAGE_DATUM_TYPE_STRING: new WebAssembly.Global(0 as any),
+                }
+    
+                const module = await compileAssemblyScript(code)
+                
+                assert.deepStrictEqual(
+                    Object.keys((module as any).instance.exports),
+                    Object.keys(modelModule)
+                )
+            })
         })
     })
 
@@ -190,7 +379,7 @@ describe('compile', () => {
             const compilation = new Compilation(
                 graph,
                 nodeImplementations,
-                COMPILER_SETTINGS
+                COMPILER_SETTINGS_JS
             )
 
             const setup = compileSetup(compilation, [graph.osc, graph.dac])
@@ -289,7 +478,7 @@ describe('compile', () => {
             const compilation = new Compilation(
                 graph,
                 NODE_IMPLEMENTATIONS,
-                COMPILER_SETTINGS
+                COMPILER_SETTINGS_JS
             )
 
             const loop = compileLoop(compilation, [
@@ -373,7 +562,7 @@ describe('compile', () => {
             const compilation = new Compilation(
                 graph,
                 NODE_IMPLEMENTATIONS,
-                COMPILER_SETTINGS
+                COMPILER_SETTINGS_JS
             )
 
             const loop = compileLoop(compilation, [
@@ -439,7 +628,7 @@ describe('compile', () => {
             const compilation = new Compilation(
                 graph,
                 NODE_IMPLEMENTATIONS,
-                COMPILER_SETTINGS
+                COMPILER_SETTINGS_JS
             )
 
             const loop = compileLoop(compilation, [graph.osc, graph.dac])

@@ -18,7 +18,7 @@ import { generateInletVariableName, generateOutletVariableName, generateStateVar
 export class Compilation {
     readonly graph: PdDspGraph.Graph
     readonly nodeImplementations: NodeImplementations
-    readonly settings: CompilerSettings
+    readonly settings: CompilerSettingsWithDefaults
     readonly variableNames: VariableNames
 
     constructor(
@@ -66,7 +66,8 @@ export class Compilation {
         return {
             declareInt: unwrappedMacros.declareInt.bind(undefined, this),
             declareIntConst: unwrappedMacros.declareIntConst.bind(undefined, this),
-            declareSignal: unwrappedMacros.declareSignal.bind(undefined, this),
+            declareFloat: unwrappedMacros.declareFloat.bind(undefined, this),
+            declareFloatArray: unwrappedMacros.declareFloatArray.bind(undefined, this),
             declareMessageArray: unwrappedMacros.declareMessageArray.bind(undefined, this),
             fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(undefined, this),
         }
@@ -82,6 +83,7 @@ export class Compilation {
 }
 
 export const validateSettings = (settings: CompilerSettings): CompilerSettingsWithDefaults => {
+    const ports = settings.ports || {}
     if (settings.target === 'assemblyscript') {
         const bitDepth = settings.bitDepth || 32
         if (![32, 64].includes(bitDepth)) {
@@ -89,10 +91,15 @@ export const validateSettings = (settings: CompilerSettings): CompilerSettingsWi
         }
         return {
             ...settings,
-            bitDepth
+            bitDepth,
+            ports,
+        }
+    } else {
+        return {
+            ...settings,
+            ports,
         }
     }
-    return settings
 }
 
 class InvalidSettingsError extends Error {}

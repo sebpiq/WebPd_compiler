@@ -9,7 +9,7 @@
  *
  */
 
-import { NodeCodeGenerator } from '../types'
+import { Code, NodeCodeGenerator } from '../types'
 
 // ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = () => ``
@@ -22,7 +22,7 @@ export const setup: NodeCodeGenerator = () => ``
 //     transfer([89, 'bli']); // [56, 89, 'bla', 'bli-89']
 //
 export const loop: NodeCodeGenerator = (node, { ins, outs }) => {
-    let outElements: Array<PdEngine.Code> = []
+    let outElements: Array<Code> = []
     const template = node.args.template as Array<PdDspGraph.NodeArgument>
 
     // Creates an array of transfer functions `inVal -> outVal`.

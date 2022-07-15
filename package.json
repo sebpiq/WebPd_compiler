@@ -28,7 +28,7 @@
     "@types/node": "^14.14.7",
     "@webpd/engine-live-eval": "file:../WebPd_engine-live-eval",
     "@webpd/shared": "file:../WebPd_shared",
-    "assemblyscript": "^0.20.11",
+    "assemblyscript": "^0.20.12",
     "jest": "^28.1.0",
     "rollup": "^2.74.1",
     "rollup-plugin-dts": "^4.2.1",

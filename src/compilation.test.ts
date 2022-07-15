@@ -148,6 +148,7 @@ describe('compilation', () => {
                 arraysVariableName: 'ARRAYS'
             })
             assert.strictEqual((settings as any).bitDepth, 32)
+            assert.deepStrictEqual((settings as any).ports, {})
         })
 
         it('should throw error if settings invalid', () => {
