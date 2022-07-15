@@ -10,8 +10,8 @@
  */
 
 import { createNamespace } from './code-helpers'
-import AS_MACROS from './macros/assemblyscript'
-import JS_MACROS from './macros/javascript'
+import AS_MACROS from './engine-assemblyscript/macros'
+import JS_MACROS from './engine-javascript/macros'
 import { CodeMacros, CompilerSettings, CompilerSettingsWithDefaults, NodeImplementation, NodeImplementations, NodeVariableNames, VariableNames } from './types'
 import { generateInletVariableName, generateOutletVariableName, generateStateVariableName } from './variable-names'
 

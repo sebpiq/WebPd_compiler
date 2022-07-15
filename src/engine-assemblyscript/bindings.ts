@@ -1,5 +1,15 @@
-import { ArrayBufferOfIntegersPointer, InternalPointer } from "./macros/assemblyscript-types"
-import { AssemblyScriptWasmEngine } from "./types"
+/*
+ * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
+ *
+ * BSD Simplified License.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ *
+ * See https://github.com/sebpiq/WebPd_pd-parser for documentation
+ *
+ */
+
+import { ArrayBufferOfIntegersPointer, AssemblyScriptWasmEngine, InternalPointer } from "./types"
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
@@ -75,7 +85,7 @@ export const liftArrayBufferOfIntegers = (
 }
 
 // REF : Assemblyscript ESM bindings
-const liftString = (engine: any, pointer: number) => {
+const liftString = (engine: AssemblyScriptWasmEngine, pointer: number) => {
     if (!pointer) return null
     pointer = pointer >>> 0
     const end =
@@ -92,7 +102,7 @@ const liftString = (engine: any, pointer: number) => {
 }
 
 // REF : Assemblyscript ESM bindings
-const lowerString = (engine: any, value: string) => {
+const lowerString = (engine: AssemblyScriptWasmEngine, value: string) => {
     if (value == null) return 0;
     const
       length = value.length,
@@ -103,7 +113,7 @@ const lowerString = (engine: any, value: string) => {
 }
 
 // REF : Assemblyscript ESM bindings
-const lowerBuffer = (engine: any, value: ArrayBuffer) => {
+const lowerBuffer = (engine: AssemblyScriptWasmEngine, value: ArrayBuffer) => {
     if (value == null) return 0
     const pointer = engine.__new(value.byteLength, 0) >>> 0
     new Uint8Array(engine.memory.buffer).set(new Uint8Array(value), pointer)
@@ -111,7 +121,7 @@ const lowerBuffer = (engine: any, value: ArrayBuffer) => {
 }
 
 // REF : Assemblyscript ESM bindings
-const liftBuffer = (engine: any, pointer: number): ArrayBuffer => {
+const liftBuffer = (engine: AssemblyScriptWasmEngine, pointer: number): ArrayBuffer => {
     pointer = pointer >>> 0
     if (!pointer) return null
     return engine.memory.buffer.slice(pointer, pointer + new Uint32Array(engine.memory.buffer)[pointer - 4 >>> 2])

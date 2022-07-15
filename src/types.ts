@@ -1,4 +1,13 @@
-import { ArrayBufferOfIntegersPointer, InternalPointer, StringPointer } from "./macros/assemblyscript-types"
+/*
+ * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
+ *
+ * BSD Simplified License.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ *
+ * See https://github.com/sebpiq/WebPd_pd-parser for documentation
+ *
+ */
 
 // Code stored in string variable for later evaluation.
 export type Code = string
@@ -8,46 +17,10 @@ export type CodeVariableName = string
 
 // JavaScript Code that allows to create a JavaScriptEngine when evaled
 export type JavaScriptEngineCode = Code
-export interface JavaScriptEngine {
-    configure: (blockSize: number) => void
-    loop: () => Float32Array
-    ports: { [portName: string]: (...args: any) => any }
-}
 
 // AssemblyScript Code that allows to create an AssemblyScriptWasmEngine when compiled 
 // with the AssemblyScript compiler
 export type AssemblyScriptEngineCode = Code
-export interface AssemblyScriptWasmEngine {
-    configure: (blockSize: number) => void
-    loop: () => Float32Array
-    memory: WebAssembly.Memory
-    
-    MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
-    MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
-
-    createMessage: (templatePointer: ArrayBufferOfIntegersPointer) => InternalPointer
-    getMessageDatumTypes: (messagePointer: InternalPointer) => ArrayBufferOfIntegersPointer
-    createMessageArray: () => InternalPointer
-    pushMessageToArray: (messageArrayPointer: InternalPointer, messagePointer: InternalPointer) => void
-    writeStringDatum: (
-        messagePointer: InternalPointer,
-        datumIndex: number,
-        stringPointer: StringPointer,
-    ) => void
-    writeFloatDatum: (
-        messagePointer: InternalPointer,
-        datumIndex: number,
-        value: number,
-    ) => void
-    readStringDatum: (
-        messagePointer: InternalPointer, 
-        datumIndex: number,
-    ) => StringPointer
-    readFloatDatum: (
-        messagePointer: InternalPointer, 
-        datumIndex: number,
-    ) => number
-}
 
 export interface CodeMacros {
     declareInt: (name: CodeVariableName, value: number | string) => Code

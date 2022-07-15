@@ -12,7 +12,7 @@
 import { NODE_BUILDERS } from '@webpd/dsp-graph'
 import compile from './compile'
 import NODE_IMPLEMENTATIONS from './nodes'
-import { Code, CompilerSettings, NodeImplementations, JavaScriptEngine } from './types'
+import { Code, CompilerSettings, NodeImplementations } from './types'
 import {
     generateInletVariableName,
     generateOutletVariableName,
@@ -20,6 +20,7 @@ import {
 } from './variable-names'
 import { renderCode } from './code-helpers'
 import asc from 'assemblyscript/asc'
+import { JavaScriptEngine } from './engine-javascript/types'
 
 interface NodeSummary {
     type: PdDspGraph.Node['type']

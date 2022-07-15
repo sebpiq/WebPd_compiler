@@ -1,10 +1,23 @@
+/*
+ * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
+ *
+ * BSD Simplified License.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ *
+ * See https://github.com/sebpiq/WebPd_pd-parser for documentation
+ *
+ */
+
 import assert from 'assert'
 import compile, { compileLoop, compileSetup } from './compile'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { NodeImplementations, CompilerSettings, JavaScriptEngine, AssemblyScriptWasmEngine } from './types'
+import { NodeImplementations, CompilerSettings } from './types'
 import { Compilation } from './compilation'
 import { compileAssemblyScript, round } from './test-helpers'
 import {jest} from '@jest/globals'
+import { AssemblyScriptWasmEngine } from './engine-assemblyscript/types'
+import { JavaScriptEngine } from './engine-javascript/types'
 
 describe('compile', () => {
     jest.setTimeout(10000)
@@ -322,11 +335,17 @@ describe('compile', () => {
                     configure: (_: number) => {},
                     loop: () => new Float32Array(),
                     memory: new WebAssembly.Memory({initial: 128}),
-                    createMessage: () => 0,
-                    createMessageArray: () => 0,
-                    pushMessageToArray: (_: number, __: number) => undefined,
                     MESSAGE_DATUM_TYPE_FLOAT: new WebAssembly.Global(0 as any),
                     MESSAGE_DATUM_TYPE_STRING: new WebAssembly.Global(0 as any),
+                    createMessage: () => 0,
+                    getMessageDatumTypes: () => 0,
+                    createMessageArray: () => 0,
+                    pushMessageToArray: () => undefined,
+                    writeStringDatum: () => undefined,
+                    writeFloatDatum: () => undefined,
+                    readStringDatum: () => 0,
+                    readFloatDatum: () => 0,
+                    __new: () => 0
                 }
     
                 const module = await compileAssemblyScript(code)
