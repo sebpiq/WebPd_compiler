@@ -13,15 +13,16 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = (_, { state, MACROS }) => `
-    ${MACROS.declareInt(state.init, 1)}
+    let ${MACROS.typedVarInt(state.init)} = 1
 `
 
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { outs, state }) => {
+export const loop: NodeCodeGenerator = (_, { outs, state, MACROS }) => {
     return `
         if (${state.init}) {
             ${state.init} = 0
-            ${outs.$0}.push(['bang'])
+            ${MACROS.createMessage('m', ['bang'])}
+            ${outs.$0}.push(m)
         }
     `
 }

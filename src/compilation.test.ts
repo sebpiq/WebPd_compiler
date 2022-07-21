@@ -130,11 +130,11 @@ describe('compilation', () => {
                 nodeImplementations,
                 {
                     ...COMPILER_SETTINGS,
-                    target: 'javascript',
+                    target: 'assemblyscript',
                 }
             )
             const MACROS = compilation.getMacros()
-            assert.strictEqual(MACROS.declareInt('bla', 12), 'let bla = 12')
+            assert.strictEqual(MACROS.typedVarFloat('bla'), 'bla: f32')
         })
 
     })

@@ -9,6 +9,8 @@
  *
  */
 
+import { MESSAGE_DATUM_TYPE } from "./engine-common"
+
 // Code stored in string variable for later evaluation.
 export type Code = string
 
@@ -23,11 +25,26 @@ export type JavaScriptEngineCode = Code
 export type AssemblyScriptEngineCode = Code
 
 export interface CodeMacros {
-    declareInt: (name: CodeVariableName, value: number | string) => Code
-    declareIntConst: (name: CodeVariableName, value: number | string) => Code
-    declareFloat: (name: CodeVariableName, value: number | string) => Code
-    declareFloatArray: (name: CodeVariableName, size: number) => Code
-    declareMessageArray: (name: CodeVariableName) => Code
+    floatArrayType: () => Code
+    typedVarInt: (name: CodeVariableName) => Code
+    typedVarFloat: (name: CodeVariableName) => Code
+    typedVarString: (name: CodeVariableName) => Code
+    typedVarMessage: (name: CodeVariableName) => Code
+    typedVarFloatArray: (name: CodeVariableName) => Code
+    typedVarMessageArray: (name: CodeVariableName) => Code
+    createMessage: (name: CodeVariableName, message: PdSharedTypes.ControlValue) => Code
+    isMessageMatching: (
+        name: CodeVariableName, 
+        tokens: Array<number | string | MESSAGE_DATUM_TYPE>
+    ) => Code
+    readMessageStringDatum: (
+        name: CodeVariableName, 
+        tokenIndex: number
+    ) => Code,
+    readMessageFloatDatum: (
+        name: CodeVariableName, 
+        tokenIndex: number
+    ) => Code,
     fillInLoopOutput: (channel: number, value: CodeVariableName) => Code
 }
 
@@ -90,7 +107,9 @@ interface AssemblyScriptCompilerOptions {
     bitDepth: 32 | 64
 }
 
-interface JavaScriptCompilerOptions {}
+interface JavaScriptCompilerOptions {
+    bitDepth: 32 | 64
+}
 
 interface BaseAssemblyScriptCompilerSettings extends BaseCompilerSettings {
     target: 'assemblyscript'

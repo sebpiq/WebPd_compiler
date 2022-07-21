@@ -36,11 +36,7 @@ export const compile = (
 
     if (compilation.settings.target === 'javascript') {
         const {ports} = compilation.settings
-        // !!! The `SET_VARIABLE` port passes values by reference, therefore calling it twice on several
-        // variables with the same array as `variableValue` for example might have unexpected effects.
         return renderCode`
-            const isNumber = (v) => typeof v === 'number'
-
             ${compileSetup(compilation, graphTraversal)}
 
             return {
@@ -70,19 +66,17 @@ export const compile = (
     } else if (compilation.settings.target === 'assemblyscript') {
         const {channelCount, bitDepth, ports} = compilation.settings
         const MACROS = compilation.getMacros()
-        const FloatArrayType = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
         const FloatType = bitDepth === 32 ? 'f32' : 'f64'
-
         return renderCode`
             type Message = DataView
 
-            ${MACROS.declareFloatArray(globs.output, 0)}
+            let ${MACROS.typedVarFloatArray(globs.output)} = new ${MACROS.floatArrayType()}(0)
         
             ${compileSetup(compilation, graphTraversal)}
 
-            export function configure(blockSize: i32): ${FloatArrayType} {
+            export function configure(blockSize: i32): ${MACROS.floatArrayType()} {
                 ${globs.blockSize} = blockSize
-                ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
+                ${globs.output} = new ${MACROS.floatArrayType()}(${globs.blockSize} * ${channelCount.toString()})
                 return ${globs.output}
             }
 
@@ -138,23 +132,23 @@ export const compileSetup = (
     const globs = compilation.variableNames.g
     const MACROS = compilation.getMacros()
     return renderCode`
-        ${MACROS.declareInt(globs.iterFrame, 0)}
-        ${MACROS.declareInt(globs.iterOutlet, 0)}
-        ${MACROS.declareInt(globs.frame, -1)}
-        ${MACROS.declareInt(globs.blockSize, 0)}
+        let ${MACROS.typedVarInt(globs.iterFrame)} = 0
+        let ${MACROS.typedVarInt(globs.iterOutlet)} = 0
+        let ${MACROS.typedVarInt(globs.frame)} = -1
+        let ${MACROS.typedVarInt(globs.blockSize)} = 0
 
         ${graphTraversal.map((node) => {
             const { ins, outs } = compilation.variableNames.n[node.id]
             return [
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'control'
-                        ? `${MACROS.declareMessageArray(ins[inlet.id])}`
-                        : `${MACROS.declareFloat(ins[inlet.id], 0)}`
+                        ? `let ${MACROS.typedVarMessageArray(ins[inlet.id])} = []`
+                        : `let ${MACROS.typedVarFloat(ins[inlet.id])} = 0`
                 ),
                 Object.values(node.outlets).map((outlet) =>
                     outlet.type === 'control'
-                        ? `${MACROS.declareMessageArray(outs[outlet.id])}`
-                        : `${MACROS.declareFloat(outs[outlet.id], 0)}`
+                        ? `let ${MACROS.typedVarMessageArray(outs[outlet.id])} = []`
+                        : `let ${MACROS.typedVarFloat(outs[outlet.id])} = 0`
                 ),
                 compilation.getNodeImplementation(node.type).setup(
                     node,

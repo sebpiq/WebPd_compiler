@@ -22,15 +22,15 @@ const setupSignal: NodeCodeGenerator = (
     { ins, state, MACROS },
     { sampleRate }
 ) => `
-    ${MACROS.declareFloat(state.phase, 0)}
-    ${MACROS.declareFloat(state.J, `2 * Math.PI / ${sampleRate}`)}
+    let ${MACROS.typedVarFloat(state.phase)} = 0
+    let ${MACROS.typedVarFloat(state.J)} = 2 * Math.PI / ${sampleRate}
     ${ins.$0_signal} = ${node.args.frequency || 0}
 `
 
 const setupControl: NodeCodeGenerator = (node, { state, MACROS }, { sampleRate }) => `
-    ${MACROS.declareFloat(state.phase, 0)}
-    ${MACROS.declareFloat(state.currentFrequency, node.args.frequency as number || 0)}
-    ${MACROS.declareFloat(state.K, 0)}
+    let ${MACROS.typedVarFloat(state.phase)} = 0
+    let ${MACROS.typedVarFloat(state.currentFrequency)} = ${node.args.frequency as number || 0}
+    let ${MACROS.typedVarFloat(state.K)} = 0
     const ${state.refreshK} = () => 
         ${state.K} = ${state.currentFrequency} * 2 * Math.PI / ${sampleRate}
     ${state.refreshK}()

@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { compileAssemblyScript } from '../test-helpers';
 import assert from 'assert'
+import {jest} from '@jest/globals'
 import { AssemblyScriptWasmEngine } from './types';
 import { INT_ARRAY_BYTES_PER_ELEMENT, liftArrayBufferOfIntegers, liftMessage, lowerArrayBufferOfIntegers, lowerMessage } from './bindings';
 import { InternalPointer } from './types';
@@ -21,9 +22,10 @@ import { InternalPointer } from './types';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename)
 
-const assemblyscriptCoreCode = readFileSync(resolve(__dirname, 'engine-core.asc')).toString()
+const assemblyscriptCoreCode = readFileSync(resolve(__dirname, 'core-code.asc')).toString()
 
 describe('assemblyscriptCoreCode', () => {
+    jest.setTimeout(10000)
 
     const ASSEMBLY_SCRIPT_CORE_CODE = assemblyscriptCoreCode
         .replace('${FloatType}', 'f32')

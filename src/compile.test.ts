@@ -90,7 +90,6 @@ describe('compile', () => {
                 assert.strictEqual(
                     normalizeCode(code),
                     normalizeCode(`
-                    const isNumber = (v) => typeof v === 'number'
                     let F = 0
                     let O = 0
                     let FRAME = -1

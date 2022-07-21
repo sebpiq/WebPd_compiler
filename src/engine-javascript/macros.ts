@@ -10,23 +10,68 @@
  */
 
 import { Compilation } from "../compilation"
-import { CodeVariableName } from "../types"
+import { MESSAGE_DATUM_TYPE, MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
+import { Code, CodeVariableName } from "../types"
 
-const declareInt = (_: Compilation, name: CodeVariableName, value: number | string) => 
-    `let ${name} = ${value.toString()}`
-
-const declareIntConst = (_: Compilation, name: CodeVariableName, value: number | string) => 
-    `const ${name} = ${value.toString()}`
-
-const declareFloat = (_: Compilation, name: CodeVariableName, value: number | string) => 
-    `let ${name} = ${value.toString()}`
-
-const declareFloatArray = (_: Compilation, name: CodeVariableName, size: number) => {
-    return `let ${name} = new Float32Array(${size})`
+const floatArrayType = (compilation: Compilation) => {
+    const {bitDepth} = compilation.settings
+    return bitDepth === 32 ? 'Float32Array' : 'Float64Array'
 }
 
-const declareMessageArray = (_: Compilation, name: CodeVariableName) => 
-    `let ${name} = []`
+const typedVarInt = (_: Compilation, name: CodeVariableName) => 
+    `${name}`
+
+const typedVarFloat = (_: Compilation, name: CodeVariableName) => 
+    `${name}`
+
+const typedVarString = (_: Compilation, name: CodeVariableName) => 
+    `${name}`
+
+const typedVarMessage = (_: Compilation, name: CodeVariableName) => 
+    `${name}`
+
+const typedVarFloatArray = (_: Compilation, name: CodeVariableName) =>
+    `${name}`
+
+const typedVarMessageArray = (_: Compilation, name: CodeVariableName) => 
+    `${name}`
+
+const createMessage = (_: Compilation, name: CodeVariableName, message: PdSharedTypes.ControlValue) => 
+    `const ${name} = ${JSON.stringify(message)}`
+
+const isMessageMatching = (
+    _: Compilation, name: CodeVariableName, 
+    tokens: Array<number | string | MESSAGE_DATUM_TYPE>
+): Code => {
+    const andConditions = tokens.map((token, tokenIndex) => {
+        if (typeof token === 'number') {
+            return `${name}[${tokenIndex}] === ${token}`
+        } else if (typeof token === 'string') {
+            return `${name}[${tokenIndex}] === "${token}"`
+        } else if (token === MESSAGE_DATUM_TYPE_FLOAT) {
+            return `typeof ${name}[${tokenIndex}] === "number"`
+        } else if (token === MESSAGE_DATUM_TYPE_STRING) {
+            return `typeof ${name}[${tokenIndex}] === "string"`
+        } else {
+            throw new Error(`unexpected token ${token}`)
+        }
+    }).join(' && ')
+    return `(${andConditions})`
+}
+
+const readMessageStringDatum = (
+    _: Compilation, 
+    name: CodeVariableName, 
+    tokenIndex: number
+) => 
+    `${name}[${tokenIndex}]`
+
+const readMessageFloatDatum = (
+    _: Compilation, 
+    name: CodeVariableName, 
+    tokenIndex: number
+) => 
+    `${name}[${tokenIndex}]`
 
 const fillInLoopOutput = (compilation: Compilation, channel: number, value: CodeVariableName) => {
     const globs = compilation.variableNames.g
@@ -34,11 +79,17 @@ const fillInLoopOutput = (compilation: Compilation, channel: number, value: Code
 }
 
 const MACROS = {
-    declareInt,
-    declareIntConst,
-    declareFloat,
-    declareFloatArray,
-    declareMessageArray,
+    floatArrayType,
+    typedVarInt,
+    typedVarFloat,
+    typedVarString,
+    typedVarMessage,
+    typedVarFloatArray,
+    typedVarMessageArray,
+    createMessage,
+    isMessageMatching,
+    readMessageStringDatum,
+    readMessageFloatDatum,
     fillInLoopOutput
 }
 

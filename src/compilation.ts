@@ -64,11 +64,17 @@ export class Compilation {
     getMacros(): CodeMacros {
         let unwrappedMacros = this.settings.target === 'javascript' ? JS_MACROS : AS_MACROS
         return {
-            declareInt: unwrappedMacros.declareInt.bind(undefined, this),
-            declareIntConst: unwrappedMacros.declareIntConst.bind(undefined, this),
-            declareFloat: unwrappedMacros.declareFloat.bind(undefined, this),
-            declareFloatArray: unwrappedMacros.declareFloatArray.bind(undefined, this),
-            declareMessageArray: unwrappedMacros.declareMessageArray.bind(undefined, this),
+            floatArrayType: unwrappedMacros.floatArrayType.bind(undefined, this),
+            typedVarInt: unwrappedMacros.typedVarInt.bind(undefined, this),
+            typedVarFloat: unwrappedMacros.typedVarFloat.bind(undefined, this),
+            typedVarString: unwrappedMacros.typedVarString.bind(undefined, this),
+            typedVarMessage: unwrappedMacros.typedVarMessage.bind(undefined, this),
+            typedVarFloatArray: unwrappedMacros.typedVarFloatArray.bind(undefined, this),
+            typedVarMessageArray: unwrappedMacros.typedVarMessageArray.bind(undefined, this),
+            createMessage: unwrappedMacros.createMessage.bind(undefined, this),
+            isMessageMatching: unwrappedMacros.isMessageMatching.bind(undefined, this),
+            readMessageFloatDatum: unwrappedMacros.readMessageFloatDatum.bind(undefined, this),
+            readMessageStringDatum: unwrappedMacros.readMessageStringDatum.bind(undefined, this),
             fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(undefined, this),
         }
     }
@@ -84,11 +90,11 @@ export class Compilation {
 
 export const validateSettings = (settings: CompilerSettings): CompilerSettingsWithDefaults => {
     const ports = settings.ports || {}
+    const bitDepth = settings.bitDepth || 32
+    if (![32, 64].includes(bitDepth)) {
+        throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
+    }
     if (settings.target === 'assemblyscript') {
-        const bitDepth = settings.bitDepth || 32
-        if (![32, 64].includes(bitDepth)) {
-            throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
-        }
         return {
             ...settings,
             bitDepth,
@@ -97,6 +103,7 @@ export const validateSettings = (settings: CompilerSettings): CompilerSettingsWi
     } else {
         return {
             ...settings,
+            bitDepth,
             ports,
         }
     }

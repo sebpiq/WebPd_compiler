@@ -188,8 +188,8 @@ export const generateFramesForNode = (
             setup: (_, { state, MACROS }) =>
                 renderCode`${Object.values(recorderNode.inlets).map(
                     (inlet) => inlet.type === "signal" ? 
-                        MACROS.declareFloat(state['mem' + inlet.id], 0): 
-                        MACROS.declareMessageArray(state['mem' + inlet.id])
+                        `let ${MACROS.typedVarFloat(state['mem' + inlet.id])} = 0`: 
+                        `let ${MACROS.typedVarMessageArray(state['mem' + inlet.id])} = 0`
                 )}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.

@@ -9,45 +9,42 @@
  *
  */
 
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from '../engine-common'
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = (node, { state, ins, globs, MACROS }) => `
-    ${MACROS.declareFloatArray(state.array, 0)}
-    ${MACROS.declareInt(state.readPosition, 0)}
-    ${MACROS.declareInt(state.readUntil, 0)}
+    let ${MACROS.typedVarFloatArray(state.array)} = new ${MACROS.floatArrayType}(0)
+    let ${MACROS.typedVarInt(state.readPosition)} = 0
+    let ${MACROS.typedVarInt(state.readUntil)} = 0
 
-    const ${state.funcSetArrayName} = (arrayName) => {
+    const ${state.funcSetArrayName} = (
+        ${MACROS.typedVarString('arrayName')}
+    ) => {
         ${state.array} = ${globs.arrays}[arrayName] || new Float32Array(0)
         ${state.readPosition} = ${state.array}.length
         ${state.readUntil} = ${state.array}.length
     }
 
-    const ${state.funcPlay} = (startPosition, sampleCount) => {
-        ${state.readPosition} = startPosition
-        ${state.readUntil} = sampleCount !== undefined ? 
-            Math.min(startPosition + sampleCount, ${state.array}.length) 
-            : ${state.array}.length
-    }
-
     const ${state.funcHandleMessage} = () => {
-        let inMessage = ${ins.$0}.shift()
-        if (inMessage.length === 0) {
-
-        } else if (inMessage[0] === 'set') {
-            ${state.funcSetArrayName}(inMessage[1])
+        let ${MACROS.typedVarMessage('inMessage')} = ${ins.$0}.shift()
+        if (${MACROS.isMessageMatching('inMessage', ['set', MESSAGE_DATUM_TYPE_STRING])}) {
+            ${state.funcSetArrayName}(${MACROS.readMessageStringDatum('inMessage', 1)})
             
-        } else if (inMessage[0] === 'bang') {
-            ${state.funcPlay}(0)
+        } else if (${MACROS.isMessageMatching('inMessage', ['bang'])}) {
+            ${state.readPosition} = 0
+            ${state.readUntil} = ${state.array}.length
+            
+        } else if (${MACROS.isMessageMatching('inMessage', [MESSAGE_DATUM_TYPE_FLOAT])}) {
+            ${state.readPosition} = ${MACROS.readMessageFloatDatum('inMessage', 0)}
+            ${state.readUntil} = Math.min(startPosition + sampleCount, ${state.array}.length)
     
-        } else if (inMessage.length === 1) {
-            ${state.funcPlay}(inMessage[0])
-    
-        } else if (inMessage.length === 2) {
-            ${state.funcPlay}(inMessage[0], inMessage[1])
+        } else if (${MACROS.isMessageMatching('inMessage', [MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_FLOAT])}) {
+            ${state.readPosition} = ${MACROS.readMessageFloatDatum('inMessage', 0)}
+            ${state.readUntil} = ${MACROS.readMessageFloatDatum('inMessage', 1)}
             
         } else {
-            // TODO : error handling
+            throw new Error("Unexpected message")
         }
     }
 
@@ -55,7 +52,7 @@ export const setup: NodeCodeGenerator = (node, { state, ins, globs, MACROS }) =>
 `
 
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { state, ins, outs }) => `
+export const loop: NodeCodeGenerator = (_, { state, ins, outs, MACROS }) => `
     while (${ins.$0}.length) {
         ${state.funcHandleMessage}()
     }
@@ -64,7 +61,8 @@ export const loop: NodeCodeGenerator = (_, { state, ins, outs }) => `
         ${outs.$0} = ${state.array}[${state.readPosition}]
         ${state.readPosition}++
         if (${state.readPosition} >= ${state.readUntil}) {
-            ${outs.$1}.push(['bang'])
+            ${MACROS.createMessage('m', ['bang'])}
+            ${outs.$1}.push(m)
         }
     } else {
         ${outs.$0} = 0
