@@ -12,6 +12,7 @@
 import assert from "assert"
 import { Compilation } from "../compilation"
 import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
+import { normalizeCode } from "../test-helpers"
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from "./bindings"
 import MACROS from "./macros"
 
@@ -22,6 +23,29 @@ describe('macros', () => {
         sampleRate: 44100,
         channelCount: 2,
         arraysVariableName: 'ARRAYS',
+    })
+
+    describe('createMessage', () => {
+
+        it('should generate the right code for string', () => {
+            const code = MACROS.createMessage(
+                COMPILATION, 'myMessage', ['bang', 'lol'])
+            assert.strictEqual(normalizeCode(code), normalizeCode(`
+                const myMessage: Message = Message.fromTemplate([${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 4, ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 3])
+                writeStringDatum(myMessage, 0, "bang")
+                writeStringDatum(myMessage, 1, "lol")
+            `))
+        })
+
+        it('should generate the right code for float', () => {
+            const code = MACROS.createMessage(
+                COMPILATION, 'myMessage', [1.234, 888])
+            assert.strictEqual(normalizeCode(code), normalizeCode(`
+                const myMessage: Message = Message.fromTemplate([${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}, ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}])
+                writeFloatDatum(myMessage, 0, 1.234)
+                writeFloatDatum(myMessage, 1, 888)
+            `))
+        })
     })
 
     describe('isMessageMatching', () => {

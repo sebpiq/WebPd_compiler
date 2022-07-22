@@ -9,15 +9,14 @@
  *
  */
 
-import assert from 'assert'
-import { COMPILER_SETTINGS, generateFramesForNode } from '../test-helpers'
+import { assertNodeOutput, COMPILER_OPTIONS } from './test-helpers'
 
 describe('metro', () => {
-    it('should start metro at rate passed as arg', () => {
-        const frames = generateFramesForNode(
+    it('should start metro at rate passed as arg', async () => {
+        await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (2 * 1000) / COMPILER_SETTINGS.sampleRate },
+                args: { rate: (2 * 1000) / COMPILER_OPTIONS.sampleRate },
             },
             [
                 {}, // frame 1
@@ -28,22 +27,22 @@ describe('metro', () => {
                 },
                 {}, // frame 4
                 {}, // frame 5
+            ],
+            [
+                { '0': [] },
+                { '0': [] },
+                { '0': [['bang']] },
+                { '0': [] },
+                { '0': [['bang']] },
             ]
         )
-        assert.deepStrictEqual(frames, [
-            { '0': [] },
-            { '0': [] },
-            { '0': [['bang']] },
-            { '0': [] },
-            { '0': [['bang']] },
-        ])
     })
 
-    it('should start metro when sent 1', () => {
-        const frames = generateFramesForNode(
+    it('should start metro when sent 1', async () => {
+        await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILER_SETTINGS.sampleRate },
+                args: { rate: (1 * 1000) / COMPILER_OPTIONS.sampleRate },
             },
             [
                 {
@@ -51,19 +50,19 @@ describe('metro', () => {
                     '0': [[1]],
                 },
                 {}, // frame 2
+            ],
+            [
+                { '0': [['bang']] },
+                { '0': [['bang']] },
             ]
         )
-        assert.deepStrictEqual(frames, [
-            { '0': [['bang']] },
-            { '0': [['bang']] },
-        ])
     })
 
-    it('should start metro at rate passed to inlet 1', () => {
-        const frames = generateFramesForNode(
+    it('should start metro at rate passed to inlet 1', async () => {
+        await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (2 * 1000) / COMPILER_SETTINGS.sampleRate },
+                args: { rate: (2 * 1000) / COMPILER_OPTIONS.sampleRate },
             },
             [
                 {
@@ -73,26 +72,26 @@ describe('metro', () => {
                 {}, // frame 2
                 {
                     // frame 3
-                    '1': [[1000 / COMPILER_SETTINGS.sampleRate]],
+                    '1': [[1000 / COMPILER_OPTIONS.sampleRate]],
                 },
                 {}, // frame 4
                 {}, // frame 5
+            ],
+            [
+                { '0': [['bang']] },
+                { '0': [] },
+                { '0': [['bang']] },
+                { '0': [['bang']] },
+                { '0': [['bang']] },
             ]
         )
-        assert.deepStrictEqual(frames, [
-            { '0': [['bang']] },
-            { '0': [] },
-            { '0': [['bang']] },
-            { '0': [['bang']] },
-            { '0': [['bang']] },
-        ])
     })
 
-    it('should stop metro when receiving stop', () => {
-        const frames = generateFramesForNode(
+    it('should stop metro when receiving stop', async () => {
+        await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILER_SETTINGS.sampleRate },
+                args: { rate: (1 * 1000) / COMPILER_OPTIONS.sampleRate },
             },
             [
                 {
@@ -104,20 +103,20 @@ describe('metro', () => {
                     // frame 3
                     '0': [['stop']],
                 },
+            ],
+            [
+                { '0': [['bang']] },
+                { '0': [['bang']] },
+                { '0': [] },
             ]
         )
-        assert.deepStrictEqual(frames, [
-            { '0': [['bang']] },
-            { '0': [['bang']] },
-            { '0': [] },
-        ])
     })
 
-    it('should stop metro when receiving 0', () => {
-        const frames = generateFramesForNode(
+    it('should stop metro when receiving 0', async () => {
+        await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILER_SETTINGS.sampleRate },
+                args: { rate: (1 * 1000) / COMPILER_OPTIONS.sampleRate },
             },
             [
                 {
@@ -129,12 +128,12 @@ describe('metro', () => {
                     // frame 3
                     '0': [[0]],
                 },
+            ],
+            [
+                { '0': [['bang']] },
+                { '0': [['bang']] },
+                { '0': [] },
             ]
         )
-        assert.deepStrictEqual(frames, [
-            { '0': [['bang']] },
-            { '0': [['bang']] },
-            { '0': [] },
-        ])
     })
 })

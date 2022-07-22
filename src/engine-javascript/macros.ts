@@ -36,6 +36,15 @@ const typedVarFloatArray = (_: Compilation, name: CodeVariableName) =>
 const typedVarMessageArray = (_: Compilation, name: CodeVariableName) => 
     `${name}`
 
+const castToInt = (_: Compilation, name: CodeVariableName) => 
+    `${name}`
+
+const castToFloat = (_: Compilation, name: CodeVariableName) =>
+    `${name}`
+
+const functionHeader = (_: Compilation, ...functionArgs: Array<Code>) => 
+    `(${functionArgs.join(', ')})`
+
 const createMessage = (_: Compilation, name: CodeVariableName, message: PdSharedTypes.ControlValue) => 
     `const ${name} = ${JSON.stringify(message)}`
 
@@ -86,6 +95,9 @@ const MACROS = {
     typedVarMessage,
     typedVarFloatArray,
     typedVarMessageArray,
+    castToInt,
+    castToFloat,
+    functionHeader,
     createMessage,
     isMessageMatching,
     readMessageStringDatum,

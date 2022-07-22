@@ -9,53 +9,55 @@
  *
  */
 
-import assert from 'assert'
-import { generateFramesForNode, COMPILER_SETTINGS } from '../test-helpers'
+import { assertNodeOutput, COMPILER_OPTIONS } from './test-helpers'
 
 describe('osc~', () => {
-    it('should work with signal frequency', () => {
-        const { sampleRate } = COMPILER_SETTINGS
+    it('should work with signal frequency', async () => {
+        const { sampleRate } = COMPILER_OPTIONS
+        const frequency1 = 100
+        const frequency2 = 200
+        const frequency3 = 50
         const J = (2 * Math.PI) / sampleRate
-        const frames = generateFramesForNode(
+        await assertNodeOutput(
             {
                 type: 'osc~',
                 args: { frequency: 0 },
                 connectedSources: ['0_signal'],
             },
             [
-                { '0_signal': 1 },
-                { '0_signal': 1 },
-                { '0_signal': 2 },
-                { '0_signal': 2 },
-                { '0_signal': 0.5 },
-                { '0_signal': 0.5 },
+                { '0_signal': frequency1 },
+                { '0_signal': frequency1 },
+                { '0_signal': frequency2 },
+                { '0_signal': frequency2 },
+                { '0_signal': frequency3 },
+                { '0_signal': frequency3 },
+            ], 
+            [
+                { '0': Math.cos(0) },
+                { '0': Math.cos(100 * J) },
+                { '0': Math.cos(200 * J) },
+                { '0': Math.cos(400 * J) },
+                { '0': Math.cos(600 * J) },
+                { '0': Math.cos(650 * J) },
             ]
         )
-        assert.deepStrictEqual(frames, [
-            { '0': Math.cos(0) },
-            { '0': Math.cos(1 * J) },
-            { '0': Math.cos(2 * J) },
-            { '0': Math.cos(4 * J) },
-            { '0': Math.cos(6 * J) },
-            { '0': Math.cos(6.5 * J) },
-        ])
     })
 
-    it('should work with control frequency', () => {
-        const { sampleRate } = COMPILER_SETTINGS
-        const J = (2 * Math.PI) / sampleRate
+    it('should work with control frequency', async () => {
+        const { sampleRate } = COMPILER_OPTIONS
+        const frequency1 = 100
+        const frequency2 = 300
+        const J = (2 * Math.PI * frequency1) / sampleRate
 
-        const frames = generateFramesForNode(
-            { type: 'osc~', args: { frequency: 1 } },
+        await assertNodeOutput(
+            { type: 'osc~', args: { frequency: frequency1 } },
             [
                 { '0_control': [] },
                 { '0_control': [] },
-                { '0_control': [[3]] },
+                { '0_control': [[frequency2]] },
                 { '0_control': [] },
                 { '0_control': [] },
-            ]
-        )
-        assert.deepStrictEqual(frames, [
+            ], [
             { '0': Math.cos(0) },
             { '0': Math.cos(1 * J) },
             { '0': Math.cos(2 * J) },

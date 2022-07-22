@@ -14,7 +14,7 @@ import compile, { compileLoop, compileSetup } from './compile'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations, CompilerSettings } from './types'
 import { Compilation } from './compilation'
-import { compileAssemblyScript, round } from './test-helpers'
+import { compileAssemblyScript, normalizeCode, round } from './test-helpers'
 import {jest} from '@jest/globals'
 import { AssemblyScriptWasmEngine } from './engine-assemblyscript/types'
 import { JavaScriptEngine } from './engine-javascript/types'
@@ -35,14 +35,6 @@ describe('compile', () => {
         arraysVariableName: 'ARRAYS',
         target: 'assemblyscript',
         bitDepth: 32
-    }
-
-    const normalizeCode = (rawCode: string) => {
-        const lines = rawCode
-            .split('\n')
-            .map((line) => line.trim())
-            .filter((line) => !!line.length)
-        return lines.join('\n')
     }
 
     describe('default', () => {
@@ -129,7 +121,7 @@ describe('compile', () => {
             it('should create the specified ports', () => {
                 const code = compile({}, NODE_IMPLEMENTATIONS, {
                     ...COMPILER_SETTINGS_JS,
-                    ports: {
+                    portSpecs: {
                         'bla': {access: 'r', type: 'float'},
                         'blo': {access: 'w', type: 'messages'},
                         'bli': {access: 'rw', type: 'float'},
@@ -276,7 +268,7 @@ describe('compile', () => {
             it('should create the specified ports', async () => {
                 const code = compile({}, NODE_IMPLEMENTATIONS, {
                     ...COMPILER_SETTINGS_AS,
-                    ports: {
+                    portSpecs: {
                         'bla': {access: 'r', type: 'float'},
                         // 'blo': {access: 'w', type: 'messages'},
                         'bli': {access: 'rw', type: 'float'},

@@ -32,31 +32,42 @@ const typedVarString = (_: Compilation, name: CodeVariableName) =>
     `${name}: string`
 
 const typedVarMessage = (_: Compilation, name: CodeVariableName) => 
-    `${name}: Messsage`
+    `${name}: Message`
 
 const typedVarFloatArray = (compilation: Compilation, name: CodeVariableName) => 
     `${name}: ${compilation.getMacros().floatArrayType()}`
 
 const typedVarMessageArray = (_: Compilation, name: CodeVariableName) => 
-    `${name}: Message`
+    `${name}: Message[]`
+
+const castToInt = (_: Compilation, name: CodeVariableName) => 
+    `i32(${name})`
+
+const castToFloat = (compilation: Compilation, name: CodeVariableName) => {
+    const { bitDepth } = compilation.settings
+    return bitDepth === 32 ? `f32(${name})` : `f64(${name})`
+}
+
+const functionHeader = (_: Compilation, ...functionArgs: Array<Code>) => 
+    `(${functionArgs.join(', ')}): void`
 
 const createMessage = (_: Compilation, name: CodeVariableName, message: PdSharedTypes.ControlValue) => {
     return renderCode`
-        const ${name}: Message = Message.fromTemplate(${message.map(value => {
+        const ${name}: Message = Message.fromTemplate([${message.reduce((template, value) => {
             if (typeof value === 'number') {
-                return MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]
-            } else if (typeof value === 'number') {
-                return MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]
+                return [...template, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]]
+            } else if (typeof value === 'string') {
+                return [...template, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING], value.length]
             } else {
                 throw new Error(`invalid value for message : ${value}`)
             }
-        }).join(', ')})
+        }, [] as Array<number>).join(', ')}])
 
         ${message.map((value, datumIndex) => {
             if (typeof value === 'number') {
                 return `writeFloatDatum(${name}, ${datumIndex}, ${value.toString(10)})`
-            } else if (typeof value === 'number') {
-                return `writeStringDatum(${name}, ${datumIndex}, ${value})`
+            } else if (typeof value === 'string') {
+                return `writeStringDatum(${name}, ${datumIndex}, "${value}")`
             } else {
                 throw new Error(`invalid value for message : ${value}`)
             }
@@ -118,6 +129,9 @@ const MACROS = {
     typedVarMessage,
     typedVarFloatArray,
     typedVarMessageArray,
+    castToInt,
+    castToFloat,
+    functionHeader,
     createMessage,
     isMessageMatching,
     readMessageStringDatum,

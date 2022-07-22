@@ -71,6 +71,9 @@ export class Compilation {
             typedVarMessage: unwrappedMacros.typedVarMessage.bind(undefined, this),
             typedVarFloatArray: unwrappedMacros.typedVarFloatArray.bind(undefined, this),
             typedVarMessageArray: unwrappedMacros.typedVarMessageArray.bind(undefined, this),
+            castToInt: unwrappedMacros.castToInt.bind(undefined, this),
+            castToFloat: unwrappedMacros.castToFloat.bind(undefined, this),
+            functionHeader: unwrappedMacros.functionHeader.bind(undefined, this),
             createMessage: unwrappedMacros.createMessage.bind(undefined, this),
             isMessageMatching: unwrappedMacros.isMessageMatching.bind(undefined, this),
             readMessageFloatDatum: unwrappedMacros.readMessageFloatDatum.bind(undefined, this),
@@ -89,7 +92,7 @@ export class Compilation {
 }
 
 export const validateSettings = (settings: CompilerSettings): CompilerSettingsWithDefaults => {
-    const ports = settings.ports || {}
+    const portSpecs = settings.portSpecs || {}
     const bitDepth = settings.bitDepth || 32
     if (![32, 64].includes(bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
@@ -98,13 +101,13 @@ export const validateSettings = (settings: CompilerSettings): CompilerSettingsWi
         return {
             ...settings,
             bitDepth,
-            ports,
+            portSpecs: portSpecs,
         }
     } else {
         return {
             ...settings,
             bitDepth,
-            ports,
+            portSpecs: portSpecs,
         }
     }
 }

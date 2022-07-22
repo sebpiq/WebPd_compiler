@@ -14,6 +14,10 @@ import { CompilerSettings, JavaScriptEngineCode, AssemblyScriptEngineCode, Code 
 import { NodeImplementations } from './types'
 import { Compilation } from './compilation'
 import { renderCode } from './code-helpers'
+import assemblyscriptCoreCode from './engine-assemblyscript/core-code.asc'
+import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/bindings'
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from './engine-common'
+import { compilePorts } from './engine-assemblyscript/compile'
 
 export default (
     graph: PdDspGraph.Graph,
@@ -35,7 +39,7 @@ export const compile = (
     const globs = compilation.variableNames.g
 
     if (compilation.settings.target === 'javascript') {
-        const {ports} = compilation.settings
+        const {portSpecs} = compilation.settings
         return renderCode`
             ${compileSetup(compilation, graphTraversal)}
 
@@ -50,7 +54,7 @@ export const compile = (
                     }
                 },
                 ports: {
-                    ${Object.entries(ports).map(([variableName, spec]) => {
+                    ${Object.entries(portSpecs).map(([variableName, spec]) => {
                         const portsCode: Array<Code> = []
                         if (spec.access.includes('r')) {
                             portsCode.push(`read_${variableName}: () => ${variableName},`)
@@ -64,19 +68,31 @@ export const compile = (
             }
         `
     } else if (compilation.settings.target === 'assemblyscript') {
-        const {channelCount, bitDepth, ports} = compilation.settings
+        const {channelCount, bitDepth} = compilation.settings
         const MACROS = compilation.getMacros()
         const FloatType = bitDepth === 32 ? 'f32' : 'f64'
-        return renderCode`
-            type Message = DataView
+        const FloatArrayType = MACROS.floatArrayType()
+        const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
+        const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
+        const CORE_CODE = assemblyscriptCoreCode
+            .replaceAll('${FloatType}', FloatType)
+            .replaceAll('${FloatArrayType}', FloatArrayType)
+            .replaceAll('${getFloat}', getFloat)
+            .replaceAll('${setFloat}', setFloat)
+            .replaceAll('${MESSAGE_DATUM_TYPE_FLOAT}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT].toString()) 
+            .replaceAll('${MESSAGE_DATUM_TYPE_STRING}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING].toString())
 
-            let ${MACROS.typedVarFloatArray(globs.output)} = new ${MACROS.floatArrayType()}(0)
+        return renderCode`
+            ${CORE_CODE}
+
+            let ${MACROS.typedVarFloatArray(globs.output)} = new ${FloatArrayType}(0)
+            const ${globs.arrays} = new Map<string,${FloatArrayType}>()
         
             ${compileSetup(compilation, graphTraversal)}
 
-            export function configure(blockSize: i32): ${MACROS.floatArrayType()} {
+            export function configure(blockSize: i32): ${FloatArrayType} {
                 ${globs.blockSize} = blockSize
-                ${globs.output} = new ${MACROS.floatArrayType()}(${globs.blockSize} * ${channelCount.toString()})
+                ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
                 return ${globs.output}
             }
 
@@ -87,40 +103,12 @@ export const compile = (
                 }
             }
 
-            ${Object.entries(ports).map(([variableName, spec]) => {
-                const portsCode: Array<Code> = []
-                if (spec.access.includes('r')) {
-                    if (spec.type === 'float') {
-                        portsCode.push(`
-                            export function read_${variableName}(): ${FloatType} { 
-                                return ${variableName} 
-                            }
-                        `)
-                    } else {
-                        portsCode.push(`
-                            export function read_${variableName}(): Message[] { 
-                                return ${variableName} 
-                            }
-                        `)
-                    }
-                }
-                if (spec.access.includes('w')) {
-                    if (spec.type === 'float') {
-                        portsCode.push(`
-                            export function write_${variableName}(value: ${FloatType}): void { 
-                                ${variableName} = value
-                            }
-                        `)
-                    } else {
-                        portsCode.push(`
-                            export function write_${variableName}(messages: Message[]): void { 
-                                ${variableName} = messages
-                            }
-                        `)
-                    }
-                }
-                return portsCode
-            })}
+            export function setArray(arrayName: string, buffer: ArrayBuffer): void {
+                const array = bufferToFloatArray(buffer)
+                ${globs.arrays}.set(arrayName, array)
+            }
+
+            ${compilePorts(compilation, {FloatType})}
         `
     }
 }

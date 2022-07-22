@@ -16,8 +16,8 @@ import { NodeCodeGenerator } from '../types'
 export const setup: NodeCodeGenerator = () => ``
 
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { outs }) => {
+export const loop: NodeCodeGenerator = (_, { outs, MACROS }) => {
     return `
-        ${outs.$0} = Math.random() * 2 - 1
+        ${outs.$0} = ${MACROS.castToFloat(`Math.random() * 2 - 1`)}
     `
 }

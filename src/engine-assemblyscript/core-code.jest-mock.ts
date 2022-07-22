@@ -9,10 +9,11 @@
  *
  */
 
-import { EnginePorts } from "../types"
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-export interface JavaScriptEngine {
-    configure: (blockSize: number) => void
-    loop: () => Float32Array
-    ports: EnginePorts
-}
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+export default readFileSync(resolve(__dirname, './core-code.asc')).toString()

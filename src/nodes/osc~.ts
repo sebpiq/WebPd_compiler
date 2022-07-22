@@ -31,7 +31,7 @@ const setupControl: NodeCodeGenerator = (node, { state, MACROS }, { sampleRate }
     let ${MACROS.typedVarFloat(state.phase)} = 0
     let ${MACROS.typedVarFloat(state.currentFrequency)} = ${node.args.frequency as number || 0}
     let ${MACROS.typedVarFloat(state.K)} = 0
-    const ${state.refreshK} = () => 
+    const ${state.refreshK} = ${MACROS.functionHeader()} => 
         ${state.K} = ${state.currentFrequency} * 2 * Math.PI / ${sampleRate}
     ${state.refreshK}()
 `
@@ -43,15 +43,16 @@ export const loop: NodeCodeGenerator = (...args) => {
     return _hasSignalInput(node) ? loopSignal(...args) : loopControl(...args)
 }
 
-const loopSignal: NodeCodeGenerator = (_, { state, ins, outs }) => `
+const loopSignal: NodeCodeGenerator = (_, { state, ins, outs, MACROS }) => `
     ${outs.$0} = Math.cos(${state.phase})
     ${state.phase} += ${state.J} * ${ins.$0_signal}
 `
 
 // Take only the last received frequency message (first in the list)
-const loopControl: NodeCodeGenerator = (_, { state, ins, outs }) => `
+const loopControl: NodeCodeGenerator = (_, { state, ins, outs, MACROS }) => `
     if (${ins.$0_control}.length) {
-        ${state.currentFrequency} = ${ins.$0_control}.pop()
+        const ${MACROS.typedVarMessage('m')} = ${ins.$0_control}.pop()
+        ${state.currentFrequency} = ${MACROS.readMessageFloatDatum('m', 0)}
         ${state.refreshK}()
     }
     ${outs.$0} = Math.cos(${state.phase})

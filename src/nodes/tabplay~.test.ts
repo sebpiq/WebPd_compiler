@@ -10,11 +10,11 @@
  */
 
 import assert from 'assert'
-import { generateFramesForNode, COMPILER_SETTINGS } from '../test-helpers'
+import { generateFramesForNode, COMPILER_OPTIONS } from '../test-helpers'
 
 describe('tabplay~', () => {
     it('should change array when sent set', () => {
-        ;(globalThis as any)[COMPILER_SETTINGS.arraysVariableName] = {
+        ;(globalThis as any)[COMPILER_OPTIONS.arraysVariableName] = {
             myArray: [1, 2, 3],
         }
         const frames = generateFramesForNode(
@@ -39,7 +39,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from beginning to end when receiving bang', () => {
-        ;(globalThis as any)[COMPILER_SETTINGS.arraysVariableName] = {
+        ;(globalThis as any)[COMPILER_OPTIONS.arraysVariableName] = {
             myArray: [11, 22, 33],
         }
         const frames = generateFramesForNode(
@@ -65,7 +65,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from sample when receiving float', () => {
-        ;(globalThis as any)[COMPILER_SETTINGS.arraysVariableName] = {
+        ;(globalThis as any)[COMPILER_OPTIONS.arraysVariableName] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
         const frames = generateFramesForNode(
@@ -93,7 +93,7 @@ describe('tabplay~', () => {
     })
 
     it('should read from sample to sample when receiving 2 floats', () => {
-        ;(globalThis as any)[COMPILER_SETTINGS.arraysVariableName] = {
+        ;(globalThis as any)[COMPILER_OPTIONS.arraysVariableName] = {
             myArray: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
         }
         const frames = generateFramesForNode(

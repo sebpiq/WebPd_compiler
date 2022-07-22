@@ -10,6 +10,7 @@
  */
 
 import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
+import { EnginePorts, PortSpecs } from "../types"
 import { ArrayBufferOfIntegersPointer, AssemblyScriptWasmEngine, InternalPointer } from "./types"
 
 // Assemblyscript representation of message datum types
@@ -19,6 +20,42 @@ export const MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT = {
 }
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
+
+export const bindPorts = (engine: AssemblyScriptWasmEngine, portSpecs: PortSpecs): EnginePorts => {
+    const ports: EnginePorts = {}
+    Object.entries(portSpecs).forEach(([variableName, spec]) => {
+        if (spec.access.includes('w')) {
+            if (spec.type === 'messages') {
+                ports[`write_${variableName}`] = (messages) => {
+                    const messageArrayPointer = lowerMessageArray(engine, messages)
+                    ;(engine as any)[`write_${variableName}`](messageArrayPointer)
+                }
+                
+            } else {
+                ports[`write_${variableName}`] = (engine as any)[`write_${variableName}`]
+            }
+        }
+
+        if (spec.access.includes('r')) {
+            if (spec.type === 'messages') {
+                ports[`read_${variableName}`] = () => {
+                    const messagesCount = (engine as any)[`read_${variableName}_length`]()
+                    const messages: Array<PdSharedTypes.ControlValue> = []
+                    for (let i = 0; i < messagesCount; i++) {
+                        const messagePointer = (engine as any)[`read_${variableName}_elem`](i)
+                        messages.push(liftMessage(engine, messagePointer))
+                    }
+                    return messages
+                }
+            } else {
+                ports[`read_${variableName}`] = (engine as any)[`read_${variableName}`]
+            }
+        }
+
+    })
+
+    return ports
+}
 
 export const lowerMessage = (
     engine: AssemblyScriptWasmEngine, 
@@ -67,6 +104,14 @@ export const liftMessage = (engine: AssemblyScriptWasmEngine, messagePointer: In
     return message
 }
 
+export const lowerMessageArray = (engine: AssemblyScriptWasmEngine, messages: Array<PdSharedTypes.ControlValue>): InternalPointer => {
+    const messageArrayPointer = engine.createMessageArray()
+    messages.forEach(message => {
+        engine.pushMessageToArray(messageArrayPointer, lowerMessage(engine, message))
+    })
+    return messageArrayPointer
+}
+
 export const lowerArrayBufferOfIntegers = (engine: AssemblyScriptWasmEngine, integers: Array<number>) => {
     const buffer = new ArrayBuffer(INT_ARRAY_BYTES_PER_ELEMENT * integers.length) 
     const dataView = new DataView(buffer)
@@ -92,7 +137,7 @@ export const liftArrayBufferOfIntegers = (
 }
 
 // REF : Assemblyscript ESM bindings
-const liftString = (engine: AssemblyScriptWasmEngine, pointer: number) => {
+export const liftString = (engine: AssemblyScriptWasmEngine, pointer: number) => {
     if (!pointer) return null
     pointer = pointer >>> 0
     const end =

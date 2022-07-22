@@ -24,6 +24,9 @@ export type JavaScriptEngineCode = Code
 // with the AssemblyScript compiler
 export type AssemblyScriptEngineCode = Code
 
+// Map of public engine ports for accessing data inside the engine
+export type EnginePorts = { [portName: string]: (...args: any) => any }
+
 export interface CodeMacros {
     floatArrayType: () => Code
     typedVarInt: (name: CodeVariableName) => Code
@@ -32,6 +35,9 @@ export interface CodeMacros {
     typedVarMessage: (name: CodeVariableName) => Code
     typedVarFloatArray: (name: CodeVariableName) => Code
     typedVarMessageArray: (name: CodeVariableName) => Code
+    castToInt: (name: CodeVariableName) => Code
+    castToFloat: (name: CodeVariableName) => Code
+    functionHeader: (...functionArgs: Array<Code>) => Code
     createMessage: (name: CodeVariableName, message: PdSharedTypes.ControlValue) => Code
     isMessageMatching: (
         name: CodeVariableName, 
@@ -87,6 +93,11 @@ export interface NodeImplementation {
 
 export type NodeImplementations = { [nodeType: string]: NodeImplementation }
 
+export type PortSpecs = {[variableName: CodeVariableName]: {
+    access: 'r' | 'w' | 'rw',
+    type: 'float' | 'messages'
+}}
+
 interface BaseCompilerSettings {
     sampleRate: number
     channelCount: number
@@ -97,10 +108,7 @@ interface BaseCompilerSettings {
 
 interface CompilerOptions {
     // Ports allowing to read / write variables from the engine
-    ports: {[variableName: CodeVariableName]: {
-        access: 'r' | 'w' | 'rw',
-        type: 'float' | 'messages'
-    }}
+    portSpecs: PortSpecs
 }
 
 interface AssemblyScriptCompilerOptions {
