@@ -12,7 +12,7 @@
 import { renderCode } from "../code-helpers"
 import { Compilation } from "../compilation"
 import { MESSAGE_DATUM_TYPE, MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
-import { AssemblyScriptCompilerSettingsWithDefaults, Code, CodeVariableName } from "../types"
+import { CompilerAssemblyScriptSettingsWithDefaults, Code, CodeVariableName } from "../types"
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from "./bindings"
 
 const floatArrayType = (compilation: Compilation) => {
@@ -24,7 +24,7 @@ const typedVarInt = (_: Compilation, name: CodeVariableName) =>
     `${name}: i32`
 
 const typedVarFloat = (compilation: Compilation, name: CodeVariableName) => {
-    const settings = compilation.settings as AssemblyScriptCompilerSettingsWithDefaults
+    const settings = compilation.settings as CompilerAssemblyScriptSettingsWithDefaults
     return `${name}: f${settings.bitDepth}`
 }
 

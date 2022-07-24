@@ -209,7 +209,7 @@ export const generateFramesForNode = async (
     const code = compile(graph, nodeImplementations, {
         ...COMPILER_OPTIONS,
         target,
-        portSpecs
+        portSpecs,
     })
 
     let engine: JavaScriptEngine | AssemblyScriptWasmEngine
@@ -339,5 +339,4 @@ const roundFloatsInFrames = (frames: Array<Frame>) =>
 export const COMPILER_OPTIONS = {
     sampleRate: 44100,
     channelCount: 2,
-    arraysVariableName: 'WEBPD_ARRAYS',
 }

@@ -20,7 +20,6 @@ describe('macros', () => {
         target: 'assemblyscript',
         sampleRate: 44100,
         channelCount: 2,
-        arraysVariableName: 'ARRAYS',
     })
 
     describe('isMessageMatching', () => {

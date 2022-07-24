@@ -98,57 +98,57 @@ export type PortSpecs = {[variableName: CodeVariableName]: {
     type: 'float' | 'messages'
 }}
 
-interface BaseCompilerSettings {
+
+// Discriminated union for settings, allows to have specific values
+// depending on the target
+interface CompilerSettingsMandatory {
     sampleRate: number
     channelCount: number
-    // Name of variable that olds the collection of data arrays
-    // so they can be made accessible to nodes that need them.
-    arraysVariableName: CodeVariableName
 }
 
-interface CompilerOptions {
+interface CompilerSettingsOptional {
     // Ports allowing to read / write variables from the engine
     portSpecs: PortSpecs
-}
-
-interface AssemblyScriptCompilerOptions {
     bitDepth: 32 | 64
 }
 
-interface JavaScriptCompilerOptions {
-    bitDepth: 32 | 64
-}
-
-interface BaseAssemblyScriptCompilerSettings extends BaseCompilerSettings {
+type CompilerAssemblyScriptSettingsMandatory = CompilerSettingsMandatory & {
     target: 'assemblyscript'
 }
 
-interface BaseJavaScriptCompilerSettings extends BaseCompilerSettings {
+type CompilerJavaScriptSettingsMandatory = CompilerSettingsMandatory & {
     target: 'javascript'
 }
 
-type AssemblyScriptCompilerSettings = 
-    BaseAssemblyScriptCompilerSettings 
-    & Partial<AssemblyScriptCompilerOptions> 
-    & Partial<CompilerOptions>
-type JavaScriptCompilerSettings = 
-    BaseJavaScriptCompilerSettings 
-    & Partial<JavaScriptCompilerOptions> 
-    & Partial<CompilerOptions>
+interface CompilerAssemblyScriptSettingOptional {}
+interface CompilerJavaScriptSettingsOptional {}
+
 
 // External type of settings passed to the compilation by library user
-export type CompilerSettings = 
-    AssemblyScriptCompilerSettings | JavaScriptCompilerSettings
+type CompilerAssemblyScriptSettings = 
+    CompilerAssemblyScriptSettingsMandatory
+    & Partial<CompilerSettingsOptional>
+    & Partial<CompilerAssemblyScriptSettingOptional> 
 
-export type AssemblyScriptCompilerSettingsWithDefaults = 
-    BaseAssemblyScriptCompilerSettings 
-    & AssemblyScriptCompilerOptions
-    & CompilerOptions
-export type JavaScriptCompilerSettingsWithDefaults = 
-    BaseJavaScriptCompilerSettings 
-    & JavaScriptCompilerOptions
-    & CompilerOptions
+type CompilerJavaScriptSettings = 
+    CompilerJavaScriptSettingsMandatory 
+    & Partial<CompilerSettingsOptional>
+    & Partial<CompilerJavaScriptSettingsOptional> 
+
+export type CompilerSettings = 
+    CompilerAssemblyScriptSettings | CompilerJavaScriptSettings
+
 
 // Internal type of setting after validation and settings defaults
+export type CompilerAssemblyScriptSettingsWithDefaults = 
+    CompilerAssemblyScriptSettingsMandatory 
+    & CompilerSettingsOptional
+    & CompilerAssemblyScriptSettingOptional
+
+export type CompilerJavaScriptSettingsWithDefaults = 
+    CompilerJavaScriptSettingsMandatory 
+    & CompilerSettingsOptional
+    & CompilerJavaScriptSettingsOptional
+
 export type CompilerSettingsWithDefaults = 
-    AssemblyScriptCompilerSettingsWithDefaults | JavaScriptCompilerSettingsWithDefaults
+    CompilerAssemblyScriptSettingsWithDefaults | CompilerJavaScriptSettingsWithDefaults

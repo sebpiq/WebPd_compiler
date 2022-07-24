@@ -10,10 +10,12 @@
  */
 
 import { createNamespace } from './code-helpers'
-import AS_MACROS from './engine-assemblyscript/macros'
+import ASC_MACROS from './engine-assemblyscript/macros'
 import JS_MACROS from './engine-javascript/macros'
 import { CodeMacros, CompilerSettings, CompilerSettingsWithDefaults, NodeImplementation, NodeImplementations, NodeVariableNames, VariableNames } from './types'
 import { generateInletVariableName, generateOutletVariableName, generateStateVariableName } from './variable-names'
+
+export const ARRAYS_VARIABLE_NAME = 'ARRAYS'
 
 export class Compilation {
     readonly graph: PdDspGraph.Graph
@@ -51,7 +53,7 @@ export class Compilation {
                 return nodeMap
             }, {})),
             g: {
-                arrays: settings.arraysVariableName,
+                arrays: ARRAYS_VARIABLE_NAME,
                 iterOutlet: 'O',
                 iterFrame: 'F',
                 frame: 'FRAME',
@@ -62,7 +64,7 @@ export class Compilation {
     }
 
     getMacros(): CodeMacros {
-        let unwrappedMacros = this.settings.target === 'javascript' ? JS_MACROS : AS_MACROS
+        let unwrappedMacros = this.settings.target === 'javascript' ? JS_MACROS : ASC_MACROS
         return {
             floatArrayType: unwrappedMacros.floatArrayType.bind(undefined, this),
             typedVarInt: unwrappedMacros.typedVarInt.bind(undefined, this),

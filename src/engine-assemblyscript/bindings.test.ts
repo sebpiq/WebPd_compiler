@@ -11,7 +11,7 @@
 
 import assert from "assert"
 import {jest} from '@jest/globals'
-import { Compilation } from "../compilation"
+import { ARRAYS_VARIABLE_NAME, Compilation } from "../compilation"
 import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
 import { assertMessageRawContentsEqual, compileAssemblyScript, getAssemblyscriptCoreCode } from "./test-helpers"
 import { bindPorts, INT_ARRAY_BYTES_PER_ELEMENT, liftArrayBufferOfIntegers, liftMessage, lowerArrayBufferOfIntegers, lowerMessage, lowerString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT, setArray } from "./bindings"
@@ -30,7 +30,6 @@ describe('bindings', () => {
         target: 'assemblyscript' as CompilerSettings["target"],
         sampleRate: 44100,
         channelCount: 2,
-        arraysVariableName: 'ARRAYS',
     }
 
     const float32ToInt32 = (value: number) => {
@@ -134,7 +133,7 @@ describe('bindings', () => {
         it('should set the array', async () => {
             const code = compile({}, {}, COMPILER_OPTIONS) + `
                 export function testReadArray (arrayName: string, index: i32): f32 {
-                    return ${COMPILER_OPTIONS.arraysVariableName}[arrayName][index]
+                    return ${ARRAYS_VARIABLE_NAME}[arrayName][index]
                 }
             `
             const module = await compileAssemblyScript(code)

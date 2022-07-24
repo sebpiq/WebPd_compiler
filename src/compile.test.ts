@@ -25,14 +25,12 @@ describe('compile', () => {
     const COMPILER_SETTINGS_JS: CompilerSettings = {
         sampleRate: 44100,
         channelCount: 2,
-        arraysVariableName: 'ARRAYS',
         target: 'javascript'
     }
 
     const COMPILER_SETTINGS_AS: CompilerSettings = {
         sampleRate: 44100,
         channelCount: 2,
-        arraysVariableName: 'ARRAYS',
         target: 'assemblyscript',
         bitDepth: 32
     }

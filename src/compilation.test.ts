@@ -12,7 +12,6 @@ describe('compilation', () => {
     const COMPILER_SETTINGS: CompilerSettings = {
         sampleRate: 44100,
         channelCount: 2,
-        arraysVariableName: 'ARRAYS',
         target: 'javascript',
     }
 
@@ -145,7 +144,6 @@ describe('compilation', () => {
                 target: 'assemblyscript',
                 channelCount: 2,
                 sampleRate: 44100,
-                arraysVariableName: 'ARRAYS'
             })
             assert.strictEqual((settings as any).bitDepth, 32)
             assert.deepStrictEqual((settings as any).portSpecs, {})
@@ -157,7 +155,6 @@ describe('compilation', () => {
                 channelCount: 2,
                 sampleRate: 44100,
                 bitDepth: 666,
-                arraysVariableName: 'ARRAYS'
             } as any))
         })
     })
