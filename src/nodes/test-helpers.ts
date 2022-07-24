@@ -21,7 +21,7 @@ import {
 import { renderCode } from '../code-helpers'
 import { JavaScriptEngine } from '../engine-javascript/types'
 import { AssemblyScriptWasmEngine } from '../engine-assemblyscript/types'
-import { bindPorts } from '../engine-assemblyscript/bindings'
+import { bindPorts, setArray } from '../engine-assemblyscript/bindings'
 import { compileAssemblyScript } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { round } from '../test-helpers'
@@ -74,7 +74,8 @@ export type Frame = {
 export const generateFramesForNode = async (
     target: CompilerSettings["target"],
     nodeSummary: NodeSummary,
-    inputFrames: Array<Frame>
+    inputFrames: Array<Frame>,
+    arrays?: {[arrayName: string]: Array<number>},
 ): Promise<Array<Frame>> => {
     const _isConnectedToFakeNode = (inletId: PdDspGraph.PortletId) => 
         testNode.sources[inletId] 
@@ -213,12 +214,26 @@ export const generateFramesForNode = async (
 
     let engine: JavaScriptEngine | AssemblyScriptWasmEngine
     let ports: EnginePorts
+
     if (target === 'javascript') {
-        engine = new Function(code)() as JavaScriptEngine
-        ports = engine.ports
+        const jsEngine = new Function(code)() as JavaScriptEngine
+        ports = jsEngine.ports
+        if (arrays) {
+            Object.entries(arrays).forEach(([arrayName, data]) => {
+                jsEngine.setArray(arrayName, data)
+            })
+        }
+        engine = jsEngine
+
     } else {
-        engine = (await compileAssemblyScript(code)).instance.exports as unknown as AssemblyScriptWasmEngine
-        ports = bindPorts(engine, portSpecs)
+        const ascEngine = (await compileAssemblyScript(code)).instance.exports as unknown as AssemblyScriptWasmEngine
+        ports = bindPorts(ascEngine, portSpecs)
+        if (arrays) {
+            Object.entries(arrays).forEach(([arrayName, data]) => {
+                setArray(ascEngine, arrayName, data)
+            })
+        }
+        engine = ascEngine
     }
 
     // --------------- Generate frames
@@ -293,11 +308,12 @@ export const assertNodeOutput = async (
     nodeSummary: NodeSummary,
     inputFrames: Array<Frame>,
     expectedOutputFrames: Array<Frame>,
+    arrays?: {[arrayName: string]: Array<number>},
 ): Promise<void> => {
     let actualOutputFrames: Array<Frame>
-    actualOutputFrames = await generateFramesForNode('javascript', nodeSummary, inputFrames)
+    actualOutputFrames = await generateFramesForNode('javascript', nodeSummary, inputFrames, arrays)
     assert.deepStrictEqual(roundFloatsInFrames(actualOutputFrames), roundFloatsInFrames(expectedOutputFrames), 'javascript frames not matching')
-    actualOutputFrames = await generateFramesForNode('assemblyscript', nodeSummary, inputFrames)
+    actualOutputFrames = await generateFramesForNode('assemblyscript', nodeSummary, inputFrames, arrays)
     assert.deepStrictEqual(roundFloatsInFrames(actualOutputFrames), roundFloatsInFrames(expectedOutputFrames), 'assemblyscript frames not matching')
 }
 

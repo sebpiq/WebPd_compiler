@@ -54,21 +54,21 @@ describe('macros', () => {
             const code = MACROS.isMessageMatching(
                 COMPILATION, 'myMessage', [MESSAGE_DATUM_TYPE_STRING, MESSAGE_DATUM_TYPE_FLOAT])
             assert.strictEqual(code, 
-                `(myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]})`)
+                `(myMessage.datumCount === 2 && myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]})`)
         })
 
         it('should generate condition for values', () => {
             const code = MACROS.isMessageMatching(
                 COMPILATION, 'myMessage', ['blabla', 123.5])
             assert.strictEqual(code, 
-                `(myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && readStringDatum(myMessage, 0) === "blabla" && readFloatDatum(myMessage, 1) === 123.5)`)
+                `(myMessage.datumCount === 2 && myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && readStringDatum(myMessage, 0) === "blabla" && readFloatDatum(myMessage, 1) === 123.5)`)
         })
 
         it('should generate condition for types and values', () => {
             const code = MACROS.isMessageMatching(
                 COMPILATION, 'myMessage', [MESSAGE_DATUM_TYPE_FLOAT, 'bla'])
             assert.strictEqual(code, 
-                `(myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && readStringDatum(myMessage, 1) === "bla")`)
+                `(myMessage.datumCount === 2 && myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && readStringDatum(myMessage, 1) === "bla")`)
         })
     })
 

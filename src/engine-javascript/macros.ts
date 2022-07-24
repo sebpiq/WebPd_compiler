@@ -52,7 +52,8 @@ const isMessageMatching = (
     _: Compilation, name: CodeVariableName, 
     tokens: Array<number | string | MESSAGE_DATUM_TYPE>
 ): Code => {
-    const andConditions = tokens.map((token, tokenIndex) => {
+    const conditionOnLength = `${name}.length === ${tokens.length}`
+    const conditionsOnValues = tokens.map((token, tokenIndex) => {
         if (typeof token === 'number') {
             return `${name}[${tokenIndex}] === ${token}`
         } else if (typeof token === 'string') {
@@ -64,8 +65,8 @@ const isMessageMatching = (
         } else {
             throw new Error(`unexpected token ${token}`)
         }
-    }).join(' && ')
-    return `(${andConditions})`
+    })
+    return `(${[conditionOnLength, ...conditionsOnValues].join(' && ')})`
 }
 
 const readMessageStringDatum = (

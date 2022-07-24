@@ -14,10 +14,12 @@ import {jest} from '@jest/globals'
 import { Compilation } from "../compilation"
 import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
 import { assertMessageRawContentsEqual, compileAssemblyScript, getAssemblyscriptCoreCode } from "./test-helpers"
-import { bindPorts, INT_ARRAY_BYTES_PER_ELEMENT, liftArrayBufferOfIntegers, liftMessage, lowerArrayBufferOfIntegers, lowerMessage, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from "./bindings"
+import { bindPorts, INT_ARRAY_BYTES_PER_ELEMENT, liftArrayBufferOfIntegers, liftMessage, lowerArrayBufferOfIntegers, lowerMessage, lowerString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT, setArray } from "./bindings"
 import { AssemblyScriptWasmEngine } from "./types"
 import { Code, CompilerSettings, PortSpecs } from "../types"
 import { compilePorts } from "./compile"
+import { round } from "../test-helpers"
+import compile from "../compile"
 
 describe('bindings', () => {
     jest.setTimeout(10000)
@@ -42,7 +44,7 @@ describe('bindings', () => {
         const getBoundPorts = async (portSpecs: PortSpecs, extraCode: Code) => {
             const compilation = new Compilation({}, {}, {...COMPILER_OPTIONS, portSpecs: portSpecs})
             const code = ASSEMBLY_SCRIPT_CORE_CODE + extraCode + `
-                ${compilePorts(compilation, {FloatType: 'f32'})}
+                ${compilePorts(compilation, {FloatType: 'f32', FloatArrayType: 'Float32Array'})}
             `
             const module = await compileAssemblyScript(code)
             const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
@@ -124,6 +126,33 @@ describe('bindings', () => {
             ports.write_someFloat(666)
             assert.strictEqual(ports.read_someFloat(), 666)
         })
+
+    })
+
+    describe('setArray', () => {
+
+        it('should set the array', async () => {
+            const code = compile({}, {}, COMPILER_OPTIONS) + `
+                export function testReadArray (arrayName: string, index: i32): f32 {
+                    return ${COMPILER_OPTIONS.arraysVariableName}[arrayName][index]
+                }
+            `
+            const module = await compileAssemblyScript(code)
+            const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
+
+            setArray(engine, 'array1', new Float32Array([11.1, 22.2, 33.3]))
+            setArray(engine, 'array2', new Float64Array([44.4, 55.5]))
+            setArray(engine, 'array3', [66.6, 77.7])
+            
+            let actual: number
+            actual = (engine as any).testReadArray(lowerString(engine, 'array1'), 1)
+            assert.strictEqual(round(actual), 22.2)
+            actual = (engine as any).testReadArray(lowerString(engine, 'array2'), 0)
+            assert.strictEqual(round(actual), 44.4)
+            actual = (engine as any).testReadArray(lowerString(engine, 'array3'), 1)
+            assert.strictEqual(round(actual), 77.7)
+        })
+
     })
 
     describe('lowerArrayBufferOfIntegers', () => {

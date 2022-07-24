@@ -80,6 +80,7 @@ const isMessageMatching = (
     tokens: Array<number | string | MESSAGE_DATUM_TYPE>
 ) => {
     const MACROS = compilation.getMacros()
+    const conditionOnDatumCount = `${name}.datumCount === ${tokens.length}`
     const conditionsOnValues: Array<Code> = []
     const conditionsOnTypes: Array<Code> = tokens.map((token, tokenIndex) => {
         if (typeof token === 'number' || token === MESSAGE_DATUM_TYPE_FLOAT) {
@@ -99,7 +100,7 @@ const isMessageMatching = (
 
     // !!! Conditions on message template must appear before conditions on values,
     // because the conditions on values assume a specific a type for the value they are testing
-    return `(${[...conditionsOnTypes, ...conditionsOnValues].join(' && ')})`
+    return `(${[conditionOnDatumCount, ...conditionsOnTypes, ...conditionsOnValues].join(' && ')})`
 }
 
 const readMessageStringDatum = (

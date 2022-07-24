@@ -9,19 +9,17 @@
  *
  */
 
-import assert from 'assert'
-import { generateFramesForNode } from '../test-helpers'
+import { assertNodeOutput } from "./test-helpers"
+
 
 describe('msg', () => {
     it('should transfer directly messages without dollar strings', () => {
-        const frames = generateFramesForNode(
+        assertNodeOutput(
             {
                 type: 'msg',
                 args: { template: [123, 'hello'] },
             },
-            [{ '0': [['bang'], ['blabla'], ['quoi?', 456]] }]
-        )
-        assert.deepStrictEqual(frames, [
+            [{ '0': [['bang'], ['blabla'], ['quoi?', 456]] }], [
             {
                 '0': [
                     [123, 'hello'],
@@ -33,7 +31,7 @@ describe('msg', () => {
     })
 
     it('should substitute entire dollar strings', () => {
-        const frames = generateFramesForNode(
+        assertNodeOutput(
             {
                 type: 'msg',
                 args: { template: [123, '$2', '$1'] },
@@ -45,9 +43,7 @@ describe('msg', () => {
                         ['blabla', 456],
                     ],
                 },
-            ]
-        )
-        assert.deepStrictEqual(frames, [
+            ], [
             {
                 '0': [
                     [123, 'hehe', 'wow'],
@@ -58,7 +54,7 @@ describe('msg', () => {
     })
 
     it('should substitute dollar strings within strings', () => {
-        const frames = generateFramesForNode(
+        assertNodeOutput(
             {
                 type: 'msg',
                 args: { template: ['hello_$2', '$1', 'greetings'] },
@@ -70,9 +66,7 @@ describe('msg', () => {
                         ['satan', 666],
                     ],
                 },
-            ]
-        )
-        assert.deepStrictEqual(frames, [
+            ], [
             {
                 '0': [
                     ['hello_saturn', 'earth', 'greetings'],

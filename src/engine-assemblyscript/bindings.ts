@@ -10,7 +10,7 @@
  */
 
 import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
-import { EnginePorts, PortSpecs } from "../types"
+import { CompilerSettingsWithDefaults, EnginePorts, PortSpecs } from "../types"
 import { ArrayBufferOfIntegersPointer, AssemblyScriptWasmEngine, InternalPointer } from "./types"
 
 // Assemblyscript representation of message datum types
@@ -20,6 +20,12 @@ export const MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT = {
 }
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
+
+export const setArray = (engine: AssemblyScriptWasmEngine, arrayName: string, data: Array<number> | Float32Array | Float64Array) => {
+    const stringPointer = lowerString(engine, arrayName)
+    const bufferPointer = lowerArrayBufferOfFloats(engine, data, 32)
+    engine.setArray(stringPointer, bufferPointer)
+}
 
 export const bindPorts = (engine: AssemblyScriptWasmEngine, portSpecs: PortSpecs): EnginePorts => {
     const ports: EnginePorts = {}
@@ -136,6 +142,22 @@ export const liftArrayBufferOfIntegers = (
     return array
 }
 
+export const lowerArrayBufferOfFloats = (
+    engine: AssemblyScriptWasmEngine, 
+    floats: Array<number> | Float32Array | Float64Array,
+    bitDepth: CompilerSettingsWithDefaults["bitDepth"],
+) => {
+    const bytesPerElement = bitDepth / 8
+    const buffer = new ArrayBuffer(bytesPerElement * floats.length) 
+    const dataView = new DataView(buffer)
+    const setFloatName = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
+    for (let i = 0; i < floats.length; i++) {
+        dataView[setFloatName](
+            bytesPerElement * i, floats[i])    
+    }
+    return lowerBuffer(engine, buffer)
+}
+
 // REF : Assemblyscript ESM bindings
 export const liftString = (engine: AssemblyScriptWasmEngine, pointer: number) => {
     if (!pointer) return null
@@ -154,7 +176,7 @@ export const liftString = (engine: AssemblyScriptWasmEngine, pointer: number) =>
 }
 
 // REF : Assemblyscript ESM bindings
-const lowerString = (engine: AssemblyScriptWasmEngine, value: string) => {
+export const lowerString = (engine: AssemblyScriptWasmEngine, value: string) => {
     if (value == null) return 0;
     const
       length = value.length,

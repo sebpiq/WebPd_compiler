@@ -2,7 +2,7 @@ import { renderCode } from "../code-helpers"
 import { Compilation } from "../compilation"
 import { Code } from "../types"
 
-export const compilePorts = (compilation: Compilation, {FloatType}: {FloatType: string}) => {
+export const compilePorts = (compilation: Compilation, {FloatType, FloatArrayType}: {FloatType: string, FloatArrayType: string}) => {
     const {portSpecs} = compilation.settings
     return renderCode`
         ${Object.entries(portSpecs).map(([variableName, spec]) => {

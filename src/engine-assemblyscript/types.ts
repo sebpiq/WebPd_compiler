@@ -20,9 +20,17 @@ export type InternalPointer = number
 // REF : https://www.assemblyscript.org/runtime.html#memory-layout
 export type ArrayBufferOfIntegersPointer = number
 
+// Pointer to an array buffer that contains floats (f32 or f64 depending on setting bitDepth).
+// This is what we use to pass audio data back and forth from the module.
+// Because the memory layout is not fixed for data types other than strings
+// REF : https://www.assemblyscript.org/runtime.html#memory-layout
+export type ArrayBufferOfFloatsPointer = number
+
 export interface AssemblyScriptWasmEngine {
     configure: (blockSize: number) => void
     loop: () => Float32Array
+    setArray: (arrayName: StringPointer, buffer: ArrayBufferOfFloatsPointer) => void
+
     memory: WebAssembly.Memory
     
     MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global

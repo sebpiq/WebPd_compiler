@@ -14,41 +14,50 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ setup ------------------------------ //
 export const setup: NodeCodeGenerator = (node, { state, ins, globs, MACROS }) => `
-    let ${MACROS.typedVarFloatArray(state.array)} = new ${MACROS.floatArrayType}(0)
+    let ${MACROS.typedVarFloatArray(state.array)} = new ${MACROS.floatArrayType()}(0)
     let ${MACROS.typedVarInt(state.readPosition)} = 0
     let ${MACROS.typedVarInt(state.readUntil)} = 0
 
-    const ${state.funcSetArrayName} = (
-        ${MACROS.typedVarString('arrayName')}
-    ) => {
-        ${state.array} = ${globs.arrays}[arrayName] || new Float32Array(0)
+    const ${state.funcSetArrayName} = ${MACROS.functionHeader(MACROS.typedVarString('arrayName'))} => {
+        if (!${globs.arrays}.has(arrayName)) {
+            ${state.array} = new Float32Array(0)
+        } else {
+            ${state.array} = ${globs.arrays}.get(arrayName)
+        }
         ${state.readPosition} = ${state.array}.length
         ${state.readUntil} = ${state.array}.length
     }
 
-    const ${state.funcHandleMessage} = () => {
-        let ${MACROS.typedVarMessage('inMessage')} = ${ins.$0}.shift()
-        if (${MACROS.isMessageMatching('inMessage', ['set', MESSAGE_DATUM_TYPE_STRING])}) {
-            ${state.funcSetArrayName}(${MACROS.readMessageStringDatum('inMessage', 1)})
+    const ${state.funcHandleMessage} = ${MACROS.functionHeader()} => {
+        let ${MACROS.typedVarMessage('m')} = ${ins.$0}.shift()
+        
+        if (${MACROS.isMessageMatching('m', ['set', MESSAGE_DATUM_TYPE_STRING])}) {
+            ${state.funcSetArrayName}(${MACROS.readMessageStringDatum('m', 1)})
             
-        } else if (${MACROS.isMessageMatching('inMessage', ['bang'])}) {
+        } else if (${MACROS.isMessageMatching('m', ['bang'])}) {
             ${state.readPosition} = 0
             ${state.readUntil} = ${state.array}.length
             
-        } else if (${MACROS.isMessageMatching('inMessage', [MESSAGE_DATUM_TYPE_FLOAT])}) {
-            ${state.readPosition} = ${MACROS.readMessageFloatDatum('inMessage', 0)}
-            ${state.readUntil} = Math.min(startPosition + sampleCount, ${state.array}.length)
+        } else if (${MACROS.isMessageMatching('m', [MESSAGE_DATUM_TYPE_FLOAT])}) {
+            ${state.readPosition} = ${MACROS.castToInt(MACROS.readMessageFloatDatum('m', 0))}
+            ${state.readUntil} = ${state.array}.length
     
-        } else if (${MACROS.isMessageMatching('inMessage', [MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_FLOAT])}) {
-            ${state.readPosition} = ${MACROS.readMessageFloatDatum('inMessage', 0)}
-            ${state.readUntil} = ${MACROS.readMessageFloatDatum('inMessage', 1)}
+        } else if (${MACROS.isMessageMatching('m', [MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_FLOAT])}) {
+            ${state.readPosition} = ${MACROS.castToInt(MACROS.readMessageFloatDatum('m', 0))}
+            ${state.readUntil} = ${MACROS.castToInt(`Math.min(
+                ${MACROS.castToFloat(state.readPosition)} + ${MACROS.readMessageFloatDatum('m', 1)}, 
+                ${MACROS.castToFloat(`${state.array}.length`)}
+            )`)}
             
         } else {
             throw new Error("Unexpected message")
         }
     }
 
-    ${state.funcSetArrayName}("${node.args.arrayName}")
+    ${node.args.arrayName ? `{
+        ${MACROS.createMessage('m', ['set', node.args.arrayName as string])}
+        ${ins.$0}.push(m)
+    }`: ''}
 `
 
 // ------------------------------- loop ------------------------------ //

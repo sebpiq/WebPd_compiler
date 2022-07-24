@@ -41,6 +41,8 @@ export const compile = (
     if (compilation.settings.target === 'javascript') {
         const {portSpecs} = compilation.settings
         return renderCode`
+            const ${globs.arrays} = new Map()
+
             ${compileSetup(compilation, graphTraversal)}
 
             return {
@@ -52,6 +54,9 @@ export const compile = (
                         ${globs.frame}++
                         ${compileLoop(compilation, graphTraversal)}
                     }
+                },
+                setArray: (arrayName, array) => { 
+                    ${globs.arrays}.set(arrayName, array)
                 },
                 ports: {
                     ${Object.entries(portSpecs).map(([variableName, spec]) => {
@@ -86,7 +91,6 @@ export const compile = (
             ${CORE_CODE}
 
             let ${MACROS.typedVarFloatArray(globs.output)} = new ${FloatArrayType}(0)
-            const ${globs.arrays} = new Map<string,${FloatArrayType}>()
         
             ${compileSetup(compilation, graphTraversal)}
 
@@ -103,12 +107,14 @@ export const compile = (
                 }
             }
 
+            const ${globs.arrays} = new Map<string,${FloatArrayType}>()
+
             export function setArray(arrayName: string, buffer: ArrayBuffer): void {
-                const array = bufferToFloatArray(buffer)
+                const array = bufferToArrayOfFloats(buffer)
                 ${globs.arrays}.set(arrayName, array)
             }
 
-            ${compilePorts(compilation, {FloatType})}
+            ${compilePorts(compilation, {FloatType, FloatArrayType})}
         `
     }
 }
