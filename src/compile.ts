@@ -16,7 +16,7 @@ import { Compilation } from './compilation'
 import { renderCode } from './code-helpers'
 import assemblyscriptCoreCode from './engine-assemblyscript/core-code.asc'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/bindings'
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from './engine-common'
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from './constants'
 import { compilePorts } from './engine-assemblyscript/compile'
 
 export default (

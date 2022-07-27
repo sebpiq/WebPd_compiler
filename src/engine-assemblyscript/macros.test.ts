@@ -11,7 +11,7 @@
 
 import assert from "assert"
 import { Compilation } from "../compilation"
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants"
 import { normalizeCode } from "../test-helpers"
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from "./bindings"
 import MACROS from "./macros"

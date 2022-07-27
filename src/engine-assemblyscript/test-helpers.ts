@@ -13,9 +13,9 @@ import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from '../engine-common'
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from '../constants'
 import { Code } from '../types';
-import { liftArrayBufferOfIntegers, liftString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './bindings';
+import { liftString, liftTypedArray, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './bindings';
 import assert from 'assert'
 import { AssemblyScriptWasmEngine, InternalPointer } from './types'
 
@@ -30,11 +30,6 @@ export const getAssemblyscriptCoreCode = () => {
         .replaceAll('${setFloat}', 'setFloat32')
         .replaceAll('${MESSAGE_DATUM_TYPE_FLOAT}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT].toString()) 
         .replaceAll('${MESSAGE_DATUM_TYPE_STRING}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING].toString())
-        + `
-        export function testGetMessageBuffer (message: Message): ArrayBuffer {
-            return message.dataView.buffer
-        }
-        `
 }
 
 export const compileAssemblyScript = async (code: Code) => {
@@ -69,13 +64,4 @@ export const compileAssemblyScript = async (code: Code) => {
         },
     })
     return wasmModule
-}
-
-export const assertMessageRawContentsEqual = (
-    engine: AssemblyScriptWasmEngine, 
-    messagePointer: InternalPointer, 
-    expected: Array<number>
-) => {
-    const messageBufferPointer = (engine as any).testGetMessageBuffer(messagePointer)
-    assert.deepStrictEqual(liftArrayBufferOfIntegers(engine, messageBufferPointer), expected)
 }

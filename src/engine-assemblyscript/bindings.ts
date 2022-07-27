@@ -9,9 +9,20 @@
  *
  */
 
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants"
 import { CompilerSettingsWithDefaults, EnginePorts, PortSpecs } from "../types"
-import { ArrayBufferOfIntegersPointer, AssemblyScriptWasmEngine, InternalPointer } from "./types"
+import { AssemblyScriptWasmEngine, InternalPointer } from "./types"
+
+type TypedArrayConstructor =
+    | typeof Int8Array
+    | typeof Uint8Array
+    | typeof Int16Array
+    | typeof Uint16Array
+    | typeof Int32Array
+    | typeof Uint32Array
+    | typeof Uint8ClampedArray
+    | typeof Float32Array
+    | typeof Float64Array
 
 // Assemblyscript representation of message datum types
 export const MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT = {
@@ -21,7 +32,11 @@ export const MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT = {
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
-export const setArray = (engine: AssemblyScriptWasmEngine, arrayName: string, data: Array<number> | Float32Array | Float64Array) => {
+export const setArray = (
+    engine: AssemblyScriptWasmEngine, 
+    arrayName: string, data: 
+    Array<number> | Float32Array | Float64Array
+) => {
     const stringPointer = lowerString(engine, arrayName)
     const bufferPointer = lowerArrayBufferOfFloats(engine, data, 32)
     engine.setArray(stringPointer, bufferPointer)
@@ -97,7 +112,7 @@ export const lowerMessage = (
 
 export const liftMessage = (engine: AssemblyScriptWasmEngine, messagePointer: InternalPointer): PdSharedTypes.ControlValue => {
     const messageDatumTypesPointer = engine.getMessageDatumTypes(messagePointer)
-    const messageDatumTypes = liftArrayBufferOfIntegers(engine, messageDatumTypesPointer)
+    const messageDatumTypes = liftTypedArray(engine, Int32Array, messageDatumTypesPointer)
     const message: PdSharedTypes.ControlValue = []
     messageDatumTypes.forEach((datumType, datumIndex) => {
         if (datumType === engine.MESSAGE_DATUM_TYPE_FLOAT.valueOf()) {
@@ -118,7 +133,10 @@ export const lowerMessageArray = (engine: AssemblyScriptWasmEngine, messages: Ar
     return messageArrayPointer
 }
 
-export const lowerArrayBufferOfIntegers = (engine: AssemblyScriptWasmEngine, integers: Array<number>) => {
+export const lowerArrayBufferOfIntegers = (
+    engine: AssemblyScriptWasmEngine, 
+    integers: Array<number>
+) => {
     const buffer = new ArrayBuffer(INT_ARRAY_BYTES_PER_ELEMENT * integers.length) 
     const dataView = new DataView(buffer)
     for (let i = 0; i < integers.length; i++) {
@@ -126,20 +144,6 @@ export const lowerArrayBufferOfIntegers = (engine: AssemblyScriptWasmEngine, int
             INT_ARRAY_BYTES_PER_ELEMENT * i, integers[i])    
     }
     return lowerBuffer(engine, buffer)
-}
-
-export const liftArrayBufferOfIntegers = (
-    engine: AssemblyScriptWasmEngine, 
-    bufferPointer: ArrayBufferOfIntegersPointer,
-): Array<number> => {
-    const buffer = liftBuffer(engine, bufferPointer)
-    const dataView = new DataView(buffer)
-    const elemCount = dataView.byteLength / INT_ARRAY_BYTES_PER_ELEMENT
-    const array: Array<number> = new Array(elemCount)
-    for (let i = 0; i < elemCount; i++) {
-        array[i] = dataView.getInt32(INT_ARRAY_BYTES_PER_ELEMENT * i)
-    }
-    return array
 }
 
 export const lowerArrayBufferOfFloats = (
@@ -156,6 +160,21 @@ export const lowerArrayBufferOfFloats = (
             bytesPerElement * i, floats[i])    
     }
     return lowerBuffer(engine, buffer)
+}
+
+// REF : Assemblyscript ESM bindings
+export const liftTypedArray = (
+    engine: AssemblyScriptWasmEngine, 
+    constructor: TypedArrayConstructor, 
+    pointer: InternalPointer,
+) => {
+    if (!pointer) return null;
+    const memoryU32 = new Uint32Array(engine.memory.buffer);
+    return new constructor(
+      engine.memory.buffer,
+      memoryU32[pointer + 4 >>> 2],
+      memoryU32[pointer + 8 >>> 2] / constructor.BYTES_PER_ELEMENT
+    ).slice();
 }
 
 // REF : Assemblyscript ESM bindings
@@ -192,11 +211,4 @@ const lowerBuffer = (engine: AssemblyScriptWasmEngine, value: ArrayBuffer) => {
     const pointer = engine.__new(value.byteLength, 0) >>> 0
     new Uint8Array(engine.memory.buffer).set(new Uint8Array(value), pointer)
     return pointer
-}
-
-// REF : Assemblyscript ESM bindings
-const liftBuffer = (engine: AssemblyScriptWasmEngine, pointer: number): ArrayBuffer => {
-    pointer = pointer >>> 0
-    if (!pointer) return null
-    return engine.memory.buffer.slice(pointer, pointer + new Uint32Array(engine.memory.buffer)[pointer - 4 >>> 2])
 }

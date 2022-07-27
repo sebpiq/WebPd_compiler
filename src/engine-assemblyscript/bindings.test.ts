@@ -12,9 +12,9 @@
 import assert from "assert"
 import {jest} from '@jest/globals'
 import { ARRAYS_VARIABLE_NAME, Compilation } from "../compilation"
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
-import { assertMessageRawContentsEqual, compileAssemblyScript, getAssemblyscriptCoreCode } from "./test-helpers"
-import { bindPorts, INT_ARRAY_BYTES_PER_ELEMENT, liftArrayBufferOfIntegers, liftMessage, lowerArrayBufferOfIntegers, lowerMessage, lowerString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT, setArray } from "./bindings"
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants"
+import { compileAssemblyScript, getAssemblyscriptCoreCode } from "./test-helpers"
+import { bindPorts, INT_ARRAY_BYTES_PER_ELEMENT, liftMessage, lowerArrayBufferOfIntegers, lowerMessage, lowerString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT, setArray } from "./bindings"
 import { AssemblyScriptWasmEngine } from "./types"
 import { Code, CompilerSettings, PortSpecs } from "../types"
 import { compilePorts } from "./compile"
@@ -176,61 +176,43 @@ describe('bindings', () => {
 
     })
 
-    describe('liftArrayBufferOfIntegers', () => {
-
-        it('should correctly lift the given array buffer of intergers to an array', async () => {
-            const module = await compileAssemblyScript(`
-                export function testCreateBuffer(): ArrayBuffer {
-                    const dataView: DataView = new DataView(new ArrayBuffer(sizeof<i32>() * 4))
-                    dataView.setInt32(0 * sizeof<i32>(), 1)
-                    dataView.setInt32(1 * sizeof<i32>(), 22)
-                    dataView.setInt32(2 * sizeof<i32>(), 333)
-                    dataView.setInt32(3 * sizeof<i32>(), 4444)
-                    return dataView.buffer
-                }
-                ${ASSEMBLY_SCRIPT_CORE_CODE}
-            `)
-            const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
-            const bufferPointer = (engine as any).testCreateBuffer()
-            const array = liftArrayBufferOfIntegers(engine, bufferPointer)
-            assert.deepStrictEqual(array, [
-                1, 22, 333, 4444
-            ])
-        })
-
-    })
-
     describe('lowerMessage', () => {
 
         it('should create the message with correct header and filled-in data', async () => {
-            const module = await compileAssemblyScript(ASSEMBLY_SCRIPT_CORE_CODE)
-            const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
+            const module = await compileAssemblyScript(`
+                export function testReadMessageData(message: Message, index: i32): i32 {
+                    return message.dataView.getInt32(index * sizeof<i32>())
+                }
+                ${ASSEMBLY_SCRIPT_CORE_CODE}
+            `)
+            const engine = module.instance.exports as any
             
             const messagePointer = lowerMessage(engine, [
                 'bla', 2.3
             ])
 
-            assertMessageRawContentsEqual(engine, messagePointer, [
-                // Testing datum count
-                2,
+            // Testing datum count
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 0), 2)
 
-                // Testing datum types
-                1, 0,
-                
-                // Testing datum positions
-                // <Header byte size> 
-                //      + <Size of f32> 
-                //      + <Size of 3 chars strings> + <Size of f32>
-                6 * INT_ARRAY_BYTES_PER_ELEMENT, 
-                9 * INT_ARRAY_BYTES_PER_ELEMENT,
-                10 * INT_ARRAY_BYTES_PER_ELEMENT,
+            // Testing datum types
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 1), 1)
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 2), 0)
 
-                // DATUM "bla"
-                'bla'.charCodeAt(0), 'bla'.charCodeAt(1), 'bla'.charCodeAt(2), 
+            // Testing datum positions
+            // <Header byte size> 
+            //      + <Size of f32> 
+            //      + <Size of 3 chars strings> + <Size of f32>            
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 3), 6 * INT_ARRAY_BYTES_PER_ELEMENT)
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 4), 9 * INT_ARRAY_BYTES_PER_ELEMENT)
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 5), 10 * INT_ARRAY_BYTES_PER_ELEMENT)
 
-                // DATUM "2.3"
-                float32ToInt32(2.3),
-            ])
+            // DATUM "bla"
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 6), 'bla'.charCodeAt(0))
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 7), 'bla'.charCodeAt(1))
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 8), 'bla'.charCodeAt(2))
+
+            // DATUM "2.3"
+            assert.strictEqual(engine.testReadMessageData(messagePointer, 9), float32ToInt32(2.3))
         })
 
     })

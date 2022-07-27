@@ -11,8 +11,8 @@
 
 import { renderCode } from "../code-helpers"
 import { Compilation } from "../compilation"
-import { MESSAGE_DATUM_TYPE, MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
-import { CompilerAssemblyScriptSettingsWithDefaults, Code, CodeVariableName } from "../types"
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants"
+import { CompilerAssemblyScriptSettingsWithDefaults, Code, CodeVariableName, MessageDatumType } from "../types"
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from "./bindings"
 
 const floatArrayType = (compilation: Compilation) => {
@@ -77,7 +77,7 @@ const createMessage = (_: Compilation, name: CodeVariableName, message: PdShared
 
 const isMessageMatching = (
     compilation: Compilation, name: CodeVariableName, 
-    tokens: Array<number | string | MESSAGE_DATUM_TYPE>
+    tokens: Array<number | string | MessageDatumType>
 ) => {
     const MACROS = compilation.getMacros()
     const conditionOnDatumCount = `${name}.datumCount === ${tokens.length}`

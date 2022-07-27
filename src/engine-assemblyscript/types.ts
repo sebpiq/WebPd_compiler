@@ -11,8 +11,11 @@
 
 export type StringPointer = number
 
+export type TypedArrayPointer = number
+
 // Pointer to data of unknown type that stays in the wasm space (`Message` for example).
 export type InternalPointer = number
+
 
 // Pointer to an array buffer that contains i32 integers.
 // This is what we use to pass generic data back and forth from the module.
@@ -37,7 +40,7 @@ export interface AssemblyScriptWasmEngine {
     MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
 
     createMessage: (templatePointer: ArrayBufferOfIntegersPointer) => InternalPointer
-    getMessageDatumTypes: (messagePointer: InternalPointer) => ArrayBufferOfIntegersPointer
+    getMessageDatumTypes: (messagePointer: InternalPointer) => TypedArrayPointer
     createMessageArray: () => InternalPointer
     pushMessageToArray: (messageArrayPointer: InternalPointer, messagePointer: InternalPointer) => void
     writeStringDatum: (

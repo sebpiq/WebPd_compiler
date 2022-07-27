@@ -10,8 +10,8 @@
  */
 
 import { Compilation } from "../compilation"
-import { MESSAGE_DATUM_TYPE, MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../engine-common"
-import { Code, CodeVariableName } from "../types"
+import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants"
+import { Code, CodeVariableName, MessageDatumType } from "../types"
 
 const floatArrayType = (compilation: Compilation) => {
     const {bitDepth} = compilation.settings
@@ -50,7 +50,7 @@ const createMessage = (_: Compilation, name: CodeVariableName, message: PdShared
 
 const isMessageMatching = (
     _: Compilation, name: CodeVariableName, 
-    tokens: Array<number | string | MESSAGE_DATUM_TYPE>
+    tokens: Array<number | string | MessageDatumType>
 ): Code => {
     const conditionOnLength = `${name}.length === ${tokens.length}`
     const conditionsOnValues = tokens.map((token, tokenIndex) => {

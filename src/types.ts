@@ -9,7 +9,9 @@
  *
  */
 
-import { MESSAGE_DATUM_TYPE } from "./engine-common"
+import { MESSAGE_DATUM_TYPE_STRING, MESSAGE_DATUM_TYPE_FLOAT } from "./constants"
+
+export type MessageDatumType = typeof MESSAGE_DATUM_TYPE_STRING | typeof MESSAGE_DATUM_TYPE_FLOAT
 
 // Code stored in string variable for later evaluation.
 export type Code = string
@@ -41,7 +43,7 @@ export interface CodeMacros {
     createMessage: (name: CodeVariableName, message: PdSharedTypes.ControlValue) => Code
     isMessageMatching: (
         name: CodeVariableName, 
-        tokens: Array<number | string | MESSAGE_DATUM_TYPE>
+        tokens: Array<number | string | MessageDatumType>
     ) => Code
     readMessageStringDatum: (
         name: CodeVariableName, 

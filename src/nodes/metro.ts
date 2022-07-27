@@ -9,7 +9,7 @@
  *
  */
 
-import { MESSAGE_DATUM_TYPE_FLOAT } from '../engine-common'
+import { MESSAGE_DATUM_TYPE_FLOAT } from '../constants'
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ setup ------------------------------ //
