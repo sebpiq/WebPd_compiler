@@ -9,8 +9,7 @@
  *
  */
 
-import { assertNodeOutput } from "./test-helpers"
-
+import { assertNodeOutput } from './test-helpers'
 
 describe('msg', () => {
     it('should transfer directly messages without dollar strings', () => {
@@ -19,15 +18,17 @@ describe('msg', () => {
                 type: 'msg',
                 args: { template: [123, 'hello'] },
             },
-            [{ '0': [['bang'], ['blabla'], ['quoi?', 456]] }], [
-            {
-                '0': [
-                    [123, 'hello'],
-                    [123, 'hello'],
-                    [123, 'hello'],
-                ],
-            },
-        ])
+            [{ '0': [['bang'], ['blabla'], ['quoi?', 456]] }],
+            [
+                {
+                    '0': [
+                        [123, 'hello'],
+                        [123, 'hello'],
+                        [123, 'hello'],
+                    ],
+                },
+            ]
+        )
     })
 
     it('should substitute entire dollar strings', () => {
@@ -43,14 +44,16 @@ describe('msg', () => {
                         ['blabla', 456],
                     ],
                 },
-            ], [
-            {
-                '0': [
-                    [123, 'hehe', 'wow'],
-                    [123, 456, 'blabla'],
-                ],
-            },
-        ])
+            ],
+            [
+                {
+                    '0': [
+                        [123, 'hehe', 'wow'],
+                        [123, 456, 'blabla'],
+                    ],
+                },
+            ]
+        )
     })
 
     it('should substitute dollar strings within strings', () => {
@@ -66,13 +69,15 @@ describe('msg', () => {
                         ['satan', 666],
                     ],
                 },
-            ], [
-            {
-                '0': [
-                    ['hello_saturn', 'earth', 'greetings'],
-                    ['hello_666', 'satan', 'greetings'],
-                ],
-            },
-        ])
+            ],
+            [
+                {
+                    '0': [
+                        ['hello_saturn', 'earth', 'greetings'],
+                        ['hello_666', 'satan', 'greetings'],
+                    ],
+                },
+            ]
+        )
     })
 })

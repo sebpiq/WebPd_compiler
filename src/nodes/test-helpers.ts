@@ -12,7 +12,12 @@
 import { NODE_BUILDERS } from '@webpd/dsp-graph'
 import compile from '../compile'
 import NODE_IMPLEMENTATIONS from '.'
-import { CompilerSettings, EnginePorts, NodeImplementations, PortSpecs } from '../types'
+import {
+    CompilerSettings,
+    EnginePorts,
+    NodeImplementations,
+    PortSpecs,
+} from '../types'
 import {
     generateInletVariableName,
     generateOutletVariableName,
@@ -66,21 +71,22 @@ const getNodeState = (
 }
 
 export type Frame = {
-    [portletId: string]: 
+    [portletId: string]:
         | Array<PdSharedTypes.ControlValue>
         | PdSharedTypes.SignalValue
 }
 
 export const generateFramesForNode = async (
-    target: CompilerSettings["target"],
+    target: CompilerSettings['target'],
     nodeSummary: NodeSummary,
     inputFrames: Array<Frame>,
-    arrays?: {[arrayName: string]: Array<number>},
+    arrays?: { [arrayName: string]: Array<number> }
 ): Promise<Array<Frame>> => {
-    const _isConnectedToFakeNode = (inletId: PdDspGraph.PortletId) => 
-        testNode.sources[inletId] 
-            && testNode.sources[inletId].filter(
-                source => source.nodeId === fakeSourceNode.id).length
+    const _isConnectedToFakeNode = (inletId: PdDspGraph.PortletId) =>
+        testNode.sources[inletId] &&
+        testNode.sources[inletId].filter(
+            (source) => source.nodeId === fakeSourceNode.id
+        ).length
 
     // --------------- Generating test graph
     //   [fakeSourceNode] -> [testNode] -> [recorderNode]
@@ -163,18 +169,24 @@ export const generateFramesForNode = async (
         'recorder-node': {
             // Generate one memory variable per outlet of test node
             setup: (_, { state, MACROS }) =>
-                renderCode`${Object.values(recorderNode.inlets).map(
-                    (inlet) => inlet.type === "signal" ? 
-                        `let ${MACROS.typedVarFloat(state['mem' + inlet.id])} = 0`: 
-                        `let ${MACROS.typedVarMessageArray(state['mem' + inlet.id])} = []`
+                renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
+                    inlet.type === 'signal'
+                        ? `let ${MACROS.typedVarFloat(
+                              state['mem' + inlet.id]
+                          )} = 0`
+                        : `let ${MACROS.typedVarMessageArray(
+                              state['mem' + inlet.id]
+                          )} = []`
                 )}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.
             loop: (_, { state, ins }) =>
-                renderCode`${Object.values(recorderNode.inlets).map(
-                    (inlet) => inlet.type === "signal" ? 
-                        `${state['mem' + inlet.id]} = ${ins[inlet.id]}`:
-                        `${state['mem' + inlet.id]} = ${ins[inlet.id]}.slice(0)`
+                renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
+                    inlet.type === 'signal'
+                        ? `${state['mem' + inlet.id]} = ${ins[inlet.id]}`
+                        : `${state['mem' + inlet.id]} = ${
+                              ins[inlet.id]
+                          }.slice(0)`
                 )}`,
             stateVariables: Object.keys(recorderNode.inlets).map(
                 (inletId) => 'mem' + inletId
@@ -186,23 +198,35 @@ export const generateFramesForNode = async (
     const portSpecs: PortSpecs = {}
     inputFrames.forEach((inputFrame) => {
         // Ports to write input values
-        Object.keys(inputFrame).forEach(inletId => {
+        Object.keys(inputFrame).forEach((inletId) => {
             const inlet = testNode.inlets[inletId]
-            const portType = inlet.type === 'signal' ? 'float': 'messages'
-            const inletVariableName = generateInletVariableName(testNode.id, inletId)
-            portSpecs[inletVariableName] = {access: 'w', type: portType}
+            const portType = inlet.type === 'signal' ? 'float' : 'messages'
+            const inletVariableName = generateInletVariableName(
+                testNode.id,
+                inletId
+            )
+            portSpecs[inletVariableName] = { access: 'w', type: portType }
 
             // We need a port to write to the output of the fakeSourceNode only if it is connected
             if (_isConnectedToFakeNode(inletId)) {
-                const outletVariableName = generateOutletVariableName(fakeSourceNode.id, inletId)
-                portSpecs[outletVariableName] = {access: 'w', type: portType}
+                const outletVariableName = generateOutletVariableName(
+                    fakeSourceNode.id,
+                    inletId
+                )
+                portSpecs[outletVariableName] = { access: 'w', type: portType }
             }
         })
 
         // Ports to read output values
         Object.entries(recorderNode.inlets).forEach(([inletId, inlet]) => {
-            const variableName = generateStateVariableName(recorderNode.id, 'mem' + inletId)
-            portSpecs[variableName] = {access: 'r', type: inlet.type === 'signal' ? 'float': 'messages'}
+            const variableName = generateStateVariableName(
+                recorderNode.id,
+                'mem' + inletId
+            )
+            portSpecs[variableName] = {
+                access: 'r',
+                type: inlet.type === 'signal' ? 'float' : 'messages',
+            }
         })
     })
 
@@ -224,9 +248,9 @@ export const generateFramesForNode = async (
             })
         }
         engine = jsEngine
-
     } else {
-        const ascEngine = (await compileAssemblyScript(code)).instance.exports as unknown as AssemblyScriptWasmEngine
+        const ascEngine = ((await compileAssemblyScript(code)).instance
+            .exports as unknown) as AssemblyScriptWasmEngine
         ports = bindPorts(ascEngine, portSpecs)
         if (arrays) {
             Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -241,17 +265,16 @@ export const generateFramesForNode = async (
     // Cleaning global scope polluted by assemblyscript compiler.
     // Some functions such as f32 and i32 are defined globally by assemblyscript compiler
     // That could cause some interference with our JS code that is executed through eval,
-    // (e.g. if a `f32` has been forgotten in the code generator of a node, code should fail, 
+    // (e.g. if a `f32` has been forgotten in the code generator of a node, code should fail,
     // but it won't because f32 exists globally).
     // so we remove these globals before running the tests.
     const assemblyscriptGlobalKeys = ['i32', 'f32', 'f64']
     const assemblyscriptGlobals: any = {}
-    assemblyscriptGlobalKeys.forEach(key => {
+    assemblyscriptGlobalKeys.forEach((key) => {
         const g = globalThis as any
         assemblyscriptGlobals[key] = g[key]
         g[key] = undefined
     })
-
 
     // blockSize = 1
     engine.configure(1)
@@ -259,12 +282,12 @@ export const generateFramesForNode = async (
     const outputFrames: Array<Frame> = []
     inputFrames.forEach((inputFrame) => {
         Object.entries(inputFrame).forEach(([inletId, value]) => {
-            // TODO : if working set only inlet 
+            // TODO : if working set only inlet
             // We set the inlets with our simulation values.
             setNodeInlet(
-                ports, 
-                testNode.id, 
-                inletId, 
+                ports,
+                testNode.id,
+                inletId,
                 Array.isArray(value) ? value.slice(0) : value
             )
 
@@ -308,22 +331,40 @@ export const assertNodeOutput = async (
     nodeSummary: NodeSummary,
     inputFrames: Array<Frame>,
     expectedOutputFrames: Array<Frame>,
-    arrays?: {[arrayName: string]: Array<number>},
+    arrays?: { [arrayName: string]: Array<number> }
 ): Promise<void> => {
     let actualOutputFrames: Array<Frame>
-    actualOutputFrames = await generateFramesForNode('javascript', nodeSummary, inputFrames, arrays)
-    assert.deepStrictEqual(roundFloatsInFrames(actualOutputFrames), roundFloatsInFrames(expectedOutputFrames), 'javascript frames not matching')
-    actualOutputFrames = await generateFramesForNode('assemblyscript', nodeSummary, inputFrames, arrays)
-    assert.deepStrictEqual(roundFloatsInFrames(actualOutputFrames), roundFloatsInFrames(expectedOutputFrames), 'assemblyscript frames not matching')
+    actualOutputFrames = await generateFramesForNode(
+        'javascript',
+        nodeSummary,
+        inputFrames,
+        arrays
+    )
+    assert.deepStrictEqual(
+        roundFloatsInFrames(actualOutputFrames),
+        roundFloatsInFrames(expectedOutputFrames),
+        'javascript frames not matching'
+    )
+    actualOutputFrames = await generateFramesForNode(
+        'assemblyscript',
+        nodeSummary,
+        inputFrames,
+        arrays
+    )
+    assert.deepStrictEqual(
+        roundFloatsInFrames(actualOutputFrames),
+        roundFloatsInFrames(expectedOutputFrames),
+        'assemblyscript frames not matching'
+    )
 }
 
 const roundFloatsInFrames = (frames: Array<Frame>) =>
-    frames.map(frame => {
+    frames.map((frame) => {
         const roundDecimal = 5
         const roundedFrame: Frame = {}
         Object.entries(frame).forEach(([portletId, arrayOrSignal]) => {
             if (Array.isArray(arrayOrSignal)) {
-                roundedFrame[portletId] = arrayOrSignal.map(value => {
+                roundedFrame[portletId] = arrayOrSignal.map((value) => {
                     if (typeof value === 'number') {
                         return round(value, roundDecimal) as any
                     }

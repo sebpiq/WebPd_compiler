@@ -16,7 +16,6 @@ export type TypedArrayPointer = number
 // Pointer to data of unknown type that stays in the wasm space (`Message` for example).
 export type InternalPointer = number
 
-
 // Pointer to an array buffer that contains i32 integers.
 // This is what we use to pass generic data back and forth from the module.
 // Because the memory layout is not fixed for data types other than strings
@@ -32,34 +31,42 @@ export type ArrayBufferOfFloatsPointer = number
 export interface AssemblyScriptWasmEngine {
     configure: (blockSize: number) => void
     loop: () => Float32Array
-    setArray: (arrayName: StringPointer, buffer: ArrayBufferOfFloatsPointer) => void
+    setArray: (
+        arrayName: StringPointer,
+        buffer: ArrayBufferOfFloatsPointer
+    ) => void
 
     memory: WebAssembly.Memory
-    
+
     MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
     MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
 
-    createMessage: (templatePointer: ArrayBufferOfIntegersPointer) => InternalPointer
+    createMessage: (
+        templatePointer: ArrayBufferOfIntegersPointer
+    ) => InternalPointer
     getMessageDatumTypes: (messagePointer: InternalPointer) => TypedArrayPointer
     createMessageArray: () => InternalPointer
-    pushMessageToArray: (messageArrayPointer: InternalPointer, messagePointer: InternalPointer) => void
+    pushMessageToArray: (
+        messageArrayPointer: InternalPointer,
+        messagePointer: InternalPointer
+    ) => void
     writeStringDatum: (
         messagePointer: InternalPointer,
         datumIndex: number,
-        stringPointer: StringPointer,
+        stringPointer: StringPointer
     ) => void
     writeFloatDatum: (
         messagePointer: InternalPointer,
         datumIndex: number,
-        value: number,
+        value: number
     ) => void
     readStringDatum: (
-        messagePointer: InternalPointer, 
-        datumIndex: number,
+        messagePointer: InternalPointer,
+        datumIndex: number
     ) => StringPointer
     readFloatDatum: (
-        messagePointer: InternalPointer, 
-        datumIndex: number,
+        messagePointer: InternalPointer,
+        datumIndex: number
     ) => number
 
     // Signatures of internal methods that enable to access wasm memory.

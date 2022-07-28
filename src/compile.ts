@@ -10,13 +10,21 @@
  */
 
 import { traversal, getters } from '@webpd/dsp-graph'
-import { CompilerSettings, JavaScriptEngineCode, AssemblyScriptEngineCode, Code } from './types'
+import {
+    CompilerSettings,
+    JavaScriptEngineCode,
+    AssemblyScriptEngineCode,
+    Code,
+} from './types'
 import { NodeImplementations } from './types'
 import { Compilation } from './compilation'
 import { renderCode } from './code-helpers'
 import assemblyscriptCoreCode from './engine-assemblyscript/core-code.asc'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/bindings'
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from './constants'
+import {
+    MESSAGE_DATUM_TYPE_FLOAT,
+    MESSAGE_DATUM_TYPE_STRING,
+} from './constants'
 import { compilePorts } from './engine-assemblyscript/compile'
 
 export default (
@@ -39,7 +47,7 @@ export const compile = (
     const globs = compilation.variableNames.g
 
     if (compilation.settings.target === 'javascript') {
-        const {portSpecs} = compilation.settings
+        const { portSpecs } = compilation.settings
         return renderCode`
             const ${globs.arrays} = new Map()
 
@@ -50,7 +58,9 @@ export const compile = (
                     ${globs.blockSize} = blockSize
                 },
                 loop: (${globs.output}) => {
-                    for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
+                    for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${
+            globs.blockSize
+        }; ${globs.iterFrame}++) {
                         ${globs.frame}++
                         ${compileLoop(compilation, graphTraversal)}
                     }
@@ -62,10 +72,14 @@ export const compile = (
                     ${Object.entries(portSpecs).map(([variableName, spec]) => {
                         const portsCode: Array<Code> = []
                         if (spec.access.includes('r')) {
-                            portsCode.push(`read_${variableName}: () => ${variableName},`)
+                            portsCode.push(
+                                `read_${variableName}: () => ${variableName},`
+                            )
                         }
                         if (spec.access.includes('w')) {
-                            portsCode.push(`write_${variableName}: (value) => ${variableName} = value,`)
+                            portsCode.push(
+                                `write_${variableName}: (value) => ${variableName} = value,`
+                            )
                         }
                         return portsCode
                     })}
@@ -73,7 +87,7 @@ export const compile = (
             }
         `
     } else if (compilation.settings.target === 'assemblyscript') {
-        const {channelCount, bitDepth} = compilation.settings
+        const { channelCount, bitDepth } = compilation.settings
         const MACROS = compilation.getMacros()
         const FloatType = bitDepth === 32 ? 'f32' : 'f64'
         const FloatArrayType = MACROS.floatArrayType()
@@ -84,24 +98,40 @@ export const compile = (
             .replaceAll('${FloatArrayType}', FloatArrayType)
             .replaceAll('${getFloat}', getFloat)
             .replaceAll('${setFloat}', setFloat)
-            .replaceAll('${MESSAGE_DATUM_TYPE_FLOAT}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT].toString()) 
-            .replaceAll('${MESSAGE_DATUM_TYPE_STRING}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING].toString())
+            .replaceAll(
+                '${MESSAGE_DATUM_TYPE_FLOAT}',
+                MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
+                    MESSAGE_DATUM_TYPE_FLOAT
+                ].toString()
+            )
+            .replaceAll(
+                '${MESSAGE_DATUM_TYPE_STRING}',
+                MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
+                    MESSAGE_DATUM_TYPE_STRING
+                ].toString()
+            )
 
         return renderCode`
             ${CORE_CODE}
 
-            let ${MACROS.typedVarFloatArray(globs.output)} = new ${FloatArrayType}(0)
+            let ${MACROS.typedVarFloatArray(
+                globs.output
+            )} = new ${FloatArrayType}(0)
         
             ${compileSetup(compilation, graphTraversal)}
 
             export function configure(blockSize: i32): ${FloatArrayType} {
                 ${globs.blockSize} = blockSize
-                ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
+                ${globs.output} = new ${FloatArrayType}(${
+            globs.blockSize
+        } * ${channelCount.toString()})
                 return ${globs.output}
             }
 
             export function loop(): void {
-                for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
+                for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${
+            globs.blockSize
+        }; ${globs.iterFrame}++) {
                     ${globs.frame}++
                     ${compileLoop(compilation, graphTraversal)}
                 }
@@ -114,7 +144,7 @@ export const compile = (
                 ${globs.arrays}.set(arrayName, array)
             }
 
-            ${compilePorts(compilation, {FloatType, FloatArrayType})}
+            ${compilePorts(compilation, { FloatType, FloatArrayType })}
         `
     }
 }
@@ -136,12 +166,16 @@ export const compileSetup = (
             return [
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'control'
-                        ? `let ${MACROS.typedVarMessageArray(ins[inlet.id])} = []`
+                        ? `let ${MACROS.typedVarMessageArray(
+                              ins[inlet.id]
+                          )} = []`
                         : `let ${MACROS.typedVarFloat(ins[inlet.id])} = 0`
                 ),
                 Object.values(node.outlets).map((outlet) =>
                     outlet.type === 'control'
-                        ? `let ${MACROS.typedVarMessageArray(outs[outlet.id])} = []`
+                        ? `let ${MACROS.typedVarMessageArray(
+                              outs[outlet.id]
+                          )} = []`
                         : `let ${MACROS.typedVarFloat(outs[outlet.id])} = 0`
                 ),
                 compilation.getNodeImplementation(node.type).setup(
@@ -155,7 +189,7 @@ export const compileSetup = (
                 ),
             ]
         })}
-    `   
+    `
 }
 
 export const compileLoop = (
@@ -228,6 +262,6 @@ export const compileLoop = (
                     `
                     ),
             ]
-        })
+        }),
     ]}`
 }

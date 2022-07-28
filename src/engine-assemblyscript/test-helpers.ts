@@ -13,29 +13,41 @@ import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from '../constants'
-import { Code } from '../types';
-import { liftString, liftTypedArray, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './bindings';
-import assert from 'assert'
-import { AssemblyScriptWasmEngine, InternalPointer } from './types'
+import {
+    MESSAGE_DATUM_TYPE_FLOAT,
+    MESSAGE_DATUM_TYPE_STRING,
+} from '../constants'
+import { Code } from '../types'
+import { liftString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './bindings'
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export const getAssemblyscriptCoreCode = () => {
-    return readFileSync(resolve(__dirname, 'core-code.asc')).toString()
+    return readFileSync(resolve(__dirname, 'core-code.asc'))
+        .toString()
         .replaceAll('${FloatArrayType}', 'Float32Array')
         .replaceAll('${FloatType}', 'f32')
         .replaceAll('${getFloat}', 'getFloat32')
         .replaceAll('${setFloat}', 'setFloat32')
-        .replaceAll('${MESSAGE_DATUM_TYPE_FLOAT}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT].toString()) 
-        .replaceAll('${MESSAGE_DATUM_TYPE_STRING}', MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING].toString())
+        .replaceAll(
+            '${MESSAGE_DATUM_TYPE_FLOAT}',
+            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MESSAGE_DATUM_TYPE_FLOAT
+            ].toString()
+        )
+        .replaceAll(
+            '${MESSAGE_DATUM_TYPE_STRING}',
+            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MESSAGE_DATUM_TYPE_STRING
+            ].toString()
+        )
 }
 
 export const compileAssemblyScript = async (code: Code) => {
     const { error, binary, stderr } = await asc.compileString(code, {
         optimizeLevel: 3,
-        runtime: "stub",
+        runtime: 'stub',
         exportRuntime: true,
         // For tests we use f32, so we need to compile with the f32 version of `Math`
         use: ['Math=NativeMathf'],
@@ -47,19 +59,22 @@ export const compileAssemblyScript = async (code: Code) => {
     const wasmModule = await WebAssembly.instantiate(binary.buffer, {
         env: {
             // memory,
-            abort: function() {},
+            abort: function () {},
             seed() {
                 // ~lib/builtins/seed() => f64
                 return (() => {
-                  // @external.js
-                  return Date.now() * Math.random()
+                    // @external.js
+                    return Date.now() * Math.random()
                 })()
             },
             // log: function(a) { console.log(a) }
-            "console.log"(pointer: number) {
+            'console.log'(pointer: number) {
                 // ~lib/bindings/dom/console.log(~lib/string/String) => void
-                const text = liftString(wasmModule.instance.exports as any, pointer);
-                console.log(text);
+                const text = liftString(
+                    wasmModule.instance.exports as any,
+                    pointer
+                )
+                console.log(text)
             },
         },
     })

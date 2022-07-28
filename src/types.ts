@@ -9,9 +9,14 @@
  *
  */
 
-import { MESSAGE_DATUM_TYPE_STRING, MESSAGE_DATUM_TYPE_FLOAT } from "./constants"
+import {
+    MESSAGE_DATUM_TYPE_STRING,
+    MESSAGE_DATUM_TYPE_FLOAT,
+} from './constants'
 
-export type MessageDatumType = typeof MESSAGE_DATUM_TYPE_STRING | typeof MESSAGE_DATUM_TYPE_FLOAT
+export type MessageDatumType =
+    | typeof MESSAGE_DATUM_TYPE_STRING
+    | typeof MESSAGE_DATUM_TYPE_FLOAT
 
 // Code stored in string variable for later evaluation.
 export type Code = string
@@ -22,7 +27,7 @@ export type CodeVariableName = string
 // JavaScript Code that allows to create a JavaScriptEngine when evaled
 export type JavaScriptEngineCode = Code
 
-// AssemblyScript Code that allows to create an AssemblyScriptWasmEngine when compiled 
+// AssemblyScript Code that allows to create an AssemblyScriptWasmEngine when compiled
 // with the AssemblyScript compiler
 export type AssemblyScriptEngineCode = Code
 
@@ -40,19 +45,16 @@ export interface CodeMacros {
     castToInt: (name: CodeVariableName) => Code
     castToFloat: (name: CodeVariableName) => Code
     functionHeader: (...functionArgs: Array<Code>) => Code
-    createMessage: (name: CodeVariableName, message: PdSharedTypes.ControlValue) => Code
+    createMessage: (
+        name: CodeVariableName,
+        message: PdSharedTypes.ControlValue
+    ) => Code
     isMessageMatching: (
-        name: CodeVariableName, 
+        name: CodeVariableName,
         tokens: Array<number | string | MessageDatumType>
     ) => Code
-    readMessageStringDatum: (
-        name: CodeVariableName, 
-        tokenIndex: number
-    ) => Code,
-    readMessageFloatDatum: (
-        name: CodeVariableName, 
-        tokenIndex: number
-    ) => Code,
+    readMessageStringDatum: (name: CodeVariableName, tokenIndex: number) => Code
+    readMessageFloatDatum: (name: CodeVariableName, tokenIndex: number) => Code
     fillInLoopOutput: (channel: number, value: CodeVariableName) => Code
 }
 
@@ -83,7 +85,10 @@ export type VariableNameGenerator = (
 
 export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
-    variableNames: NodeVariableNames & { globs: VariableNames['g'], MACROS: CodeMacros },
+    variableNames: NodeVariableNames & {
+        globs: VariableNames['g']
+        MACROS: CodeMacros
+    },
     settings: CompilerSettings
 ) => Code
 
@@ -95,11 +100,12 @@ export interface NodeImplementation {
 
 export type NodeImplementations = { [nodeType: string]: NodeImplementation }
 
-export type PortSpecs = {[variableName: CodeVariableName]: {
-    access: 'r' | 'w' | 'rw',
-    type: 'float' | 'messages'
-}}
-
+export type PortSpecs = {
+    [variableName: CodeVariableName]: {
+        access: 'r' | 'w' | 'rw'
+        type: 'float' | 'messages'
+    }
+}
 
 // Discriminated union for settings, allows to have specific values
 // depending on the target
@@ -125,32 +131,28 @@ type CompilerJavaScriptSettingsMandatory = CompilerSettingsMandatory & {
 interface CompilerAssemblyScriptSettingOptional {}
 interface CompilerJavaScriptSettingsOptional {}
 
-
 // External type of settings passed to the compilation by library user
-type CompilerAssemblyScriptSettings = 
-    CompilerAssemblyScriptSettingsMandatory
-    & Partial<CompilerSettingsOptional>
-    & Partial<CompilerAssemblyScriptSettingOptional> 
+type CompilerAssemblyScriptSettings = CompilerAssemblyScriptSettingsMandatory &
+    Partial<CompilerSettingsOptional> &
+    Partial<CompilerAssemblyScriptSettingOptional>
 
-type CompilerJavaScriptSettings = 
-    CompilerJavaScriptSettingsMandatory 
-    & Partial<CompilerSettingsOptional>
-    & Partial<CompilerJavaScriptSettingsOptional> 
+type CompilerJavaScriptSettings = CompilerJavaScriptSettingsMandatory &
+    Partial<CompilerSettingsOptional> &
+    Partial<CompilerJavaScriptSettingsOptional>
 
-export type CompilerSettings = 
-    CompilerAssemblyScriptSettings | CompilerJavaScriptSettings
-
+export type CompilerSettings =
+    | CompilerAssemblyScriptSettings
+    | CompilerJavaScriptSettings
 
 // Internal type of setting after validation and settings defaults
-export type CompilerAssemblyScriptSettingsWithDefaults = 
-    CompilerAssemblyScriptSettingsMandatory 
-    & CompilerSettingsOptional
-    & CompilerAssemblyScriptSettingOptional
+export type CompilerAssemblyScriptSettingsWithDefaults = CompilerAssemblyScriptSettingsMandatory &
+    CompilerSettingsOptional &
+    CompilerAssemblyScriptSettingOptional
 
-export type CompilerJavaScriptSettingsWithDefaults = 
-    CompilerJavaScriptSettingsMandatory 
-    & CompilerSettingsOptional
-    & CompilerJavaScriptSettingsOptional
+export type CompilerJavaScriptSettingsWithDefaults = CompilerJavaScriptSettingsMandatory &
+    CompilerSettingsOptional &
+    CompilerJavaScriptSettingsOptional
 
-export type CompilerSettingsWithDefaults = 
-    CompilerAssemblyScriptSettingsWithDefaults | CompilerJavaScriptSettingsWithDefaults
+export type CompilerSettingsWithDefaults =
+    | CompilerAssemblyScriptSettingsWithDefaults
+    | CompilerJavaScriptSettingsWithDefaults

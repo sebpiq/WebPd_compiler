@@ -9,11 +9,14 @@
  *
  */
 
-import { EnginePorts } from "../types"
+import { EnginePorts } from '../types'
 
 export interface JavaScriptEngine {
     configure: (blockSize: number) => void
     loop: () => Float32Array
-    setArray: (arrayName: string, data: Float32Array | Float64Array | Array<number>) => void
+    setArray: (
+        arrayName: string,
+        data: Float32Array | Float64Array | Array<number>
+    ) => void
     ports: EnginePorts
 }

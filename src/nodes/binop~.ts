@@ -25,7 +25,9 @@ const setupSignal: NodeCodeGenerator = (node, { ins }) =>
     `${ins.$1_signal} = ${node.args.value} || 0`
 
 const setupControl: NodeCodeGenerator = (node, { state, MACROS }) =>
-    `let ${MACROS.typedVarFloat(state.rightOp)} = ${(node.args.value as string) || 0}`
+    `let ${MACROS.typedVarFloat(state.rightOp)} = ${
+        (node.args.value as string) || 0
+    }`
 
 // ------------------------------- loop ------------------------------ //
 export const makeLoop = (operator: string): NodeCodeGenerator => {
@@ -49,7 +51,9 @@ const makeLoopControl = (operator: string): NodeCodeGenerator => (
     { ins, outs, state, MACROS }
 ) => `
         if (${ins.$1_control}.length) {
-            const ${MACROS.typedVarMessage('inMessage')} = ${ins.$1_control}.pop()
+            const ${MACROS.typedVarMessage('inMessage')} = ${
+    ins.$1_control
+}.pop()
             ${state.rightOp} = ${MACROS.readMessageFloatDatum('inMessage', 0)}
         }
         ${outs.$0} = ${ins.$0} ${operator} ${state.rightOp}`

@@ -90,7 +90,7 @@ describe('compilation', () => {
                     stateVariables: ['phase'],
                 },
             }
-    
+
             const graph = makeGraph({
                 myOsc: {
                     type: 'osc~',
@@ -102,13 +102,13 @@ describe('compilation', () => {
                     },
                 },
             })
-    
+
             const compilation = new Compilation(
                 graph,
                 nodeImplementations,
                 COMPILER_SETTINGS
             )
-    
+
             assert.throws(() => compilation.variableNames.n.unknownNode)
             assert.throws(
                 () => compilation.variableNames.n.myOsc.ins['unknown portlet']
@@ -120,22 +120,17 @@ describe('compilation', () => {
                 () => compilation.variableNames.n.myOsc.state['unknown var']
             )
         })
-    
+
         it('should bind the macros to pass compilation as first argument', () => {
             const graph = makeGraph({})
             const nodeImplementations: NodeImplementations = {}
-            const compilation = new Compilation(
-                graph,
-                nodeImplementations,
-                {
-                    ...COMPILER_SETTINGS,
-                    target: 'assemblyscript',
-                }
-            )
+            const compilation = new Compilation(graph, nodeImplementations, {
+                ...COMPILER_SETTINGS,
+                target: 'assemblyscript',
+            })
             const MACROS = compilation.getMacros()
             assert.strictEqual(MACROS.typedVarFloat('bla'), 'bla: f32')
         })
-
     })
 
     describe('validateSettings', () => {
@@ -150,12 +145,14 @@ describe('compilation', () => {
         })
 
         it('should throw error if settings invalid', () => {
-            assert.throws(() => validateSettings({
-                target: 'assemblyscript',
-                channelCount: 2,
-                sampleRate: 44100,
-                bitDepth: 666,
-            } as any))
+            assert.throws(() =>
+                validateSettings({
+                    target: 'assemblyscript',
+                    channelCount: 2,
+                    sampleRate: 44100,
+                    bitDepth: 666,
+                } as any)
+            )
         })
     })
 })

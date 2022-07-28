@@ -15,7 +15,7 @@ import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations, CompilerSettings } from './types'
 import { Compilation } from './compilation'
 import { compileAssemblyScript, normalizeCode, round } from './test-helpers'
-import {jest} from '@jest/globals'
+import { jest } from '@jest/globals'
 import { AssemblyScriptWasmEngine } from './engine-assemblyscript/types'
 import { JavaScriptEngine } from './engine-javascript/types'
 
@@ -25,18 +25,17 @@ describe('compile', () => {
     const COMPILER_SETTINGS_JS: CompilerSettings = {
         sampleRate: 44100,
         channelCount: 2,
-        target: 'javascript'
+        target: 'javascript',
     }
 
     const COMPILER_SETTINGS_AS: CompilerSettings = {
         sampleRate: 44100,
         channelCount: 2,
         target: 'assemblyscript',
-        bitDepth: 32
+        bitDepth: 32,
     }
 
     describe('default', () => {
-        
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
             'osc~': {
                 setup: () => `// [osc~] setup`,
@@ -49,7 +48,6 @@ describe('compile', () => {
         }
 
         describe('target: javascript', () => {
-
             it('should compile the full function as a string', () => {
                 const graph = makeGraph({
                     osc: {
@@ -74,9 +72,13 @@ describe('compile', () => {
                         isEndSink: true,
                     },
                 })
-    
-                const code = compile(graph, NODE_IMPLEMENTATIONS, COMPILER_SETTINGS_JS)
-    
+
+                const code = compile(
+                    graph,
+                    NODE_IMPLEMENTATIONS,
+                    COMPILER_SETTINGS_JS
+                )
+
                 assert.strictEqual(
                     normalizeCode(code),
                     normalizeCode(`
@@ -115,16 +117,16 @@ describe('compile', () => {
                 `)
                 )
             })
-    
+
             it('should create the specified ports', () => {
                 const code = compile({}, NODE_IMPLEMENTATIONS, {
                     ...COMPILER_SETTINGS_JS,
                     portSpecs: {
-                        'bla': {access: 'r', type: 'float'},
-                        'blo': {access: 'w', type: 'messages'},
-                        'bli': {access: 'rw', type: 'float'},
-                        'blu': {access: 'rw', type: 'messages'},
-                    }
+                        bla: { access: 'r', type: 'float' },
+                        blo: { access: 'w', type: 'messages' },
+                        bli: { access: 'rw', type: 'float' },
+                        blu: { access: 'rw', type: 'messages' },
+                    },
                 })
                 const engine: JavaScriptEngine = new Function(`
                     let bla = 1
@@ -133,12 +135,15 @@ describe('compile', () => {
                     let blu = [[123.123, 'bang']]
                     ${code}
                 `)()
-              
 
-                assert.deepStrictEqual(
-                    Object.keys(engine.ports), 
-                    ['read_bla', 'write_blo', 'read_bli', 'write_bli', 'read_blu', 'write_blu']
-                )
+                assert.deepStrictEqual(Object.keys(engine.ports), [
+                    'read_bla',
+                    'write_blo',
+                    'read_bli',
+                    'write_bli',
+                    'read_blu',
+                    'write_blu',
+                ])
 
                 assert.strictEqual(engine.ports.read_bla(), 1)
 
@@ -149,11 +154,14 @@ describe('compile', () => {
                 const blu = engine.ports.read_blu()
                 assert.deepStrictEqual(blu, [[123.123, 'bang']])
                 blu.push(['I am blu'])
-                assert.deepStrictEqual(engine.ports.read_blu(), [[123.123, 'bang'], ['I am blu']])
+                assert.deepStrictEqual(engine.ports.read_blu(), [
+                    [123.123, 'bang'],
+                    ['I am blu'],
+                ])
                 engine.ports.write_blu([['blurg']])
                 assert.deepStrictEqual(engine.ports.read_blu(), [['blurg']])
             })
-    
+
             it('should be a JavaScript engine when evaled', () => {
                 const graph = makeGraph({
                     osc: {
@@ -167,24 +175,28 @@ describe('compile', () => {
                         outlets: { '0': { id: '0', type: 'signal' } },
                     },
                 })
-    
-                const code = compile(graph, NODE_IMPLEMENTATIONS, COMPILER_SETTINGS_JS)
-    
+
+                const code = compile(
+                    graph,
+                    NODE_IMPLEMENTATIONS,
+                    COMPILER_SETTINGS_JS
+                )
+
                 const modelEngine: JavaScriptEngine = {
                     configure: (_: number) => {},
                     loop: () => new Float32Array(),
                     ports: {},
                 }
-    
+
                 const engine = new Function(code)()
-    
+
                 assert.deepStrictEqual(
                     Object.keys(engine),
                     Object.keys(modelEngine)
                 )
             })
         })
-    
+
         describe('target: assemblyscript', () => {
             it('should compile the full function as a string', () => {
                 const nodeImplementations: NodeImplementations = {
@@ -197,7 +209,7 @@ describe('compile', () => {
                         loop: () => `// [dac~] loop`,
                     },
                 }
-    
+
                 const graph = makeGraph({
                     osc: {
                         type: 'osc~',
@@ -221,9 +233,13 @@ describe('compile', () => {
                         isEndSink: true,
                     },
                 })
-    
-                const code = compile(graph, nodeImplementations, COMPILER_SETTINGS_AS)
-    
+
+                const code = compile(
+                    graph,
+                    nodeImplementations,
+                    COMPILER_SETTINGS_AS
+                )
+
                 assert.strictEqual(
                     normalizeCode(code),
                     normalizeCode(`
@@ -262,16 +278,16 @@ describe('compile', () => {
                 `)
                 )
             })
-    
+
             it('should create the specified ports', async () => {
                 const code = compile({}, NODE_IMPLEMENTATIONS, {
                     ...COMPILER_SETTINGS_AS,
                     portSpecs: {
-                        'bla': {access: 'r', type: 'float'},
+                        bla: { access: 'r', type: 'float' },
                         // 'blo': {access: 'w', type: 'messages'},
-                        'bli': {access: 'rw', type: 'float'},
+                        bli: { access: 'rw', type: 'float' },
                         // 'blu': {access: 'rw', type: 'messages'},
-                    }
+                    },
                 })
                 const module = await compileAssemblyScript(`
                     let bla: f32 = 1
@@ -282,7 +298,7 @@ describe('compile', () => {
                 `)
                 const moduleExports = (module as any).instance.exports
                 // assert.deepStrictEqual(
-                //     Object.keys(moduleExports), 
+                //     Object.keys(moduleExports),
                 //     ['loop', 'configure', 'read_bla', 'write_blo', 'read_bli', 'write_bli', 'read_blu', 'write_blu']
                 // )
 
@@ -304,7 +320,7 @@ describe('compile', () => {
                         loop: () => `// [osc~] loop`,
                     },
                 }
-    
+
                 const graph = makeGraph({
                     osc: {
                         type: 'osc~',
@@ -317,13 +333,17 @@ describe('compile', () => {
                         outlets: { '0': { id: '0', type: 'signal' } },
                     },
                 })
-    
-                const code = compile(graph, nodeImplementations, COMPILER_SETTINGS_AS)
-    
+
+                const code = compile(
+                    graph,
+                    nodeImplementations,
+                    COMPILER_SETTINGS_AS
+                )
+
                 const modelModule: AssemblyScriptWasmEngine = {
                     configure: (_: number) => {},
                     loop: () => new Float32Array(),
-                    memory: new WebAssembly.Memory({initial: 128}),
+                    memory: new WebAssembly.Memory({ initial: 128 }),
                     MESSAGE_DATUM_TYPE_FLOAT: new WebAssembly.Global(0 as any),
                     MESSAGE_DATUM_TYPE_STRING: new WebAssembly.Global(0 as any),
                     createMessage: () => 0,
@@ -334,11 +354,11 @@ describe('compile', () => {
                     writeFloatDatum: () => undefined,
                     readStringDatum: () => 0,
                     readFloatDatum: () => 0,
-                    __new: () => 0
+                    __new: () => 0,
                 }
-    
+
                 const module = await compileAssemblyScript(code)
-                
+
                 assert.deepStrictEqual(
                     Object.keys((module as any).instance.exports),
                     Object.keys(modelModule)

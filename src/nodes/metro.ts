@@ -26,18 +26,22 @@ export const setup: NodeCodeGenerator = (
         let ${MACROS.typedVarFloat(state.realNextTick)} = -1
 
         const ${state.funcSetRate} = ${MACROS.functionHeader(
-            MACROS.typedVarFloat('rate')
-        )} => {
+        MACROS.typedVarFloat('rate')
+    )} => {
             ${state.rate} = rate / 1000 * ${sampleRate}
         }
 
         const ${state.funcHandleMessage0} = ${MACROS.functionHeader()} => {
             let m = ${ins.$0}.shift()
-            if (${MACROS.isMessageMatching('m', [0])} || ${MACROS.isMessageMatching('m', ['stop'])}) {
+            if (${MACROS.isMessageMatching('m', [
+                0,
+            ])} || ${MACROS.isMessageMatching('m', ['stop'])}) {
                 ${state.nextTick} = 0
                 ${state.realNextTick} = 0
                 
-            } else if (${MACROS.isMessageMatching('m', [MESSAGE_DATUM_TYPE_FLOAT])} || ${MACROS.isMessageMatching('m', ['bang'])}) {
+            } else if (${MACROS.isMessageMatching('m', [
+                MESSAGE_DATUM_TYPE_FLOAT,
+            ])} || ${MACROS.isMessageMatching('m', ['bang'])}) {
                 ${state.nextTick} = ${globs.frame}
                 ${state.realNextTick} = ${MACROS.castToFloat(globs.frame)}
         
@@ -56,12 +60,14 @@ export const setup: NodeCodeGenerator = (
             }
         }
 
-        ${args.rate !== undefined ? 
-            `${state.funcSetRate}(${args.rate})`: ''}
+        ${args.rate !== undefined ? `${state.funcSetRate}(${args.rate})` : ''}
     `
 
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { state, ins, outs, globs, MACROS }) => `
+export const loop: NodeCodeGenerator = (
+    _,
+    { state, ins, outs, globs, MACROS }
+) => `
     while (${ins.$1}.length) {
         ${state.funcHandleMessage1}()
     }
@@ -72,7 +78,9 @@ export const loop: NodeCodeGenerator = (_, { state, ins, outs, globs, MACROS }) 
         ${MACROS.createMessage('m', ['bang'])}
         ${outs.$0}.push(m)
         ${state.realNextTick} = ${state.realNextTick} + ${state.rate}
-        ${state.nextTick} = ${MACROS.castToInt(`Math.round(${state.realNextTick})`)}
+        ${state.nextTick} = ${MACROS.castToInt(
+    `Math.round(${state.realNextTick})`
+)}
     }
 `
 

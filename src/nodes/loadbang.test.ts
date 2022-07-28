@@ -13,17 +13,10 @@ import { assertNodeOutput } from './test-helpers'
 
 describe('loadbang', () => {
     it('should output a bang on creation', async () => {
-        await assertNodeOutput({ type: 'loadbang', args: {} }, 
-            [
-                {},
-                {},
-                {},
-            ], 
-            [
-                { '0': [['bang']] },
-                { '0': [] },
-                { '0': [] },
-            ]
+        await assertNodeOutput(
+            { type: 'loadbang', args: {} },
+            [{}, {}, {}],
+            [{ '0': [['bang']] }, { '0': [] }, { '0': [] }]
         )
     })
 })

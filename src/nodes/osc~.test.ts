@@ -31,7 +31,7 @@ describe('osc~', () => {
                 { '0_signal': frequency2 },
                 { '0_signal': frequency3 },
                 { '0_signal': frequency3 },
-            ], 
+            ],
             [
                 { '0': Math.cos(0) },
                 { '0': Math.cos(100 * J) },
@@ -57,12 +57,14 @@ describe('osc~', () => {
                 { '0_control': [[frequency2]] },
                 { '0_control': [] },
                 { '0_control': [] },
-            ], [
-            { '0': Math.cos(0) },
-            { '0': Math.cos(1 * J) },
-            { '0': Math.cos(2 * J) },
-            { '0': Math.cos(5 * J) },
-            { '0': Math.cos(8 * J) },
-        ])
+            ],
+            [
+                { '0': Math.cos(0) },
+                { '0': Math.cos(1 * J) },
+                { '0': Math.cos(2 * J) },
+                { '0': Math.cos(5 * J) },
+                { '0': Math.cos(8 * J) },
+            ]
+        )
     })
 })

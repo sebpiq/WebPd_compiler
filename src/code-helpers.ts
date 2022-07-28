@@ -9,7 +9,7 @@
  *
  */
 
-import { Code } from "./types"
+import { Code } from './types'
 
 type CodeLines = Array<CodeLines | Code>
 
@@ -29,9 +29,7 @@ export const renderCode = (
     return rendered
 }
 
-const renderCodeLines = (
-    codeLines: CodeLines | Code
-): Code => {
+const renderCodeLines = (codeLines: CodeLines | Code): Code => {
     if (Array.isArray(codeLines)) {
         return codeLines.map(renderCodeLines).join('\n')
     }

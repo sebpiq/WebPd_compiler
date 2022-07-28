@@ -13,7 +13,6 @@ import assert from 'assert'
 import { Frame, generateFramesForNode } from './test-helpers'
 
 describe('noise~', () => {
-
     const testOutputFrames = (frames: Array<Frame>) => {
         const values = new Set(frames.map((frame) => frame['0']))
         values.forEach((value) => {
@@ -25,12 +24,16 @@ describe('noise~', () => {
 
     it('should output white noise', async () => {
         const nodeSummary = { type: 'noise~', args: {} }
-        const inputFrames = [
-            {},
-            {},
-            {},
-        ]
-        testOutputFrames(await generateFramesForNode('javascript', nodeSummary, inputFrames))
-        testOutputFrames(await generateFramesForNode('assemblyscript', nodeSummary, inputFrames))
+        const inputFrames = [{}, {}, {}]
+        testOutputFrames(
+            await generateFramesForNode('javascript', nodeSummary, inputFrames)
+        )
+        testOutputFrames(
+            await generateFramesForNode(
+                'assemblyscript',
+                nodeSummary,
+                inputFrames
+            )
+        )
     })
 })

@@ -17,6 +17,5 @@ export const normalizeCode = (rawCode: string) => {
     return lines.join('\n')
 }
 
-export const round = (v: number, decimals: number = 3) => 
+export const round = (v: number, decimals: number = 3) =>
     Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals)
-

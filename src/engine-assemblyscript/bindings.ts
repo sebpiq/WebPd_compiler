@@ -9,9 +9,12 @@
  *
  */
 
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants"
-import { CompilerSettingsWithDefaults, EnginePorts, PortSpecs } from "../types"
-import { AssemblyScriptWasmEngine, InternalPointer } from "./types"
+import {
+    MESSAGE_DATUM_TYPE_FLOAT,
+    MESSAGE_DATUM_TYPE_STRING,
+} from '../constants'
+import { CompilerSettingsWithDefaults, EnginePorts, PortSpecs } from '../types'
+import { AssemblyScriptWasmEngine, InternalPointer } from './types'
 
 type TypedArrayConstructor =
     | typeof Int8Array
@@ -33,53 +36,67 @@ export const MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT = {
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
 export const setArray = (
-    engine: AssemblyScriptWasmEngine, 
-    arrayName: string, data: 
-    Array<number> | Float32Array | Float64Array
+    engine: AssemblyScriptWasmEngine,
+    arrayName: string,
+    data: Array<number> | Float32Array | Float64Array
 ) => {
     const stringPointer = lowerString(engine, arrayName)
     const bufferPointer = lowerArrayBufferOfFloats(engine, data, 32)
     engine.setArray(stringPointer, bufferPointer)
 }
 
-export const bindPorts = (engine: AssemblyScriptWasmEngine, portSpecs: PortSpecs): EnginePorts => {
+export const bindPorts = (
+    engine: AssemblyScriptWasmEngine,
+    portSpecs: PortSpecs
+): EnginePorts => {
     const ports: EnginePorts = {}
     Object.entries(portSpecs).forEach(([variableName, spec]) => {
         if (spec.access.includes('w')) {
             if (spec.type === 'messages') {
                 ports[`write_${variableName}`] = (messages) => {
-                    const messageArrayPointer = lowerMessageArray(engine, messages)
-                    ;(engine as any)[`write_${variableName}`](messageArrayPointer)
+                    const messageArrayPointer = lowerMessageArray(
+                        engine,
+                        messages
+                    )
+                    ;(engine as any)[`write_${variableName}`](
+                        messageArrayPointer
+                    )
                 }
-                
             } else {
-                ports[`write_${variableName}`] = (engine as any)[`write_${variableName}`]
+                ports[`write_${variableName}`] = (engine as any)[
+                    `write_${variableName}`
+                ]
             }
         }
 
         if (spec.access.includes('r')) {
             if (spec.type === 'messages') {
                 ports[`read_${variableName}`] = () => {
-                    const messagesCount = (engine as any)[`read_${variableName}_length`]()
+                    const messagesCount = (engine as any)[
+                        `read_${variableName}_length`
+                    ]()
                     const messages: Array<PdSharedTypes.ControlValue> = []
                     for (let i = 0; i < messagesCount; i++) {
-                        const messagePointer = (engine as any)[`read_${variableName}_elem`](i)
+                        const messagePointer = (engine as any)[
+                            `read_${variableName}_elem`
+                        ](i)
                         messages.push(liftMessage(engine, messagePointer))
                     }
                     return messages
                 }
             } else {
-                ports[`read_${variableName}`] = (engine as any)[`read_${variableName}`]
+                ports[`read_${variableName}`] = (engine as any)[
+                    `read_${variableName}`
+                ]
             }
         }
-
     })
 
     return ports
 }
 
 export const lowerMessage = (
-    engine: AssemblyScriptWasmEngine, 
+    engine: AssemblyScriptWasmEngine,
     message: PdSharedTypes.ControlValue
 ): InternalPointer => {
     const messageTemplate: Array<number> = message.reduce((template, value) => {
@@ -93,7 +110,7 @@ export const lowerMessage = (
         }
         return template
     }, [] as Array<number>)
-    
+
     const messagePointer = engine.createMessage(
         lowerArrayBufferOfIntegers(engine, messageTemplate)
     )
@@ -106,83 +123,104 @@ export const lowerMessage = (
             engine.writeStringDatum(messagePointer, index, stringPointer)
         }
     })
-    
+
     return messagePointer
 }
 
-export const liftMessage = (engine: AssemblyScriptWasmEngine, messagePointer: InternalPointer): PdSharedTypes.ControlValue => {
+export const liftMessage = (
+    engine: AssemblyScriptWasmEngine,
+    messagePointer: InternalPointer
+): PdSharedTypes.ControlValue => {
     const messageDatumTypesPointer = engine.getMessageDatumTypes(messagePointer)
-    const messageDatumTypes = liftTypedArray(engine, Int32Array, messageDatumTypesPointer)
+    const messageDatumTypes = liftTypedArray(
+        engine,
+        Int32Array,
+        messageDatumTypesPointer
+    )
     const message: PdSharedTypes.ControlValue = []
     messageDatumTypes.forEach((datumType, datumIndex) => {
         if (datumType === engine.MESSAGE_DATUM_TYPE_FLOAT.valueOf()) {
             message.push(engine.readFloatDatum(messagePointer, datumIndex))
         } else if (datumType === engine.MESSAGE_DATUM_TYPE_STRING.valueOf()) {
-            const stringPointer = engine.readStringDatum(messagePointer, datumIndex)
+            const stringPointer = engine.readStringDatum(
+                messagePointer,
+                datumIndex
+            )
             message.push(liftString(engine, stringPointer))
         }
     })
     return message
 }
 
-export const lowerMessageArray = (engine: AssemblyScriptWasmEngine, messages: Array<PdSharedTypes.ControlValue>): InternalPointer => {
+export const lowerMessageArray = (
+    engine: AssemblyScriptWasmEngine,
+    messages: Array<PdSharedTypes.ControlValue>
+): InternalPointer => {
     const messageArrayPointer = engine.createMessageArray()
-    messages.forEach(message => {
-        engine.pushMessageToArray(messageArrayPointer, lowerMessage(engine, message))
+    messages.forEach((message) => {
+        engine.pushMessageToArray(
+            messageArrayPointer,
+            lowerMessage(engine, message)
+        )
     })
     return messageArrayPointer
 }
 
 export const lowerArrayBufferOfIntegers = (
-    engine: AssemblyScriptWasmEngine, 
+    engine: AssemblyScriptWasmEngine,
     integers: Array<number>
 ) => {
-    const buffer = new ArrayBuffer(INT_ARRAY_BYTES_PER_ELEMENT * integers.length) 
+    const buffer = new ArrayBuffer(
+        INT_ARRAY_BYTES_PER_ELEMENT * integers.length
+    )
     const dataView = new DataView(buffer)
     for (let i = 0; i < integers.length; i++) {
-        dataView.setInt32(
-            INT_ARRAY_BYTES_PER_ELEMENT * i, integers[i])    
+        dataView.setInt32(INT_ARRAY_BYTES_PER_ELEMENT * i, integers[i])
     }
     return lowerBuffer(engine, buffer)
 }
 
 export const lowerArrayBufferOfFloats = (
-    engine: AssemblyScriptWasmEngine, 
+    engine: AssemblyScriptWasmEngine,
     floats: Array<number> | Float32Array | Float64Array,
-    bitDepth: CompilerSettingsWithDefaults["bitDepth"],
+    bitDepth: CompilerSettingsWithDefaults['bitDepth']
 ) => {
     const bytesPerElement = bitDepth / 8
-    const buffer = new ArrayBuffer(bytesPerElement * floats.length) 
+    const buffer = new ArrayBuffer(bytesPerElement * floats.length)
     const dataView = new DataView(buffer)
     const setFloatName = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
     for (let i = 0; i < floats.length; i++) {
-        dataView[setFloatName](
-            bytesPerElement * i, floats[i])    
+        dataView[setFloatName](bytesPerElement * i, floats[i])
     }
     return lowerBuffer(engine, buffer)
 }
 
 // REF : Assemblyscript ESM bindings
 export const liftTypedArray = (
-    engine: AssemblyScriptWasmEngine, 
-    constructor: TypedArrayConstructor, 
-    pointer: InternalPointer,
+    engine: AssemblyScriptWasmEngine,
+    constructor: TypedArrayConstructor,
+    pointer: InternalPointer
 ) => {
-    if (!pointer) return null;
-    const memoryU32 = new Uint32Array(engine.memory.buffer);
+    if (!pointer) return null
+    const memoryU32 = new Uint32Array(engine.memory.buffer)
     return new constructor(
-      engine.memory.buffer,
-      memoryU32[pointer + 4 >>> 2],
-      memoryU32[pointer + 8 >>> 2] / constructor.BYTES_PER_ELEMENT
-    ).slice();
+        engine.memory.buffer,
+        memoryU32[(pointer + 4) >>> 2],
+        memoryU32[(pointer + 8) >>> 2] / constructor.BYTES_PER_ELEMENT
+    ).slice()
 }
 
 // REF : Assemblyscript ESM bindings
-export const liftString = (engine: AssemblyScriptWasmEngine, pointer: number) => {
+export const liftString = (
+    engine: AssemblyScriptWasmEngine,
+    pointer: number
+) => {
     if (!pointer) return null
     pointer = pointer >>> 0
     const end =
-        (pointer + new Uint32Array(engine.memory.buffer)[(pointer - 4) >>> 2]) >>> 1
+        (pointer +
+            new Uint32Array(engine.memory.buffer)[(pointer - 4) >>> 2]) >>>
+        1
     const memoryU16 = new Uint16Array(engine.memory.buffer)
     let start = pointer >>> 1
     let string = ''
@@ -195,14 +233,17 @@ export const liftString = (engine: AssemblyScriptWasmEngine, pointer: number) =>
 }
 
 // REF : Assemblyscript ESM bindings
-export const lowerString = (engine: AssemblyScriptWasmEngine, value: string) => {
-    if (value == null) return 0;
-    const
-      length = value.length,
-      pointer = engine.__new(length << 1, 1) >>> 0,
-      memoryU16 = new Uint16Array(engine.memory.buffer);
-    for (let i = 0; i < length; ++i) memoryU16[(pointer >>> 1) + i] = value.charCodeAt(i);
-    return pointer;
+export const lowerString = (
+    engine: AssemblyScriptWasmEngine,
+    value: string
+) => {
+    if (value == null) return 0
+    const length = value.length,
+        pointer = engine.__new(length << 1, 1) >>> 0,
+        memoryU16 = new Uint16Array(engine.memory.buffer)
+    for (let i = 0; i < length; ++i)
+        memoryU16[(pointer >>> 1) + i] = value.charCodeAt(i)
+    return pointer
 }
 
 // REF : Assemblyscript ESM bindings

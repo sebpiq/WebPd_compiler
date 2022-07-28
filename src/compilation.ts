@@ -12,8 +12,20 @@
 import { createNamespace } from './code-helpers'
 import ASC_MACROS from './engine-assemblyscript/macros'
 import JS_MACROS from './engine-javascript/macros'
-import { CodeMacros, CompilerSettings, CompilerSettingsWithDefaults, NodeImplementation, NodeImplementations, NodeVariableNames, VariableNames } from './types'
-import { generateInletVariableName, generateOutletVariableName, generateStateVariableName } from './variable-names'
+import {
+    CodeMacros,
+    CompilerSettings,
+    CompilerSettingsWithDefaults,
+    NodeImplementation,
+    NodeImplementations,
+    NodeVariableNames,
+    VariableNames,
+} from './types'
+import {
+    generateInletVariableName,
+    generateOutletVariableName,
+    generateStateVariableName,
+} from './variable-names'
 
 export const ARRAYS_VARIABLE_NAME = 'ARRAYS'
 
@@ -31,27 +43,62 @@ export class Compilation {
         this.graph = graph
         this.nodeImplementations = nodeImplementations
         this.settings = validateSettings(settings)
-        
+
         this.variableNames = {
-            n: createNamespace(Object.values(graph).reduce<VariableNames["n"]>((nodeMap, node) => {
-                const nodeImplementation = this.getNodeImplementation(node.type)
-                const nodeStateVariables = nodeImplementation.stateVariables || []
-                nodeMap[node.id] = {
-                    ins: createNamespace(Object.values(node.inlets).reduce<NodeVariableNames['ins']>((nameMap, portlet) => {
-                        nameMap[portlet.id] = generateInletVariableName(node.id, portlet.id)
-                        return nameMap
-                    }, {})),
-                    outs: createNamespace(Object.values(node.outlets).reduce<NodeVariableNames['outs']>((nameMap, portlet) => {
-                        nameMap[portlet.id] = generateOutletVariableName(node.id, portlet.id)
-                        return nameMap
-                    }, {})),
-                    state: createNamespace(nodeStateVariables.reduce<NodeVariableNames['state']>((nameMap, stateVariable) => {
-                        nameMap[stateVariable] = generateStateVariableName(node.id, stateVariable)
-                        return nameMap
-                    }, {})),
-                }
-                return nodeMap
-            }, {})),
+            n: createNamespace(
+                Object.values(graph).reduce<VariableNames['n']>(
+                    (nodeMap, node) => {
+                        const nodeImplementation = this.getNodeImplementation(
+                            node.type
+                        )
+                        const nodeStateVariables =
+                            nodeImplementation.stateVariables || []
+                        nodeMap[node.id] = {
+                            ins: createNamespace(
+                                Object.values(node.inlets).reduce<
+                                    NodeVariableNames['ins']
+                                >((nameMap, portlet) => {
+                                    nameMap[
+                                        portlet.id
+                                    ] = generateInletVariableName(
+                                        node.id,
+                                        portlet.id
+                                    )
+                                    return nameMap
+                                }, {})
+                            ),
+                            outs: createNamespace(
+                                Object.values(node.outlets).reduce<
+                                    NodeVariableNames['outs']
+                                >((nameMap, portlet) => {
+                                    nameMap[
+                                        portlet.id
+                                    ] = generateOutletVariableName(
+                                        node.id,
+                                        portlet.id
+                                    )
+                                    return nameMap
+                                }, {})
+                            ),
+                            state: createNamespace(
+                                nodeStateVariables.reduce<
+                                    NodeVariableNames['state']
+                                >((nameMap, stateVariable) => {
+                                    nameMap[
+                                        stateVariable
+                                    ] = generateStateVariableName(
+                                        node.id,
+                                        stateVariable
+                                    )
+                                    return nameMap
+                                }, {})
+                            ),
+                        }
+                        return nodeMap
+                    },
+                    {}
+                )
+            ),
             g: {
                 arrays: ARRAYS_VARIABLE_NAME,
                 iterOutlet: 'O',
@@ -64,27 +111,60 @@ export class Compilation {
     }
 
     getMacros(): CodeMacros {
-        let unwrappedMacros = this.settings.target === 'javascript' ? JS_MACROS : ASC_MACROS
+        let unwrappedMacros =
+            this.settings.target === 'javascript' ? JS_MACROS : ASC_MACROS
         return {
-            floatArrayType: unwrappedMacros.floatArrayType.bind(undefined, this),
+            floatArrayType: unwrappedMacros.floatArrayType.bind(
+                undefined,
+                this
+            ),
             typedVarInt: unwrappedMacros.typedVarInt.bind(undefined, this),
             typedVarFloat: unwrappedMacros.typedVarFloat.bind(undefined, this),
-            typedVarString: unwrappedMacros.typedVarString.bind(undefined, this),
-            typedVarMessage: unwrappedMacros.typedVarMessage.bind(undefined, this),
-            typedVarFloatArray: unwrappedMacros.typedVarFloatArray.bind(undefined, this),
-            typedVarMessageArray: unwrappedMacros.typedVarMessageArray.bind(undefined, this),
+            typedVarString: unwrappedMacros.typedVarString.bind(
+                undefined,
+                this
+            ),
+            typedVarMessage: unwrappedMacros.typedVarMessage.bind(
+                undefined,
+                this
+            ),
+            typedVarFloatArray: unwrappedMacros.typedVarFloatArray.bind(
+                undefined,
+                this
+            ),
+            typedVarMessageArray: unwrappedMacros.typedVarMessageArray.bind(
+                undefined,
+                this
+            ),
             castToInt: unwrappedMacros.castToInt.bind(undefined, this),
             castToFloat: unwrappedMacros.castToFloat.bind(undefined, this),
-            functionHeader: unwrappedMacros.functionHeader.bind(undefined, this),
+            functionHeader: unwrappedMacros.functionHeader.bind(
+                undefined,
+                this
+            ),
             createMessage: unwrappedMacros.createMessage.bind(undefined, this),
-            isMessageMatching: unwrappedMacros.isMessageMatching.bind(undefined, this),
-            readMessageFloatDatum: unwrappedMacros.readMessageFloatDatum.bind(undefined, this),
-            readMessageStringDatum: unwrappedMacros.readMessageStringDatum.bind(undefined, this),
-            fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(undefined, this),
+            isMessageMatching: unwrappedMacros.isMessageMatching.bind(
+                undefined,
+                this
+            ),
+            readMessageFloatDatum: unwrappedMacros.readMessageFloatDatum.bind(
+                undefined,
+                this
+            ),
+            readMessageStringDatum: unwrappedMacros.readMessageStringDatum.bind(
+                undefined,
+                this
+            ),
+            fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(
+                undefined,
+                this
+            ),
         }
     }
 
-    getNodeImplementation = (nodeType: PdSharedTypes.NodeType): NodeImplementation => {
+    getNodeImplementation = (
+        nodeType: PdSharedTypes.NodeType
+    ): NodeImplementation => {
         const nodeImplementation = this.nodeImplementations[nodeType]
         if (!nodeImplementation) {
             throw new Error(`node ${nodeType} is not implemented`)
@@ -93,7 +173,9 @@ export class Compilation {
     }
 }
 
-export const validateSettings = (settings: CompilerSettings): CompilerSettingsWithDefaults => {
+export const validateSettings = (
+    settings: CompilerSettings
+): CompilerSettingsWithDefaults => {
     const portSpecs = settings.portSpecs || {}
     const bitDepth = settings.bitDepth || 32
     if (![32, 64].includes(bitDepth)) {

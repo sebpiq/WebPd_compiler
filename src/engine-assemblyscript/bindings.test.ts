@@ -9,17 +9,32 @@
  *
  */
 
-import assert from "assert"
-import {jest} from '@jest/globals'
-import { ARRAYS_VARIABLE_NAME, Compilation } from "../compilation"
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants"
-import { compileAssemblyScript, getAssemblyscriptCoreCode } from "./test-helpers"
-import { bindPorts, INT_ARRAY_BYTES_PER_ELEMENT, liftMessage, lowerArrayBufferOfIntegers, lowerMessage, lowerString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT, setArray } from "./bindings"
-import { AssemblyScriptWasmEngine } from "./types"
-import { Code, CompilerSettings, PortSpecs } from "../types"
-import { compilePorts } from "./compile"
-import { round } from "../test-helpers"
-import compile from "../compile"
+import assert from 'assert'
+import { jest } from '@jest/globals'
+import { ARRAYS_VARIABLE_NAME, Compilation } from '../compilation'
+import {
+    MESSAGE_DATUM_TYPE_FLOAT,
+    MESSAGE_DATUM_TYPE_STRING,
+} from '../constants'
+import {
+    compileAssemblyScript,
+    getAssemblyscriptCoreCode,
+} from './test-helpers'
+import {
+    bindPorts,
+    INT_ARRAY_BYTES_PER_ELEMENT,
+    liftMessage,
+    lowerArrayBufferOfIntegers,
+    lowerMessage,
+    lowerString,
+    MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT,
+    setArray,
+} from './bindings'
+import { AssemblyScriptWasmEngine } from './types'
+import { Code, CompilerSettings, PortSpecs } from '../types'
+import { compilePorts } from './compile'
+import { round } from '../test-helpers'
+import compile from '../compile'
 
 describe('bindings', () => {
     jest.setTimeout(10000)
@@ -27,7 +42,7 @@ describe('bindings', () => {
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
 
     const COMPILER_OPTIONS = {
-        target: 'assemblyscript' as CompilerSettings["target"],
+        target: 'assemblyscript' as CompilerSettings['target'],
         sampleRate: 44100,
         channelCount: 2,
     }
@@ -39,25 +54,37 @@ describe('bindings', () => {
     }
 
     describe('bindPorts', () => {
-
         const getBoundPorts = async (portSpecs: PortSpecs, extraCode: Code) => {
-            const compilation = new Compilation({}, {}, {...COMPILER_OPTIONS, portSpecs: portSpecs})
-            const code = ASSEMBLY_SCRIPT_CORE_CODE + extraCode + `
-                ${compilePorts(compilation, {FloatType: 'f32', FloatArrayType: 'Float32Array'})}
+            const compilation = new Compilation(
+                {},
+                {},
+                { ...COMPILER_OPTIONS, portSpecs: portSpecs }
+            )
+            const code =
+                ASSEMBLY_SCRIPT_CORE_CODE +
+                extraCode +
+                `
+                ${compilePorts(compilation, {
+                    FloatType: 'f32',
+                    FloatArrayType: 'Float32Array',
+                })}
             `
             const module = await compileAssemblyScript(code)
-            const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
+            const engine = (module.instance
+                .exports as unknown) as AssemblyScriptWasmEngine
             return bindPorts(engine, portSpecs)
         }
 
         it('should generate port to read message arrays', async () => {
             const portSpecs: PortSpecs = {
-                'someMessageArray': {
+                someMessageArray: {
                     type: 'messages',
-                    access: 'r'
-                }
+                    access: 'r',
+                },
             }
-            const ports = await getBoundPorts(portSpecs, `
+            const ports = await getBoundPorts(
+                portSpecs,
+                `
                 const someMessageArray: Message[] = []
                 const m1 = Message.fromTemplate([
                     ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
@@ -71,91 +98,119 @@ describe('bindings', () => {
                 writeFloatDatum(m2, 1, 123)
                 someMessageArray.push(m1)
                 someMessageArray.push(m2)
-            `)
-            assert.deepStrictEqual(Object.keys(ports).sort(), ['read_someMessageArray'])
+            `
+            )
+            assert.deepStrictEqual(Object.keys(ports).sort(), [
+                'read_someMessageArray',
+            ])
             assert.deepStrictEqual(ports.read_someMessageArray(), [
-                [666.5], ['bla', 123]
+                [666.5],
+                ['bla', 123],
             ])
         })
 
         it('should generate port to write message arrays', async () => {
             const portSpecs: PortSpecs = {
-                'someMessageArray': {
+                someMessageArray: {
                     type: 'messages',
-                    access: 'rw'
-                }
+                    access: 'rw',
+                },
             }
-            const ports = await getBoundPorts(portSpecs, `
+            const ports = await getBoundPorts(
+                portSpecs,
+                `
                 let someMessageArray: Message[] = []
-            `)
-            assert.deepStrictEqual(Object.keys(ports).sort(), ['read_someMessageArray', 'write_someMessageArray'])
-            ports.write_someMessageArray([
-                [777, 'hello'], [111]
+            `
+            )
+            assert.deepStrictEqual(Object.keys(ports).sort(), [
+                'read_someMessageArray',
+                'write_someMessageArray',
             ])
+            ports.write_someMessageArray([[777, 'hello'], [111]])
             assert.deepStrictEqual(ports.read_someMessageArray(), [
-                [777, 'hello'], [111]
+                [777, 'hello'],
+                [111],
             ])
         })
 
         it('should generate port to read floats', async () => {
             const portSpecs: PortSpecs = {
-                'someFloat': {
+                someFloat: {
                     type: 'float',
-                    access: 'r'
-                }
+                    access: 'r',
+                },
             }
-            const ports = await getBoundPorts(portSpecs, `
+            const ports = await getBoundPorts(
+                portSpecs,
+                `
                 const someFloat: f32 = 999
-            `)
-            assert.deepStrictEqual(Object.keys(ports).sort(), ['read_someFloat'])
+            `
+            )
+            assert.deepStrictEqual(Object.keys(ports).sort(), [
+                'read_someFloat',
+            ])
             assert.strictEqual(ports.read_someFloat(), 999)
         })
 
         it('should generate port to write floats', async () => {
             const portSpecs: PortSpecs = {
-                'someFloat': {
+                someFloat: {
                     type: 'float',
-                    access: 'rw'
-                }
+                    access: 'rw',
+                },
             }
-            const ports = await getBoundPorts(portSpecs, `
+            const ports = await getBoundPorts(
+                portSpecs,
+                `
                 let someFloat: f32 = 456
-            `)
-            assert.deepStrictEqual(Object.keys(ports).sort(), ['read_someFloat', 'write_someFloat'])
+            `
+            )
+            assert.deepStrictEqual(Object.keys(ports).sort(), [
+                'read_someFloat',
+                'write_someFloat',
+            ])
             ports.write_someFloat(666)
             assert.strictEqual(ports.read_someFloat(), 666)
         })
-
     })
 
     describe('setArray', () => {
-
         it('should set the array', async () => {
-            const code = compile({}, {}, COMPILER_OPTIONS) + `
+            const code =
+                compile({}, {}, COMPILER_OPTIONS) +
+                `
                 export function testReadArray (arrayName: string, index: i32): f32 {
                     return ${ARRAYS_VARIABLE_NAME}[arrayName][index]
                 }
             `
             const module = await compileAssemblyScript(code)
-            const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
+            const engine = (module.instance
+                .exports as unknown) as AssemblyScriptWasmEngine
 
             setArray(engine, 'array1', new Float32Array([11.1, 22.2, 33.3]))
             setArray(engine, 'array2', new Float64Array([44.4, 55.5]))
             setArray(engine, 'array3', [66.6, 77.7])
-            
+
             let actual: number
-            actual = (engine as any).testReadArray(lowerString(engine, 'array1'), 1)
+            actual = (engine as any).testReadArray(
+                lowerString(engine, 'array1'),
+                1
+            )
             assert.strictEqual(round(actual), 22.2)
-            actual = (engine as any).testReadArray(lowerString(engine, 'array2'), 0)
+            actual = (engine as any).testReadArray(
+                lowerString(engine, 'array2'),
+                0
+            )
             assert.strictEqual(round(actual), 44.4)
-            actual = (engine as any).testReadArray(lowerString(engine, 'array3'), 1)
+            actual = (engine as any).testReadArray(
+                lowerString(engine, 'array3'),
+                1
+            )
             assert.strictEqual(round(actual), 77.7)
         })
-
     })
 
     describe('lowerArrayBufferOfIntegers', () => {
-
         it('should correctly lower the given array to an ArrayBuffer of integers', async () => {
             const module = await compileAssemblyScript(`
                 export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: i32): i32 {
@@ -164,20 +219,36 @@ describe('bindings', () => {
                 }
                 ${ASSEMBLY_SCRIPT_CORE_CODE}
             `)
-            const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
+            const engine = (module.instance
+                .exports as unknown) as AssemblyScriptWasmEngine
 
-            const bufferPointer = lowerArrayBufferOfIntegers(engine, [1, 22, 333, 4444])
+            const bufferPointer = lowerArrayBufferOfIntegers(engine, [
+                1,
+                22,
+                333,
+                4444,
+            ])
 
-            assert.strictEqual((engine as any).testReadArrayBufferOfIntegers(bufferPointer, 0), 1)
-            assert.strictEqual((engine as any).testReadArrayBufferOfIntegers(bufferPointer, 1), 22)
-            assert.strictEqual((engine as any).testReadArrayBufferOfIntegers(bufferPointer, 2), 333)
-            assert.strictEqual((engine as any).testReadArrayBufferOfIntegers(bufferPointer, 3), 4444)
+            assert.strictEqual(
+                (engine as any).testReadArrayBufferOfIntegers(bufferPointer, 0),
+                1
+            )
+            assert.strictEqual(
+                (engine as any).testReadArrayBufferOfIntegers(bufferPointer, 1),
+                22
+            )
+            assert.strictEqual(
+                (engine as any).testReadArrayBufferOfIntegers(bufferPointer, 2),
+                333
+            )
+            assert.strictEqual(
+                (engine as any).testReadArrayBufferOfIntegers(bufferPointer, 3),
+                4444
+            )
         })
-
     })
 
     describe('lowerMessage', () => {
-
         it('should create the message with correct header and filled-in data', async () => {
             const module = await compileAssemblyScript(`
                 export function testReadMessageData(message: Message, index: i32): i32 {
@@ -186,10 +257,8 @@ describe('bindings', () => {
                 ${ASSEMBLY_SCRIPT_CORE_CODE}
             `)
             const engine = module.instance.exports as any
-            
-            const messagePointer = lowerMessage(engine, [
-                'bla', 2.3
-            ])
+
+            const messagePointer = lowerMessage(engine, ['bla', 2.3])
 
             // Testing datum count
             assert.strictEqual(engine.testReadMessageData(messagePointer, 0), 2)
@@ -199,26 +268,45 @@ describe('bindings', () => {
             assert.strictEqual(engine.testReadMessageData(messagePointer, 2), 0)
 
             // Testing datum positions
-            // <Header byte size> 
-            //      + <Size of f32> 
-            //      + <Size of 3 chars strings> + <Size of f32>            
-            assert.strictEqual(engine.testReadMessageData(messagePointer, 3), 6 * INT_ARRAY_BYTES_PER_ELEMENT)
-            assert.strictEqual(engine.testReadMessageData(messagePointer, 4), 9 * INT_ARRAY_BYTES_PER_ELEMENT)
-            assert.strictEqual(engine.testReadMessageData(messagePointer, 5), 10 * INT_ARRAY_BYTES_PER_ELEMENT)
+            // <Header byte size>
+            //      + <Size of f32>
+            //      + <Size of 3 chars strings> + <Size of f32>
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 3),
+                6 * INT_ARRAY_BYTES_PER_ELEMENT
+            )
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 4),
+                9 * INT_ARRAY_BYTES_PER_ELEMENT
+            )
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 5),
+                10 * INT_ARRAY_BYTES_PER_ELEMENT
+            )
 
             // DATUM "bla"
-            assert.strictEqual(engine.testReadMessageData(messagePointer, 6), 'bla'.charCodeAt(0))
-            assert.strictEqual(engine.testReadMessageData(messagePointer, 7), 'bla'.charCodeAt(1))
-            assert.strictEqual(engine.testReadMessageData(messagePointer, 8), 'bla'.charCodeAt(2))
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 6),
+                'bla'.charCodeAt(0)
+            )
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 7),
+                'bla'.charCodeAt(1)
+            )
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 8),
+                'bla'.charCodeAt(2)
+            )
 
             // DATUM "2.3"
-            assert.strictEqual(engine.testReadMessageData(messagePointer, 9), float32ToInt32(2.3))
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 9),
+                float32ToInt32(2.3)
+            )
         })
-
     })
 
     describe('liftMessage', () => {
-
         it('should read message to a JavaScript array', async () => {
             const module = await compileAssemblyScript(`
                 export function testCreateMessage(): Message {
@@ -232,12 +320,15 @@ describe('bindings', () => {
                 }
                 ${ASSEMBLY_SCRIPT_CORE_CODE}
             `)
-            const engine = (module.instance.exports as unknown as AssemblyScriptWasmEngine)
+            const engine = (module.instance
+                .exports as unknown) as AssemblyScriptWasmEngine
 
-            const messagePointer = (module.instance.exports as any).testCreateMessage()
-            assert.deepStrictEqual(liftMessage(engine, messagePointer), ['hello', 666])
+            const messagePointer = (module.instance
+                .exports as any).testCreateMessage()
+            assert.deepStrictEqual(liftMessage(engine, messagePointer), [
+                'hello',
+                666,
+            ])
         })
-
     })
-
 })
