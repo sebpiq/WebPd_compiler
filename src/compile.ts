@@ -54,7 +54,8 @@ export const compile = (
             ${compileSetup(compilation, graphTraversal)}
 
             return {
-                configure: (blockSize) => {
+                configure: (sampleRate, blockSize) => {
+                    ${globs.sampleRate} = sampleRate
                     ${globs.blockSize} = blockSize
                 },
                 loop: (${globs.output}) => {
@@ -120,7 +121,8 @@ export const compile = (
         
             ${compileSetup(compilation, graphTraversal)}
 
-            export function configure(blockSize: i32): ${FloatArrayType} {
+            export function configure(sampleRate: ${FloatType}, blockSize: i32): ${FloatArrayType} {
+                ${globs.sampleRate} = sampleRate
                 ${globs.blockSize} = blockSize
                 ${globs.output} = new ${FloatArrayType}(${
             globs.blockSize
@@ -160,6 +162,7 @@ export const compileSetup = (
         let ${MACROS.typedVarInt(globs.iterOutlet)} = 0
         let ${MACROS.typedVarInt(globs.frame)} = -1
         let ${MACROS.typedVarInt(globs.blockSize)} = 0
+        let ${MACROS.typedVarInt(globs.sampleRate)} = 0
 
         ${graphTraversal.map((node) => {
             const { ins, outs } = compilation.variableNames.n[node.id]

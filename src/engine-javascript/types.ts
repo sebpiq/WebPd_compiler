@@ -12,7 +12,7 @@
 import { EnginePorts } from '../types'
 
 export interface JavaScriptEngine {
-    configure: (blockSize: number) => void
+    configure: (sampleRate: number, blockSize: number) => void
     loop: () => Float32Array
     setArray: (
         arrayName: string,

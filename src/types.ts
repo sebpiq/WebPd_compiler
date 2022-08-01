@@ -75,6 +75,7 @@ export interface VariableNames {
         iterFrame: string
         frame: string
         blockSize: string
+        sampleRate: string
         output: string
     }
 }
@@ -107,10 +108,8 @@ export type PortSpecs = {
     }
 }
 
-// Discriminated union for settings, allows to have specific values
-// depending on the target
+// Mandatory & optional settings for different targets
 interface CompilerSettingsMandatory {
-    sampleRate: number
     channelCount: number
 }
 

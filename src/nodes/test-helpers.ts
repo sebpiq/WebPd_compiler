@@ -277,7 +277,7 @@ export const generateFramesForNode = async (
     })
 
     // blockSize = 1
-    engine.configure(1)
+    engine.configure(COMPILER_OPTIONS.sampleRate, 1)
 
     const outputFrames: Array<Frame> = []
     inputFrames.forEach((inputFrame) => {

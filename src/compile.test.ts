@@ -14,22 +14,21 @@ import compile, { compileLoop, compileSetup } from './compile'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations, CompilerSettings } from './types'
 import { Compilation } from './compilation'
-import { compileAssemblyScript, normalizeCode, round } from './test-helpers'
+import { normalizeCode, round } from './test-helpers'
 import { jest } from '@jest/globals'
 import { AssemblyScriptWasmEngine } from './engine-assemblyscript/types'
 import { JavaScriptEngine } from './engine-javascript/types'
+import { compileAssemblyScript } from './engine-assemblyscript/test-helpers'
 
 describe('compile', () => {
     jest.setTimeout(10000)
 
     const COMPILER_SETTINGS_JS: CompilerSettings = {
-        sampleRate: 44100,
         channelCount: 2,
         target: 'javascript',
     }
 
     const COMPILER_SETTINGS_AS: CompilerSettings = {
-        sampleRate: 44100,
         channelCount: 2,
         target: 'assemblyscript',
         bitDepth: 32,
@@ -185,6 +184,7 @@ describe('compile', () => {
                 const modelEngine: JavaScriptEngine = {
                     configure: (_: number) => {},
                     loop: () => new Float32Array(),
+                    setArray: () => undefined,
                     ports: {},
                 }
 
@@ -341,8 +341,9 @@ describe('compile', () => {
                 )
 
                 const modelModule: AssemblyScriptWasmEngine = {
-                    configure: (_: number) => {},
+                    configure: (_: number) => 0,
                     loop: () => new Float32Array(),
+                    setArray: () => undefined,
                     memory: new WebAssembly.Memory({ initial: 128 }),
                     MESSAGE_DATUM_TYPE_FLOAT: new WebAssembly.Global(0 as any),
                     MESSAGE_DATUM_TYPE_STRING: new WebAssembly.Global(0 as any),
@@ -393,8 +394,8 @@ describe('compile', () => {
 
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    setup: (node, _, settings) =>
-                        `// [osc~] frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
+                    setup: (node, _) =>
+                        `// [osc~] frequency ${node.args.frequency}`,
                     loop: () => ``,
                 },
                 'dac~': {
@@ -438,13 +439,13 @@ describe('compile', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
             msg: {
                 setup: () => ``,
-                loop: (node, _, settings) =>
-                    `// [msg] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+                loop: (node) =>
+                    `// [msg] : value ${node.args.value}`,
             },
             '+': {
                 setup: () => ``,
-                loop: (node, _, settings) =>
-                    `// [+] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+                loop: (node) =>
+                    `// [+] : value ${node.args.value}`,
             },
             print: {
                 setup: () => ``,
@@ -453,13 +454,13 @@ describe('compile', () => {
             },
             'osc~': {
                 setup: () => ``,
-                loop: (node, _, settings) =>
-                    `// [osc~] : frequency ${node.args.frequency} ; sample rate ${settings.sampleRate}`,
+                loop: (node) =>
+                    `// [osc~] : frequency ${node.args.frequency}`,
             },
             '+~': {
                 setup: () => ``,
-                loop: (node, _, settings) =>
-                    `// [+~] : value ${node.args.value} ; sample rate ${settings.sampleRate}`,
+                loop: (node) =>
+                    `// [+~] : value ${node.args.value}`,
             },
             'dac~': {
                 setup: () => ``,

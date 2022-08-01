@@ -105,6 +105,7 @@ export class Compilation {
                 iterFrame: 'F',
                 frame: 'FRAME',
                 blockSize: 'BLOCK_SIZE',
+                sampleRate: 'SAMPLE_RATE',
                 output: 'OUTPUT',
             },
         }
@@ -177,7 +178,7 @@ export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettingsWithDefaults => {
     const portSpecs = settings.portSpecs || {}
-    const bitDepth = settings.bitDepth || 32
+    const bitDepth = settings.bitDepth || 64
     if (![32, 64].includes(bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }

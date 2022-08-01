@@ -10,13 +10,13 @@
  */
 
 import {
-    assertMessageRawContentsEqual,
     compileAssemblyScript,
     getAssemblyscriptCoreCode,
 } from './test-helpers'
 import { jest } from '@jest/globals'
 import { AssemblyScriptWasmEngine } from './types'
 import { INT_ARRAY_BYTES_PER_ELEMENT, lowerMessage } from './bindings'
+import assert from 'assert'
 
 describe('assemblyscriptCoreCode', () => {
     jest.setTimeout(10000)
@@ -28,6 +28,9 @@ describe('assemblyscriptCoreCode', () => {
             const module = await compileAssemblyScript(`
                 export function testMessageArray(messageArray: Message[], index: i32): Message {
                     return messageArray[index]
+                }
+                export function testReadMessageData(message: Message, index: i32): i32 {
+                    return message.dataView.getInt32(index * sizeof<i32>())
                 }
                 ${ASSEMBLY_SCRIPT_CORE_CODE}
             `)
@@ -50,7 +53,7 @@ describe('assemblyscriptCoreCode', () => {
                 1
             )
 
-            assertMessageRawContentsEqual(engine, messagePointer1Bis, [
+            assert.deepStrictEqual([0, 1, 2, 3, 4, 5].map(i => (engine as any).testReadMessageData(messagePointer1Bis, i)), [
                 1,
                 engine.MESSAGE_DATUM_TYPE_STRING.valueOf(),
                 4 * INT_ARRAY_BYTES_PER_ELEMENT,
@@ -58,7 +61,7 @@ describe('assemblyscriptCoreCode', () => {
                 0,
                 0,
             ])
-            assertMessageRawContentsEqual(engine, messagePointer2Bis, [
+            assert.deepStrictEqual([0, 1, 2, 3, 4].map(i => (engine as any).testReadMessageData(messagePointer2Bis, i)), [
                 1,
                 engine.MESSAGE_DATUM_TYPE_FLOAT.valueOf(),
                 4 * INT_ARRAY_BYTES_PER_ELEMENT,

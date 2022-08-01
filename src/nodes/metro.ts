@@ -16,7 +16,6 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 export const setup: NodeCodeGenerator = (
     { args },
     { state, ins, globs, MACROS },
-    { sampleRate }
 ) =>
     // TODO : more complex ways to set rate
     // Time units are all expressed in frames here
@@ -28,7 +27,7 @@ export const setup: NodeCodeGenerator = (
         const ${state.funcSetRate} = ${MACROS.functionHeader(
         MACROS.typedVarFloat('rate')
     )} => {
-            ${state.rate} = rate / 1000 * ${sampleRate}
+            ${state.rate} = rate / 1000 * ${globs.sampleRate}
         }
 
         const ${state.funcHandleMessage0} = ${MACROS.functionHeader()} => {

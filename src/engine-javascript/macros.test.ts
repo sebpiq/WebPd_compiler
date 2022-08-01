@@ -23,7 +23,6 @@ describe('macros', () => {
         {},
         {
             target: 'assemblyscript',
-            sampleRate: 44100,
             channelCount: 2,
         }
     )

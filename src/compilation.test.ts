@@ -10,7 +10,6 @@ import {
 
 describe('compilation', () => {
     const COMPILER_SETTINGS: CompilerSettings = {
-        sampleRate: 44100,
         channelCount: 2,
         target: 'javascript',
     }
@@ -138,7 +137,6 @@ describe('compilation', () => {
             const settings = validateSettings({
                 target: 'assemblyscript',
                 channelCount: 2,
-                sampleRate: 44100,
             })
             assert.strictEqual((settings as any).bitDepth, 32)
             assert.deepStrictEqual((settings as any).portSpecs, {})

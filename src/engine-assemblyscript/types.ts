@@ -29,7 +29,7 @@ export type ArrayBufferOfIntegersPointer = number
 export type ArrayBufferOfFloatsPointer = number
 
 export interface AssemblyScriptWasmEngine {
-    configure: (blockSize: number) => void
+    configure: (sampleRate: number, blockSize: number) => TypedArrayPointer
     loop: () => Float32Array
     setArray: (
         arrayName: StringPointer,
