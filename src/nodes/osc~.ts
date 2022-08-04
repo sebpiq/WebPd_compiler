@@ -11,32 +11,53 @@
 
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
-// ------------------------------ setup ------------------------------ //
-export const setup: NodeCodeGenerator = (...args) => {
+// ------------------------------ declare ------------------------------ //
+export const declare: NodeCodeGenerator = (...args) => {
     const [node] = args
-    return _hasSignalInput(node) ? setupSignal(...args) : setupControl(...args)
+    return _hasSignalInput(node) ? declareSignal(...args) : declareControl(...args)
 }
 
-const setupSignal: NodeCodeGenerator = (
-    node,
-    { ins, state, globs, MACROS },
+const declareSignal: NodeCodeGenerator = (
+    _,
+    { state, MACROS },
 ) => `
-    let ${MACROS.typedVarFloat(state.phase)} = 0
-    let ${MACROS.typedVarFloat(state.J)} = 2 * Math.PI / ${globs.sampleRate}
+    let ${MACROS.typedVarFloat(state.phase)}
+    let ${MACROS.typedVarFloat(state.J)}
+`
+
+const declareControl: NodeCodeGenerator = (
+    _,
+    { state, globs, MACROS },
+) => `
+    let ${MACROS.typedVarFloat(state.phase)}
+    let ${MACROS.typedVarFloat(state.currentFrequency)}
+    let ${MACROS.typedVarFloat(state.K)}
+    const ${state.refreshK} = ${MACROS.functionHeader()} => 
+        ${state.K} = ${state.currentFrequency} * 2 * Math.PI / ${globs.sampleRate}
+`
+
+// ------------------------------ initialize ------------------------------ //
+export const initialize: NodeCodeGenerator = (...args) => {
+    const [node] = args
+    return _hasSignalInput(node) ? initializeSignal(...args) : initializeControl(...args)
+}
+
+const initializeSignal: NodeCodeGenerator = (
+    node,
+    { ins, state, globs },
+) => `
+    ${state.phase} = 0
+    ${state.J} = 2 * Math.PI / ${globs.sampleRate}
     ${ins.$0_signal} = ${node.args.frequency || 0}
 `
 
-const setupControl: NodeCodeGenerator = (
+const initializeControl: NodeCodeGenerator = (
     node,
-    { state, globs, MACROS },
+    { state },
 ) => `
-    let ${MACROS.typedVarFloat(state.phase)} = 0
-    let ${MACROS.typedVarFloat(state.currentFrequency)} = ${
-    (node.args.frequency as number) || 0
-}
-    let ${MACROS.typedVarFloat(state.K)} = 0
-    const ${state.refreshK} = ${MACROS.functionHeader()} => 
-        ${state.K} = ${state.currentFrequency} * 2 * Math.PI / ${globs.sampleRate}
+    ${state.phase} = 0
+    ${state.currentFrequency} = ${(node.args.frequency as number) || 0}
+    ${state.K} = 0
     ${state.refreshK}()
 `
 
@@ -47,7 +68,7 @@ export const loop: NodeCodeGenerator = (...args) => {
     return _hasSignalInput(node) ? loopSignal(...args) : loopControl(...args)
 }
 
-const loopSignal: NodeCodeGenerator = (_, { state, ins, outs, MACROS }) => `
+const loopSignal: NodeCodeGenerator = (_, { state, ins, outs }) => `
     ${outs.$0} = Math.cos(${state.phase})
     ${state.phase} += ${state.J} * ${ins.$0_signal}
 `

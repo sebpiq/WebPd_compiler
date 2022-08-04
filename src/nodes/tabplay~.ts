@@ -15,22 +15,20 @@ import {
 } from '../constants'
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
-// ------------------------------ setup ------------------------------ //
-export const setup: NodeCodeGenerator = (
-    node,
+// ------------------------------ declare ------------------------------ //
+export const declare: NodeCodeGenerator = (
+    _,
     { state, ins, globs, MACROS }
 ) => `
-    let ${MACROS.typedVarFloatArray(
-        state.array
-    )} = new ${MACROS.floatArrayType()}(0)
-    let ${MACROS.typedVarInt(state.readPosition)} = 0
-    let ${MACROS.typedVarInt(state.readUntil)} = 0
+    let ${MACROS.typedVarFloatArray(state.array)}
+    let ${MACROS.typedVarInt(state.readPosition)}
+    let ${MACROS.typedVarInt(state.readUntil)}
 
     const ${state.funcSetArrayName} = ${MACROS.functionHeader(
-    MACROS.typedVarString('arrayName')
-)} => {
+        MACROS.typedVarString('arrayName')
+    )} => {
         if (!${globs.arrays}.has(arrayName)) {
-            ${state.array} = new Float32Array(0)
+            ${state.array} = new ${MACROS.floatArrayType()}(0)
         } else {
             ${state.array} = ${globs.arrays}.get(arrayName)
         }
@@ -55,8 +53,8 @@ export const setup: NodeCodeGenerator = (
             MESSAGE_DATUM_TYPE_FLOAT,
         ])}) {
             ${state.readPosition} = ${MACROS.castToInt(
-    MACROS.readMessageFloatDatum('m', 0)
-)}
+                MACROS.readMessageFloatDatum('m', 0)
+            )}
             ${state.readUntil} = ${state.array}.length
     
         } else if (${MACROS.isMessageMatching('m', [
@@ -64,8 +62,8 @@ export const setup: NodeCodeGenerator = (
             MESSAGE_DATUM_TYPE_FLOAT,
         ])}) {
             ${state.readPosition} = ${MACROS.castToInt(
-    MACROS.readMessageFloatDatum('m', 0)
-)}
+                MACROS.readMessageFloatDatum('m', 0)
+            )}
             ${state.readUntil} = ${MACROS.castToInt(`Math.min(
                 ${MACROS.castToFloat(
                     state.readPosition
@@ -77,15 +75,21 @@ export const setup: NodeCodeGenerator = (
             throw new Error("Unexpected message")
         }
     }
+`
 
-    ${
-        node.args.arrayName
-            ? `{
+// ------------------------------ initialize ------------------------------ //
+export const initialize: NodeCodeGenerator = (
+    node,
+    { state, ins, MACROS }
+) => `
+    ${state.array} = new ${MACROS.floatArrayType()}(0)
+    ${state.readPosition} = 0
+    ${state.readUntil} = 0
+
+    ${node.args.arrayName ? `{
         ${MACROS.createMessage('m', ['set', node.args.arrayName as string])}
         ${ins.$0}.push(m)
-    }`
-            : ''
-    }
+    }`: ''}
 `
 
 // ------------------------------- loop ------------------------------ //

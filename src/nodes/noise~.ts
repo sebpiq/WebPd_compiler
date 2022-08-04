@@ -11,10 +11,7 @@
 
 import { NodeCodeGenerator } from '../types'
 
-// ------------------------------ setup ------------------------------ //
 // TODO : left inlet ?
-export const setup: NodeCodeGenerator = () => ``
-
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (_, { outs, MACROS }) => {
     return `

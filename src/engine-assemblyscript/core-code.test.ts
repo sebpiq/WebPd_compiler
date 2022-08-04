@@ -10,7 +10,7 @@
  */
 
 import {
-    compileAssemblyScript,
+    compileWasmModule,
     getAssemblyscriptCoreCode,
 } from './test-helpers'
 import { jest } from '@jest/globals'
@@ -25,7 +25,7 @@ describe('assemblyscriptCoreCode', () => {
 
     describe('createMessageArray / pushMessageToArray', () => {
         it.only('should create message array and push message to array', async () => {
-            const module = await compileAssemblyScript(`
+            const module = await compileWasmModule(`
                 export function testMessageArray(messageArray: Message[], index: i32): Message {
                     return messageArray[index]
                 }
@@ -56,16 +56,16 @@ describe('assemblyscriptCoreCode', () => {
             assert.deepStrictEqual([0, 1, 2, 3, 4, 5].map(i => (engine as any).testReadMessageData(messagePointer1Bis, i)), [
                 1,
                 engine.MESSAGE_DATUM_TYPE_STRING.valueOf(),
-                4 * INT_ARRAY_BYTES_PER_ELEMENT,
-                6 * INT_ARRAY_BYTES_PER_ELEMENT,
+                INT_ARRAY_BYTES_PER_ELEMENT * 4,
+                INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
                 0,
                 0,
             ])
             assert.deepStrictEqual([0, 1, 2, 3, 4].map(i => (engine as any).testReadMessageData(messagePointer2Bis, i)), [
                 1,
                 engine.MESSAGE_DATUM_TYPE_FLOAT.valueOf(),
-                4 * INT_ARRAY_BYTES_PER_ELEMENT,
-                5 * INT_ARRAY_BYTES_PER_ELEMENT,
+                INT_ARRAY_BYTES_PER_ELEMENT * 4,
+                INT_ARRAY_BYTES_PER_ELEMENT * 4 + Float64Array.BYTES_PER_ELEMENT,
                 0,
             ])
         })

@@ -15,19 +15,28 @@ import {
     NodeImplementations,
 } from '../types'
 
-// ------------------------------ setup ------------------------------ //
-export const makeSetup = (): NodeCodeGenerator => (...args) => {
+// ------------------------------ declare ------------------------------ //
+export const makeDeclare = (): NodeCodeGenerator => (...args) => {
     const [node] = args
-    return _hasSignalInput(node) ? setupSignal(...args) : setupControl(...args)
+    return _hasSignalInput(node) ? declareSignal(...args) : declareControl(...args)
 }
 
-const setupSignal: NodeCodeGenerator = (node, { ins }) =>
+const declareSignal: NodeCodeGenerator = () => ``
+
+const declareControl: NodeCodeGenerator = (_, { state, MACROS }) =>
+    `let ${MACROS.typedVarFloat(state.rightOp)}`
+
+// ------------------------------ initialize ------------------------------ //
+export const makeInitialize = (): NodeCodeGenerator => (...args) => {
+    const [node] = args
+    return _hasSignalInput(node) ? initializeSignal(...args) : initializeControl(...args)
+}
+
+const initializeSignal: NodeCodeGenerator = (node, { ins }) =>
     `${ins.$1_signal} = ${node.args.value} || 0`
 
-const setupControl: NodeCodeGenerator = (node, { state, MACROS }) =>
-    `let ${MACROS.typedVarFloat(state.rightOp)} = ${
-        (node.args.value as string) || 0
-    }`
+const initializeControl: NodeCodeGenerator = (node, { state }) =>
+    `${state.rightOp} = ${(node.args.value as string) || 0}`
 
 // ------------------------------- loop ------------------------------ //
 export const makeLoop = (operator: string): NodeCodeGenerator => {
@@ -51,9 +60,7 @@ const makeLoopControl = (operator: string): NodeCodeGenerator => (
     { ins, outs, state, MACROS }
 ) => `
         if (${ins.$1_control}.length) {
-            const ${MACROS.typedVarMessage('inMessage')} = ${
-    ins.$1_control
-}.pop()
+            const ${MACROS.typedVarMessage('inMessage')} = ${ins.$1_control}.pop()
             ${state.rightOp} = ${MACROS.readMessageFloatDatum('inMessage', 0)}
         }
         ${outs.$0} = ${ins.$0} ${operator} ${state.rightOp}`
@@ -66,12 +73,14 @@ const _hasSignalInput = (node: PdDspGraph.Node) =>
 
 const binopTilde: NodeImplementations = {
     '+~': {
-        setup: makeSetup(),
+        initialize: makeInitialize(),
+        declare: makeDeclare(),
         loop: makeLoop('+'),
         stateVariables,
     },
     '*~': {
-        setup: makeSetup(),
+        initialize: makeInitialize(),
+        declare: makeDeclare(),
         loop: makeLoop('*'),
         stateVariables,
     },

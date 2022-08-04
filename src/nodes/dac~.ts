@@ -11,9 +11,9 @@
 
 import { NodeCodeGenerator } from '../types'
 
-// ------------------------------ setup ------------------------------ //
+// ------------------------------ initialize ------------------------------ //
 // TODO : args
-export const setup: NodeCodeGenerator = () => ``
+
 
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (

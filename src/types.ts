@@ -94,7 +94,8 @@ export type NodeCodeGenerator = (
 ) => Code
 
 export interface NodeImplementation {
-    setup: NodeCodeGenerator
+    declare?: NodeCodeGenerator
+    initialize?: NodeCodeGenerator
     loop: NodeCodeGenerator
     stateVariables?: Array<string>
 }

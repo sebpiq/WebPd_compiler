@@ -27,7 +27,7 @@ import { renderCode } from '../code-helpers'
 import { JavaScriptEngine } from '../engine-javascript/types'
 import { AssemblyScriptWasmEngine } from '../engine-assemblyscript/types'
 import { bindPorts, setArray } from '../engine-assemblyscript/bindings'
-import { compileAssemblyScript } from '../engine-assemblyscript/test-helpers'
+import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { round } from '../test-helpers'
 
@@ -163,20 +163,15 @@ export const generateFramesForNode = async (
         ...NODE_IMPLEMENTATIONS,
         // This is a dummy node, it's only useful to fake connections
         'fake-source-node': {
-            setup: () => ``,
             loop: () => ``,
         },
         'recorder-node': {
             // Generate one memory variable per outlet of test node
-            setup: (_, { state, MACROS }) =>
+            declare: (_, { state, MACROS }) =>
                 renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
                     inlet.type === 'signal'
-                        ? `let ${MACROS.typedVarFloat(
-                              state['mem' + inlet.id]
-                          )} = 0`
-                        : `let ${MACROS.typedVarMessageArray(
-                              state['mem' + inlet.id]
-                          )} = []`
+                        ? `let ${MACROS.typedVarFloat(state['mem' + inlet.id])} = 0`
+                        : `let ${MACROS.typedVarMessageArray(state['mem' + inlet.id])} = []`
                 )}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.
@@ -184,9 +179,7 @@ export const generateFramesForNode = async (
                 renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
                     inlet.type === 'signal'
                         ? `${state['mem' + inlet.id]} = ${ins[inlet.id]}`
-                        : `${state['mem' + inlet.id]} = ${
-                              ins[inlet.id]
-                          }.slice(0)`
+                        : `${state['mem' + inlet.id]} = ${ins[inlet.id]}.slice(0)`
                 )}`,
             stateVariables: Object.keys(recorderNode.inlets).map(
                 (inletId) => 'mem' + inletId
@@ -249,7 +242,7 @@ export const generateFramesForNode = async (
         }
         engine = jsEngine
     } else {
-        const ascEngine = ((await compileAssemblyScript(code)).instance
+        const ascEngine = ((await compileWasmModule(code)).instance
             .exports as unknown) as AssemblyScriptWasmEngine
         ports = bindPorts(ascEngine, portSpecs)
         if (arrays) {

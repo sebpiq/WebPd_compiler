@@ -11,9 +11,6 @@
 
 import { Code, NodeCodeGenerator } from '../types'
 
-// ------------------------------ setup ------------------------------ //
-export const setup: NodeCodeGenerator = () => ``
-
 // ------------------------------- loop ------------------------------ //
 // Takes a message array as input, and constructs the output message using `template` argument.
 // For example :

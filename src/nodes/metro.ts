@@ -12,21 +12,21 @@
 import { MESSAGE_DATUM_TYPE_FLOAT } from '../constants'
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
-// ------------------------------ setup ------------------------------ //
-export const setup: NodeCodeGenerator = (
-    { args },
+// ------------------------------ declare ------------------------------ //
+export const declare: NodeCodeGenerator = (
+    _,
     { state, ins, globs, MACROS },
 ) =>
     // TODO : more complex ways to set rate
     // Time units are all expressed in frames here
     `
-        let ${MACROS.typedVarFloat(state.rate)} = 0
-        let ${MACROS.typedVarInt(state.nextTick)} = -1
-        let ${MACROS.typedVarFloat(state.realNextTick)} = -1
+        let ${MACROS.typedVarFloat(state.rate)}
+        let ${MACROS.typedVarInt(state.nextTick)}
+        let ${MACROS.typedVarFloat(state.realNextTick)}
 
         const ${state.funcSetRate} = ${MACROS.functionHeader(
-        MACROS.typedVarFloat('rate')
-    )} => {
+            MACROS.typedVarFloat('rate')
+        )} => {
             ${state.rate} = rate / 1000 * ${globs.sampleRate}
         }
 
@@ -58,7 +58,18 @@ export const setup: NodeCodeGenerator = (
                 throw new Error("Unexpected message")
             }
         }
+    `
 
+
+// ------------------------------ initialize ------------------------------ //
+export const initialize: NodeCodeGenerator = (
+    { args },
+    { state },
+) =>
+    `
+        ${state.rate} = 0
+        ${state.nextTick} = -1
+        ${state.realNextTick} = -1
         ${args.rate !== undefined ? `${state.funcSetRate}(${args.rate})` : ''}
     `
 

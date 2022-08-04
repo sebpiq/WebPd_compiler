@@ -17,7 +17,7 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import {
-    compileAssemblyScript,
+    compileWasmModule,
     getAssemblyscriptCoreCode,
 } from './test-helpers'
 import {
@@ -32,25 +32,25 @@ import {
 } from './bindings'
 import { AssemblyScriptWasmEngine } from './types'
 import { Code, CompilerSettings, PortSpecs } from '../types'
-import { compilePorts } from './compile'
+import { compilePorts } from './compile-to-assemblyscript'
 import { round } from '../test-helpers'
-import compile from '../compile'
+import compileToAssemblyscript from './compile-to-assemblyscript'
 
 describe('bindings', () => {
     jest.setTimeout(10000)
 
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
 
-    const COMPILER_OPTIONS = {
-        target: 'assemblyscript' as CompilerSettings['target'],
-        sampleRate: 44100,
+    const COMPILER_OPTIONS: CompilerSettings = {
+        target: 'assemblyscript',
         channelCount: 2,
+        bitDepth: 32,
     }
 
-    const float32ToInt32 = (value: number) => {
-        const dataView = new DataView(new ArrayBuffer(4))
-        dataView.setFloat32(0, value)
-        return dataView.getInt32(0)
+    const float64ToInt32Array = (value: number) => {
+        const dataView = new DataView(new ArrayBuffer(Float64Array.BYTES_PER_ELEMENT))
+        dataView.setFloat64(0, value)
+        return [dataView.getInt32(0), dataView.getInt32(4)]
     }
 
     describe('bindPorts', () => {
@@ -65,11 +65,10 @@ describe('bindings', () => {
                 extraCode +
                 `
                 ${compilePorts(compilation, {
-                    FloatType: 'f32',
-                    FloatArrayType: 'Float32Array',
+                    FloatType: 'f32'
                 })}
             `
-            const module = await compileAssemblyScript(code)
+            const module = await compileWasmModule(code)
             const engine = (module.instance
                 .exports as unknown) as AssemblyScriptWasmEngine
             return bindPorts(engine, portSpecs)
@@ -176,14 +175,15 @@ describe('bindings', () => {
 
     describe('setArray', () => {
         it('should set the array', async () => {
+            const compilation = new Compilation({}, {}, COMPILER_OPTIONS)
             const code =
-                compile({}, {}, COMPILER_OPTIONS) +
+                compileToAssemblyscript(compilation) +
                 `
                 export function testReadArray (arrayName: string, index: i32): f32 {
                     return ${ARRAYS_VARIABLE_NAME}[arrayName][index]
                 }
             `
-            const module = await compileAssemblyScript(code)
+            const module = await compileWasmModule(code)
             const engine = (module.instance
                 .exports as unknown) as AssemblyScriptWasmEngine
 
@@ -212,7 +212,7 @@ describe('bindings', () => {
 
     describe('lowerArrayBufferOfIntegers', () => {
         it('should correctly lower the given array to an ArrayBuffer of integers', async () => {
-            const module = await compileAssemblyScript(`
+            const module = await compileWasmModule(`
                 export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: i32): i32 {
                     const dataView = new DataView(buffer)
                     return dataView.getInt32(index * sizeof<i32>())
@@ -250,7 +250,7 @@ describe('bindings', () => {
 
     describe('lowerMessage', () => {
         it('should create the message with correct header and filled-in data', async () => {
-            const module = await compileAssemblyScript(`
+            const module = await compileWasmModule(`
                 export function testReadMessageData(message: Message, index: i32): i32 {
                     return message.dataView.getInt32(index * sizeof<i32>())
                 }
@@ -277,11 +277,11 @@ describe('bindings', () => {
             )
             assert.strictEqual(
                 engine.testReadMessageData(messagePointer, 4),
-                9 * INT_ARRAY_BYTES_PER_ELEMENT
+                6 * INT_ARRAY_BYTES_PER_ELEMENT + 3 * 4 // 4 = number of bytes in char
             )
             assert.strictEqual(
                 engine.testReadMessageData(messagePointer, 5),
-                10 * INT_ARRAY_BYTES_PER_ELEMENT
+                6 * INT_ARRAY_BYTES_PER_ELEMENT + 3 * 4 + Float64Array.BYTES_PER_ELEMENT
             )
 
             // DATUM "bla"
@@ -301,14 +301,18 @@ describe('bindings', () => {
             // DATUM "2.3"
             assert.strictEqual(
                 engine.testReadMessageData(messagePointer, 9),
-                float32ToInt32(2.3)
+                float64ToInt32Array(2.3)[0]
+            )
+            assert.strictEqual(
+                engine.testReadMessageData(messagePointer, 10),
+                float64ToInt32Array(2.3)[1]
             )
         })
     })
 
     describe('liftMessage', () => {
         it('should read message to a JavaScript array', async () => {
-            const module = await compileAssemblyScript(`
+            const module = await compileWasmModule(`
                 export function testCreateMessage(): Message {
                     const message: Message = Message.fromTemplate([
                         MESSAGE_DATUM_TYPE_STRING, 5,

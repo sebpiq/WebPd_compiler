@@ -9,6 +9,8 @@
  *
  */
 
+import { CompilerSettings } from "../types"
+
 export type StringPointer = number
 
 export type TypedArrayPointer = number
@@ -68,6 +70,9 @@ export interface AssemblyScriptWasmEngine {
         messagePointer: InternalPointer,
         datumIndex: number
     ) => number
+
+    // Settings accessors
+    getBitDepth: () => CompilerSettings["bitDepth"]
 
     // Signatures of internal methods that enable to access wasm memory.
     // REF : https://www.assemblyscript.org/runtime.html#interface

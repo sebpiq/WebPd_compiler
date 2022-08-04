@@ -41,7 +41,7 @@ export const setArray = (
     data: Array<number> | Float32Array | Float64Array
 ) => {
     const stringPointer = lowerString(engine, arrayName)
-    const bufferPointer = lowerArrayBufferOfFloats(engine, data, 32)
+    const bufferPointer = lowerArrayBufferOfFloats(engine, data, engine.getBitDepth())
     engine.setArray(stringPointer, bufferPointer)
 }
 

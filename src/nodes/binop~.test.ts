@@ -8,10 +8,12 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-
+import { jest } from '@jest/globals'
 import { assertNodeOutput } from './test-helpers'
 
 describe('binop~', () => {
+    jest.setTimeout(10000)
+
     describe('+~', () => {
         it('should work with signal as inlet 1', async () => {
             await assertNodeOutput(

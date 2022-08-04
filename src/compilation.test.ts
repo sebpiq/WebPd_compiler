@@ -12,18 +12,17 @@ describe('compilation', () => {
     const COMPILER_SETTINGS: CompilerSettings = {
         channelCount: 2,
         target: 'javascript',
+        bitDepth: 32,
     }
 
     describe('Compilation', () => {
         it('should create variable names for nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    setup: () => `// [osc~] setup`,
                     loop: () => `// [osc~] loop`,
                     stateVariables: ['phase', 'currentThing', 'k'],
                 },
                 'dac~': {
-                    setup: () => `// [dac~] setup`,
                     loop: () => `// [dac~] loop`,
                 },
             }
@@ -84,7 +83,6 @@ describe('compilation', () => {
         it('should throw error for unknown namespaces', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    setup: () => `// [osc~] setup`,
                     loop: () => `// [osc~] loop`,
                     stateVariables: ['phase'],
                 },
@@ -138,7 +136,7 @@ describe('compilation', () => {
                 target: 'assemblyscript',
                 channelCount: 2,
             })
-            assert.strictEqual((settings as any).bitDepth, 32)
+            assert.strictEqual((settings as any).bitDepth, 64)
             assert.deepStrictEqual((settings as any).portSpecs, {})
         })
 

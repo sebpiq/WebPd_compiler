@@ -26,10 +26,10 @@ const __dirname = dirname(__filename)
 export const getAssemblyscriptCoreCode = () => {
     return readFileSync(resolve(__dirname, 'core-code.asc'))
         .toString()
-        .replaceAll('${FloatArrayType}', 'Float32Array')
-        .replaceAll('${FloatType}', 'f32')
-        .replaceAll('${getFloat}', 'getFloat32')
-        .replaceAll('${setFloat}', 'setFloat32')
+        .replaceAll('${FloatArrayType}', 'Float64Array')
+        .replaceAll('${FloatType}', 'f64')
+        .replaceAll('${getFloat}', 'getFloat64')
+        .replaceAll('${setFloat}', 'setFloat64')
         .replaceAll(
             '${MESSAGE_DATUM_TYPE_FLOAT}',
             MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
@@ -44,13 +44,13 @@ export const getAssemblyscriptCoreCode = () => {
         )
 }
 
-export const compileAssemblyScript = async (code: Code) => {
-    const { error, binary, stderr } = await asc.compileString(code, {
+export const compileWasmModule = async (ascCode: Code) => {
+    const { error, binary, stderr } = await asc.compileString(ascCode, {
         optimizeLevel: 3,
         runtime: 'stub',
         exportRuntime: true,
-        // For tests we use f32, so we need to compile with the f32 version of `Math`
-        use: ['Math=NativeMathf'],
+        // For 32 bits version of Math, not needed since we do tests with bitDepth 64
+        // use: ['Math=NativeMathf'],
     })
     if (error) {
         throw new Error(stderr.toString())
