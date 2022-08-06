@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "outDir": "bindings",
+        "module": "ESNext",
+        "target": "es2021",
+        "esModuleInterop": true,
+        "removeComments": true,
+        "noImplicitAny": true,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "declaration": true,
+        "moduleResolution": "node",
+    },
+    "typeRoots": ["./node_modules/@types"],
+    "files": [
+        "./src/engine-assemblyscript/asc-wasm-bindings.ts"
+    ],
+    "include": [
+        "node_modules/@webpd/shared/types/*.ts"
+    ]
+}

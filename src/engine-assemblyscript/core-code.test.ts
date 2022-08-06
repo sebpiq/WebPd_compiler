@@ -15,7 +15,7 @@ import {
 } from './test-helpers'
 import { jest } from '@jest/globals'
 import { AssemblyScriptWasmEngine } from './types'
-import { INT_ARRAY_BYTES_PER_ELEMENT, lowerMessage } from './bindings'
+import { INT_ARRAY_BYTES_PER_ELEMENT, lowerMessage } from './asc-wasm-bindings'
 import assert from 'assert'
 
 describe('assemblyscriptCoreCode', () => {

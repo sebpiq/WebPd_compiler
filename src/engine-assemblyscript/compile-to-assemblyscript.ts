@@ -18,7 +18,7 @@ import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
 import { AssemblyScriptEngineCode, Code, JavaScriptEngineCode } from '../types'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './bindings'
+import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
 
 export default (
     compilation: Compilation

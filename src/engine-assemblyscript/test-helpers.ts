@@ -18,7 +18,7 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import { Code } from '../types'
-import { liftString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './bindings'
+import { liftString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

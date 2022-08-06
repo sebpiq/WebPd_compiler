@@ -26,7 +26,7 @@ import {
 import { renderCode } from '../code-helpers'
 import { JavaScriptEngine } from '../engine-javascript/types'
 import { AssemblyScriptWasmEngine } from '../engine-assemblyscript/types'
-import { bindPorts, setArray } from '../engine-assemblyscript/bindings'
+import { bindPorts, setArray } from '../engine-assemblyscript/asc-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { round } from '../test-helpers'

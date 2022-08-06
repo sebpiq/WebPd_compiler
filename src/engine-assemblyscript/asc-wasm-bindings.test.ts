@@ -29,14 +29,14 @@ import {
     lowerString,
     MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT,
     setArray,
-} from './bindings'
+} from './asc-wasm-bindings'
 import { AssemblyScriptWasmEngine } from './types'
 import { Code, CompilerSettings, PortSpecs } from '../types'
 import { compilePorts } from './compile-to-assemblyscript'
 import { round } from '../test-helpers'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 
-describe('bindings', () => {
+describe('asc-wasm-bindings', () => {
     jest.setTimeout(10000)
 
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
