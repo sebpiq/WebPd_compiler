@@ -18,7 +18,7 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import { Code } from '../types'
-import { liftString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
+import { instantiateWasmModule, liftString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -56,27 +56,6 @@ export const compileWasmModule = async (ascCode: Code) => {
         throw new Error(stderr.toString())
     }
 
-    const wasmModule = await WebAssembly.instantiate(binary.buffer, {
-        env: {
-            // memory,
-            abort: function () {},
-            seed() {
-                // ~lib/builtins/seed() => f64
-                return (() => {
-                    // @external.js
-                    return Date.now() * Math.random()
-                })()
-            },
-            // log: function(a) { console.log(a) }
-            'console.log'(pointer: number) {
-                // ~lib/bindings/dom/console.log(~lib/string/String) => void
-                const text = liftString(
-                    wasmModule.instance.exports as any,
-                    pointer
-                )
-                console.log(text)
-            },
-        },
-    })
+    const wasmModule = await instantiateWasmModule(binary)
     return wasmModule
 }

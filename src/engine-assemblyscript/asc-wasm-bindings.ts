@@ -14,7 +14,7 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import { CompilerSettingsWithDefaults, EnginePorts, PortSpecs } from '../types'
-import { AssemblyScriptWasmEngine, InternalPointer } from './types'
+import { AssemblyScriptWasmEngine, InternalPointer, StringPointer } from './types'
 
 type TypedArrayConstructor =
     | typeof Int8Array
@@ -34,6 +34,39 @@ export const MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT = {
 }
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
+
+// REF : Assemblyscript ESM bindings
+export const instantiateWasmModule = async (wasmBuffer: ArrayBuffer) => {
+    const wasmModule = await WebAssembly.instantiate(wasmBuffer, {
+        env: {
+            abort(
+                messagePointer: StringPointer, 
+                fileNamePointer: StringPointer, 
+                lineNumber: number, 
+                columnNumber: number
+            ) {
+                const message = liftString(engine, messagePointer >>> 0)
+                const fileName = liftString(engine, fileNamePointer >>> 0)
+                lineNumber = lineNumber >>> 0
+                columnNumber = columnNumber >>> 0;
+                (() => {
+                    // @external.js
+                    throw Error(`${message} in ${fileName}:${lineNumber}:${columnNumber}`);
+                })();
+            },
+            seed() {
+                return (() => {
+                    return Date.now() * Math.random()
+                })()
+            },
+            'console.log'(textPointer: StringPointer) {
+                console.log(liftString(engine, textPointer))
+            },
+        },
+    })
+    const engine = wasmModule.instance.exports as unknown as AssemblyScriptWasmEngine
+    return wasmModule
+}
 
 export const setArray = (
     engine: AssemblyScriptWasmEngine,
