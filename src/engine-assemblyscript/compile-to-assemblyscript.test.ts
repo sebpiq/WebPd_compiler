@@ -142,6 +142,10 @@ describe('compileToAssemblyscript', () => {
             writeFloatDatum: () => undefined,
             readStringDatum: () => 0,
             readFloatDatum: () => 0,
+            getBitDepth: () => 32,
+            getSampleRate: () => 0,
+            getBlockSize: () => 0,
+            getChannelCount: () => 0,
             __new: () => 0,
         }
 

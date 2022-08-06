@@ -73,6 +73,9 @@ export interface AssemblyScriptWasmEngine {
 
     // Settings accessors
     getBitDepth: () => CompilerSettings["bitDepth"]
+    getSampleRate: () => number
+    getBlockSize: () => number
+    getChannelCount: () => number
 
     // Signatures of internal methods that enable to access wasm memory.
     // REF : https://www.assemblyscript.org/runtime.html#interface
