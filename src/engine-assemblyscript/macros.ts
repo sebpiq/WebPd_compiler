@@ -21,7 +21,7 @@ import {
     CodeVariableName,
     MessageDatumType,
 } from '../types'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
+import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 
 const floatArrayType = (compilation: Compilation) => {
     const { bitDepth } = compilation.settings

@@ -15,11 +15,12 @@ import { Compilation } from "../compilation"
 import compileDeclare from "../engine-common/compile-declare"
 import compileInitialize from "../engine-common/compile-initialize"
 import compileLoop from "../engine-common/compile-loop"
-import { JavaScriptEngineCode, AssemblyScriptEngineCode, Code } from "../types"
+import { Code } from "../types"
+import { JavaScriptEngineCode } from "./types"
 
 export default (
     compilation: Compilation
-): JavaScriptEngineCode | AssemblyScriptEngineCode => {
+): JavaScriptEngineCode => {
     const { portSpecs } = compilation.settings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g

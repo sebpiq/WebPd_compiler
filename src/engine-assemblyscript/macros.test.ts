@@ -16,7 +16,7 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import { normalizeCode } from '../test-helpers'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
+import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import MACROS from './macros'
 
 describe('macros', () => {
@@ -26,6 +26,7 @@ describe('macros', () => {
         {
             target: 'assemblyscript',
             channelCount: 2,
+            bitDepth: 32,
         }
     )
 

@@ -23,6 +23,7 @@ describe('macros', () => {
         {},
         {
             target: 'assemblyscript',
+            bitDepth: 32,
             channelCount: 2,
         }
     )

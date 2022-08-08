@@ -19,8 +19,9 @@ import { JavaScriptEngine } from "./types"
 describe('compileToJavascript', () => {
 
     const COMPILER_SETTINGS: CompilerSettings = {
-        channelCount: 2,
         target: 'javascript',
+        channelCount: 2,
+        bitDepth: 32,
     }
 
     const NODE_IMPLEMENTATIONS: NodeImplementations = {

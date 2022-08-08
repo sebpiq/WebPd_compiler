@@ -24,13 +24,6 @@ export type Code = string
 // Name of a variable in generated code
 export type CodeVariableName = string
 
-// JavaScript Code that allows to create a JavaScriptEngine when evaled
-export type JavaScriptEngineCode = Code
-
-// AssemblyScript Code that allows to create an AssemblyScriptWasmEngine when compiled
-// with the AssemblyScript compiler
-export type AssemblyScriptEngineCode = Code
-
 // Map of public engine ports for accessing data inside the engine
 export type EnginePorts = { [portName: string]: (...args: any) => any }
 
@@ -112,12 +105,12 @@ export type PortSpecs = {
 // Mandatory & optional settings for different targets
 interface CompilerSettingsMandatory {
     channelCount: number
+    bitDepth: 32 | 64
 }
 
 interface CompilerSettingsOptional {
     // Ports allowing to read / write variables from the engine
     portSpecs: PortSpecs
-    bitDepth: 32 | 64
 }
 
 type CompilerAssemblyScriptSettingsMandatory = CompilerSettingsMandatory & {

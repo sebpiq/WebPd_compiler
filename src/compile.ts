@@ -11,19 +11,19 @@
 
 import {
     CompilerSettings,
-    JavaScriptEngineCode,
-    AssemblyScriptEngineCode,
     NodeImplementations,
 } from './types'
 import { Compilation } from './compilation'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
+import { JavaScriptEngineCode } from './engine-javascript/types'
+import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
 
 export default (
     graph: PdDspGraph.Graph,
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
-): JavaScriptEngineCode | AssemblyScriptEngineCode => {
+): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
     const compilation = new Compilation(
         graph,
         nodeImplementations,

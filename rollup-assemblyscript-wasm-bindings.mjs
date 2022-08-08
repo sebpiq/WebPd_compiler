@@ -4,15 +4,15 @@ import commonjs from '@rollup/plugin-commonjs'
 
 export default [
     {
-        input: './src/engine-assemblyscript/asc-wasm-bindings.ts',
+        input: './src/engine-assemblyscript/assemblyscript-wasm-bindings.ts',
         output: {
-            file: './dist/asc-wasm-bindings.iife.js',
+            file: './dist/assemblyscript-wasm-bindings.iife.js',
             sourcemap: true,
             format: 'iife',
             name: 'AscWasmBindings',
         },
         plugins: [
-            typescript({ tsconfig: 'tsconfig-asc-wasm-bindings.json' }),
+            typescript({ tsconfig: 'tsconfig-assemblyscript-wasm-bindings.json' }),
             nodeResolve(),
             commonjs(),
         ],

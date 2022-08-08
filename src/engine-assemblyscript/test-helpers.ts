@@ -18,7 +18,7 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import { Code } from '../types'
-import { instantiateWasmModule, liftString, MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
+import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -44,7 +44,7 @@ export const getAssemblyscriptCoreCode = () => {
         )
 }
 
-export const compileWasmModule = async (ascCode: Code) => {
+export const compileWasmModule = async (ascCode: Code): Promise<ArrayBuffer> => {
     const { error, binary, stderr } = await asc.compileString(ascCode, {
         optimizeLevel: 3,
         runtime: 'stub',
@@ -55,7 +55,5 @@ export const compileWasmModule = async (ascCode: Code) => {
     if (error) {
         throw new Error(stderr.toString())
     }
-
-    const wasmModule = await instantiateWasmModule(binary)
-    return wasmModule
+    return binary
 }

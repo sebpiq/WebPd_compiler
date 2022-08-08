@@ -9,7 +9,10 @@
  *
  */
 
-import { CompilerSettings } from "../types"
+import { Code } from "../types"
+
+// AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports` 
+export type AssemblyScriptWasmEngineCode = Code
 
 export type StringPointer = number
 
@@ -30,10 +33,10 @@ export type ArrayBufferOfIntegersPointer = number
 // REF : https://www.assemblyscript.org/runtime.html#memory-layout
 export type ArrayBufferOfFloatsPointer = number
 
-export interface AssemblyScriptWasmEngine {
+export interface AssemblyScriptWasmExports {
     configure: (sampleRate: number, blockSize: number) => TypedArrayPointer
-    loop: () => Float32Array
-    setArray: (
+    loop: () => void
+    setArray?: (
         arrayName: StringPointer,
         buffer: ArrayBufferOfFloatsPointer
     ) => void
@@ -70,12 +73,6 @@ export interface AssemblyScriptWasmEngine {
         messagePointer: InternalPointer,
         datumIndex: number
     ) => number
-
-    // Settings accessors
-    getBitDepth: () => CompilerSettings["bitDepth"]
-    getSampleRate: () => number
-    getBlockSize: () => number
-    getChannelCount: () => number
 
     // Signatures of internal methods that enable to access wasm memory.
     // REF : https://www.assemblyscript.org/runtime.html#interface

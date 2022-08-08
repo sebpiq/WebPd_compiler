@@ -9,7 +9,10 @@
  *
  */
 
-import { EnginePorts } from '../types'
+import { Code, EnginePorts } from '../types'
+
+// JavaScript Code that allows to create a JavaScriptEngine when evaled
+export type JavaScriptEngineCode = Code
 
 export interface JavaScriptEngine {
     configure: (sampleRate: number, blockSize: number) => void

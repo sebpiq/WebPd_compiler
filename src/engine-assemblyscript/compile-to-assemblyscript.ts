@@ -17,12 +17,13 @@ import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from '../constant
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { AssemblyScriptEngineCode, Code, JavaScriptEngineCode } from '../types'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './asc-wasm-bindings'
+import { Code } from '../types'
+import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import { AssemblyScriptWasmEngineCode } from './types'
 
 export default (
     compilation: Compilation
-): JavaScriptEngineCode | AssemblyScriptEngineCode => {
+): AssemblyScriptWasmEngineCode => {
     const { channelCount, bitDepth } = compilation.settings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
@@ -77,11 +78,6 @@ export default (
             const array = bufferToArrayOfFloats(buffer)
             ${globs.arrays}.set(arrayName, array)
         }
-
-        export function getBitDepth(): i32 { return ${bitDepth.toString(10)} }
-        export function getSampleRate(): ${FloatType} { return ${globs.sampleRate} }
-        export function getBlockSize(): i32 { return ${globs.blockSize} }
-        export function getChannelCount(): i32 { return ${channelCount.toString(10)} }
 
         ${compilePorts(compilation, { FloatType })}
     `

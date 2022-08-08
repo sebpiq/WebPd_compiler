@@ -8,7 +8,7 @@
   "scripts": {
     "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --config node_modules/@webpd/shared/configs/jest.js",
     "rollup": "npx rollup --config node_modules/@webpd/shared/configs/rollup.mjs",
-    "rollup:asc-wasm-bindings": "npx rollup --config rollup-asc-wasm-bindings.mjs",
+    "rollup:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
     "prettier": "npm explore @webpd/shared -- npm run prettier $(pwd)/src",
     "eslint": "npm explore @webpd/shared -- npm run eslint $(pwd)/src",
     "all": "npm run test-bail && npm run prettier && npm run eslint"

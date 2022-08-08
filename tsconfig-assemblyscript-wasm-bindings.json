@@ -13,7 +13,7 @@
     },
     "typeRoots": ["./node_modules/@types"],
     "files": [
-        "./src/engine-assemblyscript/asc-wasm-bindings.ts"
+        "./src/engine-assemblyscript/assemblyscript-wasm-bindings.ts"
     ],
     "include": [
         "node_modules/@webpd/shared/types/*.ts"

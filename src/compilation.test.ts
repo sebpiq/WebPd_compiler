@@ -135,6 +135,7 @@ describe('compilation', () => {
             const settings = validateSettings({
                 target: 'assemblyscript',
                 channelCount: 2,
+                bitDepth: 32,
             })
             assert.strictEqual((settings as any).bitDepth, 64)
             assert.deepStrictEqual((settings as any).portSpecs, {})

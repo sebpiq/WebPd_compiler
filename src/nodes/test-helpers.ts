@@ -14,7 +14,7 @@ import compile from '../compile'
 import NODE_IMPLEMENTATIONS from '.'
 import {
     CompilerSettings,
-    EnginePorts,
+    CompilerSettingsWithDefaults,
     NodeImplementations,
     PortSpecs,
 } from '../types'
@@ -25,8 +25,8 @@ import {
 } from '../variable-names'
 import { renderCode } from '../code-helpers'
 import { JavaScriptEngine } from '../engine-javascript/types'
-import { AssemblyScriptWasmEngine } from '../engine-assemblyscript/types'
-import { bindPorts, setArray } from '../engine-assemblyscript/asc-wasm-bindings'
+import { createEngine, AssemblyScriptWasmEngine } 
+    from '../engine-assemblyscript/assemblyscript-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { round } from '../test-helpers'
@@ -42,32 +42,32 @@ type GenericInletValue =
     | Array<PdSharedTypes.ControlValue>
 
 const setNodeInlet = (
-    ports: EnginePorts,
+    engine: AssemblyScriptWasmEngine | JavaScriptEngine,
     nodeId: PdDspGraph.NodeId,
     inletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const inletVariableName = generateInletVariableName(nodeId, inletId)
-    ports[`write_${inletVariableName}`](value)
+    engine.ports[`write_${inletVariableName}`](value)
 }
 
 const setNodeOutlet = (
-    ports: EnginePorts,
+    engine: AssemblyScriptWasmEngine | JavaScriptEngine,
     nodeId: PdDspGraph.NodeId,
     outletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const outletVariableName = generateOutletVariableName(nodeId, outletId)
-    ports[`write_${outletVariableName}`](value)
+    engine.ports[`write_${outletVariableName}`](value)
 }
 
 const getNodeState = (
-    ports: EnginePorts,
+    engine: AssemblyScriptWasmEngine | JavaScriptEngine,
     nodeId: PdDspGraph.NodeId,
     name: string
 ) => {
     const variableName = generateStateVariableName(nodeId, name)
-    return ports[`read_${variableName}`]()
+    return engine.ports[`read_${variableName}`]()
 }
 
 export type Frame = {
@@ -187,7 +187,7 @@ export const generateFramesForNode = async (
         },
     }
 
-    // --------------- Compile ports, code, engine
+    // --------------- Compile code & engine
     const portSpecs: PortSpecs = {}
     inputFrames.forEach((inputFrame) => {
         // Ports to write input values
@@ -223,34 +223,26 @@ export const generateFramesForNode = async (
         })
     })
 
-    const code = compile(graph, nodeImplementations, {
+    const compilerSettings: CompilerSettingsWithDefaults = {
         ...COMPILER_OPTIONS,
         target,
         portSpecs,
-    })
+        bitDepth: 64,
+    }
+    const code = compile(graph, nodeImplementations, compilerSettings)
 
     let engine: JavaScriptEngine | AssemblyScriptWasmEngine
-    let ports: EnginePorts
-
-    if (target === 'javascript') {
-        const jsEngine = new Function(code)() as JavaScriptEngine
-        ports = jsEngine.ports
-        if (arrays) {
-            Object.entries(arrays).forEach(([arrayName, data]) => {
-                jsEngine.setArray(arrayName, data)
-            })
-        }
-        engine = jsEngine
+    if (compilerSettings.target === 'javascript') {
+        engine = new Function(code)() as JavaScriptEngine
     } else {
-        const ascEngine = ((await compileWasmModule(code)).instance
-            .exports as unknown) as AssemblyScriptWasmEngine
-        ports = bindPorts(ascEngine, portSpecs)
-        if (arrays) {
-            Object.entries(arrays).forEach(([arrayName, data]) => {
-                setArray(ascEngine, arrayName, data)
-            })
-        }
-        engine = ascEngine
+        const wasmBuffer = await compileWasmModule(code)
+        engine = await createEngine(wasmBuffer, compilerSettings)
+    }
+
+    if (arrays) {
+        Object.entries(arrays).forEach(([arrayName, data]) => {
+            engine.setArray(arrayName, data)
+        })
     }
 
     // --------------- Generate frames
@@ -278,7 +270,7 @@ export const generateFramesForNode = async (
             // TODO : if working set only inlet
             // We set the inlets with our simulation values.
             setNodeInlet(
-                ports,
+                engine,
                 testNode.id,
                 inletId,
                 Array.isArray(value) ? value.slice(0) : value
@@ -290,7 +282,7 @@ export const generateFramesForNode = async (
                 // !!! setting value is done by reference, so we need to copy the array
                 // to not assign the same the inlet
                 setNodeOutlet(
-                    ports,
+                    engine,
                     fakeSourceNode.id,
                     inletId,
                     Array.isArray(value) ? value.slice(0) : value
@@ -303,7 +295,7 @@ export const generateFramesForNode = async (
         const outputFrame: Frame = {}
         Object.keys(recorderNode.inlets).forEach((inletId) => {
             outputFrame[inletId] = getNodeState(
-                ports,
+                engine,
                 recorderNode.id,
                 'mem' + inletId
             )
