@@ -9,15 +9,16 @@
  *
  */
 
-import { renderCode } from "../code-helpers"
-import { Code } from "../types"
-import { Compilation } from "../compilation"
+import { renderCode } from '../code-helpers'
+import { Code } from '../types'
+import { Compilation } from '../compilation'
 
 export default (
     compilation: Compilation,
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
     const globs = compilation.variableNames.g
+    // prettier-ignore
     return renderCode`
         ${globs.iterFrame} = 0
         ${globs.iterOutlet} = 0

@@ -10,17 +10,16 @@
  */
 
 import { jest } from '@jest/globals'
-import assert from "assert"
-import { Compilation } from "../compilation"
-import { round } from "../test-helpers"
-import { CompilerSettings, NodeImplementations, PortSpecs } from "../types"
-import compileToAssemblyscript from "./compile-to-assemblyscript"
-import { compileWasmModule } from "./test-helpers"
-import { AssemblyScriptWasmExports } from "./types"
-import { createEngine } from "./assemblyscript-wasm-bindings"
+import assert from 'assert'
+import { Compilation } from '../compilation'
+import { round } from '../test-helpers'
+import { CompilerSettings, NodeImplementations, PortSpecs } from '../types'
+import compileToAssemblyscript from './compile-to-assemblyscript'
+import { compileWasmModule } from './test-helpers'
+import { AssemblyScriptWasmExports } from './types'
+import { createEngine } from './assemblyscript-wasm-bindings'
 
 describe('compileToAssemblyscript', () => {
-    
     jest.setTimeout(10000)
 
     const COMPILER_SETTINGS: CompilerSettings = {
@@ -51,6 +50,7 @@ describe('compileToAssemblyscript', () => {
             } as PortSpecs,
         }
         const compilation = new Compilation({}, NODE_IMPLEMENTATIONS, settings)
+        // prettier-ignore
         const wasmModule = await compileWasmModule(`
             let bla: f32 = 1
             let blo: Message[]
@@ -74,17 +74,21 @@ describe('compileToAssemblyscript', () => {
         `)
         const engine = await createEngine(wasmModule, settings)
         const wasmExports = engine.wasmExports as any
-        
-        const portFunctionKeys = Object.keys(wasmExports)
-            .filter(key => key.startsWith('read_') || key.startsWith('write_'))
-        
+
+        const portFunctionKeys = Object.keys(wasmExports).filter(
+            (key) => key.startsWith('read_') || key.startsWith('write_')
+        )
+
         assert.deepStrictEqual(
             portFunctionKeys.sort(),
             [
-                'read_bla', 
-                'write_blo', 
-                'read_bli', 'write_bli', 
-                'read_blu_length', 'read_blu_elem', 'write_blu'
+                'read_bla',
+                'write_blo',
+                'read_bli',
+                'write_bli',
+                'read_blu_length',
+                'read_blu_elem',
+                'write_blu',
             ].sort()
         )
 
@@ -95,22 +99,33 @@ describe('compileToAssemblyscript', () => {
         assert.strictEqual(round(wasmExports.read_bli()), 666.666)
 
         assert.deepStrictEqual(wasmExports.read_blu_length(), 2)
-        assert.strictEqual(wasmExports.read_blu_elem(0), wasmExports.getBluMessage1())
-        assert.strictEqual(wasmExports.read_blu_elem(1), wasmExports.getBluMessage2())
+        assert.strictEqual(
+            wasmExports.read_blu_elem(0),
+            wasmExports.getBluMessage1()
+        )
+        assert.strictEqual(
+            wasmExports.read_blu_elem(1),
+            wasmExports.getBluMessage2()
+        )
 
         const blu2Pointer = wasmExports.getBlu2()
         wasmExports.write_blu(blu2Pointer)
         assert.deepStrictEqual(wasmExports.read_blu_length(), 1)
-        assert.strictEqual(wasmExports.read_blu_elem(0), wasmExports.getBluMessage2())
+        assert.strictEqual(
+            wasmExports.read_blu_elem(0),
+            wasmExports.getBluMessage2()
+        )
     })
 
     it('should be a wasm engine when compiled', async () => {
-        const compilation = new Compilation({},
-            {},
-            COMPILER_SETTINGS
+        const compilation = new Compilation({}, {}, COMPILER_SETTINGS)
+        const wasmModule = await compileWasmModule(
+            compileToAssemblyscript(compilation)
         )
-        const wasmModule = await compileWasmModule(compileToAssemblyscript(compilation))
-        const engine = await createEngine(wasmModule, {...COMPILER_SETTINGS, portSpecs: {}})
+        const engine = await createEngine(wasmModule, {
+            ...COMPILER_SETTINGS,
+            portSpecs: {},
+        })
         const wasmExports = engine.wasmExports as any
 
         const expectedExports: AssemblyScriptWasmExports = {
@@ -131,7 +146,7 @@ describe('compileToAssemblyscript', () => {
             __new: () => 0,
         }
 
-        // Plenty of low-level exported function are added by asc compiler when using 
+        // Plenty of low-level exported function are added by asc compiler when using
         // option 'export-runtime'
         const exportsIgnoredKeys = [
             '__collect',
@@ -139,13 +154,14 @@ describe('compileToAssemblyscript', () => {
             '__rtti_base',
             '__unpin',
         ]
-                
-        const actualExportsKeys = Object.keys(wasmExports)
-            .filter(key => !exportsIgnoredKeys.includes(key))
+
+        const actualExportsKeys = Object.keys(wasmExports).filter(
+            (key) => !exportsIgnoredKeys.includes(key)
+        )
 
         assert.deepStrictEqual(
             actualExportsKeys.sort(),
-            Object.keys(expectedExports).sort(),
+            Object.keys(expectedExports).sort()
         )
     })
 })

@@ -131,6 +131,8 @@ describe('compileDeclare', () => {
             COMPILER_SETTINGS
         )
 
-        assert.doesNotThrow(() => compileDeclare(compilation, [graph.osc, graph.dac]))
+        assert.doesNotThrow(() =>
+            compileDeclare(compilation, [graph.osc, graph.dac])
+        )
     })
 })

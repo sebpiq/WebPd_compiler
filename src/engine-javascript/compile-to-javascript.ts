@@ -9,22 +9,21 @@
  *
  */
 
-import { traversal } from "@webpd/dsp-graph"
-import { renderCode } from "../code-helpers"
-import { Compilation } from "../compilation"
-import compileDeclare from "../engine-common/compile-declare"
-import compileInitialize from "../engine-common/compile-initialize"
-import compileLoop from "../engine-common/compile-loop"
-import { Code } from "../types"
-import { JavaScriptEngineCode } from "./types"
+import { traversal } from '@webpd/dsp-graph'
+import { renderCode } from '../code-helpers'
+import { Compilation } from '../compilation'
+import compileDeclare from '../engine-common/compile-declare'
+import compileInitialize from '../engine-common/compile-initialize'
+import compileLoop from '../engine-common/compile-loop'
+import { Code } from '../types'
+import { JavaScriptEngineCode } from './types'
 
-export default (
-    compilation: Compilation
-): JavaScriptEngineCode => {
+export default (compilation: Compilation): JavaScriptEngineCode => {
     const { portSpecs } = compilation.settings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
 
+    // prettier-ignore
     return renderCode`
         const ${globs.arrays} = new Map()
 
@@ -60,4 +59,3 @@ export default (
         }
     `
 }
-

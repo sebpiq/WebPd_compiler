@@ -13,7 +13,10 @@ import { traversal } from '@webpd/dsp-graph'
 import { renderCode } from '../code-helpers'
 import { Compilation } from '../compilation'
 import assemblyscriptCoreCode from './core-code.asc'
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from '../constants'
+import {
+    MESSAGE_DATUM_TYPE_FLOAT,
+    MESSAGE_DATUM_TYPE_STRING,
+} from '../constants'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
@@ -21,9 +24,7 @@ import { Code } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode } from './types'
 
-export default (
-    compilation: Compilation
-): AssemblyScriptWasmEngineCode => {
+export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { channelCount, bitDepth } = compilation.settings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
@@ -50,6 +51,7 @@ export default (
             ].toString()
         )
 
+    // prettier-ignore
     return renderCode`
         ${CORE_CODE}
 
@@ -88,6 +90,7 @@ export const compilePorts = (
     { FloatType }: { FloatType: string }
 ) => {
     const { portSpecs } = compilation.settings
+    // prettier-ignore
     return renderCode`
         ${Object.entries(portSpecs).map(([variableName, spec]) => {
             const portsCode: Array<Code> = []

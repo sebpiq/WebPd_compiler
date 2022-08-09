@@ -58,12 +58,11 @@ export class Compilation {
                                 Object.values(node.inlets).reduce<
                                     NodeVariableNames['ins']
                                 >((nameMap, portlet) => {
-                                    nameMap[
-                                        portlet.id
-                                    ] = generateInletVariableName(
-                                        node.id,
-                                        portlet.id
-                                    )
+                                    nameMap[portlet.id] =
+                                        generateInletVariableName(
+                                            node.id,
+                                            portlet.id
+                                        )
                                     return nameMap
                                 }, {})
                             ),
@@ -71,12 +70,11 @@ export class Compilation {
                                 Object.values(node.outlets).reduce<
                                     NodeVariableNames['outs']
                                 >((nameMap, portlet) => {
-                                    nameMap[
-                                        portlet.id
-                                    ] = generateOutletVariableName(
-                                        node.id,
-                                        portlet.id
-                                    )
+                                    nameMap[portlet.id] =
+                                        generateOutletVariableName(
+                                            node.id,
+                                            portlet.id
+                                        )
                                     return nameMap
                                 }, {})
                             ),
@@ -84,12 +82,11 @@ export class Compilation {
                                 nodeStateVariables.reduce<
                                     NodeVariableNames['state']
                                 >((nameMap, stateVariable) => {
-                                    nameMap[
-                                        stateVariable
-                                    ] = generateStateVariableName(
-                                        node.id,
-                                        stateVariable
-                                    )
+                                    nameMap[stateVariable] =
+                                        generateStateVariableName(
+                                            node.id,
+                                            stateVariable
+                                        )
                                     return nameMap
                                 }, {})
                             ),

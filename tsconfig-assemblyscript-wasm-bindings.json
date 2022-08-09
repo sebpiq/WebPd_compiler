@@ -9,13 +9,9 @@
         "preserveConstEnums": true,
         "sourceMap": true,
         "declaration": true,
-        "moduleResolution": "node",
+        "moduleResolution": "node"
     },
     "typeRoots": ["./node_modules/@types"],
-    "files": [
-        "./src/engine-assemblyscript/assemblyscript-wasm-bindings.ts"
-    ],
-    "include": [
-        "node_modules/@webpd/shared/types/*.ts"
-    ]
+    "files": ["./src/engine-assemblyscript/assemblyscript-wasm-bindings.ts"],
+    "include": ["node_modules/@webpd/shared/types/*.ts"]
 }

@@ -9,10 +9,7 @@
  *
  */
 
-import {
-    CompilerSettings,
-    NodeImplementations,
-} from './types'
+import { CompilerSettings, NodeImplementations } from './types'
 import { Compilation } from './compilation'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'

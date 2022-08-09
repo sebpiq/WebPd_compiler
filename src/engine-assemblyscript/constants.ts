@@ -1,4 +1,7 @@
-import { MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING } from "../constants";
+import {
+    MESSAGE_DATUM_TYPE_FLOAT,
+    MESSAGE_DATUM_TYPE_STRING,
+} from '../constants'
 
 // Assemblyscript representation of message datum types
 export const MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT = {

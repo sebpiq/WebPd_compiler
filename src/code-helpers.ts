@@ -14,11 +14,11 @@ import { Code } from './types'
 type CodeLines = Array<CodeLines | Code>
 
 /**
- * Helper to render code. 
+ * Helper to render code.
  * Allows to pass templated strings with arrays and arrays of arrays of codelines, adding new lines automatically.
- * @param strings 
- * @param codeLines 
- * @returns 
+ * @param strings
+ * @param codeLines
+ * @returns
  */
 export const renderCode = (
     strings: TemplateStringsArray,

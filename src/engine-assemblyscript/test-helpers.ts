@@ -44,7 +44,9 @@ export const getAssemblyscriptCoreCode = () => {
         )
 }
 
-export const compileWasmModule = async (ascCode: Code): Promise<ArrayBuffer> => {
+export const compileWasmModule = async (
+    ascCode: Code
+): Promise<ArrayBuffer> => {
     const { error, binary, stderr } = await asc.compileString(ascCode, {
         optimizeLevel: 3,
         runtime: 'stub',

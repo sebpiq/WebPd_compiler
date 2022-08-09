@@ -31,7 +31,8 @@ const floatArrayType = (compilation: Compilation) => {
 const typedVarInt = (_: Compilation, name: CodeVariableName) => `${name}: i32`
 
 const typedVarFloat = (compilation: Compilation, name: CodeVariableName) => {
-    const settings = compilation.settings as CompilerAssemblyScriptSettingsWithDefaults
+    const settings =
+        compilation.settings as CompilerAssemblyScriptSettingsWithDefaults
     return `${name}: f${settings.bitDepth}`
 }
 

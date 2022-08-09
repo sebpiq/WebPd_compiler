@@ -12,9 +12,11 @@ export default [
             name: 'AscWasmBindings',
         },
         plugins: [
-            typescript({ tsconfig: 'tsconfig-assemblyscript-wasm-bindings.json' }),
+            typescript({
+                tsconfig: 'tsconfig-assemblyscript-wasm-bindings.json',
+            }),
             nodeResolve(),
             commonjs(),
         ],
-    }
+    },
 ]

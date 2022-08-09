@@ -9,9 +9,9 @@
  *
  */
 
-import { Code } from "../types"
+import { Code } from '../types'
 
-// AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports` 
+// AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
 export type AssemblyScriptWasmEngineCode = Code
 
 export type StringPointer = number

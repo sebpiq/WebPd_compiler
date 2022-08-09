@@ -16,17 +16,20 @@ import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
-import {
-    compileWasmModule,
-    getAssemblyscriptCoreCode,
-} from './test-helpers'
+import { compileWasmModule, getAssemblyscriptCoreCode } from './test-helpers'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     createEngine,
     AssemblyScriptWasmEngine,
 } from './assemblyscript-wasm-bindings'
-import { Code, CompilerAssemblyScriptSettingsWithDefaults, PortSpecs } from '../types'
-import compileToAssemblyscript, { compilePorts } from './compile-to-assemblyscript'
+import {
+    Code,
+    CompilerAssemblyScriptSettingsWithDefaults,
+    PortSpecs,
+} from '../types'
+import compileToAssemblyscript, {
+    compilePorts,
+} from './compile-to-assemblyscript'
 import { round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 
@@ -43,7 +46,9 @@ describe('AssemblyScriptWasmEngine', () => {
     }
 
     const float64ToInt32Array = (value: number) => {
-        const dataView = new DataView(new ArrayBuffer(Float64Array.BYTES_PER_ELEMENT))
+        const dataView = new DataView(
+            new ArrayBuffer(Float64Array.BYTES_PER_ELEMENT)
+        )
         dataView.setFloat64(0, value)
         return [dataView.getInt32(0), dataView.getInt32(4)]
     }
@@ -52,30 +57,40 @@ describe('AssemblyScriptWasmEngine', () => {
         const buffer = await compileWasmModule(code)
         const engine = await createEngine(buffer, COMPILER_OPTIONS)
         const wasmExports = engine.wasmExports as any
-        return {engine, wasmExports}
+        return { engine, wasmExports }
     }
 
     describe('configure/loop', () => {
-
         it('should configure and return an output block of the right size', async () => {
             let engine: AssemblyScriptWasmEngine
-            let block : Float32Array | Float64Array
-            ;({engine} = await getEngine(
-                compileToAssemblyscript(new Compilation({}, {}, {
-                    ...COMPILER_OPTIONS, 
-                    channelCount: 2,
-                }
-            ))))
+            let block: Float32Array | Float64Array
+            ;({ engine } = await getEngine(
+                compileToAssemblyscript(
+                    new Compilation(
+                        {},
+                        {},
+                        {
+                            ...COMPILER_OPTIONS,
+                            channelCount: 2,
+                        }
+                    )
+                )
+            ))
             engine.configure(44100, 4)
             block = engine.loop()
             assert.strictEqual(block.length, 4 * 2)
-
-            ;({engine} = await getEngine(
-                compileToAssemblyscript(new Compilation({}, {}, {
-                    ...COMPILER_OPTIONS, 
-                    channelCount: 3,
-                }
-            ))))
+            ;({ engine } = await getEngine(
+                compileToAssemblyscript(
+                    new Compilation(
+                        {},
+                        {},
+                        {
+                            ...COMPILER_OPTIONS,
+                            channelCount: 3,
+                        }
+                    )
+                )
+            ))
             engine.configure(48000, 5)
             block = engine.loop()
             assert.strictEqual(block.length, 3 * 5)
@@ -84,19 +99,18 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('ports', () => {
         const getEngine = async (portSpecs: PortSpecs, extraCode: Code) => {
-            const compilerSettings: CompilerAssemblyScriptSettingsWithDefaults = { 
-                ...COMPILER_OPTIONS, portSpecs: portSpecs }
-            const compilation = new Compilation(
-                {},
-                {},
-                compilerSettings
-            )
+            const compilerSettings: CompilerAssemblyScriptSettingsWithDefaults =
+                {
+                    ...COMPILER_OPTIONS,
+                    portSpecs: portSpecs,
+                }
+            const compilation = new Compilation({}, {}, compilerSettings)
             const code =
                 ASSEMBLY_SCRIPT_CORE_CODE +
                 extraCode +
                 `
                 ${compilePorts(compilation, {
-                    FloatType: 'f32'
+                    FloatType: 'f32',
                 })}
             `
             const buffer = await compileWasmModule(code)
@@ -205,38 +219,34 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('setArray', () => {
         it('should set the array', async () => {
-            const {engine, wasmExports} = await getEngine(compileToAssemblyscript(new Compilation({}, {}, COMPILER_OPTIONS)) + `
+            const { engine, wasmExports } = await getEngine(
+                compileToAssemblyscript(
+                    new Compilation({}, {}, COMPILER_OPTIONS)
+                ) +
+                    `
                 export function testReadArray (arrayName: string, index: i32): f64 {
                     return ${ARRAYS_VARIABLE_NAME}[arrayName][index]
                 }
-            `)
+            `
+            )
 
             engine.setArray('array1', new Float32Array([11.1, 22.2, 33.3]))
             engine.setArray('array2', new Float64Array([44.4, 55.5]))
             engine.setArray('array3', [66.6, 77.7])
 
             let actual: number
-            actual = wasmExports.testReadArray(
-                engine.lowerString('array1'),
-                1
-            )
+            actual = wasmExports.testReadArray(engine.lowerString('array1'), 1)
             assert.strictEqual(round(actual), 22.2)
-            actual = wasmExports.testReadArray(
-                engine.lowerString('array2'),
-                0
-            )
+            actual = wasmExports.testReadArray(engine.lowerString('array2'), 0)
             assert.strictEqual(round(actual), 44.4)
-            actual = wasmExports.testReadArray(
-                engine.lowerString('array3'),
-                1
-            )
+            actual = wasmExports.testReadArray(engine.lowerString('array3'), 1)
             assert.strictEqual(round(actual), 77.7)
         })
     })
 
     describe('lowerArrayBufferOfIntegers', () => {
         it('should correctly lower the given array to an ArrayBuffer of integers', async () => {
-            const {engine, wasmExports} = await getEngine(`
+            const { engine, wasmExports } = await getEngine(`
                 export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: i32): i32 {
                     const dataView = new DataView(buffer)
                     return dataView.getInt32(index * sizeof<i32>())
@@ -245,10 +255,7 @@ describe('AssemblyScriptWasmEngine', () => {
             `)
 
             const bufferPointer = engine.lowerArrayBufferOfIntegers([
-                1,
-                22,
-                333,
-                4444,
+                1, 22, 333, 4444,
             ])
 
             assert.strictEqual(
@@ -272,7 +279,7 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('lowerMessage', () => {
         it('should create the message with correct header and filled-in data', async () => {
-            const {engine, wasmExports} = await getEngine(`
+            const { engine, wasmExports } = await getEngine(`
                 export function testReadMessageData(message: Message, index: i32): i32 {
                     return message.dataView.getInt32(index * sizeof<i32>())
                 }
@@ -282,11 +289,20 @@ describe('AssemblyScriptWasmEngine', () => {
             const messagePointer = engine.lowerMessage(['bla', 2.3])
 
             // Testing datum count
-            assert.strictEqual(wasmExports.testReadMessageData(messagePointer, 0), 2)
+            assert.strictEqual(
+                wasmExports.testReadMessageData(messagePointer, 0),
+                2
+            )
 
             // Testing datum types
-            assert.strictEqual(wasmExports.testReadMessageData(messagePointer, 1), 1)
-            assert.strictEqual(wasmExports.testReadMessageData(messagePointer, 2), 0)
+            assert.strictEqual(
+                wasmExports.testReadMessageData(messagePointer, 1),
+                1
+            )
+            assert.strictEqual(
+                wasmExports.testReadMessageData(messagePointer, 2),
+                0
+            )
 
             // Testing datum positions
             // <Header byte size>
@@ -302,7 +318,9 @@ describe('AssemblyScriptWasmEngine', () => {
             )
             assert.strictEqual(
                 wasmExports.testReadMessageData(messagePointer, 5),
-                6 * INT_ARRAY_BYTES_PER_ELEMENT + 3 * 4 + Float64Array.BYTES_PER_ELEMENT
+                6 * INT_ARRAY_BYTES_PER_ELEMENT +
+                    3 * 4 +
+                    Float64Array.BYTES_PER_ELEMENT
             )
 
             // DATUM "bla"
@@ -333,7 +351,7 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('liftMessage', () => {
         it('should read message to a JavaScript array', async () => {
-            const {engine, wasmExports} = await getEngine(`
+            const { engine, wasmExports } = await getEngine(`
                 export function testCreateMessage(): Message {
                     const message: Message = Message.fromTemplate([
                         MESSAGE_DATUM_TYPE_STRING, 5,
@@ -355,7 +373,7 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('createMessageArray / pushMessageToArray', () => {
         it('should create message array and push message to array', async () => {
-            const {engine, wasmExports} = await getEngine(`
+            const { engine, wasmExports } = await getEngine(`
                 export function testMessageArray(messageArray: Message[], index: i32): Message {
                     return messageArray[index]
                 }
@@ -381,21 +399,32 @@ describe('AssemblyScriptWasmEngine', () => {
                 1
             )
 
-            assert.deepStrictEqual([0, 1, 2, 3, 4, 5].map(i => wasmExports.testReadMessageData(messagePointer1Bis, i)), [
-                1,
-                wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf(),
-                INT_ARRAY_BYTES_PER_ELEMENT * 4,
-                INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
-                0,
-                0,
-            ])
-            assert.deepStrictEqual([0, 1, 2, 3, 4].map(i => wasmExports.testReadMessageData(messagePointer2Bis, i)), [
-                1,
-                wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf(),
-                INT_ARRAY_BYTES_PER_ELEMENT * 4,
-                INT_ARRAY_BYTES_PER_ELEMENT * 4 + Float64Array.BYTES_PER_ELEMENT,
-                0,
-            ])
+            assert.deepStrictEqual(
+                [0, 1, 2, 3, 4, 5].map((i) =>
+                    wasmExports.testReadMessageData(messagePointer1Bis, i)
+                ),
+                [
+                    1,
+                    wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf(),
+                    INT_ARRAY_BYTES_PER_ELEMENT * 4,
+                    INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
+                    0,
+                    0,
+                ]
+            )
+            assert.deepStrictEqual(
+                [0, 1, 2, 3, 4].map((i) =>
+                    wasmExports.testReadMessageData(messagePointer2Bis, i)
+                ),
+                [
+                    1,
+                    wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf(),
+                    INT_ARRAY_BYTES_PER_ELEMENT * 4,
+                    INT_ARRAY_BYTES_PER_ELEMENT * 4 +
+                        Float64Array.BYTES_PER_ELEMENT,
+                    0,
+                ]
+            )
         })
     })
 })

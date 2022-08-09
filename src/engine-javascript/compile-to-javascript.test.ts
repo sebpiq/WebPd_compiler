@@ -9,15 +9,14 @@
  *
  */
 
-import { makeGraph } from "@webpd/shared/test-helpers"
-import assert from "assert"
-import { Compilation } from "../compilation"
-import { CompilerSettings, NodeImplementations } from "../types"
-import compileToJavascript from "./compile-to-javascript"
-import { JavaScriptEngine } from "./types"
+import { makeGraph } from '@webpd/shared/test-helpers'
+import assert from 'assert'
+import { Compilation } from '../compilation'
+import { CompilerSettings, NodeImplementations } from '../types'
+import compileToJavascript from './compile-to-javascript'
+import { JavaScriptEngine } from './types'
 
 describe('compileToJavascript', () => {
-
     const COMPILER_SETTINGS: CompilerSettings = {
         target: 'javascript',
         channelCount: 2,
@@ -34,7 +33,7 @@ describe('compileToJavascript', () => {
             loop: () => `// [dac~] loop`,
         },
     }
-    
+
     it('should create the specified ports', () => {
         const compilation = new Compilation({}, NODE_IMPLEMENTATIONS, {
             ...COMPILER_SETTINGS,
@@ -93,7 +92,11 @@ describe('compileToJavascript', () => {
                 outlets: { '0': { id: '0', type: 'signal' } },
             },
         })
-        const compilation = new Compilation(graph, NODE_IMPLEMENTATIONS, COMPILER_SETTINGS)
+        const compilation = new Compilation(
+            graph,
+            NODE_IMPLEMENTATIONS,
+            COMPILER_SETTINGS
+        )
         const code = compileToJavascript(compilation)
         const modelEngine: JavaScriptEngine = {
             configure: (_: number) => {},
@@ -103,9 +106,6 @@ describe('compileToJavascript', () => {
         }
         const engine = new Function(code)()
 
-        assert.deepStrictEqual(
-            Object.keys(engine),
-            Object.keys(modelEngine)
-        )
+        assert.deepStrictEqual(Object.keys(engine), Object.keys(modelEngine))
     })
 })

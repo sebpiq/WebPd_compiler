@@ -68,7 +68,10 @@ describe('compileInitialize', () => {
             COMPILER_SETTINGS
         )
 
-        const initializeCode = compileInitialize(compilation, [graph.osc, graph.dac])
+        const initializeCode = compileInitialize(compilation, [
+            graph.osc,
+            graph.dac,
+        ])
 
         assert.strictEqual(
             normalizeCode(initializeCode),
@@ -129,7 +132,8 @@ describe('compileInitialize', () => {
             COMPILER_SETTINGS
         )
 
-        assert.doesNotThrow(() => compileInitialize(compilation, [graph.osc, graph.dac]))
+        assert.doesNotThrow(() =>
+            compileInitialize(compilation, [graph.osc, graph.dac])
+        )
     })
-
 })

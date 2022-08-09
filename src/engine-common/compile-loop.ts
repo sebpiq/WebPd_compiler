@@ -9,10 +9,10 @@
  *
  */
 
-import { traversal, getters } from "@webpd/dsp-graph"
-import { renderCode } from "../code-helpers"
-import { Code } from "../types"
-import { Compilation } from "../compilation"
+import { traversal, getters } from '@webpd/dsp-graph'
+import { renderCode } from '../code-helpers'
+import { Code } from '../types'
+import { Compilation } from '../compilation'
 
 export default (
     compilation: Compilation,
@@ -20,6 +20,7 @@ export default (
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const globs = compilation.variableNames.g
+    // prettier-ignore
     return renderCode`${[
         graphTraversal.map((node) => [
             // 1. Node loop implementation

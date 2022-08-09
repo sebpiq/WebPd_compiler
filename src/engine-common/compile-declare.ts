@@ -9,9 +9,9 @@
  *
  */
 
-import { renderCode } from "../code-helpers"
-import { Code } from "../types"
-import { Compilation } from "../compilation"
+import { renderCode } from '../code-helpers'
+import { Code } from '../types'
+import { Compilation } from '../compilation'
 
 export default (
     compilation: Compilation,
@@ -19,6 +19,7 @@ export default (
 ): Code => {
     const globs = compilation.variableNames.g
     const MACROS = compilation.getMacros()
+    // prettier-ignore
     return renderCode`
         let ${MACROS.typedVarInt(globs.iterFrame)}
         let ${MACROS.typedVarInt(globs.iterOutlet)}

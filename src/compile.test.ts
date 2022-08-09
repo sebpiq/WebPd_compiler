@@ -9,12 +9,11 @@
  *
  */
 
-import assert from "assert"
-import compile from "./compile"
-import { CompilerSettings } from "./types"
+import assert from 'assert'
+import compile from './compile'
+import { CompilerSettings } from './types'
 
 describe('compile', () => {
-
     const COMPILER_SETTINGS_AS: CompilerSettings = {
         channelCount: 2,
         bitDepth: 32,
@@ -26,13 +25,12 @@ describe('compile', () => {
         bitDepth: 32,
         target: 'javascript',
     }
-    
+
     it('should compile assemblyscript without error', () => {
         const code = compile({}, {}, COMPILER_SETTINGS_AS)
         assert.strictEqual(typeof code, 'string')
     })
 
-        
     it('should compile javascript without error', () => {
         const code = compile({}, {}, COMPILER_SETTINGS_JS)
         assert.strictEqual(typeof code, 'string')

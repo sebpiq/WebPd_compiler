@@ -29,28 +29,23 @@ describe('compileLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         msg: {
             initialize: () => ``,
-            loop: (node) =>
-                `// [msg] : value ${node.args.value}`,
+            loop: (node) => `// [msg] : value ${node.args.value}`,
         },
         '+': {
             initialize: () => ``,
-            loop: (node) =>
-                `// [+] : value ${node.args.value}`,
+            loop: (node) => `// [+] : value ${node.args.value}`,
         },
         print: {
             initialize: () => ``,
-            loop: (node, _, __) =>
-                `// [print] : value "${node.args.value}"`,
+            loop: (node, _, __) => `// [print] : value "${node.args.value}"`,
         },
         'osc~': {
             initialize: () => ``,
-            loop: (node) =>
-                `// [osc~] : frequency ${node.args.frequency}`,
+            loop: (node) => `// [osc~] : frequency ${node.args.frequency}`,
         },
         '+~': {
             initialize: () => ``,
-            loop: (node) =>
-                `// [+~] : value ${node.args.value}`,
+            loop: (node) => `// [+~] : value ${node.args.value}`,
         },
         'dac~': {
             initialize: () => ``,
@@ -58,7 +53,6 @@ describe('compileLoop', () => {
                 `// [dac~] : channelCount ${settings.channelCount}`,
         },
     }
-
 
     it('should compile the loop function, pass around control messages, and cleanup control inlets and outlets', () => {
         const graph = makeGraph({
@@ -98,7 +92,7 @@ describe('compileLoop', () => {
         const compilation = new Compilation(
             graph,
             NODE_IMPLEMENTATIONS,
-            COMPILER_SETTINGS,
+            COMPILER_SETTINGS
         )
 
         const loop = compileLoop(compilation, [
@@ -182,7 +176,7 @@ describe('compileLoop', () => {
         const compilation = new Compilation(
             graph,
             NODE_IMPLEMENTATIONS,
-            COMPILER_SETTINGS,
+            COMPILER_SETTINGS
         )
 
         const loop = compileLoop(compilation, [
@@ -248,7 +242,7 @@ describe('compileLoop', () => {
         const compilation = new Compilation(
             graph,
             NODE_IMPLEMENTATIONS,
-            COMPILER_SETTINGS,
+            COMPILER_SETTINGS
         )
 
         const loop = compileLoop(compilation, [graph.osc, graph.dac])
@@ -262,5 +256,4 @@ describe('compileLoop', () => {
         `)
         )
     })
-
 })

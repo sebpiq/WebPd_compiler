@@ -138,13 +138,15 @@ export type CompilerSettings =
     | CompilerJavaScriptSettings
 
 // Internal type of setting after validation and settings defaults
-export type CompilerAssemblyScriptSettingsWithDefaults = CompilerAssemblyScriptSettingsMandatory &
-    CompilerSettingsOptional &
-    CompilerAssemblyScriptSettingOptional
+export type CompilerAssemblyScriptSettingsWithDefaults =
+    CompilerAssemblyScriptSettingsMandatory &
+        CompilerSettingsOptional &
+        CompilerAssemblyScriptSettingOptional
 
-export type CompilerJavaScriptSettingsWithDefaults = CompilerJavaScriptSettingsMandatory &
-    CompilerSettingsOptional &
-    CompilerJavaScriptSettingsOptional
+export type CompilerJavaScriptSettingsWithDefaults =
+    CompilerJavaScriptSettingsMandatory &
+        CompilerSettingsOptional &
+        CompilerJavaScriptSettingsOptional
 
 export type CompilerSettingsWithDefaults =
     | CompilerAssemblyScriptSettingsWithDefaults
