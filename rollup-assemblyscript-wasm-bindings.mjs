@@ -9,7 +9,7 @@ export default [
             file: './dist/assemblyscript-wasm-bindings.iife.js',
             sourcemap: true,
             format: 'iife',
-            name: 'AscWasmBindings',
+            name: 'AssemblyscriptWasmBindings',
         },
         plugins: [
             typescript({

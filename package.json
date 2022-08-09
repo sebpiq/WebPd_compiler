@@ -3,11 +3,11 @@
     "version": "0.1.0",
     "description": "TODO",
     "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "types": "./dist/types/index.d.ts",
     "type": "module",
     "scripts": {
         "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --config node_modules/@webpd/shared/configs/jest.js",
-        "rollup": "npx rollup --config node_modules/@webpd/shared/configs/rollup.mjs",
+        "rollup": "npx rollup --config rollup.mjs",
         "rollup:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
         "prettier": "npm explore @webpd/shared -- npm run prettier $(pwd)",
         "eslint": "npm explore @webpd/shared -- npm run eslint $(pwd)/src",
