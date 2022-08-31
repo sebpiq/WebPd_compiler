@@ -27,16 +27,18 @@ const declareControl: NodeCodeGenerator = (_, { state, MACROS }) =>
     `let ${MACROS.typedVarFloat(state.rightOp)}`
 
 // ------------------------------ initialize ------------------------------ //
-export const makeInitialize = (): NodeCodeGenerator => (...args) => {
+export const makeInitialize = (defaultValue: number): NodeCodeGenerator => (...args) => {
     const [node] = args
+    const initializeSignal = makeInitializeSignal(defaultValue)
+    const initializeControl = makeInitializeControl(defaultValue)
     return _hasSignalInput(node) ? initializeSignal(...args) : initializeControl(...args)
 }
 
-const initializeSignal: NodeCodeGenerator = (node, { ins }) =>
-    `${ins.$1_signal} = ${node.args.value} || 0`
+const makeInitializeSignal = (defaultValue: number): NodeCodeGenerator => (node, { ins }) =>
+    `${ins.$1_signal} = ${node.args.value || defaultValue}`
 
-const initializeControl: NodeCodeGenerator = (node, { state }) =>
-    `${state.rightOp} = ${(node.args.value as string) || 0}`
+const makeInitializeControl = (defaultValue: number): NodeCodeGenerator => (node, { state }) =>
+    `${state.rightOp} = ${(node.args.value as string) || defaultValue}`
 
 // ------------------------------- loop ------------------------------ //
 export const makeLoop = (operator: string): NodeCodeGenerator => {
@@ -73,13 +75,13 @@ const _hasSignalInput = (node: PdDspGraph.Node) =>
 
 const binopTilde: NodeImplementations = {
     '+~': {
-        initialize: makeInitialize(),
+        initialize: makeInitialize(0),
         declare: makeDeclare(),
         loop: makeLoop('+'),
         stateVariables,
     },
     '*~': {
-        initialize: makeInitialize(),
+        initialize: makeInitialize(1),
         declare: makeDeclare(),
         loop: makeLoop('*'),
         stateVariables,

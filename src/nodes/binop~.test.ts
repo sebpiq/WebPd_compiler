@@ -31,6 +31,22 @@ describe('binop~', () => {
             )
         })
 
+        it('should have default control value 0', async () => {
+            await assertNodeOutput(
+                {
+                    type: '+~',
+                    args: {},
+                    connectedSources: ['1_control'],
+                },
+                [
+                    { '0': 123 },
+                ],
+                [
+                    { '0': 123 },
+                ]
+            )
+        })
+
         it('should work with control messages to inlet 1', async () => {
             await assertNodeOutput(
                 {
@@ -70,6 +86,22 @@ describe('binop~', () => {
                     { '0': 100, '1_signal': 3 },
                 ],
                 [{ '0': 1 }, { '0': 20 }, { '0': 300 }]
+            )
+        })
+
+        it('should have default control value 1', async () => {
+            await assertNodeOutput(
+                {
+                    type: '*~',
+                    args: {},
+                    connectedSources: ['1_control'],
+                },
+                [
+                    { '0': 123 },
+                ],
+                [
+                    { '0': 123 },
+                ]
             )
         })
 
