@@ -21,6 +21,7 @@ import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     createEngine,
     AssemblyScriptWasmEngine,
+    lowerString,
 } from './assemblyscript-wasm-bindings'
 import {
     Code,
@@ -235,11 +236,11 @@ describe('AssemblyScriptWasmEngine', () => {
             engine.setArray('array3', [66.6, 77.7])
 
             let actual: number
-            actual = wasmExports.testReadArray(engine.lowerString('array1'), 1)
+            actual = wasmExports.testReadArray(lowerString(engine.wasmExports, 'array1'), 1)
             assert.strictEqual(round(actual), 22.2)
-            actual = wasmExports.testReadArray(engine.lowerString('array2'), 0)
+            actual = wasmExports.testReadArray(lowerString(engine.wasmExports, 'array2'), 0)
             assert.strictEqual(round(actual), 44.4)
-            actual = wasmExports.testReadArray(engine.lowerString('array3'), 1)
+            actual = wasmExports.testReadArray(lowerString(engine.wasmExports, 'array3'), 1)
             assert.strictEqual(round(actual), 77.7)
         })
     })

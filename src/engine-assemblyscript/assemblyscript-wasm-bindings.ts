@@ -79,7 +79,8 @@ export class AssemblyScriptWasmEngine {
 
     loop(): Float32Array | Float64Array {
         this.wasmExports.loop()
-        return this.liftTypedArray(
+        return liftTypedArray(
+            this.wasmExports,
             this.settings.bitDepth === 32 ? Float32Array : Float64Array,
             this.wasmOutputPointer
         ) as Float32Array | Float64Array
@@ -93,17 +94,17 @@ export class AssemblyScriptWasmEngine {
             console.warn(`Wasm exports doesn't define "setArray"`)
             return
         }
-        const stringPointer = this.lowerString(arrayName)
+        const stringPointer = lowerString(this.wasmExports, arrayName)
         const bufferPointer = this.lowerArrayBufferOfFloats(data)
         this.wasmExports.setArray(stringPointer, bufferPointer)
     }
 
     // TODO : ---- V ----  Private API ?
-
     liftMessage(messagePointer: InternalPointer): PdSharedTypes.ControlValue {
         const messageDatumTypesPointer =
             this.wasmExports.getMessageDatumTypes(messagePointer)
-        const messageDatumTypes = this.liftTypedArray(
+        const messageDatumTypes = liftTypedArray(
+            this.wasmExports,
             Int32Array,
             messageDatumTypesPointer
         )
@@ -124,13 +125,13 @@ export class AssemblyScriptWasmEngine {
                     messagePointer,
                     datumIndex
                 )
-                message.push(this.liftString(stringPointer))
+                message.push(liftString(this.wasmExports, stringPointer))
             }
         })
         return message
     }
-
-    lowerMessage(message: PdSharedTypes.ControlValue): InternalPointer {
+    
+    lowerMessage (message: PdSharedTypes.ControlValue): InternalPointer {
         const messageTemplate: Array<number> = message.reduce(
             (template, value) => {
                 if (typeof value === 'number') {
@@ -149,16 +150,16 @@ export class AssemblyScriptWasmEngine {
             },
             [] as Array<number>
         )
-
+    
         const messagePointer = this.wasmExports.createMessage(
             this.lowerArrayBufferOfIntegers(messageTemplate)
         )
-
+    
         message.forEach((value, index) => {
             if (typeof value === 'number') {
                 this.wasmExports.writeFloatDatum(messagePointer, index, value)
             } else if (typeof value === 'string') {
-                const stringPointer = this.lowerString(value)
+                const stringPointer = lowerString(this.wasmExports, value)
                 this.wasmExports.writeStringDatum(
                     messagePointer,
                     index,
@@ -166,11 +167,11 @@ export class AssemblyScriptWasmEngine {
                 )
             }
         })
-
+    
         return messagePointer
     }
-
-    lowerMessageArray(
+    
+    lowerMessageArray (
         messages: Array<PdSharedTypes.ControlValue>
     ): InternalPointer {
         const messageArrayPointer = this.wasmExports.createMessageArray()
@@ -182,8 +183,8 @@ export class AssemblyScriptWasmEngine {
         })
         return messageArrayPointer
     }
-
-    lowerArrayBufferOfIntegers(integers: Array<number>) {
+    
+    lowerArrayBufferOfIntegers (integers: Array<number>) {
         const buffer = new ArrayBuffer(
             INT_ARRAY_BYTES_PER_ELEMENT * integers.length
         )
@@ -191,10 +192,10 @@ export class AssemblyScriptWasmEngine {
         for (let i = 0; i < integers.length; i++) {
             dataView.setInt32(INT_ARRAY_BYTES_PER_ELEMENT * i, integers[i])
         }
-        return this.lowerBuffer(buffer)
+        return lowerBuffer(this.wasmExports, buffer)
     }
-
-    lowerArrayBufferOfFloats(
+    
+    lowerArrayBufferOfFloats (
         floats: Array<number> | Float32Array | Float64Array
     ) {
         const bytesPerElement = this.settings.bitDepth / 8
@@ -205,64 +206,7 @@ export class AssemblyScriptWasmEngine {
         for (let i = 0; i < floats.length; i++) {
             dataView[setFloatName](bytesPerElement * i, floats[i])
         }
-        return this.lowerBuffer(buffer)
-    }
-
-    // REF : Assemblyscript ESM bindings
-    liftTypedArray(
-        constructor: TypedArrayConstructor,
-        pointer: InternalPointer
-    ) {
-        if (!pointer) return null
-        const memoryU32 = new Uint32Array(this.wasmExports.memory.buffer)
-        return new constructor(
-            this.wasmExports.memory.buffer,
-            memoryU32[(pointer + 4) >>> 2],
-            memoryU32[(pointer + 8) >>> 2] / constructor.BYTES_PER_ELEMENT
-        ).slice()
-    }
-
-    // REF : Assemblyscript ESM bindings
-    liftString(pointer: number) {
-        if (!pointer) return null
-        pointer = pointer >>> 0
-        const end =
-            (pointer +
-                new Uint32Array(this.wasmExports.memory.buffer)[
-                    (pointer - 4) >>> 2
-                ]) >>>
-            1
-        const memoryU16 = new Uint16Array(this.wasmExports.memory.buffer)
-        let start = pointer >>> 1
-        let string = ''
-        while (end - start > 1024) {
-            string += String.fromCharCode(
-                ...memoryU16.subarray(start, (start += 1024))
-            )
-        }
-        return string + String.fromCharCode(...memoryU16.subarray(start, end))
-    }
-
-    // REF : Assemblyscript ESM bindings
-    lowerString(value: string) {
-        if (value == null) return 0
-        const length = value.length,
-            pointer = this.wasmExports.__new(length << 1, 1) >>> 0,
-            memoryU16 = new Uint16Array(this.wasmExports.memory.buffer)
-        for (let i = 0; i < length; ++i)
-            memoryU16[(pointer >>> 1) + i] = value.charCodeAt(i)
-        return pointer
-    }
-
-    // REF : Assemblyscript ESM bindings
-    lowerBuffer(value: ArrayBuffer) {
-        if (value == null) return 0
-        const pointer = this.wasmExports.__new(value.byteLength, 0) >>> 0
-        new Uint8Array(this.wasmExports.memory.buffer).set(
-            new Uint8Array(value),
-            pointer
-        )
-        return pointer
+        return lowerBuffer(this.wasmExports, buffer)
     }
 
     _bindPorts(): EnginePorts {
@@ -320,8 +264,8 @@ export class AssemblyScriptWasmEngine {
                     lineNumber: number,
                     columnNumber: number
                 ) => {
-                    const message = this.liftString(messagePointer >>> 0)
-                    const fileName = this.liftString(fileNamePointer >>> 0)
+                    const message = liftString(this.wasmExports, messagePointer >>> 0)
+                    const fileName = liftString(this.wasmExports, fileNamePointer >>> 0)
                     lineNumber = lineNumber >>> 0
                     columnNumber = columnNumber >>> 0
                     ;(() => {
@@ -337,7 +281,7 @@ export class AssemblyScriptWasmEngine {
                     })()
                 },
                 'console.log': (textPointer: StringPointer) => {
-                    console.log(this.liftString(textPointer))
+                    console.log(liftString(this.wasmExports, textPointer))
                 },
             },
         })
@@ -352,4 +296,62 @@ export const createEngine = async (
     const engine = new AssemblyScriptWasmEngine(wasmBuffer, settings)
     await engine.initialize()
     return engine
+}
+
+// REF : Assemblyscript ESM bindings
+export const liftTypedArray = (
+    wasmExports: AssemblyScriptWasmExports,
+    constructor: TypedArrayConstructor,
+    pointer: InternalPointer
+) => {
+    if (!pointer) return null
+    const memoryU32 = new Uint32Array(wasmExports.memory.buffer)
+    return new constructor(
+        wasmExports.memory.buffer,
+        memoryU32[(pointer + 4) >>> 2],
+        memoryU32[(pointer + 8) >>> 2] / constructor.BYTES_PER_ELEMENT
+    ).slice()
+}
+
+// REF : Assemblyscript ESM bindings
+export const liftString = (wasmExports: AssemblyScriptWasmExports, pointer: number) => {
+    if (!pointer) return null
+    pointer = pointer >>> 0
+    const end =
+        (pointer +
+            new Uint32Array(wasmExports.memory.buffer)[
+                (pointer - 4) >>> 2
+            ]) >>>
+        1
+    const memoryU16 = new Uint16Array(wasmExports.memory.buffer)
+    let start = pointer >>> 1
+    let string = ''
+    while (end - start > 1024) {
+        string += String.fromCharCode(
+            ...memoryU16.subarray(start, (start += 1024))
+        )
+    }
+    return string + String.fromCharCode(...memoryU16.subarray(start, end))
+}
+
+// REF : Assemblyscript ESM bindings
+export const lowerString = (wasmExports: AssemblyScriptWasmExports, value: string) => {
+    if (value == null) return 0
+    const length = value.length,
+        pointer = wasmExports.__new(length << 1, 1) >>> 0,
+        memoryU16 = new Uint16Array(wasmExports.memory.buffer)
+    for (let i = 0; i < length; ++i)
+        memoryU16[(pointer >>> 1) + i] = value.charCodeAt(i)
+    return pointer
+}
+
+// REF : Assemblyscript ESM bindings
+export const lowerBuffer = (wasmExports: AssemblyScriptWasmExports, value: ArrayBuffer) => {
+    if (value == null) return 0
+    const pointer = wasmExports.__new(value.byteLength, 0) >>> 0
+    new Uint8Array(wasmExports.memory.buffer).set(
+        new Uint8Array(value),
+        pointer
+    )
+    return pointer
 }

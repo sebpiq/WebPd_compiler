@@ -50,12 +50,10 @@ export default (
                         const { ins: sinkIns } = compilation.variableNames.n[
                             sinkNodeId
                         ]
-                        return getters.getOutlet(node, outletId).type === 'control'
-                            ? `
+                        return getters.getOutlet(node, outletId).type === 'control' ? `
                         for (${globs.iterOutlet} = 0; ${globs.iterOutlet} < ${sourceOuts[outletId]}.length; ${globs.iterOutlet}++) {
                             ${sinkIns[inletId]}.push(${sourceOuts[outletId]}[${globs.iterOutlet}])
-                        }`
-                            : `${sinkIns[inletId]} = ${sourceOuts[outletId]}`
+                        }` : `${sinkIns[inletId]} = ${sourceOuts[outletId]}`
                     }
                 ),
         ]),
