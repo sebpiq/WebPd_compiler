@@ -175,6 +175,7 @@ export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettingsWithDefaults => {
     const portSpecs = settings.portSpecs || {}
+    const messageListenerSpecs = settings.messageListenerSpecs || {}
     const bitDepth = settings.bitDepth || 64
     if (![32, 64].includes(bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
@@ -183,13 +184,15 @@ export const validateSettings = (
         return {
             ...settings,
             bitDepth,
-            portSpecs: portSpecs,
+            portSpecs,
+            messageListenerSpecs,
         }
     } else {
         return {
             ...settings,
             bitDepth,
-            portSpecs: portSpecs,
+            portSpecs,
+            messageListenerSpecs,
         }
     }
 }

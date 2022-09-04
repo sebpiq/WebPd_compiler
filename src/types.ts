@@ -102,6 +102,12 @@ export type PortSpecs = {
     }
 }
 
+export type MessageListener = (messageArray: Array<PdSharedTypes.ControlValue>) => void
+
+export type MessageListenerSpecs = {
+    [variableName: CodeVariableName]: MessageListener
+}
+
 // Mandatory & optional settings for different targets
 interface CompilerSettingsMandatory {
     channelCount: number
@@ -111,6 +117,9 @@ interface CompilerSettingsMandatory {
 interface CompilerSettingsOptional {
     // Ports allowing to read / write variables from the engine
     portSpecs: PortSpecs
+
+    // Functions to listen for when new messages are sent to inlets
+    messageListenerSpecs: MessageListenerSpecs
 }
 
 type CompilerAssemblyScriptSettingsMandatory = CompilerSettingsMandatory & {

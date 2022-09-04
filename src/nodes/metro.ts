@@ -88,9 +88,7 @@ export const loop: NodeCodeGenerator = (
         ${MACROS.createMessage('m', ['bang'])}
         ${outs.$0}.push(m)
         ${state.realNextTick} = ${state.realNextTick} + ${state.rate}
-        ${state.nextTick} = ${MACROS.castToInt(
-    `Math.round(${state.realNextTick})`
-)}
+        ${state.nextTick} = ${MACROS.castToInt(`Math.round(${state.realNextTick})`)}
     }
 `
 

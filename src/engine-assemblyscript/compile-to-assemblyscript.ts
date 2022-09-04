@@ -20,12 +20,12 @@ import {
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Code } from '../types'
+import { Code, PortSpecs } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { channelCount, bitDepth } = compilation.settings
+    const { channelCount, bitDepth, portSpecs, messageListenerSpecs } = compilation.settings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
     const MACROS = compilation.getMacros()
@@ -51,6 +51,33 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             ].toString()
         )
 
+    // TODO : move to compilation object ? Beware compilation object ravioli code. 
+    // Maybe more functional approach, passing down things like macros, etc ... 
+    // better layer things
+
+    // Merge `messageListenerSpecs` into `portSpecs` because message listeners need to have read access
+    // to the inlets they're listening to.
+    // !!! We're careful to deep-copy `portSpecs` so that the caller doesn't have strange bugs
+    // if we modify the passed `portSpecs` by mistake.
+    const newPortSpecs: PortSpecs = {...portSpecs}
+    Object.keys(messageListenerSpecs).map(variableName => {
+        if (newPortSpecs[variableName]) {
+            const spec = {...newPortSpecs[variableName]}
+            if (spec.type !== 'messages') {
+                throw new Error(`Incompatible portSpecs and messageListenerSpecs for variable ${variableName}`)
+            }
+            if (!spec.access.includes('r')) {
+                spec.access += 'r'
+            }
+            newPortSpecs[variableName] = spec
+        } else {
+            newPortSpecs[variableName] = {
+                access: 'r',
+                type: 'messages',
+            }
+        }
+    })
+    
     // prettier-ignore
     return renderCode`
         ${CORE_CODE}
@@ -81,15 +108,15 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             ${globs.arrays}.set(arrayName, array)
         }
 
-        ${compilePorts(compilation, { FloatType })}
+        ${compileMessageListeners(compilation)}
+        ${compilePorts(newPortSpecs, { FloatType })}
     `
 }
 
 export const compilePorts = (
-    compilation: Compilation,
+    portSpecs: PortSpecs,
     { FloatType }: { FloatType: string }
 ) => {
-    const { portSpecs } = compilation.settings
     // prettier-ignore
     return renderCode`
         ${Object.entries(portSpecs).map(([variableName, spec]) => {
@@ -130,5 +157,13 @@ export const compilePorts = (
             }
             return portsCode
         })}
+    `
+}
+
+export const compileMessageListeners = (compilation: Compilation) => {
+    return renderCode`
+        ${Object.keys(compilation.settings.messageListenerSpecs).map(variableName =>
+            `export declare function messageListener_${variableName}(): void`
+        )}
     `
 }

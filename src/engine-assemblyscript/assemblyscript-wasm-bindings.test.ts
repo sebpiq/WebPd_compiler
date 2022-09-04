@@ -44,6 +44,7 @@ describe('AssemblyScriptWasmEngine', () => {
         channelCount: 2,
         bitDepth: 32,
         portSpecs: {},
+        messageListenerSpecs: {},
     }
 
     const float64ToInt32Array = (value: number) => {
@@ -105,12 +106,11 @@ describe('AssemblyScriptWasmEngine', () => {
                     ...COMPILER_OPTIONS,
                     portSpecs: portSpecs,
                 }
-            const compilation = new Compilation({}, {}, compilerSettings)
             const code =
                 ASSEMBLY_SCRIPT_CORE_CODE +
                 extraCode +
                 `
-                ${compilePorts(compilation, {
+                ${compilePorts(portSpecs, {
                     FloatType: 'f32',
                 })}
             `
@@ -426,6 +426,61 @@ describe('AssemblyScriptWasmEngine', () => {
                     0,
                 ]
             )
+        })
+    })
+
+    describe('message listeners', () => {
+        it('should call message listener when new message sent to inlet', async () => {
+            const called: Array<Array<PdSharedTypes.ControlValue>> = []
+            const buffer = await compileWasmModule(`
+                ${ASSEMBLY_SCRIPT_CORE_CODE}
+                const bla: Message[] = [
+                    Message.fromTemplate([
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
+                            MESSAGE_DATUM_TYPE_FLOAT
+                        ]},
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
+                            MESSAGE_DATUM_TYPE_FLOAT
+                        ]}
+                    ]),
+                    Message.fromTemplate([
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
+                            MESSAGE_DATUM_TYPE_STRING
+                        ]}, 2
+                    ]),
+                ]
+                writeFloatDatum(bla[0], 0, 123)
+                writeFloatDatum(bla[0], 1, 456)
+                writeStringDatum(bla[1], 0, 'oh')
+                export declare function messageListener_bla(): void
+
+                export function read_bla_length(): i32 { 
+                    return bla.length
+                }
+
+                export function read_bla_elem(index: i32): Message { 
+                    return bla[index]
+                }
+
+                export function notify_bla(): void {
+                    messageListener_bla()
+                }
+            `)
+            const engine = await createEngine(buffer, {
+                ...COMPILER_OPTIONS,
+                messageListenerSpecs: {
+                    'bla': (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
+                },
+                portSpecs: {
+                    'bla': {type: 'messages', access: 'r'}
+                }
+            })
+            ;(engine.wasmExports as any).notify_bla()
+            assert.deepStrictEqual(called, [
+                [[123, 456], ['oh']]
+            ])
+            const wasmExports = engine.wasmExports as any
+            return { engine, wasmExports }
         })
     })
 })

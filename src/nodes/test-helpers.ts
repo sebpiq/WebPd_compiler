@@ -227,6 +227,7 @@ export const generateFramesForNode = async (
         ...COMPILER_OPTIONS,
         target,
         portSpecs,
+        messageListenerSpecs: {},
         bitDepth: 64,
     }
     const code = compile(graph, nodeImplementations, compilerSettings)

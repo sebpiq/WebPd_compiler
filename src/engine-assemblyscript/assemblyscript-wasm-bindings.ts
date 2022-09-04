@@ -19,6 +19,7 @@
  * @module
  */
 import {
+    CodeVariableName,
     CompilerAssemblyScriptSettingsWithDefaults,
     EnginePorts,
 } from '../types'
@@ -43,7 +44,8 @@ type TypedArrayConstructor =
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
 export interface EngineSettings {
-    portSpecs: CompilerAssemblyScriptSettingsWithDefaults['portSpecs']
+    portSpecs?: CompilerAssemblyScriptSettingsWithDefaults['portSpecs']
+    messageListenerSpecs?: CompilerAssemblyScriptSettingsWithDefaults['messageListenerSpecs']
     bitDepth: CompilerAssemblyScriptSettingsWithDefaults['bitDepth']
 }
 
@@ -64,7 +66,12 @@ export class AssemblyScriptWasmEngine {
     }
 
     async initialize() {
-        const wasmModule = await this._instantiateWasmModule()
+        const wasmModule = await instantiateWasmModule(
+            this.wasmBuffer,
+            {
+                input: this._makeMessageListenersWasmImports()
+            },
+        )
         this.wasmExports = wasmModule.instance
             .exports as unknown as AssemblyScriptWasmExports
         this.ports = this._bindPorts()
@@ -254,38 +261,17 @@ export class AssemblyScriptWasmEngine {
         return ports
     }
 
-    // REF : Assemblyscript ESM bindings
-    async _instantiateWasmModule() {
-        const wasmModule = await WebAssembly.instantiate(this.wasmBuffer, {
-            env: {
-                abort: (
-                    messagePointer: StringPointer,
-                    fileNamePointer: StringPointer,
-                    lineNumber: number,
-                    columnNumber: number
-                ) => {
-                    const message = liftString(this.wasmExports, messagePointer >>> 0)
-                    const fileName = liftString(this.wasmExports, fileNamePointer >>> 0)
-                    lineNumber = lineNumber >>> 0
-                    columnNumber = columnNumber >>> 0
-                    ;(() => {
-                        // @external.js
-                        throw Error(
-                            `${message} in ${fileName}:${lineNumber}:${columnNumber}`
-                        )
-                    })()
-                },
-                seed: () => {
-                    return (() => {
-                        return Date.now() * Math.random()
-                    })()
-                },
-                'console.log': (textPointer: StringPointer) => {
-                    console.log(liftString(this.wasmExports, textPointer))
-                },
-            },
+    _makeMessageListenersWasmImports() {
+        const wasmImports: {
+            [listenerName: CodeVariableName]: () => void
+        } = {}
+        Object.entries(this.settings.messageListenerSpecs).forEach(([variableName, callback]) => {
+            const listenerName = `messageListener_${variableName}`
+            wasmImports[listenerName] = () => {
+                callback(this.ports[`read_${variableName}`]())
+            }
         })
-        return wasmModule
+        return wasmImports
     }
 }
 
@@ -354,4 +340,43 @@ export const lowerBuffer = (wasmExports: AssemblyScriptWasmExports, value: Array
         pointer
     )
     return pointer
+}
+
+// REF : Assemblyscript ESM bindings
+export const instantiateWasmModule = async (
+    wasmBuffer: ArrayBuffer,
+    wasmImports: any = {},
+) => {
+    const wasmModule = await WebAssembly.instantiate(wasmBuffer, {
+        env: {
+            abort: (
+                messagePointer: StringPointer,
+                fileNamePointer: StringPointer,
+                lineNumber: number,
+                columnNumber: number
+            ) => {
+                const message = liftString(wasmExports, messagePointer >>> 0)
+                const fileName = liftString(wasmExports, fileNamePointer >>> 0)
+                lineNumber = lineNumber >>> 0
+                columnNumber = columnNumber >>> 0
+                ;(() => {
+                    // @external.js
+                    throw Error(
+                        `${message} in ${fileName}:${lineNumber}:${columnNumber}`
+                    )
+                })()
+            },
+            seed: () => {
+                return (() => {
+                    return Date.now() * Math.random()
+                })()
+            },
+            'console.log': (textPointer: StringPointer) => {
+                console.log(liftString(wasmExports, textPointer))
+            },
+        },
+        ...wasmImports,
+    })
+    const wasmExports = wasmModule.instance.exports as unknown as AssemblyScriptWasmExports
+    return wasmModule
 }
