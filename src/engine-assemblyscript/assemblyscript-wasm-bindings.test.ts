@@ -11,7 +11,7 @@
 
 import assert from 'assert'
 import { jest } from '@jest/globals'
-import { ARRAYS_VARIABLE_NAME, Compilation } from '../compilation'
+import { ARRAYS_VARIABLE_NAME, Compilation, generateEngineVariableNames } from '../compilation'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -20,7 +20,6 @@ import { compileWasmModule, getAssemblyscriptCoreCode } from './test-helpers'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     createEngine,
-    AssemblyScriptWasmEngine,
     lowerString,
 } from './assemblyscript-wasm-bindings'
 import {
@@ -33,6 +32,7 @@ import compileToAssemblyscript, {
 } from './compile-to-assemblyscript'
 import { round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import MACROS from './macros'
 
 describe('AssemblyScriptWasmEngine', () => {
     jest.setTimeout(10000)
@@ -64,37 +64,41 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('configure/loop', () => {
         it('should configure and return an output block of the right size', async () => {
-            let engine: AssemblyScriptWasmEngine
             let block: Float32Array | Float64Array
-            ;({ engine } = await getEngine(
-                compileToAssemblyscript(
-                    new Compilation(
-                        {},
-                        {},
-                        {
-                            ...COMPILER_OPTIONS,
-                            channelCount: 2,
-                        }
-                    )
-                )
-            ))
-            engine.configure(44100, 4)
-            block = engine.loop()
+            const compilation: Compilation = {
+                graph: {}, 
+                nodeImplementations: {}, 
+                settings: {
+                    ...COMPILER_OPTIONS,
+                    channelCount: 2,
+                },
+                macros: MACROS,
+                variableNames: generateEngineVariableNames({}, {})
+            }
+            const { engine: engine2Channels } = await getEngine(
+                compileToAssemblyscript({
+                    ...compilation,
+                    settings: {
+                        ...COMPILER_OPTIONS,
+                        channelCount: 2,
+                    }
+                })
+            )
+            engine2Channels.configure(44100, 4)
+            block = engine2Channels.loop()
             assert.strictEqual(block.length, 4 * 2)
-            ;({ engine } = await getEngine(
-                compileToAssemblyscript(
-                    new Compilation(
-                        {},
-                        {},
-                        {
-                            ...COMPILER_OPTIONS,
-                            channelCount: 3,
-                        }
-                    )
-                )
-            ))
-            engine.configure(48000, 5)
-            block = engine.loop()
+
+            const { engine: engine3Channels } = await getEngine(
+                compileToAssemblyscript({
+                    ...compilation,
+                    settings: {
+                        ...COMPILER_OPTIONS,
+                        channelCount: 3,
+                    }
+                })
+            )
+            engine3Channels.configure(48000, 5)
+            block = engine3Channels.loop()
             assert.strictEqual(block.length, 3 * 5)
         })
     })
@@ -220,10 +224,15 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('setArray', () => {
         it('should set the array', async () => {
+            const compilation: Compilation = {
+                graph: {}, 
+                nodeImplementations: {}, 
+                settings: COMPILER_OPTIONS,
+                macros: MACROS,
+                variableNames: generateEngineVariableNames({}, {})
+            }
             const { engine, wasmExports } = await getEngine(
-                compileToAssemblyscript(
-                    new Compilation({}, {}, COMPILER_OPTIONS)
-                ) +
+                compileToAssemblyscript(compilation) +
                     `
                 export function testReadArray (arrayName: string, index: i32): f64 {
                     return ${ARRAYS_VARIABLE_NAME}[arrayName][index]

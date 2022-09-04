@@ -10,7 +10,7 @@
  */
 
 import assert from 'assert'
-import { Compilation } from '../compilation'
+import { Compilation, generateEngineVariableNames, validateSettings } from '../compilation'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -18,15 +18,17 @@ import {
 import MACROS from './macros'
 
 describe('macros', () => {
-    const COMPILATION = new Compilation(
-        {},
-        {},
-        {
+    const COMPILATION: Compilation = {
+        graph: {}, 
+        nodeImplementations: {}, 
+        settings: validateSettings({
             target: 'assemblyscript',
             bitDepth: 32,
             channelCount: 2,
-        }
-    )
+        }),
+        macros: MACROS,
+        variableNames: generateEngineVariableNames({}, {})
+    }
 
     describe('isMessageMatching', () => {
         it('should generate condition for types', () => {

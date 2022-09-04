@@ -11,14 +11,14 @@
 
 import { renderCode } from '../code-helpers'
 import { Code } from '../types'
-import { Compilation } from '../compilation'
+import { Compilation, getNodeImplementation, wrapMacros } from '../compilation'
 
 export default (
     compilation: Compilation,
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
     const globs = compilation.variableNames.g
-    const MACROS = compilation.getMacros()
+    const MACROS = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`
         let ${MACROS.typedVarInt(globs.iterFrame)}
@@ -29,7 +29,7 @@ export default (
 
         ${graphTraversal.map((node) => {
             const { ins, outs } = compilation.variableNames.n[node.id]
-            const nodeDeclare = compilation.getNodeImplementation(node.type).declare
+            const nodeDeclare = getNodeImplementation(compilation.nodeImplementations, node.type).declare
             return [
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'control'
@@ -46,7 +46,7 @@ export default (
                     {
                         ...compilation.variableNames.n[node.id],
                         globs: globs,
-                        MACROS: compilation.getMacros(),
+                        MACROS,
                     },
                     compilation.settings
                 ): '',

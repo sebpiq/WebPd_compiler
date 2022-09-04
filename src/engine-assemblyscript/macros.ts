@@ -43,7 +43,7 @@ const typedVarMessage = (_: Compilation, name: CodeVariableName) =>
     `${name}: Message`
 
 const typedVarFloatArray = (compilation: Compilation, name: CodeVariableName) =>
-    `${name}: ${compilation.getMacros().floatArrayType()}`
+    `${name}: ${compilation.macros.floatArrayType(compilation)}`
 
 const typedVarMessageArray = (_: Compilation, name: CodeVariableName) =>
     `${name}: Message[]`
@@ -106,7 +106,7 @@ const isMessageMatching = (
     name: CodeVariableName,
     tokens: Array<number | string | MessageDatumType>
 ) => {
-    const MACROS = compilation.getMacros()
+    const MACROS = compilation.macros
     const conditionOnDatumCount = `${name}.datumCount === ${tokens.length}`
     const conditionsOnValues: Array<Code> = []
     const conditionsOnTypes: Array<Code> = tokens.map((token, tokenIndex) => {
@@ -114,6 +114,7 @@ const isMessageMatching = (
             if (typeof token === 'number') {
                 conditionsOnValues.push(
                     `${MACROS.readMessageFloatDatum(
+                        compilation,
                         name,
                         tokenIndex
                     )} === ${token}`
@@ -127,6 +128,7 @@ const isMessageMatching = (
             if (typeof token === 'string') {
                 conditionsOnValues.push(
                     `${MACROS.readMessageStringDatum(
+                        compilation,
                         name,
                         tokenIndex
                     )} === "${token}"`

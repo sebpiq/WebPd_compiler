@@ -29,146 +29,140 @@ import {
 
 export const ARRAYS_VARIABLE_NAME = 'ARRAYS'
 
-export class Compilation {
+export interface Compilation {
     readonly graph: PdDspGraph.Graph
     readonly nodeImplementations: NodeImplementations
     readonly settings: CompilerSettingsWithDefaults
-    readonly variableNames: VariableNames
+    readonly variableNames: VariableNames  
+    readonly macros: typeof ASC_MACROS | typeof JS_MACROS
+}
 
-    constructor(
-        graph: PdDspGraph.Graph,
-        nodeImplementations: NodeImplementations,
-        settings: CompilerSettings
-    ) {
-        this.graph = graph
-        this.nodeImplementations = nodeImplementations
-        this.settings = validateSettings(settings)
+export const wrapMacros = (unwrappedMacros: typeof JS_MACROS | typeof ASC_MACROS, compilation: Compilation): CodeMacros =>
+    ({
+        floatArrayType: unwrappedMacros.floatArrayType.bind(
+            undefined,
+            compilation
+        ),
+        typedVarInt: unwrappedMacros.typedVarInt.bind(undefined, compilation),
+        typedVarFloat: unwrappedMacros.typedVarFloat.bind(undefined, compilation),
+        typedVarString: unwrappedMacros.typedVarString.bind(
+            undefined,
+            compilation
+        ),
+        typedVarMessage: unwrappedMacros.typedVarMessage.bind(
+            undefined,
+            compilation
+        ),
+        typedVarFloatArray: unwrappedMacros.typedVarFloatArray.bind(
+            undefined,
+            compilation
+        ),
+        typedVarMessageArray: unwrappedMacros.typedVarMessageArray.bind(
+            undefined,
+            compilation
+        ),
+        castToInt: unwrappedMacros.castToInt.bind(undefined, compilation),
+        castToFloat: unwrappedMacros.castToFloat.bind(undefined, compilation),
+        functionHeader: unwrappedMacros.functionHeader.bind(
+            undefined,
+            compilation
+        ),
+        createMessage: unwrappedMacros.createMessage.bind(undefined, compilation),
+        isMessageMatching: unwrappedMacros.isMessageMatching.bind(
+            undefined,
+            compilation
+        ),
+        readMessageFloatDatum: unwrappedMacros.readMessageFloatDatum.bind(
+            undefined,
+            compilation
+        ),
+        readMessageStringDatum: unwrappedMacros.readMessageStringDatum.bind(
+            undefined,
+            compilation
+        ),
+        fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(
+            undefined,
+            compilation
+        ),
+    })
 
-        this.variableNames = {
-            n: createNamespace(
-                Object.values(graph).reduce<VariableNames['n']>(
-                    (nodeMap, node) => {
-                        const nodeImplementation = this.getNodeImplementation(
-                            node.type
-                        )
-                        const nodeStateVariables =
-                            nodeImplementation.stateVariables || []
-                        nodeMap[node.id] = {
-                            ins: createNamespace(
-                                Object.values(node.inlets).reduce<
-                                    NodeVariableNames['ins']
-                                >((nameMap, portlet) => {
-                                    nameMap[portlet.id] =
-                                        generateInletVariableName(
-                                            node.id,
-                                            portlet.id
-                                        )
-                                    return nameMap
-                                }, {})
-                            ),
-                            outs: createNamespace(
-                                Object.values(node.outlets).reduce<
-                                    NodeVariableNames['outs']
-                                >((nameMap, portlet) => {
-                                    nameMap[portlet.id] =
-                                        generateOutletVariableName(
-                                            node.id,
-                                            portlet.id
-                                        )
-                                    return nameMap
-                                }, {})
-                            ),
-                            state: createNamespace(
-                                nodeStateVariables.reduce<
-                                    NodeVariableNames['state']
-                                >((nameMap, stateVariable) => {
-                                    nameMap[stateVariable] =
-                                        generateStateVariableName(
-                                            node.id,
-                                            stateVariable
-                                        )
-                                    return nameMap
-                                }, {})
-                            ),
-                        }
-                        return nodeMap
-                    },
-                    {}
-                )
-            ),
-            g: {
-                arrays: ARRAYS_VARIABLE_NAME,
-                iterOutlet: 'O',
-                iterFrame: 'F',
-                frame: 'FRAME',
-                blockSize: 'BLOCK_SIZE',
-                sampleRate: 'SAMPLE_RATE',
-                output: 'OUTPUT',
-            },
-        }
+export const generateEngineVariableNames = (
+    nodeImplementations: NodeImplementations, 
+    graph: PdDspGraph.Graph
+): VariableNames =>
+    ({
+        n: createNamespace(
+            Object.values(graph).reduce<VariableNames['n']>(
+                (nodeMap, node) => {
+                    const nodeImplementation = getNodeImplementation(
+                        nodeImplementations,
+                        node.type
+                    )
+                    const nodeStateVariables =
+                        nodeImplementation.stateVariables || []
+                    nodeMap[node.id] = {
+                        ins: createNamespace(
+                            Object.values(node.inlets).reduce<
+                                NodeVariableNames['ins']
+                            >((nameMap, portlet) => {
+                                nameMap[portlet.id] =
+                                    generateInletVariableName(
+                                        node.id,
+                                        portlet.id
+                                    )
+                                return nameMap
+                            }, {})
+                        ),
+                        outs: createNamespace(
+                            Object.values(node.outlets).reduce<
+                                NodeVariableNames['outs']
+                            >((nameMap, portlet) => {
+                                nameMap[portlet.id] =
+                                    generateOutletVariableName(
+                                        node.id,
+                                        portlet.id
+                                    )
+                                return nameMap
+                            }, {})
+                        ),
+                        state: createNamespace(
+                            nodeStateVariables.reduce<
+                                NodeVariableNames['state']
+                            >((nameMap, stateVariable) => {
+                                nameMap[stateVariable] =
+                                    generateStateVariableName(
+                                        node.id,
+                                        stateVariable
+                                    )
+                                return nameMap
+                            }, {})
+                        ),
+                    }
+                    return nodeMap
+                },
+                {}
+            )
+        ),
+        g: {
+            arrays: ARRAYS_VARIABLE_NAME,
+            iterOutlet: 'O',
+            iterFrame: 'F',
+            frame: 'FRAME',
+            blockSize: 'BLOCK_SIZE',
+            sampleRate: 'SAMPLE_RATE',
+            output: 'OUTPUT',
+        },
+    })
+
+export const getNodeImplementation = (
+    nodeImplementations: NodeImplementations,
+    nodeType: PdSharedTypes.NodeType
+): NodeImplementation => {
+    const nodeImplementation = nodeImplementations[nodeType]
+    if (!nodeImplementation) {
+        throw new Error(`node ${nodeType} is not implemented`)
     }
-
-    getMacros(): CodeMacros {
-        let unwrappedMacros =
-            this.settings.target === 'javascript' ? JS_MACROS : ASC_MACROS
-        return {
-            floatArrayType: unwrappedMacros.floatArrayType.bind(
-                undefined,
-                this
-            ),
-            typedVarInt: unwrappedMacros.typedVarInt.bind(undefined, this),
-            typedVarFloat: unwrappedMacros.typedVarFloat.bind(undefined, this),
-            typedVarString: unwrappedMacros.typedVarString.bind(
-                undefined,
-                this
-            ),
-            typedVarMessage: unwrappedMacros.typedVarMessage.bind(
-                undefined,
-                this
-            ),
-            typedVarFloatArray: unwrappedMacros.typedVarFloatArray.bind(
-                undefined,
-                this
-            ),
-            typedVarMessageArray: unwrappedMacros.typedVarMessageArray.bind(
-                undefined,
-                this
-            ),
-            castToInt: unwrappedMacros.castToInt.bind(undefined, this),
-            castToFloat: unwrappedMacros.castToFloat.bind(undefined, this),
-            functionHeader: unwrappedMacros.functionHeader.bind(
-                undefined,
-                this
-            ),
-            createMessage: unwrappedMacros.createMessage.bind(undefined, this),
-            isMessageMatching: unwrappedMacros.isMessageMatching.bind(
-                undefined,
-                this
-            ),
-            readMessageFloatDatum: unwrappedMacros.readMessageFloatDatum.bind(
-                undefined,
-                this
-            ),
-            readMessageStringDatum: unwrappedMacros.readMessageStringDatum.bind(
-                undefined,
-                this
-            ),
-            fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(
-                undefined,
-                this
-            ),
-        }
-    }
-
-    getNodeImplementation = (
-        nodeType: PdSharedTypes.NodeType
-    ): NodeImplementation => {
-        const nodeImplementation = this.nodeImplementations[nodeType]
-        if (!nodeImplementation) {
-            throw new Error(`node ${nodeType} is not implemented`)
-        }
-        return nodeImplementation
-    }
+    return nodeImplementation
 }
 
 export const validateSettings = (
@@ -176,7 +170,7 @@ export const validateSettings = (
 ): CompilerSettingsWithDefaults => {
     const portSpecs = settings.portSpecs || {}
     const messageListenerSpecs = settings.messageListenerSpecs || {}
-    const bitDepth = settings.bitDepth || 64
+    const bitDepth = settings.bitDepth
     if (![32, 64].includes(bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }

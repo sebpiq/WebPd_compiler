@@ -11,20 +11,21 @@
 
 import { jest } from '@jest/globals'
 import assert from 'assert'
-import { Compilation } from '../compilation'
 import { round } from '../test-helpers'
-import { CompilerSettings, NodeImplementations, PortSpecs } from '../types'
+import { CompilerSettingsWithDefaults, NodeImplementations, PortSpecs } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports } from './types'
 import { createEngine } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { generateInletVariableName } from '../variable-names'
+import { Compilation, generateEngineVariableNames, wrapMacros } from '../compilation'
+import MACROS from './macros'
 
 describe('compileToAssemblyscript', () => {
     jest.setTimeout(10000)
 
-    const COMPILER_SETTINGS: CompilerSettings = {
+    const COMPILER_SETTINGS: CompilerSettingsWithDefaults = {
         channelCount: 2,
         target: 'assemblyscript',
         bitDepth: 32,
@@ -51,8 +52,18 @@ describe('compileToAssemblyscript', () => {
             (key) => key.startsWith('read_') || key.startsWith('write_')
         )
 
-    const compileWasmExports = async (graph: PdDspGraph.Graph, settings: CompilerSettings, extraCode: string = '') => {
-        const compilation = new Compilation(graph, NODE_IMPLEMENTATIONS, settings)
+    const compileWasmExports = async (
+        graph: PdDspGraph.Graph, 
+        settings: CompilerSettingsWithDefaults, 
+        extraCode: string = ''
+    ) => {
+        const compilation: Compilation = {
+            graph, 
+            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            settings,
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
+        }
         const code = compileToAssemblyscript(compilation)
         const wasmModule = await compileWasmModule(`${extraCode}\n${code}`)
         const engine = await createEngine(wasmModule, settings)
@@ -60,7 +71,7 @@ describe('compileToAssemblyscript', () => {
     }
 
     it('should create the specified ports', async () => {
-        const settings = {
+        const settings: CompilerSettingsWithDefaults = {
             ...COMPILER_SETTINGS,
             portSpecs: {
                 bla: { access: 'r', type: 'float' },
@@ -162,7 +173,7 @@ describe('compileToAssemblyscript', () => {
         )
     })
 
-    it.only('should create inlet listeners and trigger them whenever inlets receive new messages', async () => {
+    it('should create inlet listeners and trigger them whenever inlets receive new messages', async () => {
         const called: Array<Array<PdSharedTypes.ControlValue>> = []
         const inletVariableName = generateInletVariableName('someNode', 'someInlet')
         const settings = {
@@ -206,7 +217,13 @@ describe('compileToAssemblyscript', () => {
             }
         })
 
-        const compilation = new Compilation(graph, nodeImplementations, settings)
+        const compilation: Compilation = {
+            graph, 
+            nodeImplementations, 
+            settings,
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(nodeImplementations, graph)
+        }
         const code = compileToAssemblyscript(compilation)
         const wasmModule = await compileWasmModule(code)
         const engine = await createEngine(wasmModule, settings)
@@ -329,7 +346,13 @@ describe('compileToAssemblyscript', () => {
                 'bla': {access: 'w', type: 'float'},
             } as PortSpecs,
         }
-        const compilation = new Compilation({}, NODE_IMPLEMENTATIONS, settings)
+        const compilation: Compilation = {
+            graph: {}, 
+            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            settings,
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, {})
+        }
         assert.throws(() => compileToAssemblyscript(compilation))
     })
 

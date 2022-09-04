@@ -12,10 +12,11 @@
 import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations, CompilerSettings } from '../types'
-import { Compilation } from '../compilation'
+import { Compilation, generateEngineVariableNames, validateSettings } from '../compilation'
 import { normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileLoop from './compile-loop'
+import MACROS from '../engine-assemblyscript/macros'
 
 describe('compileLoop', () => {
     jest.setTimeout(10000)
@@ -89,11 +90,13 @@ describe('compileLoop', () => {
             },
         })
 
-        const compilation = new Compilation(
-            graph,
-            NODE_IMPLEMENTATIONS,
-            COMPILER_SETTINGS
-        )
+        const compilation: Compilation = {
+            graph, 
+            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            settings: validateSettings(COMPILER_SETTINGS),
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
+        }
 
         const loop = compileLoop(compilation, [
             graph.msg,
@@ -173,11 +176,13 @@ describe('compileLoop', () => {
             },
         })
 
-        const compilation = new Compilation(
-            graph,
-            NODE_IMPLEMENTATIONS,
-            COMPILER_SETTINGS
-        )
+        const compilation: Compilation = {
+            graph, 
+            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            settings: validateSettings(COMPILER_SETTINGS),
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
+        }
 
         const loop = compileLoop(compilation, [
             graph.osc,
@@ -239,11 +244,13 @@ describe('compileLoop', () => {
             },
         })
 
-        const compilation = new Compilation(
-            graph,
-            NODE_IMPLEMENTATIONS,
-            COMPILER_SETTINGS
-        )
+        const compilation: Compilation = {
+            graph, 
+            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            settings: validateSettings(COMPILER_SETTINGS),
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
+        }
 
         const loop = compileLoop(compilation, [graph.osc, graph.dac])
 

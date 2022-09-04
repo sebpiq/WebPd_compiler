@@ -12,7 +12,7 @@
 import { traversal, getters } from '@webpd/dsp-graph'
 import { renderCode } from '../code-helpers'
 import { Code } from '../types'
-import { Compilation } from '../compilation'
+import { Compilation, getNodeImplementation, wrapMacros } from '../compilation'
 
 export default (
     compilation: Compilation,
@@ -27,7 +27,7 @@ export default (
             const nodeVariableNames = compilation.variableNames.n[node.id]
             const inletsVariableNames = Object.values(nodeVariableNames.ins)
             return [
-                // 
+                // 0. Call message listeners if some inlets have new messages
                 Object.keys(messageListenerSpecs)
                     .filter(variableName => inletsVariableNames.includes(variableName))
                     .map(variableName => `
@@ -37,12 +37,12 @@ export default (
                     `),
                 
                 // 1. Node loop implementation
-                compilation.getNodeImplementation(node.type).loop(
+                getNodeImplementation(compilation.nodeImplementations, node.type).loop(
                     node,
                     {
                         ...nodeVariableNames,
                         globs,
-                        MACROS: compilation.getMacros(),
+                        MACROS: wrapMacros(compilation.macros, compilation),
                     },
                     compilation.settings
                 ),

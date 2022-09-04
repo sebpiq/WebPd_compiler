@@ -1,21 +1,18 @@
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { NodeImplementations, CompilerSettings } from './types'
-import { Compilation, validateSettings } from './compilation'
+import { NodeImplementations } from './types'
+import { Compilation, generateEngineVariableNames, getNodeImplementation, validateSettings, wrapMacros } from './compilation'
 import assert from 'assert'
 import {
     generateInletVariableName,
     generateOutletVariableName,
     generateStateVariableName,
 } from './variable-names'
+import ASC_MACROS from './engine-assemblyscript/macros'
+import JS_MACROS from './engine-javascript/macros'
 
 describe('compilation', () => {
-    const COMPILER_SETTINGS: CompilerSettings = {
-        channelCount: 2,
-        target: 'javascript',
-        bitDepth: 32,
-    }
 
-    describe('Compilation', () => {
+    describe('generateEngineVariableNames', () => {
         it('should create variable names for nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
@@ -44,14 +41,13 @@ describe('compilation', () => {
                 },
             })
 
-            const compilation = new Compilation(
-                graph,
+            const variableNames = generateEngineVariableNames(
                 nodeImplementations,
-                COMPILER_SETTINGS
+                graph,
             )
 
             assert.deepStrictEqual(
-                JSON.parse(JSON.stringify({ ...compilation.variableNames.n })),
+                JSON.parse(JSON.stringify({ ...variableNames.n })),
                 {
                     myOsc: {
                         ins: {
@@ -100,33 +96,56 @@ describe('compilation', () => {
                 },
             })
 
-            const compilation = new Compilation(
-                graph,
+            const variableNames = generateEngineVariableNames(
                 nodeImplementations,
-                COMPILER_SETTINGS
+                graph,
             )
 
-            assert.throws(() => compilation.variableNames.n.unknownNode)
+            assert.throws(() => variableNames.n.unknownNode)
             assert.throws(
-                () => compilation.variableNames.n.myOsc.ins['unknown portlet']
+                () => variableNames.n.myOsc.ins['unknown portlet']
             )
             assert.throws(
-                () => compilation.variableNames.n.myOsc.outs['unknown portlet']
+                () => variableNames.n.myOsc.outs['unknown portlet']
             )
             assert.throws(
-                () => compilation.variableNames.n.myOsc.state['unknown var']
+                () => variableNames.n.myOsc.state['unknown var']
             )
         })
+    })
 
-        it('should bind the macros to pass compilation as first argument', () => {
-            const graph = makeGraph({})
-            const nodeImplementations: NodeImplementations = {}
-            const compilation = new Compilation(graph, nodeImplementations, {
-                ...COMPILER_SETTINGS,
-                target: 'assemblyscript',
-            })
-            const MACROS = compilation.getMacros()
-            assert.strictEqual(MACROS.typedVarFloat('bla'), 'bla: f32')
+    describe('wrapMacros', () => {
+        
+        it('should bind assemblyscript macros to pass compilation as first argument', () => {
+            const compilation: Compilation = {
+                graph: {}, 
+                nodeImplementations: {},
+                settings: validateSettings({
+                    target: 'assemblyscript',
+                    bitDepth: 32,
+                    channelCount: 2,
+                }),
+                macros: ASC_MACROS,
+                variableNames: generateEngineVariableNames({}, {})
+            }
+            const wrappedMacros = wrapMacros(ASC_MACROS, compilation)
+            assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla: f32')
+        })
+
+        it('should bind javascript macros to pass compilation as first argument', () => {
+            const compilation: Compilation = {
+                graph: {}, 
+                nodeImplementations: {},
+                settings: validateSettings({
+                    target: 'javascript',
+                    bitDepth: 32,
+                    channelCount: 2,
+                }),
+                macros: JS_MACROS,
+                variableNames: generateEngineVariableNames({}, {})
+            }
+            const wrappedMacros = wrapMacros(JS_MACROS, compilation)
+            assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla')
         })
     })
 
@@ -137,11 +156,10 @@ describe('compilation', () => {
                 channelCount: 2,
                 bitDepth: 32,
             })
-            assert.strictEqual((settings as any).bitDepth, 64)
             assert.deepStrictEqual((settings as any).portSpecs, {})
         })
 
-        it('should throw error if settings invalid', () => {
+        it('should throw error if bitDepth invalid', () => {
             assert.throws(() =>
                 validateSettings({
                     target: 'assemblyscript',
@@ -150,6 +168,23 @@ describe('compilation', () => {
                     bitDepth: 666,
                 } as any)
             )
+        })
+    })
+
+    describe('getNodeImplementation', () => {
+        const NODE_IMPLEMENTATIONS: NodeImplementations = {
+            'someNodeType': {loop: () => ``}
+        }
+
+        it('should return node implementation if it exists', () => {
+            assert.strictEqual(
+                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType'), 
+                NODE_IMPLEMENTATIONS['someNodeType']
+            )
+        })
+
+        it('should throw an error if implementation doesnt exist', () => {
+            assert.throws(() => getNodeImplementation(NODE_IMPLEMENTATIONS, 'someUnknownNodeType'))
         })
     })
 })

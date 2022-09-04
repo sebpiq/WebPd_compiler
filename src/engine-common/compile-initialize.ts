@@ -11,7 +11,7 @@
 
 import { renderCode } from '../code-helpers'
 import { Code } from '../types'
-import { Compilation } from '../compilation'
+import { Compilation, getNodeImplementation, wrapMacros } from '../compilation'
 
 export default (
     compilation: Compilation,
@@ -26,7 +26,7 @@ export default (
 
         ${graphTraversal.map((node) => {
             const { ins, outs } = compilation.variableNames.n[node.id]
-            const nodeInitialize = compilation.getNodeImplementation(node.type).initialize
+            const nodeInitialize = getNodeImplementation(compilation.nodeImplementations, node.type).initialize
             return [
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'control'
@@ -43,7 +43,7 @@ export default (
                     {
                         ...compilation.variableNames.n[node.id],
                         globs: globs,
-                        MACROS: compilation.getMacros(),
+                        MACROS: wrapMacros(compilation.macros, compilation),
                     },
                     compilation.settings
                 ): '',

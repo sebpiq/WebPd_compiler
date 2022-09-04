@@ -28,9 +28,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { channelCount, bitDepth, portSpecs, messageListenerSpecs } = compilation.settings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
-    const MACROS = compilation.getMacros()
+    const MACROS = compilation.macros
     const FloatType = bitDepth === 32 ? 'f32' : 'f64'
-    const FloatArrayType = MACROS.floatArrayType()
+    const FloatArrayType = MACROS.floatArrayType(compilation)
     const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
     const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
     const CORE_CODE = assemblyscriptCoreCode
@@ -82,7 +82,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     return renderCode`
         ${CORE_CODE}
 
-        let ${MACROS.typedVarFloatArray(globs.output)} = new ${FloatArrayType}(0)
+        let ${MACROS.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
     
         ${compileDeclare(compilation, graphTraversal)}
 

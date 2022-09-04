@@ -12,10 +12,11 @@
 import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations, CompilerSettings } from '../types'
-import { Compilation } from '../compilation'
+import { Compilation, generateEngineVariableNames, validateSettings, wrapMacros } from '../compilation'
 import { normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileDeclare from './compile-declare'
+import MACROS from '../engine-javascript/macros'
 
 describe('compileDeclare', () => {
     jest.setTimeout(10000)
@@ -62,11 +63,13 @@ describe('compileDeclare', () => {
             },
         }
 
-        const compilation = new Compilation(
-            graph,
-            nodeImplementations,
-            COMPILER_SETTINGS
-        )
+        const compilation: Compilation = {
+            graph, 
+            nodeImplementations, 
+            settings: validateSettings(COMPILER_SETTINGS),
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(nodeImplementations, graph)
+        }
 
         const declareCode = compileDeclare(compilation, [graph.osc, graph.dac])
 
@@ -125,11 +128,13 @@ describe('compileDeclare', () => {
             },
         }
 
-        const compilation = new Compilation(
-            graph,
-            nodeImplementations,
-            COMPILER_SETTINGS
-        )
+        const compilation: Compilation = {
+            graph, 
+            nodeImplementations, 
+            settings: validateSettings(COMPILER_SETTINGS),
+            macros: MACROS,
+            variableNames: generateEngineVariableNames(nodeImplementations, graph)
+        }
 
         assert.doesNotThrow(() =>
             compileDeclare(compilation, [graph.osc, graph.dac])
