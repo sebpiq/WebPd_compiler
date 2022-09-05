@@ -12,23 +12,19 @@
 import { NODE_BUILDERS } from '@webpd/dsp-graph'
 import NODE_IMPLEMENTATIONS from '.'
 import {
+    Compilation,
     CompilerSettings,
     NodeImplementations,
     PortSpecs,
 } from '../types'
-import {
-    generateInletVariableName,
-    generateOutletVariableName,
-    generateStateVariableName,
-} from '../variable-names'
-import { renderCode } from '../code-helpers'
+import { renderCode } from '../compile-helpers'
 import { JavaScriptEngine, JavaScriptEngineCode } from '../engine-javascript/types'
 import { createEngine, AssemblyScriptWasmEngine } 
     from '../engine-assemblyscript/assemblyscript-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
-import { Compilation, getMacros } from '../compilation'
+import { generateInletVariableName, generateOutletVariableName, generateStateVariableName, getMacros } from '../compile'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/types'
 import compileToAssemblyscript from '../engine-assemblyscript/compile-to-assemblyscript'
 import compileToJavascript from '../engine-javascript/compile-to-javascript'

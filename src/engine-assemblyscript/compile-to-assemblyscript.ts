@@ -10,8 +10,7 @@
  */
 
 import { traversal } from '@webpd/dsp-graph'
-import { renderCode } from '../code-helpers'
-import { Compilation } from '../compilation'
+import { renderCode } from '../compile-helpers'
 import assemblyscriptCoreCode from './core-code.asc'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
@@ -20,7 +19,7 @@ import {
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Code, PortSpecs } from '../types'
+import { Code, Compilation, PortSpecs } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode } from './types'
 
@@ -28,7 +27,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, portSpecs } = compilation
     const { bitDepth, channelCount } = audioSettings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
-    const globs = compilation.variableNames.g
+    const globs = compilation.engineVariableNames.g
     const MACROS = compilation.macros
     const FloatType = bitDepth === 32 ? 'f32' : 'f64'
     const FloatArrayType = MACROS.floatArrayType(compilation)

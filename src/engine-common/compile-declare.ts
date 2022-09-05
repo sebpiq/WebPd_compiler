@@ -9,15 +9,14 @@
  *
  */
 
-import { renderCode } from '../code-helpers'
-import { Code } from '../types'
-import { Compilation, getNodeImplementation, wrapMacros } from '../compilation'
+import { getNodeImplementation, renderCode, wrapMacros } from '../compile-helpers'
+import { Code, Compilation } from '../types'
 
 export default (
     compilation: Compilation,
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
-    const globs = compilation.variableNames.g
+    const globs = compilation.engineVariableNames.g
     const MACROS = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`
@@ -28,7 +27,7 @@ export default (
         let ${MACROS.typedVarFloat(globs.sampleRate)}
 
         ${graphTraversal.map((node) => {
-            const { ins, outs } = compilation.variableNames.n[node.id]
+            const { ins, outs } = compilation.engineVariableNames.n[node.id]
             const nodeDeclare = getNodeImplementation(compilation.nodeImplementations, node.type).declare
             return [
                 Object.values(node.inlets).map((inlet) =>
@@ -44,7 +43,7 @@ export default (
                 nodeDeclare ? nodeDeclare(
                     node,
                     {
-                        ...compilation.variableNames.n[node.id],
+                        ...compilation.engineVariableNames.n[node.id],
                         globs: globs,
                         MACROS,
                     },

@@ -12,15 +12,14 @@
 import { jest } from '@jest/globals'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
-import { NodeImplementations } from '../types'
+import { Compilation, NodeImplementations } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports } from './types'
 import { createEngine } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { generateInletVariableName } from '../variable-names'
-import { Compilation } from '../compilation'
 import MACROS from './macros'
+import { generateInletVariableName } from '../compile'
 
 describe('compileToAssemblyscript', () => {
     jest.setTimeout(10000)

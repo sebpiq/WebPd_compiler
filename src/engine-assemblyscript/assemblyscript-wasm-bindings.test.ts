@@ -11,7 +11,6 @@
 
 import assert from 'assert'
 import { jest } from '@jest/globals'
-import { ARRAYS_VARIABLE_NAME, Compilation } from '../compilation'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -25,6 +24,7 @@ import {
 } from './assemblyscript-wasm-bindings'
 import {
     Code,
+    Compilation,
     PortSpecs,
 } from '../types'
 import compileToAssemblyscript, {
@@ -64,7 +64,7 @@ describe('AssemblyScriptWasmEngine', () => {
     describe('configure/loop', () => {
         it('should configure and return an output block of the right size', async () => {
             let block: Float32Array | Float64Array
-            const compilation: Compilation = makeCompilation({ macros: MACROS })
+            const compilation = makeCompilation({ macros: MACROS })
             const { engine: engine2Channels } = await getEngine(
                 compileToAssemblyscript({
                     ...compilation,
@@ -218,7 +218,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 compileToAssemblyscript(compilation) +
                     `
                 export function testReadArray (arrayName: string, index: i32): f64 {
-                    return ${ARRAYS_VARIABLE_NAME}[arrayName][index]
+                    return ARRAYS[arrayName][index]
                 }
             `
             )

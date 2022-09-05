@@ -12,7 +12,6 @@
 import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations } from '../types'
-import { Compilation } from '../compilation'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileInitialize from './compile-initialize'
@@ -57,7 +56,7 @@ describe('compileInitialize', () => {
             },
         }
 
-        const compilation: Compilation = makeCompilation({
+        const compilation = makeCompilation({
             graph, 
             nodeImplementations, 
             audioSettings: {
@@ -125,7 +124,7 @@ describe('compileInitialize', () => {
             },
         }
 
-        const compilation: Compilation = makeCompilation({
+        const compilation = makeCompilation({
             graph, 
             nodeImplementations, 
             audioSettings: {

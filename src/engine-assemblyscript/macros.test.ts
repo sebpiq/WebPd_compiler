@@ -10,7 +10,6 @@
  */
 
 import assert from 'assert'
-import { Compilation, validateSettings, generateEngineVariableNames } from '../compilation'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -20,7 +19,7 @@ import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import MACROS from './macros'
 
 describe('macros', () => {
-    const COMPILATION: Compilation = makeCompilation({
+    const COMPILATION = makeCompilation({
         macros: MACROS,
     })
 

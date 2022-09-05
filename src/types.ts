@@ -9,7 +9,6 @@
  *
  */
 
-import { Compilation } from './compilation'
 import {
     MESSAGE_DATUM_TYPE_STRING,
     MESSAGE_DATUM_TYPE_FLOAT,
@@ -27,6 +26,16 @@ export type CodeVariableName = string
 
 // Map of public engine ports for accessing data inside the engine
 export type EnginePorts = { [portName: string]: (...args: any) => any }
+
+export interface Compilation {
+    readonly graph: PdDspGraph.Graph
+    readonly nodeImplementations: NodeImplementations
+    readonly audioSettings: AudioSettings
+    readonly portSpecs: PortSpecs
+    readonly messageListenerSpecs: MessageListenerSpecs
+    readonly engineVariableNames: EngineVariableNames  
+    readonly macros: CodeMacros
+}
 
 export type CodeMacros = {
     floatArrayType: (compilation: Compilation) => Code
@@ -66,7 +75,7 @@ export interface NodeVariableNames {
     state: { [key: string]: CodeVariableName }
 }
 
-export interface VariableNames {
+export interface EngineVariableNames {
     // Namespace for individual nodes
     n: { [nodeId: PdDspGraph.NodeId]: NodeVariableNames }
 
@@ -82,14 +91,10 @@ export interface VariableNames {
     }
 }
 
-export type VariableNameGenerator = (
-    localVariableName: string
-) => CodeVariableName
-
 export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
     variableNames: NodeVariableNames & {
-        globs: VariableNames['g']
+        globs: EngineVariableNames['g']
         MACROS: WrappedCodeMacros
     },
     compilation: Compilation

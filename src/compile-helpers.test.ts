@@ -10,7 +10,11 @@
  */
 
 import assert from 'assert'
-import { createNamespace, renderCode } from './code-helpers'
+import JS_MACROS from './engine-javascript/macros'
+import ASC_MACROS from './engine-assemblyscript/macros'
+import { createNamespace, getNodeImplementation, renderCode, wrapMacros } from './compile-helpers'
+import { makeCompilation } from './test-helpers'
+import { NodeImplementations } from './types'
 
 describe('code-helpers', () => {
     describe('renderCode', () => {
@@ -58,6 +62,38 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
                 JSON.stringify(namespace),
                 '{"bla":"1","hello":"2"}'
             )
+        })
+    })
+
+    describe('wrapMacros', () => {
+        
+        it('should bind assemblyscript macros to pass compilation as first argument', () => {
+            const compilation = makeCompilation({macros: ASC_MACROS})
+            const wrappedMacros = wrapMacros(ASC_MACROS, compilation)
+            assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla: f32')
+        })
+    
+        it('should bind javascript macros to pass compilation as first argument', () => {
+            const compilation = makeCompilation({macros: JS_MACROS})
+            const wrappedMacros = wrapMacros(JS_MACROS, compilation)
+            assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla')
+        })
+    })
+
+    describe('getNodeImplementation', () => {
+        const NODE_IMPLEMENTATIONS: NodeImplementations = {
+            'someNodeType': {loop: () => ``}
+        }
+
+        it('should return node implementation if it exists', () => {
+            assert.strictEqual(
+                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType'), 
+                NODE_IMPLEMENTATIONS['someNodeType']
+            )
+        })
+
+        it('should throw an error if implementation doesnt exist', () => {
+            assert.throws(() => getNodeImplementation(NODE_IMPLEMENTATIONS, 'someUnknownNodeType'))
         })
     })
 })

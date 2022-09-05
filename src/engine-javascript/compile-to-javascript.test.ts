@@ -11,9 +11,8 @@
 
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
-import { Compilation, generateEngineVariableNames, validateSettings } from '../compilation'
 import { makeCompilation } from '../test-helpers'
-import { CompilerSettings, NodeImplementations } from '../types'
+import { NodeImplementations } from '../types'
 import compileToJavascript from './compile-to-javascript'
 import MACROS from './macros'
 import { JavaScriptEngine } from './types'
@@ -32,7 +31,7 @@ describe('compileToJavascript', () => {
     }
 
     it('should create the specified ports', () => {
-        const compilation: Compilation = makeCompilation({
+        const compilation = makeCompilation({
             nodeImplementations: NODE_IMPLEMENTATIONS, 
             portSpecs: {
                 bla: { access: 'r', type: 'float' },
@@ -91,7 +90,7 @@ describe('compileToJavascript', () => {
                 outlets: { '0': { id: '0', type: 'signal' } },
             },
         })
-        const compilation: Compilation = makeCompilation({
+        const compilation = makeCompilation({
             graph, 
             nodeImplementations: NODE_IMPLEMENTATIONS, 
             macros: MACROS,

@@ -9,8 +9,7 @@
  *
  */
 
-import { renderCode } from '../code-helpers'
-import { Compilation } from '../compilation'
+import { renderCode } from '../compile-helpers'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -19,6 +18,7 @@ import {
     Code,
     CodeMacros,
     CodeVariableName,
+    Compilation,
     MessageDatumType,
 } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
@@ -165,7 +165,7 @@ const fillInLoopOutput = (
     channel: number,
     value: CodeVariableName
 ) => {
-    const globs = compilation.variableNames.g
+    const globs = compilation.engineVariableNames.g
     return `${globs.output}[${globs.iterFrame} + ${globs.blockSize} * ${channel}] = ${value}`
 }
 

@@ -10,9 +10,8 @@
  */
 
 import { traversal, getters } from '@webpd/dsp-graph'
-import { renderCode } from '../code-helpers'
-import { Code } from '../types'
-import { Compilation, getNodeImplementation, wrapMacros } from '../compilation'
+import { getNodeImplementation, renderCode, wrapMacros } from '../compile-helpers'
+import { Code, Compilation } from '../types'
 
 export default (
     compilation: Compilation,
@@ -20,12 +19,12 @@ export default (
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const { messageListenerSpecs } = compilation
-    const globs = compilation.variableNames.g
+    const globs = compilation.engineVariableNames.g
     const MACROS = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`${[
         graphTraversal.map((node) => {
-            const nodeVariableNames = compilation.variableNames.n[node.id]
+            const nodeVariableNames = compilation.engineVariableNames.n[node.id]
             const inletsVariableNames = Object.values(nodeVariableNames.ins)
             return [
                 // 0. Call message listeners if some inlets have new messages
@@ -61,7 +60,7 @@ export default (
                             { nodeId: sinkNodeId, portletId: inletId },
                         ]) => {
                             const { outs: sourceOuts } = nodeVariableNames
-                            const { ins: sinkIns } = compilation.variableNames.n[
+                            const { ins: sinkIns } = compilation.engineVariableNames.n[
                                 sinkNodeId
                             ]
                             return getters.getOutlet(node, outletId).type === 'control' ? `
@@ -74,7 +73,7 @@ export default (
         }),
         // 3. Control inlets / outlets cleanup
         graphTraversal.map((node) => {
-            const { ins, outs } = compilation.variableNames.n[node.id]
+            const { ins, outs } = compilation.engineVariableNames.n[node.id]
             return [
                 Object.values(node.inlets)
                     .filter((inlet) => inlet.type === 'control')

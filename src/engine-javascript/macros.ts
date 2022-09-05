@@ -9,12 +9,11 @@
  *
  */
 
-import { Compilation } from '../compilation'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
-import { Code, CodeMacros, CodeVariableName, MessageDatumType } from '../types'
+import { Code, CodeMacros, CodeVariableName, Compilation, MessageDatumType } from '../types'
 
 const floatArrayType = (compilation: Compilation) => {
     const { bitDepth } = compilation.audioSettings
@@ -86,7 +85,7 @@ const fillInLoopOutput = (
     channel: number,
     value: CodeVariableName
 ) => {
-    const globs = compilation.variableNames.g
+    const globs = compilation.engineVariableNames.g
     return `${globs.output}[${channel}][${globs.iterFrame}] = ${value}`
 }
 

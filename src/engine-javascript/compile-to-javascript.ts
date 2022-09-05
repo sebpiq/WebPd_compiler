@@ -10,18 +10,17 @@
  */
 
 import { traversal } from '@webpd/dsp-graph'
-import { renderCode } from '../code-helpers'
-import { Compilation } from '../compilation'
+import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Code } from '../types'
+import { Code, Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const { portSpecs } = compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
-    const globs = compilation.variableNames.g
+    const globs = compilation.engineVariableNames.g
 
     // prettier-ignore
     return renderCode`

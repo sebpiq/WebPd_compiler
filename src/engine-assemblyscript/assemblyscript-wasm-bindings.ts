@@ -18,9 +18,10 @@
  *
  * @module
  */
-import { Compilation } from '../compilation'
+
 import {
     CodeVariableName,
+    Compilation,
     EnginePorts,
 } from '../types'
 import {

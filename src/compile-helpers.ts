@@ -9,7 +9,7 @@
  *
  */
 
-import { Code } from './types'
+import { Code, CodeMacros, Compilation, NodeImplementation, NodeImplementations, WrappedCodeMacros } from './types'
 
 type CodeLines = Array<CodeLines | Code>
 
@@ -41,6 +41,13 @@ const renderCodeLines = (codeLines: CodeLines | Code): Code => {
     return codeLines
 }
 
+/**
+ * Helper to generate VariableNames, essentially a proxy object that throws an error
+ * when trying to access undefined properties.
+ * 
+ * @param namespace 
+ * @returns 
+ */
 export const createNamespace = <T extends Object>(namespace: T) => {
     return new Proxy<T>(namespace, {
         get: (target, k) => {
@@ -60,4 +67,36 @@ export const createNamespace = <T extends Object>(namespace: T) => {
             return (target as any)[key]
         },
     })
+}
+
+export const wrapMacros = (
+    codeMacros: CodeMacros, 
+    compilation: Compilation
+): WrappedCodeMacros => {
+    const wrappedCodeMacros = {} as Partial<WrappedCodeMacros>
+    Object.entries(codeMacros).forEach(([key, macro]) => {
+        wrappedCodeMacros[key as keyof CodeMacros] = macro.bind(
+            undefined,
+            compilation
+        )
+    })
+    return wrappedCodeMacros as WrappedCodeMacros
+}
+
+/**
+ * Helper to get node implementation or throw an error if not implemented.
+ * 
+ * @param nodeImplementations 
+ * @param nodeType 
+ * @returns 
+ */
+export const getNodeImplementation = (
+    nodeImplementations: NodeImplementations,
+    nodeType: PdSharedTypes.NodeType
+): NodeImplementation => {
+    const nodeImplementation = nodeImplementations[nodeType]
+    if (!nodeImplementation) {
+        throw new Error(`node ${nodeType} is not implemented`)
+    }
+    return nodeImplementation
 }

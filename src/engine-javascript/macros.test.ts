@@ -10,7 +10,6 @@
  */
 
 import assert from 'assert'
-import { Compilation } from '../compilation'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -19,7 +18,7 @@ import { makeCompilation } from '../test-helpers'
 import MACROS from './macros'
 
 describe('macros', () => {
-    const COMPILATION: Compilation = makeCompilation({
+    const COMPILATION = makeCompilation({
         macros: MACROS,
     })
 

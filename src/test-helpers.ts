@@ -9,8 +9,9 @@
  *
  */
 
-import { Compilation, generateEngineVariableNames } from "./compilation"
+import { generateEngineVariableNames } from "./compile"
 import MACROS from "./engine-javascript/macros"
+import { Compilation } from "./types"
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -37,7 +38,7 @@ export const makeCompilation = (compilation: Partial<Compilation>): Compilation 
         portSpecs: {},
         messageListenerSpecs: {},
         macros: MACROS,
-        variableNames,
+        engineVariableNames: variableNames,
         ...compilation,
     }
 }
