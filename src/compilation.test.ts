@@ -10,8 +10,8 @@
  */
 
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { NodeImplementations } from './types'
-import { Compilation, generateEngineVariableNames, getNodeImplementation, validateSettings, wrapMacros } from './compilation'
+import { MessageListenerSpecs, NodeImplementations, PortSpecs } from './types'
+import { Compilation, generateEngineVariableNames, generatePortSpecs, getNodeImplementation, validateSettings, wrapMacros } from './compilation'
 import assert from 'assert'
 import {
     generateInletVariableName,
@@ -179,6 +179,20 @@ describe('compilation', () => {
 
         it('should throw an error if implementation doesnt exist', () => {
             assert.throws(() => getNodeImplementation(NODE_IMPLEMENTATIONS, 'someUnknownNodeType'))
+        })
+    })
+
+    describe('generatePortSpecs', () => {
+        it('should generate portSpecs according to messageListenerSpecs', () => {
+            const messageListenerSpecs: MessageListenerSpecs = {
+                'bla': () => {},
+                'blo': () => {},
+            }
+            const portSpecs: PortSpecs = generatePortSpecs(messageListenerSpecs)
+            assert.deepStrictEqual(portSpecs, {
+                'bla': {type: 'messages', access: 'r'},
+                'blo': {type: 'messages', access: 'r'},
+            })
         })
     })
 })

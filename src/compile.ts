@@ -10,51 +10,20 @@
  */
 
 import { CompilerSettings, NodeImplementations, PortSpecs } from './types'
-import { Compilation, generateEngineVariableNames, validateSettings } from './compilation'
+import { Compilation, generateEngineVariableNames, generatePortSpecs, getMacros, validateSettings } from './compilation'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
-import ASC_MACROS from './engine-assemblyscript/macros'
-import JS_MACROS from './engine-javascript/macros'
 
 export default (
     graph: PdDspGraph.Graph,
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
-    const { audioSettings, messageListenerSpecs } = validateSettings(compilerSettings)
-    const macros = {
-        'assemblyscript': ASC_MACROS,
-        'javascript': JS_MACROS,
-    }[compilerSettings.target]
-
-    // TODO : move to compilation object ? Beware compilation object ravioli code. 
-    // Maybe more functional approach, passing down things like macros, etc ... 
-    // better layer things
-
-    // Merge `messageListenerSpecs` into `portSpecs` because message listeners need to have read access
-    // to the inlets they're listening to.
-    // !!! We're careful to deep-copy `portSpecs` so that the caller doesn't have strange bugs
-    // if we modify the passed `portSpecs` by mistake.
-    const portSpecs: PortSpecs = {}
-    Object.keys(messageListenerSpecs).map(variableName => {
-        if (portSpecs[variableName]) {
-            const spec = {...portSpecs[variableName]}
-            if (spec.type !== 'messages') {
-                throw new Error(`Incompatible portSpecs and messageListenerSpecs for variable ${variableName}`)
-            }
-            if (!spec.access.includes('r')) {
-                spec.access += 'r'
-            }
-            portSpecs[variableName] = spec
-        } else {
-            portSpecs[variableName] = {
-                access: 'r',
-                type: 'messages',
-            }
-        }
-    })
+    const { audioSettings, messageListenerSpecs, target } = validateSettings(compilerSettings)
+    const macros = getMacros(target)
+    const portSpecs: PortSpecs = generatePortSpecs(messageListenerSpecs)
 
     const compilation: Compilation = {
         graph,

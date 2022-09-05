@@ -10,6 +10,8 @@
  */
 
 import { createNamespace } from './code-helpers'
+import JS_MACROS from './engine-javascript/macros'
+import ASC_MACROS from './engine-assemblyscript/macros'
 import {
     AudioSettings,
     WrappedCodeMacros,
@@ -133,6 +135,25 @@ export const getNodeImplementation = (
     return nodeImplementation
 }
 
+/**
+ * Helper to generate `portSpecs` from various settings.
+ * 
+ * @param messageListenerSpecs 
+ * @returns 
+ */
+export const generatePortSpecs = (messageListenerSpecs: MessageListenerSpecs): PortSpecs => {
+    const portSpecs: PortSpecs = {}
+
+    // Message listeners need to have read access to the inlets they're listening to.
+    Object.keys(messageListenerSpecs).map(variableName => {
+        portSpecs[variableName] = {
+            access: 'r',
+            type: 'messages',
+        }
+    })
+    return portSpecs
+}
+
 export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettings => {
@@ -145,5 +166,13 @@ export const validateSettings = (
         messageListenerSpecs,
     }
 }
+
+/**
+ * Helper to get code macros from compile target.
+ * @param target 
+ * @returns 
+ */
+export const getMacros = (target: CompilerSettings["target"]): CodeMacros => 
+    ({'javascript': JS_MACROS, 'assemblyscript': ASC_MACROS}[target])
 
 class InvalidSettingsError extends Error {}

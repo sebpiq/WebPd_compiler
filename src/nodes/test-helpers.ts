@@ -28,12 +28,10 @@ import { createEngine, AssemblyScriptWasmEngine }
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
-import { Compilation } from '../compilation'
+import { Compilation, getMacros } from '../compilation'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/types'
 import compileToAssemblyscript from '../engine-assemblyscript/compile-to-assemblyscript'
 import compileToJavascript from '../engine-javascript/compile-to-javascript'
-import JS_MACROS from '../engine-javascript/macros'
-import ASC_MACROS from '../engine-assemblyscript/macros'
 
 interface NodeSummary {
     type: PdDspGraph.Node['type']
@@ -230,7 +228,7 @@ export const generateFramesForNode = async (
     const compilation: Compilation = makeCompilation({
         graph,
         nodeImplementations,
-        macros: {'javascript': JS_MACROS, 'assemblyscript': ASC_MACROS}[target],
+        macros: getMacros(target),
         audioSettings: {
             channelCount: 2,
             bitDepth: 64,
