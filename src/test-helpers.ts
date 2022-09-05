@@ -9,6 +9,9 @@
  *
  */
 
+import { Compilation, generateEngineVariableNames } from "./compilation"
+import MACROS from "./engine-javascript/macros"
+
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
         .split('\n')
@@ -19,3 +22,22 @@ export const normalizeCode = (rawCode: string) => {
 
 export const round = (v: number, decimals: number = 3) =>
     Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals)
+
+export const makeCompilation = (compilation: Partial<Compilation>): Compilation => {
+    const nodeImplementations = compilation.nodeImplementations || {}
+    const graph = compilation.graph || {}
+    const variableNames = generateEngineVariableNames(nodeImplementations, graph)
+    return {
+        graph, 
+        nodeImplementations,
+        audioSettings: {
+            bitDepth: 32,
+            channelCount: 2,
+        },
+        portSpecs: {},
+        messageListenerSpecs: {},
+        macros: MACROS,
+        variableNames,
+        ...compilation,
+    }
+}

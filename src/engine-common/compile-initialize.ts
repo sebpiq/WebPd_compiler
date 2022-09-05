@@ -18,6 +18,7 @@ export default (
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
     const globs = compilation.variableNames.g
+    const MACROS = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`
         ${globs.iterFrame} = 0
@@ -42,10 +43,10 @@ export default (
                     node,
                     {
                         ...compilation.variableNames.n[node.id],
-                        globs: globs,
-                        MACROS: wrapMacros(compilation.macros, compilation),
+                        globs,
+                        MACROS,
                     },
-                    compilation.settings
+                    compilation
                 ): '',
             ]
         })}

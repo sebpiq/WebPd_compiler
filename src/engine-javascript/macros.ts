@@ -17,7 +17,7 @@ import {
 import { Code, CodeVariableName, MessageDatumType } from '../types'
 
 const floatArrayType = (compilation: Compilation) => {
-    const { bitDepth } = compilation.settings
+    const { bitDepth } = compilation.audioSettings
     return bitDepth === 32 ? 'Float32Array' : 'Float64Array'
 }
 

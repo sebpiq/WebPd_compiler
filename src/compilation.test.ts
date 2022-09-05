@@ -9,6 +9,7 @@ import {
 } from './variable-names'
 import ASC_MACROS from './engine-assemblyscript/macros'
 import JS_MACROS from './engine-javascript/macros'
+import { makeCompilation } from './test-helpers'
 
 describe('compilation', () => {
 
@@ -117,33 +118,13 @@ describe('compilation', () => {
     describe('wrapMacros', () => {
         
         it('should bind assemblyscript macros to pass compilation as first argument', () => {
-            const compilation: Compilation = {
-                graph: {}, 
-                nodeImplementations: {},
-                settings: validateSettings({
-                    target: 'assemblyscript',
-                    bitDepth: 32,
-                    channelCount: 2,
-                }),
-                macros: ASC_MACROS,
-                variableNames: generateEngineVariableNames({}, {})
-            }
+            const compilation: Compilation = makeCompilation({macros: ASC_MACROS})
             const wrappedMacros = wrapMacros(ASC_MACROS, compilation)
             assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla: f32')
         })
 
         it('should bind javascript macros to pass compilation as first argument', () => {
-            const compilation: Compilation = {
-                graph: {}, 
-                nodeImplementations: {},
-                settings: validateSettings({
-                    target: 'javascript',
-                    bitDepth: 32,
-                    channelCount: 2,
-                }),
-                macros: JS_MACROS,
-                variableNames: generateEngineVariableNames({}, {})
-            }
+            const compilation: Compilation = makeCompilation({macros: JS_MACROS})
             const wrappedMacros = wrapMacros(JS_MACROS, compilation)
             assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla')
         })
@@ -153,10 +134,12 @@ describe('compilation', () => {
         it('should validate settings and set defaults', () => {
             const settings = validateSettings({
                 target: 'assemblyscript',
-                channelCount: 2,
-                bitDepth: 32,
+                audioSettings: {
+                    channelCount: 2,
+                    bitDepth: 32,
+                }
             })
-            assert.deepStrictEqual((settings as any).portSpecs, {})
+            assert.deepStrictEqual(settings.messageListenerSpecs, {})
         })
 
         it('should throw error if bitDepth invalid', () => {

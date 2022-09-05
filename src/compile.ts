@@ -9,7 +9,7 @@
  *
  */
 
-import { CompilerSettings, NodeImplementations } from './types'
+import { CompilerSettings, NodeImplementations, PortSpecs } from './types'
 import { Compilation, generateEngineVariableNames, validateSettings } from './compilation'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
@@ -23,22 +23,54 @@ export default (
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
-    const validatedSettings = validateSettings(compilerSettings)
+    const { audioSettings, messageListenerSpecs } = validateSettings(compilerSettings)
     const macros = {
         'assemblyscript': ASC_MACROS,
         'javascript': JS_MACROS,
     }[compilerSettings.target]
+
+    // TODO : move to compilation object ? Beware compilation object ravioli code. 
+    // Maybe more functional approach, passing down things like macros, etc ... 
+    // better layer things
+
+    // Merge `messageListenerSpecs` into `portSpecs` because message listeners need to have read access
+    // to the inlets they're listening to.
+    // !!! We're careful to deep-copy `portSpecs` so that the caller doesn't have strange bugs
+    // if we modify the passed `portSpecs` by mistake.
+    const portSpecs: PortSpecs = {}
+    Object.keys(messageListenerSpecs).map(variableName => {
+        if (portSpecs[variableName]) {
+            const spec = {...portSpecs[variableName]}
+            if (spec.type !== 'messages') {
+                throw new Error(`Incompatible portSpecs and messageListenerSpecs for variable ${variableName}`)
+            }
+            if (!spec.access.includes('r')) {
+                spec.access += 'r'
+            }
+            portSpecs[variableName] = spec
+        } else {
+            portSpecs[variableName] = {
+                access: 'r',
+                type: 'messages',
+            }
+        }
+    })
+
     const compilation: Compilation = {
         graph,
         nodeImplementations,
-        settings: validatedSettings,
+        audioSettings,
+        messageListenerSpecs,
+        portSpecs,
         variableNames: generateEngineVariableNames(nodeImplementations, graph),
-        macros
+        macros,
     }
 
-    if (compilation.settings.target === 'javascript') {
+    if (compilerSettings.target === 'javascript') {
         return compileToJavascript(compilation)
-    } else if (compilation.settings.target === 'assemblyscript') {
+    } else if (compilerSettings.target === 'assemblyscript') {
         return compileToAssemblyscript(compilation)
+    } else {
+        throw new Error(`Invalid target ${compilerSettings.target}`)
     }
 }

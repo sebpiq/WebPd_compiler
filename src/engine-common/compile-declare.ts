@@ -48,7 +48,7 @@ export default (
                         globs: globs,
                         MACROS,
                     },
-                    compilation.settings
+                    compilation
                 ): '',
             ]
         })}

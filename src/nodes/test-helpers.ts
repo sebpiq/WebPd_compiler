@@ -10,11 +10,9 @@
  */
 
 import { NODE_BUILDERS } from '@webpd/dsp-graph'
-import compile from '../compile'
 import NODE_IMPLEMENTATIONS from '.'
 import {
     CompilerSettings,
-    CompilerSettingsWithDefaults,
     NodeImplementations,
     PortSpecs,
 } from '../types'
@@ -24,12 +22,18 @@ import {
     generateStateVariableName,
 } from '../variable-names'
 import { renderCode } from '../code-helpers'
-import { JavaScriptEngine } from '../engine-javascript/types'
+import { JavaScriptEngine, JavaScriptEngineCode } from '../engine-javascript/types'
 import { createEngine, AssemblyScriptWasmEngine } 
     from '../engine-assemblyscript/assemblyscript-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
-import { round } from '../test-helpers'
+import { makeCompilation, round } from '../test-helpers'
+import { Compilation } from '../compilation'
+import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/types'
+import compileToAssemblyscript from '../engine-assemblyscript/compile-to-assemblyscript'
+import compileToJavascript from '../engine-javascript/compile-to-javascript'
+import JS_MACROS from '../engine-javascript/macros'
+import ASC_MACROS from '../engine-assemblyscript/macros'
 
 interface NodeSummary {
     type: PdDspGraph.Node['type']
@@ -223,21 +227,30 @@ export const generateFramesForNode = async (
         })
     })
 
-    const compilerSettings: CompilerSettingsWithDefaults = {
-        ...COMPILER_OPTIONS,
-        target,
+    const compilation: Compilation = makeCompilation({
+        graph,
+        nodeImplementations,
+        macros: {'javascript': JS_MACROS, 'assemblyscript': ASC_MACROS}[target],
+        audioSettings: {
+            channelCount: 2,
+            bitDepth: 64,
+        },
         portSpecs,
-        messageListenerSpecs: {},
-        bitDepth: 64,
+    })
+
+    let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
+    if (target === 'javascript') {
+        code = compileToJavascript(compilation)
+    } else {
+        code = compileToAssemblyscript(compilation)
     }
-    const code = compile(graph, nodeImplementations, compilerSettings)
 
     let engine: JavaScriptEngine | AssemblyScriptWasmEngine
-    if (compilerSettings.target === 'javascript') {
+    if (target === 'javascript') {
         engine = new Function(code)() as JavaScriptEngine
     } else {
         const wasmBuffer = await compileWasmModule(code)
-        engine = await createEngine(wasmBuffer, compilerSettings)
+        engine = await createEngine(wasmBuffer, compilation)
     }
 
     if (arrays) {

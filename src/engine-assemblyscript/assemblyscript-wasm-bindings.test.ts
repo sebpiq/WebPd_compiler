@@ -11,7 +11,7 @@
 
 import assert from 'assert'
 import { jest } from '@jest/globals'
-import { ARRAYS_VARIABLE_NAME, Compilation, generateEngineVariableNames } from '../compilation'
+import { ARRAYS_VARIABLE_NAME, Compilation } from '../compilation'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -21,16 +21,16 @@ import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     createEngine,
     lowerString,
+    EngineSettings,
 } from './assemblyscript-wasm-bindings'
 import {
     Code,
-    CompilerAssemblyScriptSettingsWithDefaults,
     PortSpecs,
 } from '../types'
 import compileToAssemblyscript, {
     compilePorts,
 } from './compile-to-assemblyscript'
-import { round } from '../test-helpers'
+import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import MACROS from './macros'
 
@@ -39,12 +39,11 @@ describe('AssemblyScriptWasmEngine', () => {
 
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
 
-    const COMPILER_OPTIONS: CompilerAssemblyScriptSettingsWithDefaults = {
-        target: 'assemblyscript',
-        channelCount: 2,
-        bitDepth: 32,
-        portSpecs: {},
-        messageListenerSpecs: {},
+    const ENGINE_SETTINGS: EngineSettings = {
+        audioSettings: {
+            bitDepth: 32,
+            channelCount: 2,
+        },
     }
 
     const float64ToInt32Array = (value: number) => {
@@ -57,7 +56,7 @@ describe('AssemblyScriptWasmEngine', () => {
 
     const getEngine = async (code: Code) => {
         const buffer = await compileWasmModule(code)
-        const engine = await createEngine(buffer, COMPILER_OPTIONS)
+        const engine = await createEngine(buffer, ENGINE_SETTINGS)
         const wasmExports = engine.wasmExports as any
         return { engine, wasmExports }
     }
@@ -65,21 +64,12 @@ describe('AssemblyScriptWasmEngine', () => {
     describe('configure/loop', () => {
         it('should configure and return an output block of the right size', async () => {
             let block: Float32Array | Float64Array
-            const compilation: Compilation = {
-                graph: {}, 
-                nodeImplementations: {}, 
-                settings: {
-                    ...COMPILER_OPTIONS,
-                    channelCount: 2,
-                },
-                macros: MACROS,
-                variableNames: generateEngineVariableNames({}, {})
-            }
+            const compilation: Compilation = makeCompilation({ macros: MACROS })
             const { engine: engine2Channels } = await getEngine(
                 compileToAssemblyscript({
                     ...compilation,
-                    settings: {
-                        ...COMPILER_OPTIONS,
+                    audioSettings: {
+                        ...compilation.audioSettings,
                         channelCount: 2,
                     }
                 })
@@ -91,9 +81,9 @@ describe('AssemblyScriptWasmEngine', () => {
             const { engine: engine3Channels } = await getEngine(
                 compileToAssemblyscript({
                     ...compilation,
-                    settings: {
-                        ...COMPILER_OPTIONS,
-                        channelCount: 3,
+                    audioSettings: {
+                        ...compilation.audioSettings,
+                        channelCount: 3
                     }
                 })
             )
@@ -105,11 +95,10 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('ports', () => {
         const getEngine = async (portSpecs: PortSpecs, extraCode: Code) => {
-            const compilerSettings: CompilerAssemblyScriptSettingsWithDefaults =
-                {
-                    ...COMPILER_OPTIONS,
-                    portSpecs: portSpecs,
-                }
+            const engineSettings: EngineSettings = {
+                ...ENGINE_SETTINGS,
+                portSpecs,
+            }
             const code =
                 ASSEMBLY_SCRIPT_CORE_CODE +
                 extraCode +
@@ -119,7 +108,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 })}
             `
             const buffer = await compileWasmModule(code)
-            const engine = await createEngine(buffer, compilerSettings)
+            const engine = await createEngine(buffer, engineSettings)
             return engine
         }
 
@@ -224,13 +213,7 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('setArray', () => {
         it('should set the array', async () => {
-            const compilation: Compilation = {
-                graph: {}, 
-                nodeImplementations: {}, 
-                settings: COMPILER_OPTIONS,
-                macros: MACROS,
-                variableNames: generateEngineVariableNames({}, {})
-            }
+            const compilation: Compilation = makeCompilation({ macros: MACROS })
             const { engine, wasmExports } = await getEngine(
                 compileToAssemblyscript(compilation) +
                     `
@@ -476,7 +459,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 }
             `)
             const engine = await createEngine(buffer, {
-                ...COMPILER_OPTIONS,
+                ...ENGINE_SETTINGS,
                 messageListenerSpecs: {
                     'bla': (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
                 },

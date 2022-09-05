@@ -15,22 +15,14 @@ import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
-import { normalizeCode } from '../test-helpers'
+import { makeCompilation, normalizeCode } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import MACROS from './macros'
 
 describe('macros', () => {
-    const COMPILATION: Compilation = {
-        graph: {}, 
-        nodeImplementations: {}, 
-        settings: validateSettings({
-            target: 'assemblyscript',
-            channelCount: 2,
-            bitDepth: 32,
-        }),
+    const COMPILATION: Compilation = makeCompilation({
         macros: MACROS,
-        variableNames: generateEngineVariableNames({}, {})
-    }
+    })
 
     describe('createMessage', () => {
         it('should generate the right code for string', () => {

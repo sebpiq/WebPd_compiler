@@ -15,14 +15,18 @@ import { CompilerSettings } from './types'
 
 describe('compile', () => {
     const COMPILER_SETTINGS_AS: CompilerSettings = {
-        channelCount: 2,
-        bitDepth: 32,
+        audioSettings: {
+            channelCount: 2,
+            bitDepth: 32,
+        },
         target: 'assemblyscript',
     }
 
     const COMPILER_SETTINGS_JS: CompilerSettings = {
-        channelCount: 2,
-        bitDepth: 32,
+        audioSettings: {
+            channelCount: 2,
+            bitDepth: 32,
+        },
         target: 'javascript',
     }
 

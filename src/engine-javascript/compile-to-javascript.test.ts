@@ -12,17 +12,13 @@
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
 import { Compilation, generateEngineVariableNames, validateSettings } from '../compilation'
+import { makeCompilation } from '../test-helpers'
 import { CompilerSettings, NodeImplementations } from '../types'
 import compileToJavascript from './compile-to-javascript'
 import MACROS from './macros'
 import { JavaScriptEngine } from './types'
 
 describe('compileToJavascript', () => {
-    const COMPILER_SETTINGS: CompilerSettings = {
-        target: 'javascript',
-        channelCount: 2,
-        bitDepth: 32,
-    }
 
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         'osc~': {
@@ -36,21 +32,16 @@ describe('compileToJavascript', () => {
     }
 
     it('should create the specified ports', () => {
-        const compilation: Compilation = {
-            graph: {}, 
+        const compilation: Compilation = makeCompilation({
             nodeImplementations: NODE_IMPLEMENTATIONS, 
-            settings: validateSettings({
-                ...COMPILER_SETTINGS,
-                portSpecs: {
-                    bla: { access: 'r', type: 'float' },
-                    blo: { access: 'w', type: 'messages' },
-                    bli: { access: 'rw', type: 'float' },
-                    blu: { access: 'rw', type: 'messages' },
-                },
-            }),
+            portSpecs: {
+                bla: { access: 'r', type: 'float' },
+                blo: { access: 'w', type: 'messages' },
+                bli: { access: 'rw', type: 'float' },
+                blu: { access: 'rw', type: 'messages' },
+            },
             macros: MACROS,
-            variableNames: generateEngineVariableNames({}, {})
-        } 
+        })
         
         const code = compileToJavascript(compilation)
         const engine: JavaScriptEngine = new Function(`
@@ -100,13 +91,11 @@ describe('compileToJavascript', () => {
                 outlets: { '0': { id: '0', type: 'signal' } },
             },
         })
-        const compilation: Compilation = {
+        const compilation: Compilation = makeCompilation({
             graph, 
             nodeImplementations: NODE_IMPLEMENTATIONS, 
-            settings: validateSettings(COMPILER_SETTINGS),
             macros: MACROS,
-            variableNames: generateEngineVariableNames({}, {})
-        } 
+        })
         const code = compileToJavascript(compilation)
         const modelEngine: JavaScriptEngine = {
             configure: (_: number) => {},

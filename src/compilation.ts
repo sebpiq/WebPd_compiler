@@ -13,12 +13,14 @@ import { createNamespace } from './code-helpers'
 import ASC_MACROS from './engine-assemblyscript/macros'
 import JS_MACROS from './engine-javascript/macros'
 import {
+    AudioSettings,
     CodeMacros,
     CompilerSettings,
-    CompilerSettingsWithDefaults,
+    MessageListenerSpecs,
     NodeImplementation,
     NodeImplementations,
     NodeVariableNames,
+    PortSpecs,
     VariableNames,
 } from './types'
 import {
@@ -32,7 +34,9 @@ export const ARRAYS_VARIABLE_NAME = 'ARRAYS'
 export interface Compilation {
     readonly graph: PdDspGraph.Graph
     readonly nodeImplementations: NodeImplementations
-    readonly settings: CompilerSettingsWithDefaults
+    readonly audioSettings: AudioSettings
+    readonly portSpecs: PortSpecs
+    readonly messageListenerSpecs: MessageListenerSpecs
     readonly variableNames: VariableNames  
     readonly macros: typeof ASC_MACROS | typeof JS_MACROS
 }
@@ -167,27 +171,14 @@ export const getNodeImplementation = (
 
 export const validateSettings = (
     settings: CompilerSettings
-): CompilerSettingsWithDefaults => {
-    const portSpecs = settings.portSpecs || {}
+): CompilerSettings => {
     const messageListenerSpecs = settings.messageListenerSpecs || {}
-    const bitDepth = settings.bitDepth
-    if (![32, 64].includes(bitDepth)) {
+    if (![32, 64].includes(settings.audioSettings.bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }
-    if (settings.target === 'assemblyscript') {
-        return {
-            ...settings,
-            bitDepth,
-            portSpecs,
-            messageListenerSpecs,
-        }
-    } else {
-        return {
-            ...settings,
-            bitDepth,
-            portSpecs,
-            messageListenerSpecs,
-        }
+    return {
+        ...settings,
+        messageListenerSpecs,
     }
 }
 

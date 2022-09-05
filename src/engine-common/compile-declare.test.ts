@@ -11,21 +11,15 @@
 
 import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { NodeImplementations, CompilerSettings } from '../types'
-import { Compilation, generateEngineVariableNames, validateSettings, wrapMacros } from '../compilation'
-import { normalizeCode } from '../test-helpers'
+import { NodeImplementations } from '../types'
+import { Compilation } from '../compilation'
+import { makeCompilation, normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileDeclare from './compile-declare'
 import MACROS from '../engine-javascript/macros'
 
 describe('compileDeclare', () => {
     jest.setTimeout(10000)
-
-    const COMPILER_SETTINGS: CompilerSettings = {
-        channelCount: 2,
-        target: 'javascript',
-        bitDepth: 32,
-    }
 
     it('should compile the variables declaration code', () => {
         const graph = makeGraph({
@@ -57,19 +51,21 @@ describe('compileDeclare', () => {
                 loop: () => ``,
             },
             'dac~': {
-                declare: (_, __, settings) =>
-                    `// [dac~] channelCount ${settings.channelCount}`,
+                declare: (_, __, {audioSettings}) =>
+                    `// [dac~] channelCount ${audioSettings.channelCount}`,
                 loop: () => ``,
             },
         }
 
-        const compilation: Compilation = {
+        const compilation: Compilation = makeCompilation({
             graph, 
             nodeImplementations, 
-            settings: validateSettings(COMPILER_SETTINGS),
+            audioSettings: {
+                channelCount: 2,
+                bitDepth: 32,
+            },
             macros: MACROS,
-            variableNames: generateEngineVariableNames(nodeImplementations, graph)
-        }
+        })
 
         const declareCode = compileDeclare(compilation, [graph.osc, graph.dac])
 
@@ -128,13 +124,15 @@ describe('compileDeclare', () => {
             },
         }
 
-        const compilation: Compilation = {
+        const compilation: Compilation = makeCompilation({
             graph, 
             nodeImplementations, 
-            settings: validateSettings(COMPILER_SETTINGS),
+            audioSettings: {
+                channelCount: 2,
+                bitDepth: 32,
+            },
             macros: MACROS,
-            variableNames: generateEngineVariableNames(nodeImplementations, graph)
-        }
+        })
 
         assert.doesNotThrow(() =>
             compileDeclare(compilation, [graph.osc, graph.dac])

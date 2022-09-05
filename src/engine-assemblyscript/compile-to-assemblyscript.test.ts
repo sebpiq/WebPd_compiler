@@ -11,27 +11,19 @@
 
 import { jest } from '@jest/globals'
 import assert from 'assert'
-import { round } from '../test-helpers'
-import { CompilerSettingsWithDefaults, NodeImplementations, PortSpecs } from '../types'
+import { makeCompilation, round } from '../test-helpers'
+import { NodeImplementations } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports } from './types'
 import { createEngine } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { generateInletVariableName } from '../variable-names'
-import { Compilation, generateEngineVariableNames, wrapMacros } from '../compilation'
+import { Compilation } from '../compilation'
 import MACROS from './macros'
 
 describe('compileToAssemblyscript', () => {
     jest.setTimeout(10000)
-
-    const COMPILER_SETTINGS: CompilerSettingsWithDefaults = {
-        channelCount: 2,
-        target: 'assemblyscript',
-        bitDepth: 32,
-        portSpecs: {},
-        messageListenerSpecs: {},
-    }
 
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         'DUMMY': {
@@ -52,35 +44,27 @@ describe('compileToAssemblyscript', () => {
             (key) => key.startsWith('read_') || key.startsWith('write_')
         )
 
-    const compileWasmExports = async (
-        graph: PdDspGraph.Graph, 
-        settings: CompilerSettingsWithDefaults, 
-        extraCode: string = ''
+    const compileEngine = async (
+        compilation: Compilation,
+        extraCode: string = '',
     ) => {
-        const compilation: Compilation = {
-            graph, 
-            nodeImplementations: NODE_IMPLEMENTATIONS, 
-            settings,
-            macros: MACROS,
-            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
-        }
         const code = compileToAssemblyscript(compilation)
         const wasmModule = await compileWasmModule(`${extraCode}\n${code}`)
-        const engine = await createEngine(wasmModule, settings)
-        return engine.wasmExports as any
+        return createEngine(wasmModule, compilation)
     }
 
     it('should create the specified ports', async () => {
-        const settings: CompilerSettingsWithDefaults = {
-            ...COMPILER_SETTINGS,
-            portSpecs: {
-                bla: { access: 'r', type: 'float' },
-                blo: { access: 'w', type: 'messages' },
-                bli: { access: 'rw', type: 'float' },
-                blu: { access: 'rw', type: 'messages' },
-            } as PortSpecs,
-        }
-        const wasmExports = await compileWasmExports({}, settings, 
+        const engine = await compileEngine(
+            makeCompilation({
+                nodeImplementations: NODE_IMPLEMENTATIONS,
+                macros: MACROS,
+                portSpecs: {
+                    bla: { access: 'r', type: 'float' },
+                    blo: { access: 'w', type: 'messages' },
+                    bli: { access: 'rw', type: 'float' },
+                    blu: { access: 'rw', type: 'messages' },
+                }
+            }), 
             // prettier-ignore
             `
                 let bla: f32 = 1
@@ -102,6 +86,7 @@ describe('compileToAssemblyscript', () => {
                 }
             `
         )
+        const wasmExports = engine.wasmExports as any
 
         assert.deepStrictEqual(
             filterPortFunctionKeys(wasmExports).sort(),
@@ -141,54 +126,9 @@ describe('compileToAssemblyscript', () => {
         )
     })
 
-    it('should create extra read ports for inlet listeners', async () => {
-        const settings = {
-            ...COMPILER_SETTINGS,
-            messageListenerSpecs: {'bla': () => {}},
-            portSpecs: {
-                'blo': {
-                    access: 'r',
-                    type: 'float'
-                }
-            } as PortSpecs,
-        }
-        const graph = makeGraph({
-            'someNode': {
-                isEndSink: true,
-                inlets: {'someInlet': { type: 'control', id: 'someInlet' }}
-            }
-        })
-        const wasmExports = await compileWasmExports(graph, settings, `
-            let bla: Message[] = []
-            let blo: f32 = 7
-        `)
-
-        assert.deepStrictEqual(
-            filterPortFunctionKeys(wasmExports).sort(),
-            [
-                'read_bla_length',
-                'read_bla_elem',
-                'read_blo',
-            ].sort()
-        )
-    })
-
     it('should create inlet listeners and trigger them whenever inlets receive new messages', async () => {
         const called: Array<Array<PdSharedTypes.ControlValue>> = []
         const inletVariableName = generateInletVariableName('someNode', 'someInlet')
-        const settings = {
-            ...COMPILER_SETTINGS,
-            messageListenerSpecs: {
-                [inletVariableName]: (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
-            },
-            portSpecs: {
-                [inletVariableName]: {
-                    access: 'r',
-                    type: 'messages'
-                }
-            } as PortSpecs,
-        }
-
         const nodeImplementations: NodeImplementations = {
             'messageGeneratorType': {
                 loop: (_, {outs, globs, MACROS}) => `
@@ -217,16 +157,20 @@ describe('compileToAssemblyscript', () => {
             }
         })
 
-        const compilation: Compilation = {
+        const engine = await compileEngine(makeCompilation({
             graph, 
             nodeImplementations, 
-            settings,
             macros: MACROS,
-            variableNames: generateEngineVariableNames(nodeImplementations, graph)
-        }
-        const code = compileToAssemblyscript(compilation)
-        const wasmModule = await compileWasmModule(code)
-        const engine = await createEngine(wasmModule, settings)
+            messageListenerSpecs: {
+                [inletVariableName]: (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
+            },
+            portSpecs: {
+                [inletVariableName]: {
+                    access: 'r',
+                    type: 'messages'
+                }
+            },
+        }))
 
         const blockSize = 18
         engine.configure(44100, blockSize)
@@ -237,16 +181,17 @@ describe('compileToAssemblyscript', () => {
     })
 
     it('should create the specified ports', async () => {
-        const settings = {
-            ...COMPILER_SETTINGS,
-            portSpecs: {
-                bla: { access: 'r', type: 'float' },
-                blo: { access: 'w', type: 'messages' },
-                bli: { access: 'rw', type: 'float' },
-                blu: { access: 'rw', type: 'messages' },
-            } as PortSpecs,
-        }
-        const wasmExports = await compileWasmExports({}, settings, 
+        const engine = await compileEngine(
+            makeCompilation({
+                nodeImplementations: NODE_IMPLEMENTATIONS,
+                macros: MACROS,
+                portSpecs: {
+                    bla: { access: 'r', type: 'float' },
+                    blo: { access: 'w', type: 'messages' },
+                    bli: { access: 'rw', type: 'float' },
+                    blu: { access: 'rw', type: 'messages' },
+                }
+            }), 
             // prettier-ignore
             `
                 let bla: f32 = 1
@@ -268,6 +213,7 @@ describe('compileToAssemblyscript', () => {
                 }
             `
         )
+        const wasmExports = engine.wasmExports as any
 
         assert.deepStrictEqual(
             filterPortFunctionKeys(wasmExports).sort(),
@@ -307,57 +253,11 @@ describe('compileToAssemblyscript', () => {
         )
     })
 
-    it('should combine extra read ports with port specs for inlet listeners', async () => {
-        const settings = {
-            ...COMPILER_SETTINGS,
-            messageListenerSpecs: {
-                'bla': () => {},
-                'blo': () => {},
-            },
-            portSpecs: {
-                'bla': {access: 'w', type: 'messages'},
-                'blo': {access: 'r', type: 'messages'},
-            } as PortSpecs,
-        }
-        const wasmExports = await compileWasmExports({}, settings, `
-            let bla: Message[] = []
-            let blo: Message[] = []
-        `)
-
-        assert.deepStrictEqual(
-            filterPortFunctionKeys(wasmExports).sort(),
-            [
-                'read_bla_length',
-                'read_bla_elem',
-                'write_bla',
-                'read_blo_length',
-                'read_blo_elem',
-            ].sort()
-        )
-    })
-
-    it('should throw error when incompatible with portSpec', async () => {
-        const settings = {
-            ...COMPILER_SETTINGS,
-            messageListenerSpecs: {
-                'bla': () => {},
-            },
-            portSpecs: {
-                'bla': {access: 'w', type: 'float'},
-            } as PortSpecs,
-        }
-        const compilation: Compilation = {
-            graph: {}, 
-            nodeImplementations: NODE_IMPLEMENTATIONS, 
-            settings,
-            macros: MACROS,
-            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, {})
-        }
-        assert.throws(() => compileToAssemblyscript(compilation))
-    })
-
     it('should be a wasm engine when compiled', async () => {
-        const wasmExports = await compileWasmExports({}, COMPILER_SETTINGS)
+        const { wasmExports } = await compileEngine(makeCompilation({
+            nodeImplementations: NODE_IMPLEMENTATIONS,
+            macros: MACROS,
+        }))
 
         const expectedExports: AssemblyScriptWasmExports = {
             configure: (_: number) => 0,

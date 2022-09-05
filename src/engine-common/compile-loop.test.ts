@@ -11,21 +11,15 @@
 
 import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import { NodeImplementations, CompilerSettings } from '../types'
-import { Compilation, generateEngineVariableNames, validateSettings } from '../compilation'
-import { normalizeCode } from '../test-helpers'
+import { NodeImplementations } from '../types'
+import { Compilation } from '../compilation'
+import { makeCompilation, normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileLoop from './compile-loop'
 import MACROS from '../engine-assemblyscript/macros'
 
 describe('compileLoop', () => {
     jest.setTimeout(10000)
-
-    const COMPILER_SETTINGS: CompilerSettings = {
-        channelCount: 2,
-        target: 'javascript',
-        bitDepth: 32,
-    }
 
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         msg: {
@@ -50,8 +44,8 @@ describe('compileLoop', () => {
         },
         'dac~': {
             initialize: () => ``,
-            loop: (_, __, settings) =>
-                `// [dac~] : channelCount ${settings.channelCount}`,
+            loop: (_, __, {audioSettings}) =>
+                `// [dac~] : channelCount ${audioSettings.channelCount}`,
         },
     }
 
@@ -90,13 +84,15 @@ describe('compileLoop', () => {
             },
         })
 
-        const compilation: Compilation = {
+        const compilation: Compilation = makeCompilation({
             graph, 
             nodeImplementations: NODE_IMPLEMENTATIONS, 
-            settings: validateSettings(COMPILER_SETTINGS),
+            audioSettings: {
+                channelCount: 2,
+                bitDepth: 32,
+            },
             macros: MACROS,
-            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
-        }
+        })
 
         const loop = compileLoop(compilation, [
             graph.msg,
@@ -176,13 +172,15 @@ describe('compileLoop', () => {
             },
         })
 
-        const compilation: Compilation = {
+        const compilation: Compilation = makeCompilation({
             graph, 
             nodeImplementations: NODE_IMPLEMENTATIONS, 
-            settings: validateSettings(COMPILER_SETTINGS),
+            audioSettings: {
+                channelCount: 2,
+                bitDepth: 32,
+            },
             macros: MACROS,
-            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
-        }
+        })
 
         const loop = compileLoop(compilation, [
             graph.osc,
@@ -244,13 +242,15 @@ describe('compileLoop', () => {
             },
         })
 
-        const compilation: Compilation = {
+        const compilation: Compilation = makeCompilation({
             graph, 
             nodeImplementations: NODE_IMPLEMENTATIONS, 
-            settings: validateSettings(COMPILER_SETTINGS),
+            audioSettings: {
+                channelCount: 2,
+                bitDepth: 32,
+            },
             macros: MACROS,
-            variableNames: generateEngineVariableNames(NODE_IMPLEMENTATIONS, graph)
-        }
+        })
 
         const loop = compileLoop(compilation, [graph.osc, graph.dac])
 

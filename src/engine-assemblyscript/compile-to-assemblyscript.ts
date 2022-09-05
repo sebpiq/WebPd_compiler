@@ -25,7 +25,8 @@ import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { channelCount, bitDepth, portSpecs, messageListenerSpecs } = compilation.settings
+    const { audioSettings, portSpecs } = compilation
+    const { bitDepth, channelCount } = audioSettings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
     const MACROS = compilation.macros
@@ -51,33 +52,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             ].toString()
         )
 
-    // TODO : move to compilation object ? Beware compilation object ravioli code. 
-    // Maybe more functional approach, passing down things like macros, etc ... 
-    // better layer things
-
-    // Merge `messageListenerSpecs` into `portSpecs` because message listeners need to have read access
-    // to the inlets they're listening to.
-    // !!! We're careful to deep-copy `portSpecs` so that the caller doesn't have strange bugs
-    // if we modify the passed `portSpecs` by mistake.
-    const newPortSpecs: PortSpecs = {...portSpecs}
-    Object.keys(messageListenerSpecs).map(variableName => {
-        if (newPortSpecs[variableName]) {
-            const spec = {...newPortSpecs[variableName]}
-            if (spec.type !== 'messages') {
-                throw new Error(`Incompatible portSpecs and messageListenerSpecs for variable ${variableName}`)
-            }
-            if (!spec.access.includes('r')) {
-                spec.access += 'r'
-            }
-            newPortSpecs[variableName] = spec
-        } else {
-            newPortSpecs[variableName] = {
-                access: 'r',
-                type: 'messages',
-            }
-        }
-    })
-    
     // prettier-ignore
     return renderCode`
         ${CORE_CODE}
@@ -109,7 +83,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         }
 
         ${compileMessageListeners(compilation)}
-        ${compilePorts(newPortSpecs, { FloatType })}
+        ${compilePorts(portSpecs, { FloatType })}
     `
 }
 
@@ -162,7 +136,7 @@ export const compilePorts = (
 
 export const compileMessageListeners = (compilation: Compilation) => {
     return renderCode`
-        ${Object.keys(compilation.settings.messageListenerSpecs).map(variableName =>
+        ${Object.keys(compilation.messageListenerSpecs).map(variableName =>
             `export declare function messageListener_${variableName}(): void`
         )}
     `

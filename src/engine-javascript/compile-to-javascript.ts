@@ -19,7 +19,7 @@ import { Code } from '../types'
 import { JavaScriptEngineCode } from './types'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { portSpecs } = compilation.settings
+    const { portSpecs } = compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.variableNames.g
 

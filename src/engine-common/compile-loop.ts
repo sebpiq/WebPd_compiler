@@ -19,8 +19,9 @@ export default (
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { messageListenerSpecs } = compilation.settings
+    const { messageListenerSpecs } = compilation
     const globs = compilation.variableNames.g
+    const MACROS = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`${[
         graphTraversal.map((node) => {
@@ -42,9 +43,9 @@ export default (
                     {
                         ...nodeVariableNames,
                         globs,
-                        MACROS: wrapMacros(compilation.macros, compilation),
+                        MACROS,
                     },
-                    compilation.settings
+                    compilation
                 ),
 
                 // 2. Node outs to sinks ins

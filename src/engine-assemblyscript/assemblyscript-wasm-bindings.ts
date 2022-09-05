@@ -18,9 +18,9 @@
  *
  * @module
  */
+import { Compilation } from '../compilation'
 import {
     CodeVariableName,
-    CompilerAssemblyScriptSettingsWithDefaults,
     EnginePorts,
 } from '../types'
 import {
@@ -44,9 +44,9 @@ type TypedArrayConstructor =
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
 export interface EngineSettings {
-    portSpecs?: CompilerAssemblyScriptSettingsWithDefaults['portSpecs']
-    messageListenerSpecs?: CompilerAssemblyScriptSettingsWithDefaults['messageListenerSpecs']
-    bitDepth: CompilerAssemblyScriptSettingsWithDefaults['bitDepth']
+    portSpecs?: Compilation['portSpecs']
+    messageListenerSpecs?: Compilation['messageListenerSpecs']
+    audioSettings: Compilation['audioSettings']
 }
 
 /**
@@ -88,7 +88,7 @@ export class AssemblyScriptWasmEngine {
         this.wasmExports.loop()
         return liftTypedArray(
             this.wasmExports,
-            this.settings.bitDepth === 32 ? Float32Array : Float64Array,
+            this.settings.audioSettings.bitDepth === 32 ? Float32Array : Float64Array,
             this.wasmOutputPointer
         ) as Float32Array | Float64Array
     }
@@ -205,11 +205,11 @@ export class AssemblyScriptWasmEngine {
     lowerArrayBufferOfFloats (
         floats: Array<number> | Float32Array | Float64Array
     ) {
-        const bytesPerElement = this.settings.bitDepth / 8
+        const bytesPerElement = this.settings.audioSettings.bitDepth / 8
         const buffer = new ArrayBuffer(bytesPerElement * floats.length)
         const dataView = new DataView(buffer)
         const setFloatName =
-            this.settings.bitDepth === 32 ? 'setFloat32' : 'setFloat64'
+            this.settings.audioSettings.bitDepth === 32 ? 'setFloat32' : 'setFloat64'
         for (let i = 0; i < floats.length; i++) {
             dataView[setFloatName](bytesPerElement * i, floats[i])
         }
@@ -219,7 +219,7 @@ export class AssemblyScriptWasmEngine {
     _bindPorts(): EnginePorts {
         const ports: EnginePorts = {}
         const wasmExports = this.wasmExports as any
-        Object.entries(this.settings.portSpecs).forEach(
+        Object.entries(this.settings.portSpecs || {}).forEach(
             ([variableName, spec]) => {
                 if (spec.access.includes('w')) {
                     if (spec.type === 'messages') {
@@ -265,7 +265,7 @@ export class AssemblyScriptWasmEngine {
         const wasmImports: {
             [listenerName: CodeVariableName]: () => void
         } = {}
-        Object.entries(this.settings.messageListenerSpecs).forEach(([variableName, callback]) => {
+        Object.entries(this.settings.messageListenerSpecs || {}).forEach(([variableName, callback]) => {
             const listenerName = `messageListener_${variableName}`
             wasmImports[listenerName] = () => {
                 callback(this.ports[`read_${variableName}`]())

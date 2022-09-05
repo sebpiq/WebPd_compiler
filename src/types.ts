@@ -9,6 +9,7 @@
  *
  */
 
+import { Compilation } from './compilation'
 import {
     MESSAGE_DATUM_TYPE_STRING,
     MESSAGE_DATUM_TYPE_FLOAT,
@@ -83,7 +84,7 @@ export type NodeCodeGenerator = (
         globs: VariableNames['g']
         MACROS: CodeMacros
     },
-    settings: CompilerSettings
+    settings: Compilation
 ) => Code
 
 export interface NodeImplementation {
@@ -108,55 +109,13 @@ export type MessageListenerSpecs = {
     [variableName: CodeVariableName]: MessageListener
 }
 
-// Mandatory & optional settings for different targets
-interface CompilerSettingsMandatory {
+export interface AudioSettings {
     channelCount: number
     bitDepth: 32 | 64
 }
 
-interface CompilerSettingsOptional {
-    // Ports allowing to read / write variables from the engine
-    portSpecs: PortSpecs
-
-    // Functions to listen for when new messages are sent to inlets
-    messageListenerSpecs: MessageListenerSpecs
+export interface CompilerSettings {
+    audioSettings: AudioSettings
+    target: 'assemblyscript' | 'javascript'
+    messageListenerSpecs?: MessageListenerSpecs
 }
-
-type CompilerAssemblyScriptSettingsMandatory = CompilerSettingsMandatory & {
-    target: 'assemblyscript'
-}
-
-type CompilerJavaScriptSettingsMandatory = CompilerSettingsMandatory & {
-    target: 'javascript'
-}
-
-interface CompilerAssemblyScriptSettingOptional {}
-interface CompilerJavaScriptSettingsOptional {}
-
-// External type of settings passed to the compilation by library user
-type CompilerAssemblyScriptSettings = CompilerAssemblyScriptSettingsMandatory &
-    Partial<CompilerSettingsOptional> &
-    Partial<CompilerAssemblyScriptSettingOptional>
-
-type CompilerJavaScriptSettings = CompilerJavaScriptSettingsMandatory &
-    Partial<CompilerSettingsOptional> &
-    Partial<CompilerJavaScriptSettingsOptional>
-
-export type CompilerSettings =
-    | CompilerAssemblyScriptSettings
-    | CompilerJavaScriptSettings
-
-// Internal type of setting after validation and settings defaults
-export type CompilerAssemblyScriptSettingsWithDefaults =
-    CompilerAssemblyScriptSettingsMandatory &
-        CompilerSettingsOptional &
-        CompilerAssemblyScriptSettingOptional
-
-export type CompilerJavaScriptSettingsWithDefaults =
-    CompilerJavaScriptSettingsMandatory &
-        CompilerSettingsOptional &
-        CompilerJavaScriptSettingsOptional
-
-export type CompilerSettingsWithDefaults =
-    | CompilerAssemblyScriptSettingsWithDefaults
-    | CompilerJavaScriptSettingsWithDefaults
