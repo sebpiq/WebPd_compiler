@@ -28,29 +28,37 @@ export type CodeVariableName = string
 // Map of public engine ports for accessing data inside the engine
 export type EnginePorts = { [portName: string]: (...args: any) => any }
 
-export interface CodeMacros {
-    floatArrayType: () => Code
-    typedVarInt: (name: CodeVariableName) => Code
-    typedVarFloat: (name: CodeVariableName) => Code
-    typedVarString: (name: CodeVariableName) => Code
-    typedVarMessage: (name: CodeVariableName) => Code
-    typedVarFloatArray: (name: CodeVariableName) => Code
-    typedVarMessageArray: (name: CodeVariableName) => Code
-    castToInt: (name: CodeVariableName) => Code
-    castToFloat: (name: CodeVariableName) => Code
-    functionHeader: (...functionArgs: Array<Code>) => Code
-    createMessage: (
+export type CodeMacros = {
+    floatArrayType: (compilation: Compilation) => Code
+    typedVarInt: (compilation: Compilation, name: CodeVariableName) => Code
+    typedVarFloat: (compilation: Compilation, name: CodeVariableName) => Code
+    typedVarString: (compilation: Compilation, name: CodeVariableName) => Code
+    typedVarMessage: (compilation: Compilation, name: CodeVariableName) => Code
+    typedVarFloatArray: (compilation: Compilation, name: CodeVariableName) => Code
+    typedVarMessageArray: (compilation: Compilation, name: CodeVariableName) => Code
+    castToInt: (compilation: Compilation, name: CodeVariableName) => Code
+    castToFloat: (compilation: Compilation, name: CodeVariableName) => Code
+    functionHeader: (compilation: Compilation, ...functionArgs: Array<Code>) => Code
+    createMessage: (compilation: Compilation, 
         name: CodeVariableName,
         message: PdSharedTypes.ControlValue
     ) => Code
-    isMessageMatching: (
+    isMessageMatching: (compilation: Compilation, 
         name: CodeVariableName,
         tokens: Array<number | string | MessageDatumType>
     ) => Code
-    readMessageStringDatum: (name: CodeVariableName, tokenIndex: number) => Code
-    readMessageFloatDatum: (name: CodeVariableName, tokenIndex: number) => Code
-    fillInLoopOutput: (channel: number, value: CodeVariableName) => Code
+    readMessageStringDatum: (compilation: Compilation, name: CodeVariableName, tokenIndex: number) => Code
+    readMessageFloatDatum: (compilation: Compilation, name: CodeVariableName, tokenIndex: number) => Code
+    fillInLoopOutput: (compilation: Compilation, channel: number, value: CodeVariableName) => Code
 }
+
+type FunctionMap = {[key: string]: (...args: any) => any}
+type OmitFirstArg<F> = F extends (x: any, ...args: infer P) => infer R ? (...args: P) => R : never;
+type OmitFirstArgFromFunctionMap<Type extends FunctionMap> = {
+    [Property in keyof Type]: OmitFirstArg<Type[Property]>
+}
+
+export type WrappedCodeMacros = OmitFirstArgFromFunctionMap<CodeMacros>
 
 export interface NodeVariableNames {
     ins: { [portletId: PdDspGraph.PortletId]: CodeVariableName }
@@ -82,9 +90,9 @@ export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
     variableNames: NodeVariableNames & {
         globs: VariableNames['g']
-        MACROS: CodeMacros
+        MACROS: WrappedCodeMacros
     },
-    settings: Compilation
+    compilation: Compilation
 ) => Code
 
 export interface NodeImplementation {

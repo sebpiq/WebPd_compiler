@@ -10,11 +10,9 @@
  */
 
 import { createNamespace } from './code-helpers'
-import ASC_MACROS from './engine-assemblyscript/macros'
-import JS_MACROS from './engine-javascript/macros'
 import {
     AudioSettings,
-    CodeMacros,
+    WrappedCodeMacros,
     CompilerSettings,
     MessageListenerSpecs,
     NodeImplementation,
@@ -22,6 +20,7 @@ import {
     NodeVariableNames,
     PortSpecs,
     VariableNames,
+    CodeMacros,
 } from './types'
 import {
     generateInletVariableName,
@@ -38,57 +37,22 @@ export interface Compilation {
     readonly portSpecs: PortSpecs
     readonly messageListenerSpecs: MessageListenerSpecs
     readonly variableNames: VariableNames  
-    readonly macros: typeof ASC_MACROS | typeof JS_MACROS
+    readonly macros: CodeMacros
 }
 
-export const wrapMacros = (unwrappedMacros: typeof JS_MACROS | typeof ASC_MACROS, compilation: Compilation): CodeMacros =>
-    ({
-        floatArrayType: unwrappedMacros.floatArrayType.bind(
+export const wrapMacros = (
+    codeMacros: CodeMacros, 
+    compilation: Compilation
+): WrappedCodeMacros => {
+    const wrappedCodeMacros = {} as Partial<WrappedCodeMacros>
+    Object.entries(codeMacros).forEach(([key, macro]) => {
+        wrappedCodeMacros[key as keyof CodeMacros] = macro.bind(
             undefined,
             compilation
-        ),
-        typedVarInt: unwrappedMacros.typedVarInt.bind(undefined, compilation),
-        typedVarFloat: unwrappedMacros.typedVarFloat.bind(undefined, compilation),
-        typedVarString: unwrappedMacros.typedVarString.bind(
-            undefined,
-            compilation
-        ),
-        typedVarMessage: unwrappedMacros.typedVarMessage.bind(
-            undefined,
-            compilation
-        ),
-        typedVarFloatArray: unwrappedMacros.typedVarFloatArray.bind(
-            undefined,
-            compilation
-        ),
-        typedVarMessageArray: unwrappedMacros.typedVarMessageArray.bind(
-            undefined,
-            compilation
-        ),
-        castToInt: unwrappedMacros.castToInt.bind(undefined, compilation),
-        castToFloat: unwrappedMacros.castToFloat.bind(undefined, compilation),
-        functionHeader: unwrappedMacros.functionHeader.bind(
-            undefined,
-            compilation
-        ),
-        createMessage: unwrappedMacros.createMessage.bind(undefined, compilation),
-        isMessageMatching: unwrappedMacros.isMessageMatching.bind(
-            undefined,
-            compilation
-        ),
-        readMessageFloatDatum: unwrappedMacros.readMessageFloatDatum.bind(
-            undefined,
-            compilation
-        ),
-        readMessageStringDatum: unwrappedMacros.readMessageStringDatum.bind(
-            undefined,
-            compilation
-        ),
-        fillInLoopOutput: unwrappedMacros.fillInLoopOutput.bind(
-            undefined,
-            compilation
-        ),
+        )
     })
+    return wrappedCodeMacros as WrappedCodeMacros
+}
 
 export const generateEngineVariableNames = (
     nodeImplementations: NodeImplementations, 

@@ -14,7 +14,7 @@ import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
-import { Code, CodeVariableName, MessageDatumType } from '../types'
+import { Code, CodeMacros, CodeVariableName, MessageDatumType } from '../types'
 
 const floatArrayType = (compilation: Compilation) => {
     const { bitDepth } = compilation.audioSettings
@@ -90,7 +90,7 @@ const fillInLoopOutput = (
     return `${globs.output}[${channel}][${globs.iterFrame}] = ${value}`
 }
 
-const MACROS = {
+const MACROS: CodeMacros = {
     floatArrayType,
     typedVarInt,
     typedVarFloat,

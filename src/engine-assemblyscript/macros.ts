@@ -17,6 +17,7 @@ import {
 } from '../constants'
 import {
     Code,
+    CodeMacros,
     CodeVariableName,
     MessageDatumType,
 } from '../types'
@@ -168,7 +169,7 @@ const fillInLoopOutput = (
     return `${globs.output}[${globs.iterFrame} + ${globs.blockSize} * ${channel}] = ${value}`
 }
 
-const MACROS = {
+const MACROS: CodeMacros = {
     floatArrayType,
     typedVarInt,
     typedVarFloat,
