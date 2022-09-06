@@ -33,7 +33,7 @@ export interface Compilation {
     readonly audioSettings: AudioSettings
     readonly portSpecs: PortSpecs
     readonly messageListenerSpecs: MessageListenerSpecs
-    readonly engineVariableNames: EngineVariableNames  
+    readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
 }
 
@@ -122,6 +122,12 @@ export type MessageListenerSpecs = {
     [variableName: CodeVariableName]: MessageListener
 }
 
+export type MessageListeners = {
+    [nodeId: PdDspGraph.NodeId]: {
+        [inletId: PdDspGraph.PortletId]: MessageListener
+    }
+}
+
 export interface AudioSettings {
     channelCount: number
     bitDepth: 32 | 64
@@ -130,5 +136,5 @@ export interface AudioSettings {
 export interface CompilerSettings {
     audioSettings: AudioSettings
     target: 'assemblyscript' | 'javascript'
-    messageListenerSpecs?: MessageListenerSpecs
+    messageListeners?: MessageListeners
 }

@@ -58,7 +58,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         let ${MACROS.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
     
         ${compileDeclare(compilation, graphTraversal)}
-
+        ${compileMessageListeners(compilation)}
+        ${compilePorts(portSpecs, { FloatType })}
+        
         export function configure(sampleRate: ${FloatType}, blockSize: i32): ${FloatArrayType} {
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
@@ -80,9 +82,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             const array = bufferToArrayOfFloats(buffer)
             ${globs.arrays}.set(arrayName, array)
         }
-
-        ${compileMessageListeners(compilation)}
-        ${compilePorts(portSpecs, { FloatType })}
     `
 }
 

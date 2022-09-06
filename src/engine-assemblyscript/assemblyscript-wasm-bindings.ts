@@ -44,6 +44,8 @@ type TypedArrayConstructor =
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
+// TODO : Rethink what info should be passed to the bindings constructor 
+// (e.g. variable names, portSpecs are generated automatically by the compilation, i.e. shouldnt be public settings)
 export interface EngineSettings {
     portSpecs?: Compilation['portSpecs']
     messageListenerSpecs?: Compilation['messageListenerSpecs']
