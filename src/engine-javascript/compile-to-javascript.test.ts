@@ -12,7 +12,7 @@
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
-import { NodeImplementations } from '../types'
+import { MessageListenerSpecs, NodeImplementations } from '../types'
 import compileToJavascript from './compile-to-javascript'
 import MACROS from './macros'
 import { JavaScriptEngine } from './types'
@@ -105,5 +105,66 @@ describe('compileToJavascript', () => {
         const engine = new Function(code)()
 
         assert.deepStrictEqual(Object.keys(engine), Object.keys(modelEngine))
+    })
+
+    it('should create inlet listeners and trigger them whenever inlets receive new messages', async () => {
+        const called: Array<Array<PdSharedTypes.ControlValue>> = []
+        const inletVariableName = 'someNode_INS_someInlet'
+        const nodeImplementations: NodeImplementations = {
+            'messageGeneratorType': {
+                loop: (_, {outs, globs}) => `
+                    if (${globs.frame} % 4 === 0) {
+                        ${outs.someOutlet}.push([${globs.frame}])
+                    }
+                `
+            },
+            'someNodeType': {
+                loop: () => ``
+            }
+        }
+
+        const graph = makeGraph({
+            'messageGenerator': {
+                type: 'messageGeneratorType',
+                outlets: {'someOutlet': { type: 'control', id: 'someOutlet' }},
+                sinks: {'someOutlet': [['someNode', 'someInlet']]}
+            },
+            'someNode': {
+                type: 'someNodeType',
+                isEndSink: true,
+                inlets: {'someInlet': { type: 'control', id: 'someInlet' }}
+            }
+        })
+
+        const messageListenerSpecs: MessageListenerSpecs = {
+            [inletVariableName]: () => {
+                const messages = engine.ports['read_someNode_INS_someInlet']()
+                called.push(messages)
+            }
+        }
+
+        const code = compileToJavascript(makeCompilation({
+            graph, 
+            nodeImplementations, 
+            macros: MACROS,
+            messageListenerSpecs,
+            portSpecs: {
+                [inletVariableName]: {
+                    access: 'r',
+                    type: 'messages'
+                }
+            },
+        }))
+
+        const engine = new Function('messageListener_someNode_INS_someInlet', code)(
+            messageListenerSpecs[inletVariableName]
+        )
+
+        const blockSize = 13
+        engine.configure(44100, blockSize)
+        engine.loop()
+        assert.deepStrictEqual(called, [
+            [[0]],[[4]],[[8]],[[12]],
+        ])
     })
 })
