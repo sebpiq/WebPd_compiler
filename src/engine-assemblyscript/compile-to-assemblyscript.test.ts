@@ -9,7 +9,6 @@
  *
  */
 
-import { jest } from '@jest/globals'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
 import { Compilation, NodeImplementations } from '../types'
@@ -21,7 +20,6 @@ import { makeGraph } from '@webpd/shared/test-helpers'
 import macros from './macros'
 
 describe('compileToAssemblyscript', () => {
-    jest.setTimeout(10000)
 
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         'DUMMY': {

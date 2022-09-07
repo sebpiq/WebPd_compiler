@@ -13,12 +13,10 @@ import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
-import { jest } from '@jest/globals'
 import compileInitialize from './compile-initialize'
 import macros from '../engine-assemblyscript/macros'
 
 describe('compileInitialize', () => {
-    jest.setTimeout(10000)
 
     it('should compile the initialize code', () => {
         const graph = makeGraph({

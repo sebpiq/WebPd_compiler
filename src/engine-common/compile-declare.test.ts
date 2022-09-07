@@ -13,12 +13,10 @@ import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
-import { jest } from '@jest/globals'
 import compileDeclare from './compile-declare'
 import macros from '../engine-javascript/macros'
 
 describe('compileDeclare', () => {
-    jest.setTimeout(10000)
 
     it('should compile the variables declaration code', () => {
         const graph = makeGraph({

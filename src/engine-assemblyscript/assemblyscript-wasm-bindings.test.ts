@@ -10,7 +10,6 @@
  */
 
 import assert from 'assert'
-import { jest } from '@jest/globals'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -35,7 +34,6 @@ import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
 
 describe('AssemblyScriptWasmEngine', () => {
-    jest.setTimeout(10000)
 
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
 

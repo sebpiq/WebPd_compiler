@@ -13,12 +13,10 @@ import assert from 'assert'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
-import { jest } from '@jest/globals'
 import compileLoop from './compile-loop'
 import macros from '../engine-assemblyscript/macros'
 
 describe('compileLoop', () => {
-    jest.setTimeout(10000)
 
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         msg: {
