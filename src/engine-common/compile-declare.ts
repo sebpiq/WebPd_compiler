@@ -17,14 +17,14 @@ export default (
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
     const globs = compilation.engineVariableNames.g
-    const MACROS = wrapMacros(compilation.macros, compilation)
+    const macros = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`
-        let ${MACROS.typedVarInt(globs.iterFrame)}
-        let ${MACROS.typedVarInt(globs.iterOutlet)}
-        let ${MACROS.typedVarInt(globs.frame)}
-        let ${MACROS.typedVarInt(globs.blockSize)}
-        let ${MACROS.typedVarFloat(globs.sampleRate)}
+        let ${macros.typedVarInt(globs.iterFrame)}
+        let ${macros.typedVarInt(globs.iterOutlet)}
+        let ${macros.typedVarInt(globs.frame)}
+        let ${macros.typedVarInt(globs.blockSize)}
+        let ${macros.typedVarFloat(globs.sampleRate)}
 
         ${graphTraversal.map((node) => {
             const { ins, outs } = compilation.engineVariableNames.n[node.id]
@@ -32,20 +32,20 @@ export default (
             return [
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'control'
-                        ? `let ${MACROS.typedVarMessageArray(ins[inlet.id])}`
-                        : `let ${MACROS.typedVarFloat(ins[inlet.id])}`
+                        ? `let ${macros.typedVarMessageArray(ins[inlet.id])}`
+                        : `let ${macros.typedVarFloat(ins[inlet.id])}`
                 ),
                 Object.values(node.outlets).map((outlet) =>
                     outlet.type === 'control'
-                        ? `let ${MACROS.typedVarMessageArray(outs[outlet.id])}`
-                        : `let ${MACROS.typedVarFloat(outs[outlet.id])}`
+                        ? `let ${macros.typedVarMessageArray(outs[outlet.id])}`
+                        : `let ${macros.typedVarFloat(outs[outlet.id])}`
                 ),
                 nodeDeclare ? nodeDeclare(
                     node,
                     {
                         ...compilation.engineVariableNames.n[node.id],
                         globs: globs,
-                        MACROS,
+                        macros,
                     },
                     compilation
                 ): '',

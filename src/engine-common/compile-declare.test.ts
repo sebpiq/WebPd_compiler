@@ -15,7 +15,7 @@ import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileDeclare from './compile-declare'
-import MACROS from '../engine-javascript/macros'
+import macros from '../engine-javascript/macros'
 
 describe('compileDeclare', () => {
     jest.setTimeout(10000)
@@ -63,7 +63,7 @@ describe('compileDeclare', () => {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: MACROS,
+            macros: macros,
         })
 
         const declareCode = compileDeclare(compilation, [graph.osc, graph.dac])
@@ -130,7 +130,7 @@ describe('compileDeclare', () => {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: MACROS,
+            macros: macros,
         })
 
         assert.doesNotThrow(() =>

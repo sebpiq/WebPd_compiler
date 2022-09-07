@@ -13,8 +13,8 @@ import { NodeCodeGenerator } from '../types'
 
 // TODO : left inlet ?
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { outs, MACROS }) => {
+export const loop: NodeCodeGenerator = (_, { outs, macros }) => {
     return `
-        ${outs.$0} = ${MACROS.castToFloat(`Math.random() * 2 - 1`)}
+        ${outs.$0} = ${macros.castToFloat(`Math.random() * 2 - 1`)}
     `
 }

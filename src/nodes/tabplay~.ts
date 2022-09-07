@@ -18,17 +18,17 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 // ------------------------------ declare ------------------------------ //
 export const declare: NodeCodeGenerator = (
     _,
-    { state, ins, globs, MACROS }
+    { state, ins, globs, macros }
 ) => `
-    let ${MACROS.typedVarFloatArray(state.array)}
-    let ${MACROS.typedVarInt(state.readPosition)}
-    let ${MACROS.typedVarInt(state.readUntil)}
+    let ${macros.typedVarFloatArray(state.array)}
+    let ${macros.typedVarInt(state.readPosition)}
+    let ${macros.typedVarInt(state.readUntil)}
 
-    const ${state.funcSetArrayName} = ${MACROS.functionHeader(
-        MACROS.typedVarString('arrayName')
+    const ${state.funcSetArrayName} = ${macros.functionHeader(
+        macros.typedVarString('arrayName')
     )} => {
         if (!${globs.arrays}.has(arrayName)) {
-            ${state.array} = new ${MACROS.floatArrayType()}(0)
+            ${state.array} = new ${macros.floatArrayType()}(0)
         } else {
             ${state.array} = ${globs.arrays}.get(arrayName)
         }
@@ -36,39 +36,39 @@ export const declare: NodeCodeGenerator = (
         ${state.readUntil} = ${state.array}.length
     }
 
-    const ${state.funcHandleMessage} = ${MACROS.functionHeader()} => {
-        let ${MACROS.typedVarMessage('m')} = ${ins.$0}.shift()
+    const ${state.funcHandleMessage} = ${macros.functionHeader()} => {
+        let ${macros.typedVarMessage('m')} = ${ins.$0}.shift()
         
-        if (${MACROS.isMessageMatching('m', [
+        if (${macros.isMessageMatching('m', [
             'set',
             MESSAGE_DATUM_TYPE_STRING,
         ])}) {
-            ${state.funcSetArrayName}(${MACROS.readMessageStringDatum('m', 1)})
+            ${state.funcSetArrayName}(${macros.readMessageStringDatum('m', 1)})
             
-        } else if (${MACROS.isMessageMatching('m', ['bang'])}) {
+        } else if (${macros.isMessageMatching('m', ['bang'])}) {
             ${state.readPosition} = 0
             ${state.readUntil} = ${state.array}.length
             
-        } else if (${MACROS.isMessageMatching('m', [
+        } else if (${macros.isMessageMatching('m', [
             MESSAGE_DATUM_TYPE_FLOAT,
         ])}) {
-            ${state.readPosition} = ${MACROS.castToInt(
-                MACROS.readMessageFloatDatum('m', 0)
+            ${state.readPosition} = ${macros.castToInt(
+                macros.readMessageFloatDatum('m', 0)
             )}
             ${state.readUntil} = ${state.array}.length
     
-        } else if (${MACROS.isMessageMatching('m', [
+        } else if (${macros.isMessageMatching('m', [
             MESSAGE_DATUM_TYPE_FLOAT,
             MESSAGE_DATUM_TYPE_FLOAT,
         ])}) {
-            ${state.readPosition} = ${MACROS.castToInt(
-                MACROS.readMessageFloatDatum('m', 0)
+            ${state.readPosition} = ${macros.castToInt(
+                macros.readMessageFloatDatum('m', 0)
             )}
-            ${state.readUntil} = ${MACROS.castToInt(`Math.min(
-                ${MACROS.castToFloat(
+            ${state.readUntil} = ${macros.castToInt(`Math.min(
+                ${macros.castToFloat(
                     state.readPosition
-                )} + ${MACROS.readMessageFloatDatum('m', 1)}, 
-                ${MACROS.castToFloat(`${state.array}.length`)}
+                )} + ${macros.readMessageFloatDatum('m', 1)}, 
+                ${macros.castToFloat(`${state.array}.length`)}
             )`)}
             
         } else {
@@ -80,20 +80,20 @@ export const declare: NodeCodeGenerator = (
 // ------------------------------ initialize ------------------------------ //
 export const initialize: NodeCodeGenerator = (
     node,
-    { state, ins, MACROS }
+    { state, ins, macros }
 ) => `
-    ${state.array} = new ${MACROS.floatArrayType()}(0)
+    ${state.array} = new ${macros.floatArrayType()}(0)
     ${state.readPosition} = 0
     ${state.readUntil} = 0
 
     ${node.args.arrayName ? `{
-        ${MACROS.createMessage('m', ['set', node.args.arrayName as string])}
+        ${macros.createMessage('m', ['set', node.args.arrayName as string])}
         ${ins.$0}.push(m)
     }`: ''}
 `
 
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { state, ins, outs, MACROS }) => `
+export const loop: NodeCodeGenerator = (_, { state, ins, outs, macros }) => `
     while (${ins.$0}.length) {
         ${state.funcHandleMessage}()
     }
@@ -102,7 +102,7 @@ export const loop: NodeCodeGenerator = (_, { state, ins, outs, MACROS }) => `
         ${outs.$0} = ${state.array}[${state.readPosition}]
         ${state.readPosition}++
         if (${state.readPosition} >= ${state.readUntil}) {
-            ${MACROS.createMessage('m', ['bang'])}
+            ${macros.createMessage('m', ['bang'])}
             ${outs.$1}.push(m)
         }
     } else {

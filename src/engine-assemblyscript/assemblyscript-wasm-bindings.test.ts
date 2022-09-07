@@ -32,7 +32,7 @@ import compileToAssemblyscript, {
 } from './compile-to-assemblyscript'
 import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
-import MACROS from './macros'
+import macros from './macros'
 
 describe('AssemblyScriptWasmEngine', () => {
     jest.setTimeout(10000)
@@ -64,7 +64,7 @@ describe('AssemblyScriptWasmEngine', () => {
     describe('configure/loop', () => {
         it('should configure and return an output block of the right size', async () => {
             let block: Float32Array | Float64Array
-            const compilation = makeCompilation({ macros: MACROS })
+            const compilation = makeCompilation({ macros: macros })
             const { engine: engine2Channels } = await getEngine(
                 compileToAssemblyscript({
                     ...compilation,
@@ -216,7 +216,7 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('setArray', () => {
         it('should set the array', async () => {
-            const compilation: Compilation = makeCompilation({ macros: MACROS })
+            const compilation: Compilation = makeCompilation({ macros: macros })
             const { engine, wasmExports } = await getEngine(
                 compileToAssemblyscript(compilation) +
                     `

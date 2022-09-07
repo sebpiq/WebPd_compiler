@@ -15,44 +15,44 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 // ------------------------------ declare ------------------------------ //
 export const declare: NodeCodeGenerator = (
     _,
-    { state, ins, globs, MACROS },
+    { state, ins, globs, macros },
 ) =>
     // TODO : more complex ways to set rate
     // Time units are all expressed in frames here
     `
-        let ${MACROS.typedVarFloat(state.rate)}
-        let ${MACROS.typedVarInt(state.nextTick)}
-        let ${MACROS.typedVarFloat(state.realNextTick)}
+        let ${macros.typedVarFloat(state.rate)}
+        let ${macros.typedVarInt(state.nextTick)}
+        let ${macros.typedVarFloat(state.realNextTick)}
 
-        const ${state.funcSetRate} = ${MACROS.functionHeader(
-            MACROS.typedVarFloat('rate')
+        const ${state.funcSetRate} = ${macros.functionHeader(
+            macros.typedVarFloat('rate')
         )} => {
             ${state.rate} = rate / 1000 * ${globs.sampleRate}
         }
 
-        const ${state.funcHandleMessage0} = ${MACROS.functionHeader()} => {
+        const ${state.funcHandleMessage0} = ${macros.functionHeader()} => {
             let m = ${ins.$0}.shift()
-            if (${MACROS.isMessageMatching('m', [
+            if (${macros.isMessageMatching('m', [
                 0,
-            ])} || ${MACROS.isMessageMatching('m', ['stop'])}) {
+            ])} || ${macros.isMessageMatching('m', ['stop'])}) {
                 ${state.nextTick} = 0
                 ${state.realNextTick} = 0
                 
-            } else if (${MACROS.isMessageMatching('m', [
+            } else if (${macros.isMessageMatching('m', [
                 MESSAGE_DATUM_TYPE_FLOAT,
-            ])} || ${MACROS.isMessageMatching('m', ['bang'])}) {
+            ])} || ${macros.isMessageMatching('m', ['bang'])}) {
                 ${state.nextTick} = ${globs.frame}
-                ${state.realNextTick} = ${MACROS.castToFloat(globs.frame)}
+                ${state.realNextTick} = ${macros.castToFloat(globs.frame)}
         
             } else {
                 throw new Error("Unexpected message")
             }
         }
 
-        const ${state.funcHandleMessage1} = ${MACROS.functionHeader()} => {
+        const ${state.funcHandleMessage1} = ${macros.functionHeader()} => {
             let m = ${ins.$1}.shift()
-            if (${MACROS.isMessageMatching('m', [MESSAGE_DATUM_TYPE_FLOAT])}) {
-                ${state.funcSetRate}(${MACROS.readMessageFloatDatum('m', 0)})
+            if (${macros.isMessageMatching('m', [MESSAGE_DATUM_TYPE_FLOAT])}) {
+                ${state.funcSetRate}(${macros.readMessageFloatDatum('m', 0)})
                 
             } else {
                 throw new Error("Unexpected message")
@@ -76,7 +76,7 @@ export const initialize: NodeCodeGenerator = (
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (
     _,
-    { state, ins, outs, globs, MACROS }
+    { state, ins, outs, globs, macros }
 ) => `
     while (${ins.$1}.length) {
         ${state.funcHandleMessage1}()
@@ -85,10 +85,10 @@ export const loop: NodeCodeGenerator = (
         ${state.funcHandleMessage0}()
     }
     if (${globs.frame} === ${state.nextTick}) {
-        ${MACROS.createMessage('m', ['bang'])}
+        ${macros.createMessage('m', ['bang'])}
         ${outs.$0}.push(m)
         ${state.realNextTick} = ${state.realNextTick} + ${state.rate}
-        ${state.nextTick} = ${MACROS.castToInt(`Math.round(${state.realNextTick})`)}
+        ${state.nextTick} = ${macros.castToInt(`Math.round(${state.realNextTick})`)}
     }
 `
 

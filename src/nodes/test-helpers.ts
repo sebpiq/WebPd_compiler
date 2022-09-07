@@ -165,11 +165,11 @@ export const generateFramesForNode = async (
         },
         'recorder-node': {
             // Generate one memory variable per outlet of test node
-            declare: (_, { state, MACROS }) =>
+            declare: (_, { state, macros }) =>
                 renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
                     inlet.type === 'signal'
-                        ? `let ${MACROS.typedVarFloat(state['mem' + inlet.id])} = 0`
-                        : `let ${MACROS.typedVarMessageArray(state['mem' + inlet.id])} = []`
+                        ? `let ${macros.typedVarFloat(state['mem' + inlet.id])} = 0`
+                        : `let ${macros.typedVarMessageArray(state['mem' + inlet.id])} = []`
                 )}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.

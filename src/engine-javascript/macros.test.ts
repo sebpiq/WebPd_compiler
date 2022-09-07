@@ -15,16 +15,16 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import { makeCompilation } from '../test-helpers'
-import MACROS from './macros'
+import macros from './macros'
 
 describe('macros', () => {
     const COMPILATION = makeCompilation({
-        macros: MACROS,
+        macros: macros,
     })
 
     describe('isMessageMatching', () => {
         it('should generate condition for types', () => {
-            const code = MACROS.isMessageMatching(COMPILATION, 'myMessage', [
+            const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
                 MESSAGE_DATUM_TYPE_STRING,
                 MESSAGE_DATUM_TYPE_FLOAT,
             ])
@@ -35,7 +35,7 @@ describe('macros', () => {
         })
 
         it('should generate condition for values', () => {
-            const code = MACROS.isMessageMatching(COMPILATION, 'myMessage', [
+            const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
                 'blabla',
                 123.5,
             ])
@@ -46,7 +46,7 @@ describe('macros', () => {
         })
 
         it('should generate condition for types and values', () => {
-            const code = MACROS.isMessageMatching(COMPILATION, 'myMessage', [
+            const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
                 MESSAGE_DATUM_TYPE_FLOAT,
                 'bla',
             ])

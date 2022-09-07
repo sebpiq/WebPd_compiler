@@ -14,7 +14,7 @@
  * For example : instantiation, passing data back and forth, etc ...
  *
  * **Warning** : These bindings are compiled with rollup as a standalone JS module for inclusion in other libraries.
- * In consequence, they are meant to be kept lightweight, and shouldn't avoid importing dependencies.
+ * In consequence, they are meant to be kept lightweight, and should avoid importing dependencies.
  *
  * @module
  */

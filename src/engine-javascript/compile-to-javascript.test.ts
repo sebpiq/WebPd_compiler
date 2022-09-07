@@ -14,7 +14,7 @@ import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
 import { InletListeners, NodeImplementations } from '../types'
 import compileToJavascript from './compile-to-javascript'
-import MACROS from './macros'
+import macros from './macros'
 import { JavaScriptEngine } from './types'
 
 describe('compileToJavascript', () => {
@@ -39,7 +39,7 @@ describe('compileToJavascript', () => {
                 bli: { access: 'rw', type: 'float' },
                 blu: { access: 'rw', type: 'messages' },
             },
-            macros: MACROS,
+            macros: macros,
         })
         
         const code = compileToJavascript(compilation)
@@ -93,7 +93,7 @@ describe('compileToJavascript', () => {
         const compilation = makeCompilation({
             graph, 
             nodeImplementations: NODE_IMPLEMENTATIONS, 
-            macros: MACROS,
+            macros: macros,
         })
         const code = compileToJavascript(compilation)
         const modelEngine: JavaScriptEngine = {
@@ -143,7 +143,7 @@ describe('compileToJavascript', () => {
         const code = compileToJavascript(makeCompilation({
             graph, 
             nodeImplementations, 
-            macros: MACROS,
+            macros: macros,
             inletListeners,
             portSpecs: {
                 [inletVariableName]: {

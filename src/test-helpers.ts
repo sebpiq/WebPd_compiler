@@ -10,7 +10,7 @@
  */
 
 import { attachPortsAndMessageListenersVariableNames, generateEngineVariableNames } from "./compile"
-import MACROS from "./engine-javascript/macros"
+import macros from "./engine-javascript/macros"
 import { Compilation } from "./types"
 
 export const normalizeCode = (rawCode: string) => {
@@ -42,7 +42,7 @@ export const makeCompilation = (compilation: Partial<Compilation>): Compilation 
         },
         portSpecs: {},
         inletListeners: {},
-        macros: MACROS,
+        macros: macros,
         engineVariableNames: engineVariableNames,
         ...compilation,
     }

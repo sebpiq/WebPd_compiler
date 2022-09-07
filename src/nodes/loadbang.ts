@@ -12,8 +12,8 @@
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ declare ------------------------------ //
-export const declare: NodeCodeGenerator = (_, { state, MACROS }) => `
-    let ${MACROS.typedVarInt(state.init)}
+export const declare: NodeCodeGenerator = (_, { state, macros }) => `
+    let ${macros.typedVarInt(state.init)}
 `
 
 // ------------------------------ initialize ------------------------------ //
@@ -22,11 +22,11 @@ export const initialize: NodeCodeGenerator = (_, { state }) => `
 `
 
 // ------------------------------- loop ------------------------------ //
-export const loop: NodeCodeGenerator = (_, { outs, state, MACROS }) => {
+export const loop: NodeCodeGenerator = (_, { outs, state, macros }) => {
     return `
         if (${state.init}) {
             ${state.init} = 0
-            ${MACROS.createMessage('m', ['bang'])}
+            ${macros.createMessage('m', ['bang'])}
             ${outs.$0}.push(m)
         }
     `

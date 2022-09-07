@@ -28,9 +28,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { bitDepth, channelCount } = audioSettings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
-    const MACROS = compilation.macros
+    const macros = compilation.macros
     const FloatType = bitDepth === 32 ? 'f32' : 'f64'
-    const FloatArrayType = MACROS.floatArrayType(compilation)
+    const FloatArrayType = macros.floatArrayType(compilation)
     const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
     const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
     const CORE_CODE = assemblyscriptCoreCode
@@ -55,7 +55,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     return renderCode`
         ${CORE_CODE}
 
-        let ${MACROS.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
+        let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
     
         ${compileDeclare(compilation, graphTraversal)}
         ${compileMessageListeners(compilation)}

@@ -18,7 +18,7 @@ import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports } from './types'
 import { createEngine, EngineSettings } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
-import MACROS from './macros'
+import macros from './macros'
 
 describe('compileToAssemblyscript', () => {
     jest.setTimeout(10000)
@@ -56,7 +56,7 @@ describe('compileToAssemblyscript', () => {
         const engine = await compileEngine(
             makeCompilation({
                 nodeImplementations: NODE_IMPLEMENTATIONS,
-                macros: MACROS,
+                macros: macros,
                 portSpecs: {
                     bla: { access: 'r', type: 'float' },
                     blo: { access: 'w', type: 'messages' },
@@ -130,9 +130,9 @@ describe('compileToAssemblyscript', () => {
         const inletVariableName = 'someNode_INS_someInlet'
         const nodeImplementations: NodeImplementations = {
             'messageGeneratorType': {
-                loop: (_, {outs, globs, MACROS}) => `
+                loop: (_, {outs, globs, macros}) => `
                     if (${globs.frame} % 5 === 0) {
-                        ${MACROS.createMessage('m', [0])}
+                        ${macros.createMessage('m', [0])}
                         writeFloatDatum(m, 0, f32(${globs.frame}))
                         ${outs.someOutlet}.push(m)
                     }
@@ -160,7 +160,7 @@ describe('compileToAssemblyscript', () => {
             makeCompilation({
                 graph, 
                 nodeImplementations, 
-                macros: MACROS,
+                macros: macros,
                 inletListeners: {
                     'someNode': ['someInlet']
                 },
@@ -193,7 +193,7 @@ describe('compileToAssemblyscript', () => {
         const engine = await compileEngine(
             makeCompilation({
                 nodeImplementations: NODE_IMPLEMENTATIONS,
-                macros: MACROS,
+                macros: macros,
                 portSpecs: {
                     bla: { access: 'r', type: 'float' },
                     blo: { access: 'w', type: 'messages' },
@@ -265,7 +265,7 @@ describe('compileToAssemblyscript', () => {
     it('should be a wasm engine when compiled', async () => {
         const { wasmExports } = await compileEngine(makeCompilation({
             nodeImplementations: NODE_IMPLEMENTATIONS,
-            macros: MACROS,
+            macros: macros,
         }))
 
         const expectedExports: AssemblyScriptWasmExports = {

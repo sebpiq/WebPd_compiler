@@ -15,7 +15,7 @@ import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileLoop from './compile-loop'
-import MACROS from '../engine-assemblyscript/macros'
+import macros from '../engine-assemblyscript/macros'
 
 describe('compileLoop', () => {
     jest.setTimeout(10000)
@@ -90,7 +90,7 @@ describe('compileLoop', () => {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: MACROS,
+            macros: macros,
         })
 
         const loop = compileLoop(compilation, [
@@ -178,7 +178,7 @@ describe('compileLoop', () => {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: MACROS,
+            macros: macros,
         })
 
         const loop = compileLoop(compilation, [
@@ -248,7 +248,7 @@ describe('compileLoop', () => {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: MACROS,
+            macros: macros,
         })
 
         const loop = compileLoop(compilation, [graph.osc, graph.dac])

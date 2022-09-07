@@ -18,12 +18,12 @@ import { NodeCodeGenerator } from '../types'
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (
     _,
-    { ins, MACROS },
+    { ins, macros },
     { audioSettings }
 ) => {
     let loopStr = ''
     for (let channel = 0; channel < audioSettings.channelCount; channel++) {
-        loopStr += `\n${MACROS.fillInLoopOutput(channel, ins[`${channel}`])}`
+        loopStr += `\n${macros.fillInLoopOutput(channel, ins[`${channel}`])}`
     }
     return loopStr
 }

@@ -105,14 +105,14 @@ const isMessageMatching = (
     name: CodeVariableName,
     tokens: Array<number | string | MessageDatumType>
 ) => {
-    const MACROS = compilation.macros
+    const macros = compilation.macros
     const conditionOnDatumCount = `${name}.datumCount === ${tokens.length}`
     const conditionsOnValues: Array<Code> = []
     const conditionsOnTypes: Array<Code> = tokens.map((token, tokenIndex) => {
         if (typeof token === 'number' || token === MESSAGE_DATUM_TYPE_FLOAT) {
             if (typeof token === 'number') {
                 conditionsOnValues.push(
-                    `${MACROS.readMessageFloatDatum(
+                    `${macros.readMessageFloatDatum(
                         compilation,
                         name,
                         tokenIndex
@@ -126,7 +126,7 @@ const isMessageMatching = (
         ) {
             if (typeof token === 'string') {
                 conditionsOnValues.push(
-                    `${MACROS.readMessageStringDatum(
+                    `${macros.readMessageStringDatum(
                         compilation,
                         name,
                         tokenIndex
@@ -169,7 +169,7 @@ const fillInLoopOutput = (
     return `${globs.output}[${globs.iterFrame} + ${globs.blockSize} * ${channel}] = ${value}`
 }
 
-const MACROS: CodeMacros = {
+const macros: CodeMacros = {
     floatArrayType,
     typedVarInt,
     typedVarFloat,
@@ -187,4 +187,4 @@ const MACROS: CodeMacros = {
     fillInLoopOutput,
 }
 
-export default MACROS
+export default macros

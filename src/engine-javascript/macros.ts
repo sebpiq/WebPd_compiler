@@ -89,7 +89,7 @@ const fillInLoopOutput = (
     return `${globs.output}[${channel}][${globs.iterFrame}] = ${value}`
 }
 
-const MACROS: CodeMacros = {
+const macros: CodeMacros = {
     floatArrayType,
     typedVarInt,
     typedVarFloat,
@@ -107,4 +107,4 @@ const MACROS: CodeMacros = {
     fillInLoopOutput,
 }
 
-export default MACROS
+export default macros

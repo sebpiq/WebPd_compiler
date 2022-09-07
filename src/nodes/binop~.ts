@@ -23,8 +23,8 @@ export const makeDeclare = (): NodeCodeGenerator => (...args) => {
 
 const declareSignal: NodeCodeGenerator = () => ``
 
-const declareControl: NodeCodeGenerator = (_, { state, MACROS }) =>
-    `let ${MACROS.typedVarFloat(state.rightOp)}`
+const declareControl: NodeCodeGenerator = (_, { state, macros }) =>
+    `let ${macros.typedVarFloat(state.rightOp)}`
 
 // ------------------------------ initialize ------------------------------ //
 export const makeInitialize = (defaultValue: number): NodeCodeGenerator => (...args) => {
@@ -59,11 +59,11 @@ const makeLoopSignal = (operator: string): NodeCodeGenerator => (
 
 const makeLoopControl = (operator: string): NodeCodeGenerator => (
     _,
-    { ins, outs, state, MACROS }
+    { ins, outs, state, macros }
 ) => `
         if (${ins.$1_control}.length) {
-            const ${MACROS.typedVarMessage('inMessage')} = ${ins.$1_control}.pop()
-            ${state.rightOp} = ${MACROS.readMessageFloatDatum('inMessage', 0)}
+            const ${macros.typedVarMessage('inMessage')} = ${ins.$1_control}.pop()
+            ${state.rightOp} = ${macros.readMessageFloatDatum('inMessage', 0)}
         }
         ${outs.$0} = ${ins.$0} ${operator} ${state.rightOp}`
 

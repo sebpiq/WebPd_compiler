@@ -107,7 +107,7 @@ export type NodeCodeGenerator = (
     node: PdDspGraph.Node,
     variableNames: NodeVariableNames & {
         globs: EngineVariableNames['g']
-        MACROS: WrappedCodeMacros
+        macros: WrappedCodeMacros
     },
     compilation: Compilation
 ) => Code

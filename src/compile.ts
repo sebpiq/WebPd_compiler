@@ -9,8 +9,8 @@
  *
  */
 
-import JS_MACROS from './engine-javascript/macros'
-import ASC_MACROS from './engine-assemblyscript/macros'
+import jsMacros from './engine-javascript/macros'
+import ascMacros from './engine-assemblyscript/macros'
 import { CodeMacros, Compilation, CompilerSettings, EngineVariableNames, InletListeners, NodeImplementations, NodeVariableNames, PortSpecs } from './types'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
@@ -203,6 +203,6 @@ export const validateSettings = (
  * @returns 
  */
 export const getMacros = (target: CompilerSettings["target"]): CodeMacros => 
-    ({'javascript': JS_MACROS, 'assemblyscript': ASC_MACROS}[target])
+    ({'javascript': jsMacros, 'assemblyscript': ascMacros}[target])
 
 class InvalidSettingsError extends Error {}

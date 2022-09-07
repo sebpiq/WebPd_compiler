@@ -15,7 +15,7 @@ import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import { jest } from '@jest/globals'
 import compileInitialize from './compile-initialize'
-import MACROS from '../engine-assemblyscript/macros'
+import macros from '../engine-assemblyscript/macros'
 
 describe('compileInitialize', () => {
     jest.setTimeout(10000)
@@ -63,7 +63,7 @@ describe('compileInitialize', () => {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: MACROS,
+            macros: macros,
         })
 
         const initializeCode = compileInitialize(compilation, [
@@ -131,7 +131,7 @@ describe('compileInitialize', () => {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: MACROS,
+            macros: macros,
         })
 
         assert.doesNotThrow(() =>

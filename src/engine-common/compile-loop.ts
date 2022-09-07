@@ -20,7 +20,7 @@ export default (
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const { inletListeners, engineVariableNames } = compilation
     const globs = compilation.engineVariableNames.g
-    const MACROS = wrapMacros(compilation.macros, compilation)
+    const macros = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`${[
         graphTraversal.map((node) => {
@@ -44,7 +44,7 @@ export default (
                     {
                         ...nodeVariableNames,
                         globs,
-                        MACROS,
+                        macros,
                     },
                     compilation
                 ),

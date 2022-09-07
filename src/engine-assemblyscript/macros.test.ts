@@ -16,16 +16,16 @@ import {
 } from '../constants'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
-import MACROS from './macros'
+import macros from './macros'
 
 describe('macros', () => {
     const COMPILATION = makeCompilation({
-        macros: MACROS,
+        macros: macros,
     })
 
     describe('createMessage', () => {
         it('should generate the right code for string', () => {
-            const code = MACROS.createMessage(COMPILATION, 'myMessage', [
+            const code = macros.createMessage(COMPILATION, 'myMessage', [
                 'bang',
                 'lol',
             ])
@@ -40,7 +40,7 @@ describe('macros', () => {
         })
 
         it('should generate the right code for float', () => {
-            const code = MACROS.createMessage(
+            const code = macros.createMessage(
                 COMPILATION,
                 'myMessage',
                 [1.234, 888]
@@ -58,7 +58,7 @@ describe('macros', () => {
 
     describe('isMessageMatching', () => {
         it('should generate condition for types', () => {
-            const code = MACROS.isMessageMatching(COMPILATION, 'myMessage', [
+            const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
                 MESSAGE_DATUM_TYPE_STRING,
                 MESSAGE_DATUM_TYPE_FLOAT,
             ])
@@ -69,7 +69,7 @@ describe('macros', () => {
         })
 
         it('should generate condition for values', () => {
-            const code = MACROS.isMessageMatching(COMPILATION, 'myMessage', [
+            const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
                 'blabla',
                 123.5,
             ])
@@ -80,7 +80,7 @@ describe('macros', () => {
         })
 
         it('should generate condition for types and values', () => {
-            const code = MACROS.isMessageMatching(COMPILATION, 'myMessage', [
+            const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
                 MESSAGE_DATUM_TYPE_FLOAT,
                 'bla',
             ])
