@@ -50,7 +50,10 @@ export default (
                 // 2. Node outs to sinks ins
                 traversal
                     .listConnectionsOut(node)
-                    // Make sure we omit nodes that are not connected to an end sink
+                    // When `node` has a sink node that is not connected to an end sink, that sink node won't be included
+                    // in the traversal, but will still appear in `node.sinks`. 
+                    // Therefore, we need to make sure to filter `node.sinks` to exclude sink nodes that don't
+                    // appear in the traversal.
                     .filter(([_, { nodeId: sinkNodeId }]) =>
                         traversalNodeIds.includes(sinkNodeId)
                     )
