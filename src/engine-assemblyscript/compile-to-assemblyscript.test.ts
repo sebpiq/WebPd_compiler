@@ -19,7 +19,6 @@ import { AssemblyScriptWasmExports } from './types'
 import { createEngine } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import MACROS from './macros'
-import { generateInletVariableName } from '../compile'
 
 describe('compileToAssemblyscript', () => {
     jest.setTimeout(10000)
@@ -127,7 +126,7 @@ describe('compileToAssemblyscript', () => {
 
     it('should create inlet listeners and trigger them whenever inlets receive new messages', async () => {
         const called: Array<Array<PdSharedTypes.ControlValue>> = []
-        const inletVariableName = generateInletVariableName('someNode', 'someInlet')
+        const inletVariableName = 'someNode_INS_someInlet'
         const nodeImplementations: NodeImplementations = {
             'messageGeneratorType': {
                 loop: (_, {outs, globs, MACROS}) => `

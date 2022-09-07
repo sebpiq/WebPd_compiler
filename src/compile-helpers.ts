@@ -59,7 +59,8 @@ export const createNamespace = <T extends Object>(namespace: T) => {
 
                 // Whitelist some fields that are undefined but accessed at
                 // some point or another by our code.
-                if (['toJSON'].includes(key)) {
+                if (['toJSON', 'Symbol(Symbol.toStringTag)', 'constructor', '$$typeof', 
+                    '@@__IMMUTABLE_ITERABLE__@@', '@@__IMMUTABLE_RECORD__@@'].includes(key)) {
                     return undefined
                 }
                 throw new Error(`Namespace doesn't know key "${String(key)}"`)

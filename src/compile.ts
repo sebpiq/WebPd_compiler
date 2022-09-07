@@ -28,6 +28,7 @@ export default (
     const engineVariableNames = generateEngineVariableNames(nodeImplementations, graph)
     const messageListenerSpecs = generateMessageListenerSpecs(engineVariableNames, messageListeners)
     const portSpecs = generatePortSpecs(messageListenerSpecs)
+    attachPortsAndMessageListenersVariableNames(engineVariableNames, portSpecs, messageListenerSpecs)
 
     const compilation: Compilation = {
         graph,
@@ -73,24 +74,16 @@ export const generateEngineVariableNames = (
                         ins: createNamespace(
                             Object.values(node.inlets).reduce<
                                 NodeVariableNames['ins']
-                            >((nameMap, portlet) => {
-                                nameMap[portlet.id] =
-                                    generateInletVariableName(
-                                        node.id,
-                                        portlet.id
-                                    )
+                            >((nameMap, inlet) => {
+                                nameMap[inlet.id] = `${assertValidNamePart(node.id)}_INS_${assertValidNamePart(inlet.id)}`
                                 return nameMap
                             }, {})
                         ),
                         outs: createNamespace(
                             Object.values(node.outlets).reduce<
                                 NodeVariableNames['outs']
-                            >((nameMap, portlet) => {
-                                nameMap[portlet.id] =
-                                    generateOutletVariableName(
-                                        node.id,
-                                        portlet.id
-                                    )
+                            >((nameMap, outlet) => {
+                                nameMap[outlet.id] = `${assertValidNamePart(node.id)}_OUTS_${assertValidNamePart(outlet.id)}`
                                 return nameMap
                             }, {})
                         ),
@@ -98,11 +91,7 @@ export const generateEngineVariableNames = (
                             nodeStateVariables.reduce<
                                 NodeVariableNames['state']
                             >((nameMap, stateVariable) => {
-                                nameMap[stateVariable] =
-                                    generateStateVariableName(
-                                        node.id,
-                                        stateVariable
-                                    )
+                                nameMap[stateVariable] = `${assertValidNamePart(node.id)}_STATE_${assertValidNamePart(stateVariable)}`
                                 return nameMap
                             }, {})
                         ),
@@ -121,25 +110,35 @@ export const generateEngineVariableNames = (
             sampleRate: 'SAMPLE_RATE',
             output: 'OUTPUT',
         },
+        ports: createNamespace({}),
+        messageListeners: createNamespace({}),
     })
 
-export const generateInletVariableName = (
-    nodeId: PdDspGraph.NodeId,
-    inletId: PdDspGraph.PortletId
-) => `${assertValidNamePart(nodeId)}_INS_${assertValidNamePart(inletId)}`
-
-export const generateOutletVariableName = (
-    nodeId: PdDspGraph.NodeId,
-    outletId: PdDspGraph.PortletId
-) => `${assertValidNamePart(nodeId)}_OUTS_${assertValidNamePart(outletId)}`
-
-export const generateStateVariableName = (
-    nodeId: PdDspGraph.NodeId,
-    localVariableName: PdDspGraph.PortletId
-) =>
-    `${assertValidNamePart(nodeId)}_STATE_${assertValidNamePart(
-        localVariableName
-    )}`
+/**
+ * Helper that attaches to the generated `engineVariableNames` the names of specified message listeners and port functions.
+ * 
+ * @param engineVariableNames 
+ * @param portSpecs 
+ * @param messageListenerSpecs 
+ */
+export const attachPortsAndMessageListenersVariableNames = (
+    engineVariableNames: EngineVariableNames,
+    portSpecs: PortSpecs,
+    messageListenerSpecs: MessageListenerSpecs,
+): void => {
+    Object.entries(portSpecs).forEach(([variableName, portSpec]) => {
+        engineVariableNames.ports[variableName] = {}
+        if (portSpec.access.includes('r')) {
+            engineVariableNames.ports[variableName]['r'] = `read_${variableName}`
+        }
+        if (portSpec.access.includes('w')) {
+            engineVariableNames.ports[variableName]['w'] = `write_${variableName}`
+        }
+    })
+    Object.keys(messageListenerSpecs).forEach(variableName => {
+        engineVariableNames.messageListeners[variableName] = `messageListener_${variableName}`
+    })
+}
 
 export const assertValidNamePart = (namePart: string) => {
     const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)

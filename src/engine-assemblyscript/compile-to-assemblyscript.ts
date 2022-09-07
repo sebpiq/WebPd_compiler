@@ -1,3 +1,7 @@
+
+
+
+
 /*
  * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
  *
@@ -19,12 +23,12 @@ import {
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Code, Compilation, PortSpecs } from '../types'
+import { Compilation } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { audioSettings, portSpecs } = compilation
+    const { audioSettings } = compilation
     const { bitDepth, channelCount } = audioSettings
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
@@ -59,7 +63,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     
         ${compileDeclare(compilation, graphTraversal)}
         ${compileMessageListeners(compilation)}
-        ${compilePorts(portSpecs, { FloatType })}
+        ${compilePorts(compilation, { FloatType })}
         
         export function configure(sampleRate: ${FloatType}, blockSize: i32): ${FloatArrayType} {
             ${globs.sampleRate} = sampleRate
@@ -86,56 +90,51 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 }
 
 export const compilePorts = (
-    portSpecs: PortSpecs,
+    { portSpecs, engineVariableNames }: Compilation,
     { FloatType }: { FloatType: string }
 ) => {
     // prettier-ignore
     return renderCode`
         ${Object.entries(portSpecs).map(([variableName, spec]) => {
-            const portsCode: Array<Code> = []
-            if (spec.access.includes('r')) {
-                // TODO : uniformize names of types 'float', 'messages', etc ...
-                if (spec.type === 'float') {
-                    portsCode.push(`
-                        export function read_${variableName}(): ${FloatType} { 
-                            return ${variableName} 
-                        }
-                    `)
-                } else {
-                    portsCode.push(`
-                        export function read_${variableName}_length(): i32 { 
-                            return ${variableName}.length
-                        }
-                        export function read_${variableName}_elem(index: i32): Message { 
-                            return ${variableName}[index]
-                        }
-                    `)
-                }
-            }
-            if (spec.access.includes('w')) {
-                if (spec.type === 'float') {
-                    portsCode.push(`
-                        export function write_${variableName}(value: ${FloatType}): void { 
-                            ${variableName} = value
-                        }
-                    `)
-                } else {
-                    portsCode.push(`
-                        export function write_${variableName}(messages: Message[]): void { 
-                            ${variableName} = messages
-                        }
-                    `)
-                }
-            }
-            return portsCode
+            // TODO : uniformize names of types 'float', 'messages', etc ...
+            const portsVariableNames = engineVariableNames.ports[variableName]
+            return `
+                ${spec.access.includes('r') && spec.type === 'float' ? `
+                    export function ${portsVariableNames.r}(): ${FloatType} { 
+                        return ${variableName} 
+                    }
+                    `: ''}
+                ${spec.access.includes('r') && spec.type === 'messages' ? `
+                    export function ${portsVariableNames.r}_length(): i32 { 
+                        return ${variableName}.length
+                    }
+                    export function ${portsVariableNames.r}_elem(index: i32): Message { 
+                        return ${variableName}[index]
+                    }
+                `: ''}
+                ${spec.access.includes('w') && spec.type === 'float' ? `
+                    export function ${portsVariableNames.w}(value: ${FloatType}): void { 
+                        ${variableName} = value
+                    }
+                `: ''}
+                ${spec.access.includes('w') && spec.type === 'messages' ? `
+                    export function ${portsVariableNames.w}(messages: Message[]): void { 
+                        ${variableName} = messages
+                    }
+                `: ''}
+            `
         })}
     `
 }
 
 export const compileMessageListeners = (compilation: Compilation) => {
     return renderCode`
-        ${Object.keys(compilation.messageListenerSpecs).map(variableName =>
-            `export declare function messageListener_${variableName}(): void`
-        )}
+        ${Object.keys(compilation.messageListenerSpecs).map(variableName => {
+            const portVariableName = compilation.engineVariableNames.messageListeners[variableName]
+            // prettier-ignore
+            return `
+                export declare function ${portVariableName}(): void
+            `
+        })}
     `
 }

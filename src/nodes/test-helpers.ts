@@ -24,7 +24,7 @@ import { createEngine, AssemblyScriptWasmEngine }
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
-import { generateInletVariableName, generateOutletVariableName, generateStateVariableName, getMacros } from '../compile'
+import { getMacros } from '../compile'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/types'
 import compileToAssemblyscript from '../engine-assemblyscript/compile-to-assemblyscript'
 import compileToJavascript from '../engine-javascript/compile-to-javascript'
@@ -45,7 +45,7 @@ const setNodeInlet = (
     inletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
-    const inletVariableName = generateInletVariableName(nodeId, inletId)
+    const inletVariableName = `${nodeId}_INS_${inletId}`
     engine.ports[`write_${inletVariableName}`](value)
 }
 
@@ -55,7 +55,7 @@ const setNodeOutlet = (
     outletId: PdDspGraph.PortletId,
     value: GenericInletValue
 ) => {
-    const outletVariableName = generateOutletVariableName(nodeId, outletId)
+    const outletVariableName = `${nodeId}_OUTS_${outletId}`
     engine.ports[`write_${outletVariableName}`](value)
 }
 
@@ -64,7 +64,7 @@ const getNodeState = (
     nodeId: PdDspGraph.NodeId,
     name: string
 ) => {
-    const variableName = generateStateVariableName(nodeId, name)
+    const variableName = `${nodeId}_STATE_${name}`
     return engine.ports[`read_${variableName}`]()
 }
 
@@ -192,28 +192,19 @@ export const generateFramesForNode = async (
         Object.keys(inputFrame).forEach((inletId) => {
             const inlet = testNode.inlets[inletId]
             const portType = inlet.type === 'signal' ? 'float' : 'messages'
-            const inletVariableName = generateInletVariableName(
-                testNode.id,
-                inletId
-            )
+            const inletVariableName = `${testNode.id}_INS_${inletId}`
             portSpecs[inletVariableName] = { access: 'w', type: portType }
 
             // We need a port to write to the output of the fakeSourceNode only if it is connected
             if (_isConnectedToFakeNode(inletId)) {
-                const outletVariableName = generateOutletVariableName(
-                    fakeSourceNode.id,
-                    inletId
-                )
+                const outletVariableName = `${fakeSourceNode.id}_OUTS_${inletId}`
                 portSpecs[outletVariableName] = { access: 'w', type: portType }
             }
         })
 
         // Ports to read output values
         Object.entries(recorderNode.inlets).forEach(([inletId, inlet]) => {
-            const variableName = generateStateVariableName(
-                recorderNode.id,
-                'mem' + inletId
-            )
+            const variableName = `${recorderNode.id}_OUTS_${'mem' + inletId}`
             portSpecs[variableName] = {
                 access: 'r',
                 type: inlet.type === 'signal' ? 'float' : 'messages',

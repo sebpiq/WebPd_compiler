@@ -10,7 +10,7 @@
  */
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
-import compile, { assertValidNamePart, generateEngineVariableNames, generateInletVariableName, generateMessageListenerSpecs, generateOutletVariableName, generatePortSpecs, generateStateVariableName, validateSettings } from './compile'
+import compile, { assertValidNamePart, attachPortsAndMessageListenersVariableNames, generateEngineVariableNames, generateMessageListenerSpecs, generatePortSpecs, validateSettings } from './compile'
 import { CompilerSettings, EngineVariableNames, MessageListeners, MessageListenerSpecs, NodeImplementations, PortSpecs } from './types'
 
 describe('compile', () => {
@@ -85,20 +85,17 @@ describe('compile', () => {
                 {
                     myOsc: {
                         ins: {
-                            '0': generateInletVariableName('myOsc', '0'),
-                            '1': generateInletVariableName('myOsc', '1'),
+                            '0': 'myOsc_INS_0',
+                            '1': 'myOsc_INS_1',
                         },
                         outs: {
-                            '0': generateOutletVariableName('myOsc', '0'),
-                            '1': generateOutletVariableName('myOsc', '1'),
+                            '0': 'myOsc_OUTS_0',
+                            '1': 'myOsc_OUTS_1',
                         },
                         state: {
-                            phase: generateStateVariableName('myOsc', 'phase'),
-                            currentThing: generateStateVariableName(
-                                'myOsc',
-                                'currentThing'
-                            ),
-                            k: generateStateVariableName('myOsc', 'k'),
+                            phase: 'myOsc_STATE_phase',
+                            currentThing: 'myOsc_STATE_currentThing',
+                            k: 'myOsc_STATE_k',
                         },
                     },
                     myDac: {
@@ -226,6 +223,40 @@ describe('compile', () => {
                 'node1_INS_inlet1': messageListeners['node1']['inlet1'],
                 'node1_INS_inlet2': messageListeners['node1']['inlet2'],
                 'node2_INS_inlet1': messageListeners['node2']['inlet1'],
+            })
+        })
+    })
+
+    describe('attachPortsAndMessageListenersVariableNames', () => {
+        it('should attach variable names relating to ports and message listeners', () => {
+            const engineVariableNames: EngineVariableNames = generateEngineVariableNames(NODE_IMPLEMENTATIONS, makeGraph({
+                'node1': {
+                    inlets: {
+                        'inlet1': {type: 'control', id: 'inlet1'},
+                        'inlet2': {type: 'control', id: 'inlet2'},
+                    },
+                },
+            }))
+            const portSpecs: PortSpecs = {
+                'node1_INS_inlet1': { access: 'r', type: 'float'},
+                'node1_INS_inlet2': { access: 'rw', type: 'float'},
+            }
+            const messageListenerSpecs: MessageListenerSpecs = {
+                'node1_INS_inlet1': () => {},
+            }
+            attachPortsAndMessageListenersVariableNames(engineVariableNames, portSpecs, messageListenerSpecs)
+
+            assert.deepStrictEqual(engineVariableNames.ports, {
+                'node1_INS_inlet1': {
+                    'r': 'read_node1_INS_inlet1'
+                },
+                'node1_INS_inlet2': {
+                    'r': 'read_node1_INS_inlet2',
+                    'w': 'write_node1_INS_inlet2',
+                },
+            })
+            assert.deepStrictEqual(engineVariableNames.messageListeners, {
+                'node1_INS_inlet1': 'messageListener_node1_INS_inlet1',
             })
         })
     })

@@ -99,11 +99,14 @@ describe('AssemblyScriptWasmEngine', () => {
                 ...ENGINE_SETTINGS,
                 portSpecs,
             }
+            const compilation = makeCompilation({
+                portSpecs,
+            })
             const code =
                 ASSEMBLY_SCRIPT_CORE_CODE +
                 extraCode +
                 `
-                ${compilePorts(portSpecs, {
+                ${compilePorts(compilation, {
                     FloatType: 'f32',
                 })}
             `

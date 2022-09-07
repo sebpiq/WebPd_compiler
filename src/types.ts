@@ -89,6 +89,14 @@ export interface EngineVariableNames {
         sampleRate: string
         output: string
     }
+
+    // Namespace for port functions
+    ports: { [variableName: CodeVariableName]: 
+        { r?: CodeVariableName, w?: CodeVariableName }
+    }
+
+    // Namespace for message listener callbacks
+    messageListeners: { [variableName: CodeVariableName]: CodeVariableName }
 }
 
 export type NodeCodeGenerator = (

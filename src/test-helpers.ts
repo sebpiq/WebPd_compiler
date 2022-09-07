@@ -9,7 +9,7 @@
  *
  */
 
-import { generateEngineVariableNames } from "./compile"
+import { attachPortsAndMessageListenersVariableNames, generateEngineVariableNames } from "./compile"
 import MACROS from "./engine-javascript/macros"
 import { Compilation } from "./types"
 
@@ -27,7 +27,12 @@ export const round = (v: number, decimals: number = 3) =>
 export const makeCompilation = (compilation: Partial<Compilation>): Compilation => {
     const nodeImplementations = compilation.nodeImplementations || {}
     const graph = compilation.graph || {}
-    const variableNames = generateEngineVariableNames(nodeImplementations, graph)
+    const engineVariableNames = generateEngineVariableNames(nodeImplementations, graph)
+    attachPortsAndMessageListenersVariableNames(
+        engineVariableNames, 
+        compilation.portSpecs || {}, 
+        compilation.messageListenerSpecs || {},
+    )
     return {
         graph, 
         nodeImplementations,
@@ -38,7 +43,7 @@ export const makeCompilation = (compilation: Partial<Compilation>): Compilation 
         portSpecs: {},
         messageListenerSpecs: {},
         macros: MACROS,
-        engineVariableNames: variableNames,
+        engineVariableNames: engineVariableNames,
         ...compilation,
     }
 }

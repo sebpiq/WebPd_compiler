@@ -14,7 +14,7 @@ import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Code, Compilation } from '../types'
+import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
@@ -45,14 +45,13 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
             ports: {
                 ${Object.entries(portSpecs).map(([variableName, spec]) => {
-                    const portsCode: Array<Code> = []
-                    if (spec.access.includes('r')) {
-                        portsCode.push(`read_${variableName}: () => ${variableName},`)
-                    }
-                    if (spec.access.includes('w')) {
-                        portsCode.push(`write_${variableName}: (value) => ${variableName} = value,`)
-                    }
-                    return portsCode
+                    const portsVariableNames = compilation.engineVariableNames.ports[variableName]
+                    return `
+                        ${spec.access.includes('r') ? 
+                            `${portsVariableNames.r}: () => ${variableName},`: ''}
+                        ${spec.access.includes('w') ? 
+                            `${portsVariableNames.w}: (value) => ${variableName} = value,`: ''}
+                    `
                 })}
             }
         }
