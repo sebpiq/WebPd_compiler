@@ -31,7 +31,7 @@ export const makeCompilation = (compilation: Partial<Compilation>): Compilation 
     attachPortsAndMessageListenersVariableNames(
         engineVariableNames, 
         compilation.portSpecs || {}, 
-        compilation.messageListenerSpecs || {},
+        compilation.inletListeners || {},
     )
     return {
         graph, 
@@ -41,7 +41,7 @@ export const makeCompilation = (compilation: Partial<Compilation>): Compilation 
             channelCount: 2,
         },
         portSpecs: {},
-        messageListenerSpecs: {},
+        inletListeners: {},
         macros: MACROS,
         engineVariableNames: engineVariableNames,
         ...compilation,

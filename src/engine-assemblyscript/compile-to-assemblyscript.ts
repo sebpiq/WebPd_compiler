@@ -1,7 +1,3 @@
-
-
-
-
 /*
  * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
  *
@@ -129,12 +125,14 @@ export const compilePorts = (
 
 export const compileMessageListeners = (compilation: Compilation) => {
     return renderCode`
-        ${Object.keys(compilation.messageListenerSpecs).map(variableName => {
-            const portVariableName = compilation.engineVariableNames.messageListeners[variableName]
-            // prettier-ignore
-            return `
-                export declare function ${portVariableName}(): void
-            `
-        })}
+        ${Object.entries(compilation.inletListeners).map(([nodeId, inletIds]) =>
+            inletIds.map(inletId => {
+                const inletListenerVariableName = compilation.engineVariableNames.inletListeners[nodeId][inletId]
+                // prettier-ignore
+                return `
+                    export declare function ${inletListenerVariableName}(): void
+                `
+            })
+        )}
     `
 }

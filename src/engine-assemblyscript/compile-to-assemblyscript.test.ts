@@ -16,7 +16,7 @@ import { Compilation, NodeImplementations } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports } from './types'
-import { createEngine } from './assemblyscript-wasm-bindings'
+import { createEngine, EngineSettings } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import MACROS from './macros'
 
@@ -45,10 +45,11 @@ describe('compileToAssemblyscript', () => {
     const compileEngine = async (
         compilation: Compilation,
         extraCode: string = '',
+        extraEngineSettings: Partial<EngineSettings> = {}
     ) => {
         const code = compileToAssemblyscript(compilation)
         const wasmModule = await compileWasmModule(`${extraCode}\n${code}`)
-        return createEngine(wasmModule, compilation)
+        return createEngine(wasmModule, {...compilation, ...extraEngineSettings})
     }
 
     it('should create the specified ports', async () => {
@@ -155,20 +156,30 @@ describe('compileToAssemblyscript', () => {
             }
         })
 
-        const engine = await compileEngine(makeCompilation({
-            graph, 
-            nodeImplementations, 
-            macros: MACROS,
-            messageListenerSpecs: {
-                [inletVariableName]: (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
-            },
-            portSpecs: {
-                [inletVariableName]: {
-                    access: 'r',
-                    type: 'messages'
+        const engine = await compileEngine(
+            makeCompilation({
+                graph, 
+                nodeImplementations, 
+                macros: MACROS,
+                inletListeners: {
+                    'someNode': ['someInlet']
+                },
+                portSpecs: {
+                    [inletVariableName]: {
+                        access: 'r',
+                        type: 'messages'
+                    }
+                },
+            }),
+            '',
+            {
+                inletListenersCallbacks: {
+                    'someNode': {
+                        'someInlet': (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
+                    }
                 }
-            },
-        }))
+            }
+        )
 
         const blockSize = 18
         engine.configure(44100, blockSize)

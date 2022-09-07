@@ -18,23 +18,25 @@ export default (
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { messageListenerSpecs } = compilation
+    const { inletListeners, engineVariableNames } = compilation
     const globs = compilation.engineVariableNames.g
     const MACROS = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`${[
         graphTraversal.map((node) => {
             const nodeVariableNames = compilation.engineVariableNames.n[node.id]
-            const inletsVariableNames = Object.values(nodeVariableNames.ins)
             return [
-                // 0. Call message listeners if some inlets have new messages
-                Object.keys(messageListenerSpecs)
-                    .filter(variableName => inletsVariableNames.includes(variableName))
-                    .map(variableName => `
-                        if (${variableName}.length) {
-                            messageListener_${variableName}()
-                        }
-                    `),
+                // 0. Call inlet listeners if some inlets have new messages
+                (inletListeners[node.id] || [])
+                    .map(inletId => {
+                        const listenerVariableName = engineVariableNames.inletListeners[node.id][inletId]
+                        const inletVariableName = nodeVariableNames.ins[inletId]
+                        return `
+                            if (${inletVariableName}.length) {
+                                ${listenerVariableName}()
+                            }
+                        `
+                    }),
                 
                 // 1. Node loop implementation
                 getNodeImplementation(compilation.nodeImplementations, node.type).loop(

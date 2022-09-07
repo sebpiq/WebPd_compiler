@@ -11,7 +11,7 @@
 
 import JS_MACROS from './engine-javascript/macros'
 import ASC_MACROS from './engine-assemblyscript/macros'
-import { CodeMacros, Compilation, CompilerSettings, EngineVariableNames, MessageListeners, MessageListenerSpecs, NodeImplementation, NodeImplementations, NodeVariableNames, PortSpecs, WrappedCodeMacros } from './types'
+import { CodeMacros, Compilation, CompilerSettings, EngineVariableNames, InletListeners, NodeImplementations, NodeVariableNames, PortSpecs } from './types'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
 import { JavaScriptEngineCode } from './engine-javascript/types'
@@ -23,18 +23,17 @@ export default (
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
-    const { audioSettings, messageListeners, target } = validateSettings(compilerSettings)
+    const { audioSettings, inletListeners, target } = validateSettings(compilerSettings)
     const macros = getMacros(target)
     const engineVariableNames = generateEngineVariableNames(nodeImplementations, graph)
-    const messageListenerSpecs = generateMessageListenerSpecs(engineVariableNames, messageListeners)
-    const portSpecs = generatePortSpecs(messageListenerSpecs)
-    attachPortsAndMessageListenersVariableNames(engineVariableNames, portSpecs, messageListenerSpecs)
+    const portSpecs = generatePortSpecs(engineVariableNames, inletListeners)
+    attachPortsAndMessageListenersVariableNames(engineVariableNames, portSpecs, inletListeners)
 
     const compilation: Compilation = {
         graph,
         nodeImplementations,
         audioSettings,
-        messageListenerSpecs,
+        inletListeners,
         portSpecs,
         engineVariableNames,
         macros,
@@ -111,20 +110,20 @@ export const generateEngineVariableNames = (
             output: 'OUTPUT',
         },
         ports: createNamespace({}),
-        messageListeners: createNamespace({}),
+        inletListeners: createNamespace({}),
     })
 
 /**
- * Helper that attaches to the generated `engineVariableNames` the names of specified message listeners and port functions.
+ * Helper that attaches to the generated `engineVariableNames` the names of specified inlet listeners and port functions.
  * 
  * @param engineVariableNames 
  * @param portSpecs 
- * @param messageListenerSpecs 
+ * @param inletListeners 
  */
 export const attachPortsAndMessageListenersVariableNames = (
     engineVariableNames: EngineVariableNames,
     portSpecs: PortSpecs,
-    messageListenerSpecs: MessageListenerSpecs,
+    inletListeners: InletListeners,
 ): void => {
     Object.entries(portSpecs).forEach(([variableName, portSpec]) => {
         engineVariableNames.ports[variableName] = {}
@@ -135,8 +134,11 @@ export const attachPortsAndMessageListenersVariableNames = (
             engineVariableNames.ports[variableName]['w'] = `write_${variableName}`
         }
     })
-    Object.keys(messageListenerSpecs).forEach(variableName => {
-        engineVariableNames.messageListeners[variableName] = `messageListener_${variableName}`
+    Object.entries(inletListeners).forEach(([nodeId, inletIds]) => {
+        engineVariableNames.inletListeners[nodeId] = {}
+        inletIds.forEach(inletId => {
+            engineVariableNames.inletListeners[nodeId][inletId] = `inletListener_${nodeId}_${inletId}`
+        })
     })
 }
 
@@ -153,41 +155,25 @@ export const assertValidNamePart = (namePart: string) => {
 const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/
 
 /**
- * Helper to generate `messageListenerSpecs` from messageListeners and inlet variable names.
- * 
- * @param engineVariableNames 
- * @param messageListeners 
- * @returns 
- */
-export const generateMessageListenerSpecs = (
-    engineVariableNames: EngineVariableNames,
-    messageListeners: MessageListeners,
-) => {
-    const messageListenerSpecs: MessageListenerSpecs = {}
-    Object.entries(messageListeners).forEach(([nodeId, listeners]) => {
-        Object.entries(listeners).forEach(([inletId, callback]) => {
-            const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
-            messageListenerSpecs[inletVariableName] = callback
-        })
-    })
-    return messageListenerSpecs
-}
-
-/**
  * Helper to generate `portSpecs` from various settings.
  * 
- * @param messageListenerSpecs 
+ * @param inletListeners 
  * @returns 
  */
-export const generatePortSpecs = (messageListenerSpecs: MessageListenerSpecs): PortSpecs => {
+export const generatePortSpecs = (
+    engineVariableNames: EngineVariableNames,
+    inletListeners: InletListeners): PortSpecs => {
     const portSpecs: PortSpecs = {}
 
-    // Message listeners need to have read access to the inlets they're listening to.
-    Object.keys(messageListenerSpecs).map(variableName => {
-        portSpecs[variableName] = {
-            access: 'r',
-            type: 'messages',
-        }
+    // An inlet listener needs to have read access to the variable representing the inlets it's listening to.
+    Object.entries(inletListeners).map(([nodeId, inletIds]) => {
+        inletIds.forEach(inletId => {
+            const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
+            portSpecs[inletVariableName] = {
+                access: 'r',
+                type: 'messages',
+            }
+        })
     })
     return portSpecs
 }
@@ -201,13 +187,13 @@ export const generatePortSpecs = (messageListenerSpecs: MessageListenerSpecs): P
 export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettings => {
-    const messageListeners = settings.messageListeners || {}
+    const inletListeners = settings.inletListeners || {}
     if (![32, 64].includes(settings.audioSettings.bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }
     return {
         ...settings,
-        messageListeners,
+        inletListeners,
     }
 }
 

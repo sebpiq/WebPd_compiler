@@ -48,7 +48,11 @@ export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 // (e.g. variable names, portSpecs are generated automatically by the compilation, i.e. shouldnt be public settings)
 export interface EngineSettings {
     portSpecs?: Compilation['portSpecs']
-    messageListenerSpecs?: Compilation['messageListenerSpecs']
+    inletListenersCallbacks?: {
+        [nodeId: PdDspGraph.NodeId]: {
+            [inletId: PdDspGraph.PortletId]: (messages: Array<PdSharedTypes.ControlValue>) => void
+        }
+    }
     audioSettings: Compilation['audioSettings']
 }
 
@@ -224,6 +228,7 @@ export class AssemblyScriptWasmEngine {
         const wasmExports = this.wasmExports as any
         Object.entries(this.settings.portSpecs || {}).forEach(
             ([variableName, spec]) => {
+                // TODO : Shouldn't regenerate the variable names on the fly like dat
                 if (spec.access.includes('w')) {
                     if (spec.type === 'messages') {
                         ports[`write_${variableName}`] = (messages) => {
@@ -268,12 +273,16 @@ export class AssemblyScriptWasmEngine {
         const wasmImports: {
             [listenerName: CodeVariableName]: () => void
         } = {}
-        Object.entries(this.settings.messageListenerSpecs || {}).forEach(([variableName, callback]) => {
-            const listenerName = `messageListener_${variableName}`
-            wasmImports[listenerName] = () => {
-                callback(this.ports[`read_${variableName}`]())
-            }
-        })
+        Object.entries(this.settings.inletListenersCallbacks || {})
+            .forEach(([nodeId, callbacks]) => {
+                Object.entries(callbacks).forEach(([inletId, callback]) => {
+                    // TODO : Shouldn't regenerate the variable names on the fly like dat
+                    const listenerName = `inletListener_${nodeId}_${inletId}`
+                    wasmImports[listenerName] = () => {
+                        callback(this.ports[`read_${nodeId}_INS_${inletId}`]())
+                    }
+                })
+            })
         return wasmImports
     }
 }

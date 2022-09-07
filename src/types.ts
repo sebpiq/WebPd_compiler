@@ -32,7 +32,7 @@ export interface Compilation {
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
     readonly portSpecs: PortSpecs
-    readonly messageListenerSpecs: MessageListenerSpecs
+    readonly inletListeners: InletListeners
     readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
 }
@@ -95,8 +95,12 @@ export interface EngineVariableNames {
         { r?: CodeVariableName, w?: CodeVariableName }
     }
 
-    // Namespace for message listener callbacks
-    messageListeners: { [variableName: CodeVariableName]: CodeVariableName }
+    // Namespace for inlet listener callbacks
+    inletListeners: { 
+        [nodeId: PdDspGraph.NodeId]: {
+            [inletId: PdDspGraph.PortletId]: CodeVariableName
+        }
+    }
 }
 
 export type NodeCodeGenerator = (
@@ -124,16 +128,8 @@ export type PortSpecs = {
     }
 }
 
-export type MessageListener = (messageArray: Array<PdSharedTypes.ControlValue>) => void
-
-export type MessageListenerSpecs = {
-    [variableName: CodeVariableName]: MessageListener
-}
-
-export type MessageListeners = {
-    [nodeId: PdDspGraph.NodeId]: {
-        [inletId: PdDspGraph.PortletId]: MessageListener
-    }
+export type InletListeners = {
+    [nodeId: PdDspGraph.NodeId]: Array<PdDspGraph.PortletId>
 }
 
 export interface AudioSettings {
@@ -144,5 +140,5 @@ export interface AudioSettings {
 export interface CompilerSettings {
     audioSettings: AudioSettings
     target: 'assemblyscript' | 'javascript'
-    messageListeners?: MessageListeners
+    inletListeners?: InletListeners
 }

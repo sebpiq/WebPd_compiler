@@ -424,12 +424,12 @@ describe('AssemblyScriptWasmEngine', () => {
         })
     })
 
-    describe('message listeners', () => {
-        it('should call message listener when new message sent to inlet', async () => {
+    describe('inlet listeners callbacks', () => {
+        it('should call callback when new message sent to inlet', async () => {
             const called: Array<Array<PdSharedTypes.ControlValue>> = []
             const buffer = await compileWasmModule(`
                 ${ASSEMBLY_SCRIPT_CORE_CODE}
-                const bla: Message[] = [
+                const bla_INS_blo: Message[] = [
                     Message.fromTemplate([
                         ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
                             MESSAGE_DATUM_TYPE_FLOAT
@@ -444,33 +444,35 @@ describe('AssemblyScriptWasmEngine', () => {
                         ]}, 2
                     ]),
                 ]
-                writeFloatDatum(bla[0], 0, 123)
-                writeFloatDatum(bla[0], 1, 456)
-                writeStringDatum(bla[1], 0, 'oh')
-                export declare function messageListener_bla(): void
+                writeFloatDatum(bla_INS_blo[0], 0, 123)
+                writeFloatDatum(bla_INS_blo[0], 1, 456)
+                writeStringDatum(bla_INS_blo[1], 0, 'oh')
+                export declare function inletListener_bla_blo(): void
 
-                export function read_bla_length(): i32 { 
-                    return bla.length
+                export function read_bla_INS_blo_length(): i32 { 
+                    return bla_INS_blo.length
                 }
 
-                export function read_bla_elem(index: i32): Message { 
-                    return bla[index]
+                export function read_bla_INS_blo_elem(index: i32): Message { 
+                    return bla_INS_blo[index]
                 }
 
-                export function notify_bla(): void {
-                    messageListener_bla()
+                export function notifyMessage(): void {
+                    inletListener_bla_blo()
                 }
             `)
             const engine = await createEngine(buffer, {
                 ...ENGINE_SETTINGS,
-                messageListenerSpecs: {
-                    'bla': (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
+                inletListenersCallbacks: {
+                    'bla': {
+                        'blo': (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
+                    }
                 },
                 portSpecs: {
-                    'bla': {type: 'messages', access: 'r'}
+                    'bla_INS_blo': {type: 'messages', access: 'r'}
                 }
             })
-            ;(engine.wasmExports as any).notify_bla()
+            ;(engine.wasmExports as any).notifyMessage()
             assert.deepStrictEqual(called, [
                 [[123, 456], ['oh']]
             ])

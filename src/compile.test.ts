@@ -10,8 +10,8 @@
  */
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
-import compile, { assertValidNamePart, attachPortsAndMessageListenersVariableNames, generateEngineVariableNames, generateMessageListenerSpecs, generatePortSpecs, validateSettings } from './compile'
-import { CompilerSettings, EngineVariableNames, MessageListeners, MessageListenerSpecs, NodeImplementations, PortSpecs } from './types'
+import compile, { assertValidNamePart, attachPortsAndMessageListenersVariableNames, generateEngineVariableNames, generatePortSpecs, validateSettings } from './compile'
+import { CompilerSettings, EngineVariableNames, InletListeners, NodeImplementations, PortSpecs } from './types'
 
 describe('compile', () => {
     const COMPILER_SETTINGS_AS: CompilerSettings = {
@@ -165,7 +165,7 @@ describe('compile', () => {
                     bitDepth: 32,
                 }
             })
-            assert.deepStrictEqual(settings.messageListeners, {})
+            assert.deepStrictEqual(settings.inletListeners, {})
         })
 
         it('should throw error if bitDepth invalid', () => {
@@ -181,31 +181,8 @@ describe('compile', () => {
     })
 
     describe('generatePortSpecs', () => {
-        it('should generate portSpecs according to messageListenerSpecs', () => {
-            const messageListenerSpecs: MessageListenerSpecs = {
-                'bla': () => {},
-                'blo': () => {},
-            }
-            const portSpecs: PortSpecs = generatePortSpecs(messageListenerSpecs)
-            assert.deepStrictEqual(portSpecs, {
-                'bla': {type: 'messages', access: 'r'},
-                'blo': {type: 'messages', access: 'r'},
-            })
-        })
-    })
-
-    describe('generateMessageListenerSpecs', () => {
-        it('should generate messageListenerSpecs according to messageListeners', () => {
-            const messageListeners: MessageListeners = {
-                'node1': {
-                    'inlet1': () => {},
-                    'inlet2': () => {},
-                },
-                'node2': {
-                    'inlet1': () => {},
-                },
-            }
-            const engineVariableNames: EngineVariableNames = generateEngineVariableNames(NODE_IMPLEMENTATIONS, makeGraph({
+        it('should generate portSpecs according to inletListeners', () => {
+            const engineVariableNames = generateEngineVariableNames(NODE_IMPLEMENTATIONS, makeGraph({
                 'node1': {
                     inlets: {
                         'inlet1': {type: 'control', id: 'inlet1'},
@@ -216,19 +193,23 @@ describe('compile', () => {
                     inlets: {
                         'inlet1': {type: 'control', id: 'inlet1'},
                     },
-                }
+                },
             }))
-            const messageListenerSpecs: MessageListenerSpecs = generateMessageListenerSpecs(engineVariableNames, messageListeners)
-            assert.deepStrictEqual(messageListenerSpecs, {
-                'node1_INS_inlet1': messageListeners['node1']['inlet1'],
-                'node1_INS_inlet2': messageListeners['node1']['inlet2'],
-                'node2_INS_inlet1': messageListeners['node2']['inlet1'],
+            const inletListeners: InletListeners = {
+                'node1': ['inlet1', 'inlet2'],
+                'node2': ['inlet1'],
+            }
+            const portSpecs: PortSpecs = generatePortSpecs(engineVariableNames, inletListeners)
+            assert.deepStrictEqual(portSpecs, {
+                'node1_INS_inlet1': {type: 'messages', access: 'r'},
+                'node1_INS_inlet2': {type: 'messages', access: 'r'},
+                'node2_INS_inlet1': {type: 'messages', access: 'r'},
             })
         })
     })
 
     describe('attachPortsAndMessageListenersVariableNames', () => {
-        it('should attach variable names relating to ports and message listeners', () => {
+        it('should attach variable names relating to ports and inlet listeners', () => {
             const engineVariableNames: EngineVariableNames = generateEngineVariableNames(NODE_IMPLEMENTATIONS, makeGraph({
                 'node1': {
                     inlets: {
@@ -241,10 +222,10 @@ describe('compile', () => {
                 'node1_INS_inlet1': { access: 'r', type: 'float'},
                 'node1_INS_inlet2': { access: 'rw', type: 'float'},
             }
-            const messageListenerSpecs: MessageListenerSpecs = {
-                'node1_INS_inlet1': () => {},
+            const inletListeners: InletListeners = {
+                'node1': ['inlet1'],
             }
-            attachPortsAndMessageListenersVariableNames(engineVariableNames, portSpecs, messageListenerSpecs)
+            attachPortsAndMessageListenersVariableNames(engineVariableNames, portSpecs, inletListeners)
 
             assert.deepStrictEqual(engineVariableNames.ports, {
                 'node1_INS_inlet1': {
@@ -255,8 +236,8 @@ describe('compile', () => {
                     'w': 'write_node1_INS_inlet2',
                 },
             })
-            assert.deepStrictEqual(engineVariableNames.messageListeners, {
-                'node1_INS_inlet1': 'messageListener_node1_INS_inlet1',
+            assert.deepStrictEqual(engineVariableNames.inletListeners, {
+                'node1': {'inlet1': 'inletListener_node1_inlet1'},
             })
         })
     })

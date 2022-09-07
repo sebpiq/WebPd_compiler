@@ -204,7 +204,7 @@ export const generateFramesForNode = async (
 
         // Ports to read output values
         Object.entries(recorderNode.inlets).forEach(([inletId, inlet]) => {
-            const variableName = `${recorderNode.id}_OUTS_${'mem' + inletId}`
+            const variableName = `${recorderNode.id}_STATE_${'mem' + inletId}`
             portSpecs[variableName] = {
                 access: 'r',
                 type: inlet.type === 'signal' ? 'float' : 'messages',

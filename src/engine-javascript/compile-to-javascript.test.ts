@@ -12,7 +12,7 @@
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
-import { MessageListenerSpecs, NodeImplementations } from '../types'
+import { InletListeners, NodeImplementations } from '../types'
 import compileToJavascript from './compile-to-javascript'
 import MACROS from './macros'
 import { JavaScriptEngine } from './types'
@@ -136,18 +136,15 @@ describe('compileToJavascript', () => {
             }
         })
 
-        const messageListenerSpecs: MessageListenerSpecs = {
-            [inletVariableName]: () => {
-                const messages = engine.ports['read_someNode_INS_someInlet']()
-                called.push(messages)
-            }
+        const inletListeners: InletListeners = {
+            ['someNode']: ['someInlet']
         }
 
         const code = compileToJavascript(makeCompilation({
             graph, 
             nodeImplementations, 
             macros: MACROS,
-            messageListenerSpecs,
+            inletListeners,
             portSpecs: {
                 [inletVariableName]: {
                     access: 'r',
@@ -156,8 +153,11 @@ describe('compileToJavascript', () => {
             },
         }))
 
-        const engine = new Function('messageListener_someNode_INS_someInlet', code)(
-            messageListenerSpecs[inletVariableName]
+        const engine = new Function('inletListener_someNode_someInlet', code)(
+            () => {
+                const messages = engine.ports['read_someNode_INS_someInlet']()
+                called.push(messages)
+            }
         )
 
         const blockSize = 13
