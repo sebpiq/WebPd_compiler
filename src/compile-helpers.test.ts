@@ -12,7 +12,12 @@
 import assert from 'assert'
 import jsMacros from './engine-javascript/macros'
 import ascMacros from './engine-assemblyscript/macros'
-import { createNamespace, getNodeImplementation, renderCode, wrapMacros } from './compile-helpers'
+import {
+    createNamespace,
+    getNodeImplementation,
+    renderCode,
+    wrapMacros,
+} from './compile-helpers'
 import { makeCompilation } from './test-helpers'
 import { NodeImplementations } from './types'
 
@@ -66,15 +71,14 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
     })
 
     describe('wrapMacros', () => {
-        
         it('should bind assemblyscript macros to pass compilation as first argument', () => {
-            const compilation = makeCompilation({macros: ascMacros})
+            const compilation = makeCompilation({ macros: ascMacros })
             const wrappedMacros = wrapMacros(ascMacros, compilation)
             assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla: f32')
         })
-    
+
         it('should bind javascript macros to pass compilation as first argument', () => {
-            const compilation = makeCompilation({macros: jsMacros})
+            const compilation = makeCompilation({ macros: jsMacros })
             const wrappedMacros = wrapMacros(jsMacros, compilation)
             assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla')
         })
@@ -82,18 +86,23 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
 
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
-            'someNodeType': {loop: () => ``}
+            someNodeType: { loop: () => `` },
         }
 
         it('should return node implementation if it exists', () => {
             assert.strictEqual(
-                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType'), 
+                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType'),
                 NODE_IMPLEMENTATIONS['someNodeType']
             )
         })
 
         it('should throw an error if implementation doesnt exist', () => {
-            assert.throws(() => getNodeImplementation(NODE_IMPLEMENTATIONS, 'someUnknownNodeType'))
+            assert.throws(() =>
+                getNodeImplementation(
+                    NODE_IMPLEMENTATIONS,
+                    'someUnknownNodeType'
+                )
+            )
         })
     })
 })

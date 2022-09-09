@@ -10,7 +10,11 @@
  */
 
 import { traversal, getters } from '@webpd/dsp-graph'
-import { getNodeImplementation, renderCode, wrapMacros } from '../compile-helpers'
+import {
+    getNodeImplementation,
+    renderCode,
+    wrapMacros,
+} from '../compile-helpers'
 import { Code, Compilation } from '../types'
 
 export default (

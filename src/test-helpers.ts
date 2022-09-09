@@ -9,9 +9,12 @@
  *
  */
 
-import { attachPortsAndMessageListenersVariableNames, generateEngineVariableNames } from "./compile"
-import macros from "./engine-javascript/macros"
-import { Compilation } from "./types"
+import {
+    attachPortsAndMessageListenersVariableNames,
+    generateEngineVariableNames,
+} from './compile'
+import macros from './engine-javascript/macros'
+import { Compilation } from './types'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -24,17 +27,22 @@ export const normalizeCode = (rawCode: string) => {
 export const round = (v: number, decimals: number = 3) =>
     Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals)
 
-export const makeCompilation = (compilation: Partial<Compilation>): Compilation => {
+export const makeCompilation = (
+    compilation: Partial<Compilation>
+): Compilation => {
     const nodeImplementations = compilation.nodeImplementations || {}
     const graph = compilation.graph || {}
-    const engineVariableNames = generateEngineVariableNames(nodeImplementations, graph)
+    const engineVariableNames = generateEngineVariableNames(
+        nodeImplementations,
+        graph
+    )
     attachPortsAndMessageListenersVariableNames(
-        engineVariableNames, 
-        compilation.portSpecs || {}, 
-        compilation.inletListeners || {},
+        engineVariableNames,
+        compilation.portSpecs || {},
+        compilation.inletListeners || {}
     )
     return {
-        graph, 
+        graph,
         nodeImplementations,
         audioSettings: {
             bitDepth: 32,

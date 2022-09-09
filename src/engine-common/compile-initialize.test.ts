@@ -17,7 +17,6 @@ import compileInitialize from './compile-initialize'
 import macros from '../engine-assemblyscript/macros'
 
 describe('compileInitialize', () => {
-
     it('should compile the initialize code', () => {
         const graph = makeGraph({
             osc: {
@@ -48,15 +47,15 @@ describe('compileInitialize', () => {
                 loop: () => ``,
             },
             'dac~': {
-                initialize: (_, __, {audioSettings}) =>
+                initialize: (_, __, { audioSettings }) =>
                     `// [dac~] channelCount ${audioSettings.channelCount}`,
                 loop: () => ``,
             },
         }
 
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations, 
+            graph,
+            nodeImplementations,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,
@@ -116,15 +115,15 @@ describe('compileInitialize', () => {
                 loop: () => ``,
             },
             'dac~': {
-                initialize: (_, __, {audioSettings}) =>
+                initialize: (_, __, { audioSettings }) =>
                     `// [dac~] channelCount ${audioSettings.channelCount}`,
                 loop: () => ``,
             },
         }
 
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations, 
+            graph,
+            nodeImplementations,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,

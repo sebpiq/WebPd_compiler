@@ -11,7 +11,6 @@
 import { assertNodeOutput } from './test-helpers'
 
 describe('binop~', () => {
-
     describe('+~', () => {
         it('should work with signal as inlet 1', async () => {
             await assertNodeOutput(
@@ -36,12 +35,8 @@ describe('binop~', () => {
                     args: {},
                     connectedSources: ['1_control'],
                 },
-                [
-                    { '0': 123 },
-                ],
-                [
-                    { '0': 123 },
-                ]
+                [{ '0': 123 }],
+                [{ '0': 123 }]
             )
         })
 
@@ -94,12 +89,8 @@ describe('binop~', () => {
                     args: {},
                     connectedSources: ['1_control'],
                 },
-                [
-                    { '0': 123 },
-                ],
-                [
-                    { '0': 123 },
-                ]
+                [{ '0': 123 }],
+                [{ '0': 123 }]
             )
         })
 

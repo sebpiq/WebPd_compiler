@@ -18,7 +18,9 @@ import {
 // ------------------------------ declare ------------------------------ //
 export const makeDeclare = (): NodeCodeGenerator => (...args) => {
     const [node] = args
-    return _hasSignalInput(node) ? declareSignal(...args) : declareControl(...args)
+    return _hasSignalInput(node)
+        ? declareSignal(...args)
+        : declareControl(...args)
 }
 
 const declareSignal: NodeCodeGenerator = () => ``
@@ -27,18 +29,26 @@ const declareControl: NodeCodeGenerator = (_, { state, macros }) =>
     `let ${macros.typedVarFloat(state.rightOp)}`
 
 // ------------------------------ initialize ------------------------------ //
-export const makeInitialize = (defaultValue: number): NodeCodeGenerator => (...args) => {
+export const makeInitialize = (defaultValue: number): NodeCodeGenerator => (
+    ...args
+) => {
     const [node] = args
     const initializeSignal = makeInitializeSignal(defaultValue)
     const initializeControl = makeInitializeControl(defaultValue)
-    return _hasSignalInput(node) ? initializeSignal(...args) : initializeControl(...args)
+    return _hasSignalInput(node)
+        ? initializeSignal(...args)
+        : initializeControl(...args)
 }
 
-const makeInitializeSignal = (defaultValue: number): NodeCodeGenerator => (node, { ins }) =>
-    `${ins.$1_signal} = ${node.args.value || defaultValue}`
+const makeInitializeSignal = (defaultValue: number): NodeCodeGenerator => (
+    node,
+    { ins }
+) => `${ins.$1_signal} = ${node.args.value || defaultValue}`
 
-const makeInitializeControl = (defaultValue: number): NodeCodeGenerator => (node, { state }) =>
-    `${state.rightOp} = ${(node.args.value as string) || defaultValue}`
+const makeInitializeControl = (defaultValue: number): NodeCodeGenerator => (
+    node,
+    { state }
+) => `${state.rightOp} = ${(node.args.value as string) || defaultValue}`
 
 // ------------------------------- loop ------------------------------ //
 export const makeLoop = (operator: string): NodeCodeGenerator => {
@@ -62,7 +72,9 @@ const makeLoopControl = (operator: string): NodeCodeGenerator => (
     { ins, outs, state, macros }
 ) => `
         if (${ins.$1_control}.length) {
-            const ${macros.typedVarMessage('inMessage')} = ${ins.$1_control}.pop()
+            const ${macros.typedVarMessage('inMessage')} = ${
+    ins.$1_control
+}.pop()
             ${state.rightOp} = ${macros.readMessageFloatDatum('inMessage', 0)}
         }
         ${outs.$0} = ${ins.$0} ${operator} ${state.rightOp}`

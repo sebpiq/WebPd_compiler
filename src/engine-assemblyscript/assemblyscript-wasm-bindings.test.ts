@@ -21,11 +21,7 @@ import {
     lowerString,
     EngineSettings,
 } from './assemblyscript-wasm-bindings'
-import {
-    Code,
-    Compilation,
-    PortSpecs,
-} from '../types'
+import { Code, Compilation, PortSpecs } from '../types'
 import compileToAssemblyscript, {
     compilePorts,
 } from './compile-to-assemblyscript'
@@ -34,7 +30,6 @@ import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
 
 describe('AssemblyScriptWasmEngine', () => {
-
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
 
     const ENGINE_SETTINGS: EngineSettings = {
@@ -69,7 +64,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     audioSettings: {
                         ...compilation.audioSettings,
                         channelCount: 2,
-                    }
+                    },
                 })
             )
             engine2Channels.configure(44100, 4)
@@ -81,8 +76,8 @@ describe('AssemblyScriptWasmEngine', () => {
                     ...compilation,
                     audioSettings: {
                         ...compilation.audioSettings,
-                        channelCount: 3
-                    }
+                        channelCount: 3,
+                    },
                 })
             )
             engine3Channels.configure(48000, 5)
@@ -229,11 +224,20 @@ describe('AssemblyScriptWasmEngine', () => {
             engine.setArray('array3', [66.6, 77.7])
 
             let actual: number
-            actual = wasmExports.testReadArray(lowerString(engine.wasmExports, 'array1'), 1)
+            actual = wasmExports.testReadArray(
+                lowerString(engine.wasmExports, 'array1'),
+                1
+            )
             assert.strictEqual(round(actual), 22.2)
-            actual = wasmExports.testReadArray(lowerString(engine.wasmExports, 'array2'), 0)
+            actual = wasmExports.testReadArray(
+                lowerString(engine.wasmExports, 'array2'),
+                0
+            )
             assert.strictEqual(round(actual), 44.4)
-            actual = wasmExports.testReadArray(lowerString(engine.wasmExports, 'array3'), 1)
+            actual = wasmExports.testReadArray(
+                lowerString(engine.wasmExports, 'array3'),
+                1
+            )
             assert.strictEqual(round(actual), 77.7)
         })
     })
@@ -249,7 +253,10 @@ describe('AssemblyScriptWasmEngine', () => {
             `)
 
             const bufferPointer = engine.lowerArrayBufferOfIntegers([
-                1, 22, 333, 4444,
+                1,
+                22,
+                333,
+                4444,
             ])
 
             assert.strictEqual(
@@ -429,17 +436,11 @@ describe('AssemblyScriptWasmEngine', () => {
                 ${ASSEMBLY_SCRIPT_CORE_CODE}
                 const bla_INS_blo: Message[] = [
                     Message.fromTemplate([
-                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                            MESSAGE_DATUM_TYPE_FLOAT
-                        ]},
-                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                            MESSAGE_DATUM_TYPE_FLOAT
-                        ]}
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]},
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
                     ]),
                     Message.fromTemplate([
-                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                            MESSAGE_DATUM_TYPE_STRING
-                        ]}, 2
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 2
                     ]),
                 ]
                 writeFloatDatum(bla_INS_blo[0], 0, 123)
@@ -462,18 +463,17 @@ describe('AssemblyScriptWasmEngine', () => {
             const engine = await createEngine(buffer, {
                 ...ENGINE_SETTINGS,
                 inletListenersCallbacks: {
-                    'bla': {
-                        'blo': (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
-                    }
+                    bla: {
+                        blo: (messages: Array<PdSharedTypes.ControlValue>) =>
+                            called.push(messages),
+                    },
                 },
                 portSpecs: {
-                    'bla_INS_blo': {type: 'messages', access: 'r'}
-                }
+                    bla_INS_blo: { type: 'messages', access: 'r' },
+                },
             })
             ;(engine.wasmExports as any).notifyMessage()
-            assert.deepStrictEqual(called, [
-                [[123, 456], ['oh']]
-            ])
+            assert.deepStrictEqual(called, [[[123, 456], ['oh']]])
             const wasmExports = engine.wasmExports as any
             return { engine, wasmExports }
         })

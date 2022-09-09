@@ -14,7 +14,13 @@ import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
-import { Code, CodeMacros, CodeVariableName, Compilation, MessageDatumType } from '../types'
+import {
+    Code,
+    CodeMacros,
+    CodeVariableName,
+    Compilation,
+    MessageDatumType,
+} from '../types'
 
 const floatArrayType = (compilation: Compilation) => {
     const { bitDepth } = compilation.audioSettings
@@ -90,12 +96,16 @@ const fillInLoopOutput = (
     return `${globs.output}[${channel}][${globs.iterFrame}] = ${value}`
 }
 
-const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument>, inVariableName: CodeVariableName, outVariableName: CodeVariableName) => {
+const messageTransfer = (
+    _: Compilation,
+    template: Array<PdDspGraph.NodeArgument>,
+    inVariableName: CodeVariableName,
+    outVariableName: CodeVariableName
+) => {
     const outElements: Array<Code> = []
-    buildMessageTransferOperations(template).forEach(operation => {
+    buildMessageTransferOperations(template).forEach((operation) => {
         if (operation.type === 'noop') {
-                outElements.push(`${inVariableName}[${operation.inIndex}]`)
-
+            outElements.push(`${inVariableName}[${operation.inIndex}]`)
         } else if (operation.type === 'string-template') {
             outElements.push(
                 `"${operation.template}"${operation.variables.map(
@@ -103,10 +113,8 @@ const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument
                         `.replace("${placeholder}", ${inVariableName}[${inIndex}])`
                 )}`
             )
-
         } else if (operation.type === 'string-constant') {
             outElements.push(`"${operation.value}"`)
-
         } else if (operation.type === 'float-constant') {
             outElements.push(`${operation.value}`)
         }

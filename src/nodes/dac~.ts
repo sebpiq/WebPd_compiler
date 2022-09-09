@@ -14,7 +14,6 @@ import { NodeCodeGenerator } from '../types'
 // ------------------------------ initialize ------------------------------ //
 // TODO : args
 
-
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (
     _,

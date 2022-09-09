@@ -18,9 +18,14 @@ import {
     PortSpecs,
 } from '../types'
 import { renderCode } from '../compile-helpers'
-import { JavaScriptEngine, JavaScriptEngineCode } from '../engine-javascript/types'
-import { createEngine, AssemblyScriptWasmEngine } 
-    from '../engine-assemblyscript/assemblyscript-wasm-bindings'
+import {
+    JavaScriptEngine,
+    JavaScriptEngineCode,
+} from '../engine-javascript/types'
+import {
+    createEngine,
+    AssemblyScriptWasmEngine,
+} from '../engine-assemblyscript/assemblyscript-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
@@ -168,8 +173,12 @@ export const generateFramesForNode = async (
             declare: (_, { state, macros }) =>
                 renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
                     inlet.type === 'signal'
-                        ? `let ${macros.typedVarFloat(state['mem' + inlet.id])} = 0`
-                        : `let ${macros.typedVarMessageArray(state['mem' + inlet.id])} = []`
+                        ? `let ${macros.typedVarFloat(
+                              state['mem' + inlet.id]
+                          )} = 0`
+                        : `let ${macros.typedVarMessageArray(
+                              state['mem' + inlet.id]
+                          )} = []`
                 )}`,
             // For each outlet of test node, save the output value in corresponding memory.
             // This is necessary cause engine clears outlets at each run of loop.
@@ -177,7 +186,9 @@ export const generateFramesForNode = async (
                 renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
                     inlet.type === 'signal'
                         ? `${state['mem' + inlet.id]} = ${ins[inlet.id]}`
-                        : `${state['mem' + inlet.id]} = ${ins[inlet.id]}.slice(0)`
+                        : `${state['mem' + inlet.id]} = ${
+                              ins[inlet.id]
+                          }.slice(0)`
                 )}`,
             stateVariables: Object.keys(recorderNode.inlets).map(
                 (inletId) => 'mem' + inletId

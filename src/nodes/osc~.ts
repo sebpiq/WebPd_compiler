@@ -14,47 +14,41 @@ import { NodeCodeGenerator, NodeImplementation } from '../types'
 // ------------------------------ declare ------------------------------ //
 export const declare: NodeCodeGenerator = (...args) => {
     const [node] = args
-    return _hasSignalInput(node) ? declareSignal(...args) : declareControl(...args)
+    return _hasSignalInput(node)
+        ? declareSignal(...args)
+        : declareControl(...args)
 }
 
-const declareSignal: NodeCodeGenerator = (
-    _,
-    { state, macros },
-) => `
+const declareSignal: NodeCodeGenerator = (_, { state, macros }) => `
     let ${macros.typedVarFloat(state.phase)}
     let ${macros.typedVarFloat(state.J)}
 `
 
-const declareControl: NodeCodeGenerator = (
-    _,
-    { state, globs, macros },
-) => `
+const declareControl: NodeCodeGenerator = (_, { state, globs, macros }) => `
     let ${macros.typedVarFloat(state.phase)}
     let ${macros.typedVarFloat(state.currentFrequency)}
     let ${macros.typedVarFloat(state.K)}
     const ${state.refreshK} = ${macros.functionHeader()} => 
-        ${state.K} = ${state.currentFrequency} * 2 * Math.PI / ${globs.sampleRate}
+        ${state.K} = ${state.currentFrequency} * 2 * Math.PI / ${
+    globs.sampleRate
+}
 `
 
 // ------------------------------ initialize ------------------------------ //
 export const initialize: NodeCodeGenerator = (...args) => {
     const [node] = args
-    return _hasSignalInput(node) ? initializeSignal(...args) : initializeControl(...args)
+    return _hasSignalInput(node)
+        ? initializeSignal(...args)
+        : initializeControl(...args)
 }
 
-const initializeSignal: NodeCodeGenerator = (
-    node,
-    { ins, state, globs },
-) => `
+const initializeSignal: NodeCodeGenerator = (node, { ins, state, globs }) => `
     ${state.phase} = 0
     ${state.J} = 2 * Math.PI / ${globs.sampleRate}
     ${ins.$0_signal} = ${node.args.frequency || 0}
 `
 
-const initializeControl: NodeCodeGenerator = (
-    node,
-    { state },
-) => `
+const initializeControl: NodeCodeGenerator = (node, { state }) => `
     ${state.phase} = 0
     ${state.currentFrequency} = ${(node.args.frequency as number) || 0}
     ${state.K} = 0

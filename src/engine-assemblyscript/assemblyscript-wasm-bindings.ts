@@ -19,11 +19,7 @@
  * @module
  */
 
-import {
-    CodeVariableName,
-    Compilation,
-    EnginePorts,
-} from '../types'
+import { CodeVariableName, Compilation, EnginePorts } from '../types'
 import {
     AssemblyScriptWasmExports,
     InternalPointer,
@@ -44,13 +40,15 @@ type TypedArrayConstructor =
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
-// TODO : Rethink what info should be passed to the bindings constructor 
+// TODO : Rethink what info should be passed to the bindings constructor
 // (e.g. variable names, portSpecs are generated automatically by the compilation, i.e. shouldnt be public settings)
 export interface EngineSettings {
     portSpecs?: Compilation['portSpecs']
     inletListenersCallbacks?: {
         [nodeId: PdDspGraph.NodeId]: {
-            [inletId: PdDspGraph.PortletId]: (messages: Array<PdSharedTypes.ControlValue>) => void
+            [inletId: PdDspGraph.PortletId]: (
+                messages: Array<PdSharedTypes.ControlValue>
+            ) => void
         }
     }
     audioSettings: Compilation['audioSettings']
@@ -73,14 +71,11 @@ export class AssemblyScriptWasmEngine {
     }
 
     async initialize() {
-        const wasmModule = await instantiateWasmModule(
-            this.wasmBuffer,
-            {
-                input: this._makeMessageListenersWasmImports()
-            },
-        )
-        this.wasmExports = wasmModule.instance
-            .exports as unknown as AssemblyScriptWasmExports
+        const wasmModule = await instantiateWasmModule(this.wasmBuffer, {
+            input: this._makeMessageListenersWasmImports(),
+        })
+        this.wasmExports = (wasmModule.instance
+            .exports as unknown) as AssemblyScriptWasmExports
         this.ports = this._bindPorts()
     }
 
@@ -95,7 +90,9 @@ export class AssemblyScriptWasmEngine {
         this.wasmExports.loop()
         return liftTypedArray(
             this.wasmExports,
-            this.settings.audioSettings.bitDepth === 32 ? Float32Array : Float64Array,
+            this.settings.audioSettings.bitDepth === 32
+                ? Float32Array
+                : Float64Array,
             this.wasmOutputPointer
         ) as Float32Array | Float64Array
     }
@@ -115,8 +112,9 @@ export class AssemblyScriptWasmEngine {
 
     // TODO : ---- V ----  Private API ?
     liftMessage(messagePointer: InternalPointer): PdSharedTypes.ControlValue {
-        const messageDatumTypesPointer =
-            this.wasmExports.getMessageDatumTypes(messagePointer)
+        const messageDatumTypesPointer = this.wasmExports.getMessageDatumTypes(
+            messagePointer
+        )
         const messageDatumTypes = liftTypedArray(
             this.wasmExports,
             Int32Array,
@@ -144,8 +142,8 @@ export class AssemblyScriptWasmEngine {
         })
         return message
     }
-    
-    lowerMessage (message: PdSharedTypes.ControlValue): InternalPointer {
+
+    lowerMessage(message: PdSharedTypes.ControlValue): InternalPointer {
         const messageTemplate: Array<number> = message.reduce(
             (template, value) => {
                 if (typeof value === 'number') {
@@ -164,11 +162,11 @@ export class AssemblyScriptWasmEngine {
             },
             [] as Array<number>
         )
-    
+
         const messagePointer = this.wasmExports.createMessage(
             this.lowerArrayBufferOfIntegers(messageTemplate)
         )
-    
+
         message.forEach((value, index) => {
             if (typeof value === 'number') {
                 this.wasmExports.writeFloatDatum(messagePointer, index, value)
@@ -181,11 +179,11 @@ export class AssemblyScriptWasmEngine {
                 )
             }
         })
-    
+
         return messagePointer
     }
-    
-    lowerMessageArray (
+
+    lowerMessageArray(
         messages: Array<PdSharedTypes.ControlValue>
     ): InternalPointer {
         const messageArrayPointer = this.wasmExports.createMessageArray()
@@ -197,8 +195,8 @@ export class AssemblyScriptWasmEngine {
         })
         return messageArrayPointer
     }
-    
-    lowerArrayBufferOfIntegers (integers: Array<number>) {
+
+    lowerArrayBufferOfIntegers(integers: Array<number>) {
         const buffer = new ArrayBuffer(
             INT_ARRAY_BYTES_PER_ELEMENT * integers.length
         )
@@ -208,15 +206,17 @@ export class AssemblyScriptWasmEngine {
         }
         return lowerBuffer(this.wasmExports, buffer)
     }
-    
-    lowerArrayBufferOfFloats (
+
+    lowerArrayBufferOfFloats(
         floats: Array<number> | Float32Array | Float64Array
     ) {
         const bytesPerElement = this.settings.audioSettings.bitDepth / 8
         const buffer = new ArrayBuffer(bytesPerElement * floats.length)
         const dataView = new DataView(buffer)
         const setFloatName =
-            this.settings.audioSettings.bitDepth === 32 ? 'setFloat32' : 'setFloat64'
+            this.settings.audioSettings.bitDepth === 32
+                ? 'setFloat32'
+                : 'setFloat64'
         for (let i = 0; i < floats.length; i++) {
             dataView[setFloatName](bytesPerElement * i, floats[i])
         }
@@ -232,8 +232,9 @@ export class AssemblyScriptWasmEngine {
                 if (spec.access.includes('w')) {
                     if (spec.type === 'messages') {
                         ports[`write_${variableName}`] = (messages) => {
-                            const messageArrayPointer =
-                                this.lowerMessageArray(messages)
+                            const messageArrayPointer = this.lowerMessageArray(
+                                messages
+                            )
                             wasmExports[`write_${variableName}`](
                                 messageArrayPointer
                             )
@@ -247,13 +248,14 @@ export class AssemblyScriptWasmEngine {
                 if (spec.access.includes('r')) {
                     if (spec.type === 'messages') {
                         ports[`read_${variableName}`] = () => {
-                            const messagesCount =
-                                wasmExports[`read_${variableName}_length`]()
-                            const messages: Array<PdSharedTypes.ControlValue> =
-                                []
+                            const messagesCount = wasmExports[
+                                `read_${variableName}_length`
+                            ]()
+                            const messages: Array<PdSharedTypes.ControlValue> = []
                             for (let i = 0; i < messagesCount; i++) {
-                                const messagePointer =
-                                    wasmExports[`read_${variableName}_elem`](i)
+                                const messagePointer = wasmExports[
+                                    `read_${variableName}_elem`
+                                ](i)
                                 messages.push(this.liftMessage(messagePointer))
                             }
                             return messages
@@ -273,8 +275,8 @@ export class AssemblyScriptWasmEngine {
         const wasmImports: {
             [listenerName: CodeVariableName]: () => void
         } = {}
-        Object.entries(this.settings.inletListenersCallbacks || {})
-            .forEach(([nodeId, callbacks]) => {
+        Object.entries(this.settings.inletListenersCallbacks || {}).forEach(
+            ([nodeId, callbacks]) => {
                 Object.entries(callbacks).forEach(([inletId, callback]) => {
                     // TODO : Shouldn't regenerate the variable names on the fly like dat
                     const listenerName = `inletListener_${nodeId}_${inletId}`
@@ -282,7 +284,8 @@ export class AssemblyScriptWasmEngine {
                         callback(this.ports[`read_${nodeId}_INS_${inletId}`]())
                     }
                 })
-            })
+            }
+        )
         return wasmImports
     }
 }
@@ -312,14 +315,15 @@ export const liftTypedArray = (
 }
 
 // REF : Assemblyscript ESM bindings
-export const liftString = (wasmExports: AssemblyScriptWasmExports, pointer: number) => {
+export const liftString = (
+    wasmExports: AssemblyScriptWasmExports,
+    pointer: number
+) => {
     if (!pointer) return null
     pointer = pointer >>> 0
     const end =
         (pointer +
-            new Uint32Array(wasmExports.memory.buffer)[
-                (pointer - 4) >>> 2
-            ]) >>>
+            new Uint32Array(wasmExports.memory.buffer)[(pointer - 4) >>> 2]) >>>
         1
     const memoryU16 = new Uint16Array(wasmExports.memory.buffer)
     let start = pointer >>> 1
@@ -333,7 +337,10 @@ export const liftString = (wasmExports: AssemblyScriptWasmExports, pointer: numb
 }
 
 // REF : Assemblyscript ESM bindings
-export const lowerString = (wasmExports: AssemblyScriptWasmExports, value: string) => {
+export const lowerString = (
+    wasmExports: AssemblyScriptWasmExports,
+    value: string
+) => {
     if (value == null) return 0
     const length = value.length,
         pointer = wasmExports.__new(length << 1, 1) >>> 0,
@@ -344,7 +351,10 @@ export const lowerString = (wasmExports: AssemblyScriptWasmExports, value: strin
 }
 
 // REF : Assemblyscript ESM bindings
-export const lowerBuffer = (wasmExports: AssemblyScriptWasmExports, value: ArrayBuffer) => {
+export const lowerBuffer = (
+    wasmExports: AssemblyScriptWasmExports,
+    value: ArrayBuffer
+) => {
     if (value == null) return 0
     const pointer = wasmExports.__new(value.byteLength, 0) >>> 0
     new Uint8Array(wasmExports.memory.buffer).set(
@@ -357,7 +367,7 @@ export const lowerBuffer = (wasmExports: AssemblyScriptWasmExports, value: Array
 // REF : Assemblyscript ESM bindings
 export const instantiateWasmModule = async (
     wasmBuffer: ArrayBuffer,
-    wasmImports: any = {},
+    wasmImports: any = {}
 ) => {
     const wasmModule = await WebAssembly.instantiate(wasmBuffer, {
         env: {
@@ -389,6 +399,7 @@ export const instantiateWasmModule = async (
         },
         ...wasmImports,
     })
-    const wasmExports = wasmModule.instance.exports as unknown as AssemblyScriptWasmExports
+    const wasmExports = (wasmModule.instance
+        .exports as unknown) as AssemblyScriptWasmExports
     return wasmModule
 }

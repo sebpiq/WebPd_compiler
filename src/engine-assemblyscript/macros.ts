@@ -169,14 +169,20 @@ const fillInLoopOutput = (
     return `${globs.output}[${globs.iterFrame} + ${globs.blockSize} * ${channel}] = ${value}`
 }
 
-const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument>, inVariableName: CodeVariableName, outVariableName: CodeVariableName) => {
+const messageTransfer = (
+    _: Compilation,
+    template: Array<PdDspGraph.NodeArgument>,
+    inVariableName: CodeVariableName,
+    outVariableName: CodeVariableName
+) => {
     const outMessageTemplateCode: Array<string> = []
     const outMessageSetCode: Array<string> = []
     let stringMemCount = 0
-    
+
     buildMessageTransferOperations(template).forEach((operation, outIndex) => {
         if (operation.type === 'noop') {
             const { inIndex } = operation
+            // prettier-ignore
             outMessageTemplateCode.push(`
                 outTemplate.push(${inVariableName}.datumTypes[${inIndex}])
                 if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
@@ -185,6 +191,7 @@ const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument
                     outTemplate.push(stringDatum.length)
                 }
             `)
+            // prettier-ignore
             outMessageSetCode.push(`
                 if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
                     writeFloatDatum(outMessage, ${outIndex}, readFloatDatum(${inVariableName}, ${inIndex}))
@@ -193,8 +200,8 @@ const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument
                 }
             `)
             stringMemCount++
-
         } else if (operation.type === 'string-template') {
+            // prettier-ignore
             outMessageTemplateCode.push(`
                 let stringDatum: string = "${operation.template}"
                 ${operation.variables.map(({placeholder, inIndex}) => `
@@ -222,8 +229,8 @@ const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument
                 writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
             `)
             stringMemCount++
-
         } else if (operation.type === 'string-constant') {
+            // prettier-ignore
             outMessageTemplateCode.push(`
                 outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]})
                 outTemplate.push(${operation.value.length})
@@ -232,25 +239,29 @@ const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument
             outMessageSetCode.push(`
                 writeStringDatum(outMessage, ${outIndex}, "${operation.value}")
             `)
-
         } else if (operation.type === 'float-constant') {
             outMessageTemplateCode.push(`
                 outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]})
             `)
-    
+
             outMessageSetCode.push(`
                 writeFloatDatum(outMessage, ${outIndex}, ${operation.value})
             `)
         }
     })
-    
+
+    // Put local variables in a block to avoid polluting global space.
+    // prettier-ignore
     return renderCode`
-        const stringMem: Array<string> = new Array<string>(${stringMemCount.toString()})
-        const outTemplate: MessageTemplate = []
-        ${outMessageTemplateCode}
-        
-        const ${outVariableName} = Message.fromTemplate(outTemplate)
-        ${outMessageSetCode}
+        let ${outVariableName}: Message
+        {
+            const stringMem: Array<string> = new Array<string>(${stringMemCount.toString()})
+            const outTemplate: MessageTemplate = []
+            ${outMessageTemplateCode}
+            
+            ${outVariableName} = Message.fromTemplate(outTemplate)
+            ${outMessageSetCode}
+        }
     `
 }
 

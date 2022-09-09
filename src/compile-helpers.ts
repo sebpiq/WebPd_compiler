@@ -9,7 +9,14 @@
  *
  */
 
-import { Code, CodeMacros, Compilation, NodeImplementation, NodeImplementations, WrappedCodeMacros } from './types'
+import {
+    Code,
+    CodeMacros,
+    Compilation,
+    NodeImplementation,
+    NodeImplementations,
+    WrappedCodeMacros,
+} from './types'
 
 type CodeLines = Array<CodeLines | Code>
 
@@ -44,9 +51,9 @@ const renderCodeLines = (codeLines: CodeLines | Code): Code => {
 /**
  * Helper to generate VariableNames, essentially a proxy object that throws an error
  * when trying to access undefined properties.
- * 
- * @param namespace 
- * @returns 
+ *
+ * @param namespace
+ * @returns
  */
 export const createNamespace = <T extends Object>(namespace: T) => {
     return new Proxy<T>(namespace, {
@@ -59,8 +66,16 @@ export const createNamespace = <T extends Object>(namespace: T) => {
 
                 // Whitelist some fields that are undefined but accessed at
                 // some point or another by our code.
-                if (['toJSON', 'Symbol(Symbol.toStringTag)', 'constructor', '$$typeof', 
-                    '@@__IMMUTABLE_ITERABLE__@@', '@@__IMMUTABLE_RECORD__@@'].includes(key)) {
+                if (
+                    [
+                        'toJSON',
+                        'Symbol(Symbol.toStringTag)',
+                        'constructor',
+                        '$$typeof',
+                        '@@__IMMUTABLE_ITERABLE__@@',
+                        '@@__IMMUTABLE_RECORD__@@',
+                    ].includes(key)
+                ) {
                     return undefined
                 }
                 throw new Error(`Namespace doesn't know key "${String(key)}"`)
@@ -71,7 +86,7 @@ export const createNamespace = <T extends Object>(namespace: T) => {
 }
 
 export const wrapMacros = (
-    codeMacros: CodeMacros, 
+    codeMacros: CodeMacros,
     compilation: Compilation
 ): WrappedCodeMacros => {
     const wrappedCodeMacros = {} as Partial<WrappedCodeMacros>
@@ -86,10 +101,10 @@ export const wrapMacros = (
 
 /**
  * Helper to get node implementation or throw an error if not implemented.
- * 
- * @param nodeImplementations 
- * @param nodeType 
- * @returns 
+ *
+ * @param nodeImplementations
+ * @param nodeType
+ * @returns
  */
 export const getNodeImplementation = (
     nodeImplementations: NodeImplementations,
@@ -103,13 +118,13 @@ export const getNodeImplementation = (
 }
 
 export const buildMessageTransferOperations = (
-    template: Array<PdDspGraph.NodeArgument>,
-): Array<MessageTransferOperation> => {    
+    template: Array<PdDspGraph.NodeArgument>
+): Array<MessageTransferOperation> => {
     // Creates an array of transfer functions `inVal -> outVal`.
-    return template.map(templateElem => {
+    return template.map((templateElem) => {
         if (typeof templateElem === 'string') {
             const matchDollar = DOLLAR_VAR_RE.exec(templateElem)
-    
+
             // If the transfer is a dollar var :
             //      ['bla', 789] - ['$1'] -> ['bla']
             //      ['bla', 789] - ['$2'] -> [789]
@@ -117,19 +132,22 @@ export const buildMessageTransferOperations = (
                 // -1, because $1 corresponds to value 0.
                 const inIndex = parseInt(matchDollar[1], 10) - 1
                 return { type: 'noop', inIndex }
-
             } else if (matchDollar) {
-                const variables: MessageTransferOperationStringTemplate["variables"] = []
+                const variables: MessageTransferOperationStringTemplate['variables'] = []
                 let matched: RegExpMatchArray | null
                 while ((matched = DOLLAR_VAR_RE_GLOB.exec(templateElem))) {
                     // position -1, because $1 corresponds to value 0.
                     variables.push({
-                        placeholder: matched[0], 
+                        placeholder: matched[0],
                         inIndex: parseInt(matched[1]!, 10) - 1,
                     })
                 }
-                return { type: 'string-template', template: templateElem, variables }
-    
+                return {
+                    type: 'string-template',
+                    template: templateElem,
+                    variables,
+                }
+
                 // Else the input doesn't matter
             } else {
                 return { type: 'string-constant', value: templateElem }
@@ -161,7 +179,11 @@ interface MessageTransferOperationStringConstant {
 interface MessageTransferOperationStringTemplate {
     type: 'string-template'
     template: string
-    variables: Array<{ placeholder: string, inIndex: number }>
+    variables: Array<{ placeholder: string; inIndex: number }>
 }
 
-type MessageTransferOperation = MessageTransferOperationNoop | MessageTransferOperationFloatConstant | MessageTransferOperationStringConstant | MessageTransferOperationStringTemplate
+type MessageTransferOperation =
+    | MessageTransferOperationNoop
+    | MessageTransferOperationFloatConstant
+    | MessageTransferOperationStringConstant
+    | MessageTransferOperationStringTemplate

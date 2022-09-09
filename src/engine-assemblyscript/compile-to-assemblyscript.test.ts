@@ -20,10 +20,9 @@ import { makeGraph } from '@webpd/shared/test-helpers'
 import macros from './macros'
 
 describe('compileToAssemblyscript', () => {
-
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
-        'DUMMY': {
-            loop: () => `// [DUMMY] loop`,       
+        DUMMY: {
+            loop: () => `// [DUMMY] loop`,
         },
         'osc~': {
             initialize: () => `// [osc~] setup`,
@@ -47,7 +46,10 @@ describe('compileToAssemblyscript', () => {
     ) => {
         const code = compileToAssemblyscript(compilation)
         const wasmModule = await compileWasmModule(`${extraCode}\n${code}`)
-        return createEngine(wasmModule, {...compilation, ...extraEngineSettings})
+        return createEngine(wasmModule, {
+            ...compilation,
+            ...extraEngineSettings,
+        })
     }
 
     it('should create the specified ports', async () => {
@@ -60,8 +62,8 @@ describe('compileToAssemblyscript', () => {
                     blo: { access: 'w', type: 'messages' },
                     bli: { access: 'rw', type: 'float' },
                     blu: { access: 'rw', type: 'messages' },
-                }
-            }), 
+                },
+            }),
             // prettier-ignore
             `
                 let bla: f32 = 1
@@ -127,64 +129,64 @@ describe('compileToAssemblyscript', () => {
         const called: Array<Array<PdSharedTypes.ControlValue>> = []
         const inletVariableName = 'someNode_INS_someInlet'
         const nodeImplementations: NodeImplementations = {
-            'messageGeneratorType': {
-                loop: (_, {outs, globs, macros}) => `
+            messageGeneratorType: {
+                loop: (_, { outs, globs, macros }) => `
                     if (${globs.frame} % 5 === 0) {
                         ${macros.createMessage('m', [0])}
                         writeFloatDatum(m, 0, f32(${globs.frame}))
                         ${outs.someOutlet}.push(m)
                     }
-                `
+                `,
             },
-            'someNodeType': {
-                loop: () => ``
-            }
+            someNodeType: {
+                loop: () => ``,
+            },
         }
 
         const graph = makeGraph({
-            'messageGenerator': {
+            messageGenerator: {
                 type: 'messageGeneratorType',
-                outlets: {'someOutlet': { type: 'control', id: 'someOutlet' }},
-                sinks: {'someOutlet': [['someNode', 'someInlet']]}
+                outlets: { someOutlet: { type: 'control', id: 'someOutlet' } },
+                sinks: { someOutlet: [['someNode', 'someInlet']] },
             },
-            'someNode': {
+            someNode: {
                 type: 'someNodeType',
                 isEndSink: true,
-                inlets: {'someInlet': { type: 'control', id: 'someInlet' }}
-            }
+                inlets: { someInlet: { type: 'control', id: 'someInlet' } },
+            },
         })
 
         const engine = await compileEngine(
             makeCompilation({
-                graph, 
-                nodeImplementations, 
+                graph,
+                nodeImplementations,
                 macros: macros,
                 inletListeners: {
-                    'someNode': ['someInlet']
+                    someNode: ['someInlet'],
                 },
                 portSpecs: {
                     [inletVariableName]: {
                         access: 'r',
-                        type: 'messages'
-                    }
+                        type: 'messages',
+                    },
                 },
             }),
             '',
             {
                 inletListenersCallbacks: {
-                    'someNode': {
-                        'someInlet': (messages: Array<PdSharedTypes.ControlValue>) => called.push(messages)
-                    }
-                }
+                    someNode: {
+                        someInlet: (
+                            messages: Array<PdSharedTypes.ControlValue>
+                        ) => called.push(messages),
+                    },
+                },
             }
         )
 
         const blockSize = 18
         engine.configure(44100, blockSize)
         engine.loop()
-        assert.deepStrictEqual(called, [
-            [[0]],[[5]],[[10]],[[15]],
-        ])
+        assert.deepStrictEqual(called, [[[0]], [[5]], [[10]], [[15]]])
     })
 
     it('should create the specified ports', async () => {
@@ -197,8 +199,8 @@ describe('compileToAssemblyscript', () => {
                     blo: { access: 'w', type: 'messages' },
                     bli: { access: 'rw', type: 'float' },
                     blu: { access: 'rw', type: 'messages' },
-                }
-            }), 
+                },
+            }),
             // prettier-ignore
             `
                 let bla: f32 = 1
@@ -261,10 +263,12 @@ describe('compileToAssemblyscript', () => {
     })
 
     it('should be a wasm engine when compiled', async () => {
-        const { wasmExports } = await compileEngine(makeCompilation({
-            nodeImplementations: NODE_IMPLEMENTATIONS,
-            macros: macros,
-        }))
+        const { wasmExports } = await compileEngine(
+            makeCompilation({
+                nodeImplementations: NODE_IMPLEMENTATIONS,
+                macros: macros,
+            })
+        )
 
         const expectedExports: AssemblyScriptWasmExports = {
             configure: (_: number) => 0,

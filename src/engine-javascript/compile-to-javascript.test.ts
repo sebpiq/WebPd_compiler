@@ -18,7 +18,6 @@ import macros from './macros'
 import { JavaScriptEngine } from './types'
 
 describe('compileToJavascript', () => {
-
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         'osc~': {
             initialize: () => `// [osc~] setup`,
@@ -32,7 +31,7 @@ describe('compileToJavascript', () => {
 
     it('should create the specified ports', () => {
         const compilation = makeCompilation({
-            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            nodeImplementations: NODE_IMPLEMENTATIONS,
             portSpecs: {
                 bla: { access: 'r', type: 'float' },
                 blo: { access: 'w', type: 'messages' },
@@ -41,7 +40,7 @@ describe('compileToJavascript', () => {
             },
             macros: macros,
         })
-        
+
         const code = compileToJavascript(compilation)
         const engine: JavaScriptEngine = new Function(`
             let bla = 1
@@ -91,8 +90,8 @@ describe('compileToJavascript', () => {
             },
         })
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            graph,
+            nodeImplementations: NODE_IMPLEMENTATIONS,
             macros: macros,
         })
         const code = compileToJavascript(compilation)
@@ -111,47 +110,49 @@ describe('compileToJavascript', () => {
         const called: Array<Array<PdSharedTypes.ControlValue>> = []
         const inletVariableName = 'someNode_INS_someInlet'
         const nodeImplementations: NodeImplementations = {
-            'messageGeneratorType': {
-                loop: (_, {outs, globs}) => `
+            messageGeneratorType: {
+                loop: (_, { outs, globs }) => `
                     if (${globs.frame} % 4 === 0) {
                         ${outs.someOutlet}.push([${globs.frame}])
                     }
-                `
+                `,
             },
-            'someNodeType': {
-                loop: () => ``
-            }
+            someNodeType: {
+                loop: () => ``,
+            },
         }
 
         const graph = makeGraph({
-            'messageGenerator': {
+            messageGenerator: {
                 type: 'messageGeneratorType',
-                outlets: {'someOutlet': { type: 'control', id: 'someOutlet' }},
-                sinks: {'someOutlet': [['someNode', 'someInlet']]}
+                outlets: { someOutlet: { type: 'control', id: 'someOutlet' } },
+                sinks: { someOutlet: [['someNode', 'someInlet']] },
             },
-            'someNode': {
+            someNode: {
                 type: 'someNodeType',
                 isEndSink: true,
-                inlets: {'someInlet': { type: 'control', id: 'someInlet' }}
-            }
+                inlets: { someInlet: { type: 'control', id: 'someInlet' } },
+            },
         })
 
         const inletListeners: InletListeners = {
-            ['someNode']: ['someInlet']
+            ['someNode']: ['someInlet'],
         }
 
-        const code = compileToJavascript(makeCompilation({
-            graph, 
-            nodeImplementations, 
-            macros: macros,
-            inletListeners,
-            portSpecs: {
-                [inletVariableName]: {
-                    access: 'r',
-                    type: 'messages'
-                }
-            },
-        }))
+        const code = compileToJavascript(
+            makeCompilation({
+                graph,
+                nodeImplementations,
+                macros: macros,
+                inletListeners,
+                portSpecs: {
+                    [inletVariableName]: {
+                        access: 'r',
+                        type: 'messages',
+                    },
+                },
+            })
+        )
 
         const engine = new Function('inletListener_someNode_someInlet', code)(
             () => {
@@ -163,8 +164,6 @@ describe('compileToJavascript', () => {
         const blockSize = 13
         engine.configure(44100, blockSize)
         engine.loop()
-        assert.deepStrictEqual(called, [
-            [[0]],[[4]],[[8]],[[12]],
-        ])
+        assert.deepStrictEqual(called, [[[0]], [[4]], [[8]], [[12]]])
     })
 })

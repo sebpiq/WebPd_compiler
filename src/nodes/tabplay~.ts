@@ -25,8 +25,8 @@ export const declare: NodeCodeGenerator = (
     let ${macros.typedVarInt(state.readUntil)}
 
     const ${state.funcSetArrayName} = ${macros.functionHeader(
-        macros.typedVarString('arrayName')
-    )} => {
+    macros.typedVarString('arrayName')
+)} => {
         if (!${globs.arrays}.has(arrayName)) {
             ${state.array} = new ${macros.floatArrayType()}(0)
         } else {
@@ -53,8 +53,8 @@ export const declare: NodeCodeGenerator = (
             MESSAGE_DATUM_TYPE_FLOAT,
         ])}) {
             ${state.readPosition} = ${macros.castToInt(
-                macros.readMessageFloatDatum('m', 0)
-            )}
+    macros.readMessageFloatDatum('m', 0)
+)}
             ${state.readUntil} = ${state.array}.length
     
         } else if (${macros.isMessageMatching('m', [
@@ -62,8 +62,8 @@ export const declare: NodeCodeGenerator = (
             MESSAGE_DATUM_TYPE_FLOAT,
         ])}) {
             ${state.readPosition} = ${macros.castToInt(
-                macros.readMessageFloatDatum('m', 0)
-            )}
+    macros.readMessageFloatDatum('m', 0)
+)}
             ${state.readUntil} = ${macros.castToInt(`Math.min(
                 ${macros.castToFloat(
                     state.readPosition
@@ -78,18 +78,19 @@ export const declare: NodeCodeGenerator = (
 `
 
 // ------------------------------ initialize ------------------------------ //
-export const initialize: NodeCodeGenerator = (
-    node,
-    { state, ins, macros }
-) => `
+export const initialize: NodeCodeGenerator = (node, { state, ins, macros }) => `
     ${state.array} = new ${macros.floatArrayType()}(0)
     ${state.readPosition} = 0
     ${state.readUntil} = 0
 
-    ${node.args.arrayName ? `{
+    ${
+        node.args.arrayName
+            ? `{
         ${macros.createMessage('m', ['set', node.args.arrayName as string])}
         ${ins.$0}.push(m)
-    }`: ''}
+    }`
+            : ''
+    }
 `
 
 // ------------------------------- loop ------------------------------ //

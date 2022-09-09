@@ -13,10 +13,7 @@ import { MESSAGE_DATUM_TYPE_FLOAT } from '../constants'
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ declare ------------------------------ //
-export const declare: NodeCodeGenerator = (
-    _,
-    { state, ins, globs, macros },
-) =>
+export const declare: NodeCodeGenerator = (_, { state, ins, globs, macros }) =>
     // TODO : more complex ways to set rate
     // Time units are all expressed in frames here
     `
@@ -25,8 +22,8 @@ export const declare: NodeCodeGenerator = (
         let ${macros.typedVarFloat(state.realNextTick)}
 
         const ${state.funcSetRate} = ${macros.functionHeader(
-            macros.typedVarFloat('rate')
-        )} => {
+        macros.typedVarFloat('rate')
+    )} => {
             ${state.rate} = rate / 1000 * ${globs.sampleRate}
         }
 
@@ -60,12 +57,8 @@ export const declare: NodeCodeGenerator = (
         }
     `
 
-
 // ------------------------------ initialize ------------------------------ //
-export const initialize: NodeCodeGenerator = (
-    { args },
-    { state },
-) =>
+export const initialize: NodeCodeGenerator = ({ args }, { state }) =>
     `
         ${state.rate} = 0
         ${state.nextTick} = -1
@@ -88,7 +81,9 @@ export const loop: NodeCodeGenerator = (
         ${macros.createMessage('m', ['bang'])}
         ${outs.$0}.push(m)
         ${state.realNextTick} = ${state.realNextTick} + ${state.rate}
-        ${state.nextTick} = ${macros.castToInt(`Math.round(${state.realNextTick})`)}
+        ${state.nextTick} = ${macros.castToInt(
+    `Math.round(${state.realNextTick})`
+)}
     }
 `
 

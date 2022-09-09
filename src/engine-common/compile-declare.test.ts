@@ -17,7 +17,6 @@ import compileDeclare from './compile-declare'
 import macros from '../engine-javascript/macros'
 
 describe('compileDeclare', () => {
-
     it('should compile the variables declaration code', () => {
         const graph = makeGraph({
             osc: {
@@ -48,15 +47,15 @@ describe('compileDeclare', () => {
                 loop: () => ``,
             },
             'dac~': {
-                declare: (_, __, {audioSettings}) =>
+                declare: (_, __, { audioSettings }) =>
                     `// [dac~] channelCount ${audioSettings.channelCount}`,
                 loop: () => ``,
             },
         }
 
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations, 
+            graph,
+            nodeImplementations,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,
@@ -122,8 +121,8 @@ describe('compileDeclare', () => {
         }
 
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations, 
+            graph,
+            nodeImplementations,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,

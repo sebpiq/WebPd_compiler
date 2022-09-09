@@ -126,8 +126,11 @@ export const compilePorts = (
 export const compileMessageListeners = (compilation: Compilation) => {
     return renderCode`
         ${Object.entries(compilation.inletListeners).map(([nodeId, inletIds]) =>
-            inletIds.map(inletId => {
-                const inletListenerVariableName = compilation.engineVariableNames.inletListeners[nodeId][inletId]
+            inletIds.map((inletId) => {
+                const inletListenerVariableName =
+                    compilation.engineVariableNames.inletListeners[nodeId][
+                        inletId
+                    ]
                 // prettier-ignore
                 return `
                     export declare function ${inletListenerVariableName}(): void

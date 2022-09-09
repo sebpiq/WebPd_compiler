@@ -17,7 +17,6 @@ import compileLoop from './compile-loop'
 import macros from '../engine-assemblyscript/macros'
 
 describe('compileLoop', () => {
-
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         msg: {
             initialize: () => ``,
@@ -41,7 +40,7 @@ describe('compileLoop', () => {
         },
         'dac~': {
             initialize: () => ``,
-            loop: (_, __, {audioSettings}) =>
+            loop: (_, __, { audioSettings }) =>
                 `// [dac~] : channelCount ${audioSettings.channelCount}`,
         },
     }
@@ -82,8 +81,8 @@ describe('compileLoop', () => {
         })
 
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            graph,
+            nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,
@@ -170,8 +169,8 @@ describe('compileLoop', () => {
         })
 
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            graph,
+            nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,
@@ -240,8 +239,8 @@ describe('compileLoop', () => {
         })
 
         const compilation = makeCompilation({
-            graph, 
-            nodeImplementations: NODE_IMPLEMENTATIONS, 
+            graph,
+            nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,
