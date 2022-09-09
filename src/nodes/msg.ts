@@ -9,66 +9,17 @@
  *
  */
 
-import { Code, NodeCodeGenerator } from '../types'
+import { NodeCodeGenerator } from '../types'
 
 // ------------------------------- loop ------------------------------ //
-// Takes a message array as input, and constructs the output message using `template` argument.
-// For example :
-//
-//     [56, '$1', 'bla', '$2-$1']
-//     transfer([89, 'bli']); // [56, 89, 'bla', 'bli-89']
-//
-export const loop: NodeCodeGenerator = (node, { ins, outs }) => {
-    let outElements: Array<Code> = []
+export const loop: NodeCodeGenerator = (node, { ins, outs, macros }) => {
     const template = node.args.template as Array<PdDspGraph.NodeArgument>
-
-    // Creates an array of transfer functions `inVal -> outVal`.
-    template.forEach((templateElem) => {
-        if (typeof templateElem === 'string') {
-            const matchDollar = DOLLAR_VAR_RE.exec(templateElem)
-
-            // If the transfer is a dollar var :
-            //      ['bla', 789] - ['$1'] -> ['bla']
-            //      ['bla', 789] - ['$2'] -> [789]
-            if (matchDollar && matchDollar[0] === templateElem) {
-                // -1, because $1 corresponds to value 0.
-                const inIndex = parseInt(matchDollar[1], 10) - 1
-                outElements.push(`inMessage[${inIndex}]`)
-
-                // If the transfer is a string containing dollar var :
-                //      ['bla', 789] - ['bla$2'] -> ['bla789']
-            } else if (matchDollar) {
-                const dollarVars: Array<[string, number]> = []
-                let matched: RegExpMatchArray
-                while ((matched = DOLLAR_VAR_RE_GLOB.exec(templateElem))) {
-                    // position -1, because $1 corresponds to value 0.
-                    dollarVars.push([matched[0], parseInt(matched[1], 10) - 1])
-                }
-
-                outElements.push(
-                    `"${templateElem}"${dollarVars.map(
-                        ([placeholder, inIndex]) =>
-                            `.replace("${placeholder}", inMessage[${inIndex}])`
-                    )}`
-                )
-
-                // Else the input doesn't matter
-            } else {
-                outElements.push(`"${templateElem}"`)
-            }
-        } else {
-            outElements.push(`${templateElem}`)
-        }
-    })
 
     return `
         while (${ins.$0}.length) {
-            const inMessage = ${ins.$0}.shift()
-            ${outs.$0}.push([${outElements.join(', ')}])
+            const ${macros.typedVarMessage('inMessage')} = ${ins.$0}.shift()
+            ${macros.messageTransfer(template, 'inMessage', 'outMessage')}
+            ${outs.$0}.push(outMessage)
         }
     `
 }
-
-// ------------------------------------------------------------------- //
-const DOLLAR_VAR_RE = /\$(\d+)/
-const DOLLAR_VAR_RE_GLOB = /\$(\d+)/g

@@ -12,8 +12,8 @@
 import { assertNodeOutput } from './test-helpers'
 
 describe('msg', () => {
-    it('should transfer directly messages without dollar strings', () => {
-        assertNodeOutput(
+    it('should transfer directly messages without dollar strings', async () => {
+        await assertNodeOutput(
             {
                 type: 'msg',
                 args: { template: [123, 'hello'] },
@@ -31,8 +31,8 @@ describe('msg', () => {
         )
     })
 
-    it('should substitute entire dollar strings', () => {
-        assertNodeOutput(
+    it('should substitute entire dollar strings', async () => {
+        await assertNodeOutput(
             {
                 type: 'msg',
                 args: { template: [123, '$2', '$1'] },
@@ -56,8 +56,8 @@ describe('msg', () => {
         )
     })
 
-    it('should substitute dollar strings within strings', () => {
-        assertNodeOutput(
+    it('should substitute dollar strings within strings', async () => {
+        await assertNodeOutput(
             {
                 type: 'msg',
                 args: { template: ['hello_$2', '$1', 'greetings'] },

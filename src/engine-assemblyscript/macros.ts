@@ -9,7 +9,7 @@
  *
  */
 
-import { renderCode } from '../compile-helpers'
+import { buildMessageTransferOperations, renderCode } from '../compile-helpers'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -169,6 +169,91 @@ const fillInLoopOutput = (
     return `${globs.output}[${globs.iterFrame} + ${globs.blockSize} * ${channel}] = ${value}`
 }
 
+const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument>, inVariableName: CodeVariableName, outVariableName: CodeVariableName) => {
+    const outMessageTemplateCode: Array<string> = []
+    const outMessageSetCode: Array<string> = []
+    let stringMemCount = 0
+    
+    buildMessageTransferOperations(template).forEach((operation, outIndex) => {
+        if (operation.type === 'noop') {
+            const { inIndex } = operation
+            outMessageTemplateCode.push(`
+                outTemplate.push(${inVariableName}.datumTypes[${inIndex}])
+                if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
+                    const stringDatum: string = readStringDatum(${inVariableName}, ${inIndex})
+                    stringMem[${stringMemCount}] = stringDatum
+                    outTemplate.push(stringDatum.length)
+                }
+            `)
+            outMessageSetCode.push(`
+                if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
+                    writeFloatDatum(outMessage, ${outIndex}, readFloatDatum(${inVariableName}, ${inIndex}))
+                } else if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
+                    writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
+                }
+            `)
+            stringMemCount++
+
+        } else if (operation.type === 'string-template') {
+            outMessageTemplateCode.push(`
+                let stringDatum: string = "${operation.template}"
+                ${operation.variables.map(({placeholder, inIndex}) => `
+                    if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
+                        let value: string = readFloatDatum(${inVariableName}, ${inIndex}).toString()
+                        if (value.endsWith('.0')) {
+                            value = value.slice(0, -2)
+                        }
+                        stringDatum = stringDatum.replace(
+                            "${placeholder}",
+                            value
+                        )
+                    } else if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
+                        stringDatum = stringDatum.replace(
+                            "${placeholder}",
+                            readStringDatum(${inVariableName}, ${inIndex})
+                        )
+                    }`
+                )}
+                stringMem[${stringMemCount}] = stringDatum
+                outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]})
+                outTemplate.push(stringDatum.length)
+            `)
+            outMessageSetCode.push(`
+                writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
+            `)
+            stringMemCount++
+
+        } else if (operation.type === 'string-constant') {
+            outMessageTemplateCode.push(`
+                outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]})
+                outTemplate.push(${operation.value.length})
+            `)
+
+            outMessageSetCode.push(`
+                writeStringDatum(outMessage, ${outIndex}, "${operation.value}")
+            `)
+
+        } else if (operation.type === 'float-constant') {
+            outMessageTemplateCode.push(`
+                outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]})
+            `)
+    
+            outMessageSetCode.push(`
+                writeFloatDatum(outMessage, ${outIndex}, ${operation.value})
+            `)
+        }
+    })
+    
+    return renderCode`
+        const stringMem: Array<string> = new Array<string>(${stringMemCount.toString()})
+        const outTemplate: MessageTemplate = []
+        ${outMessageTemplateCode}
+        
+        const ${outVariableName} = Message.fromTemplate(outTemplate)
+        ${outMessageSetCode}
+    `
+}
+
 const macros: CodeMacros = {
     floatArrayType,
     typedVarInt,
@@ -185,6 +270,7 @@ const macros: CodeMacros = {
     readMessageStringDatum,
     readMessageFloatDatum,
     fillInLoopOutput,
+    messageTransfer,
 }
 
 export default macros

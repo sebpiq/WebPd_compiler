@@ -59,6 +59,13 @@ export type CodeMacros = {
     readMessageStringDatum: (compilation: Compilation, name: CodeVariableName, tokenIndex: number) => Code
     readMessageFloatDatum: (compilation: Compilation, name: CodeVariableName, tokenIndex: number) => Code
     fillInLoopOutput: (compilation: Compilation, channel: number, value: CodeVariableName) => Code
+    // Takes a message array as input, and constructs the output message using `template` argument.
+    // For example :
+    //
+    //     [56, '$1', 'bla', '$2-$1']
+    //     transfer([89, 'bli']); // [56, 89, 'bla', 'bli-89']
+    //
+    messageTransfer: (compilation: Compilation, template: Array<PdDspGraph.NodeArgument>, inVariableName: CodeVariableName, outVariableName: CodeVariableName) => Code
 }
 
 type FunctionMap = {[key: string]: (...args: any) => any}

@@ -9,6 +9,7 @@
  *
  */
 
+import { buildMessageTransferOperations } from '../compile-helpers'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -89,6 +90,32 @@ const fillInLoopOutput = (
     return `${globs.output}[${channel}][${globs.iterFrame}] = ${value}`
 }
 
+const messageTransfer = (_: Compilation, template: Array<PdDspGraph.NodeArgument>, inVariableName: CodeVariableName, outVariableName: CodeVariableName) => {
+    const outElements: Array<Code> = []
+    buildMessageTransferOperations(template).forEach(operation => {
+        if (operation.type === 'noop') {
+                outElements.push(`${inVariableName}[${operation.inIndex}]`)
+
+        } else if (operation.type === 'string-template') {
+            outElements.push(
+                `"${operation.template}"${operation.variables.map(
+                    ({ placeholder, inIndex }) =>
+                        `.replace("${placeholder}", ${inVariableName}[${inIndex}])`
+                )}`
+            )
+
+        } else if (operation.type === 'string-constant') {
+            outElements.push(`"${operation.value}"`)
+
+        } else if (operation.type === 'float-constant') {
+            outElements.push(`${operation.value}`)
+        }
+    })
+    return `
+        const ${outVariableName} = [${outElements.join(', ')}]
+    `
+}
+
 const macros: CodeMacros = {
     floatArrayType,
     typedVarInt,
@@ -105,6 +132,7 @@ const macros: CodeMacros = {
     readMessageStringDatum,
     readMessageFloatDatum,
     fillInLoopOutput,
+    messageTransfer,
 }
 
 export default macros
