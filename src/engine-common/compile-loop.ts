@@ -22,7 +22,10 @@ export default (
     graphTraversal: PdDspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { inletListeners, engineVariableNames } = compilation
+    const {
+        inletListenerSpecs: inletListeners,
+        engineVariableNames,
+    } = compilation
     const globs = compilation.engineVariableNames.g
     const macros = wrapMacros(compilation.macros, compilation)
     // prettier-ignore

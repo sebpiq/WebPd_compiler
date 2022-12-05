@@ -15,10 +15,10 @@ import {
     Compilation,
     EngineVariableNames,
     NodeImplementations,
-    PortSpecs,
+    AccessorSpecs,
 } from '../types'
 import compileToAssemblyscript, {
-    attachPortsVariableNames,
+    attachAccessorsVariableNames,
 } from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports, EngineMetadata } from './types'
@@ -61,13 +61,13 @@ describe('compileToAssemblyscript', () => {
         return createEngine(wasmBuffer, bindingsSettings)
     }
 
-    it('should create the specified ports', async () => {
+    it('should create the specified accessors', async () => {
         const engine = await compileEngine(
             makeCompilation({
                 target: 'assemblyscript',
                 nodeImplementations: NODE_IMPLEMENTATIONS,
                 macros,
-                portSpecs: {
+                accessorSpecs: {
                     bla: { access: 'r', type: 'float' },
                     blo: { access: 'w', type: 'messages' },
                     bli: { access: 'rw', type: 'float' },
@@ -172,10 +172,10 @@ describe('compileToAssemblyscript', () => {
                 graph,
                 nodeImplementations,
                 macros,
-                inletListeners: {
+                inletListenerSpecs: {
                     someNode: ['someInlet'],
                 },
-                portSpecs: {
+                accessorSpecs: {
                     [inletVariableName]: {
                         access: 'r',
                         type: 'messages',
@@ -205,7 +205,7 @@ describe('compileToAssemblyscript', () => {
             target: 'assemblyscript',
             nodeImplementations: NODE_IMPLEMENTATIONS,
             macros,
-            portSpecs: {
+            accessorSpecs: {
                 bla: { access: 'rw', type: 'float' },
             },
         })
@@ -222,8 +222,8 @@ describe('compileToAssemblyscript', () => {
         assert.deepStrictEqual(metadata, {
             compilation: {
                 audioSettings: compilation.audioSettings,
-                portSpecs: compilation.portSpecs,
-                inletListeners: compilation.inletListeners,
+                accessorSpecs: compilation.accessorSpecs,
+                inletListeners: compilation.inletListenerSpecs,
                 engineVariableNames: compilation.engineVariableNames,
             },
         } as EngineMetadata)
@@ -276,8 +276,8 @@ describe('compileToAssemblyscript', () => {
         )
     })
 
-    describe('attachPortsVariableNames', () => {
-        it('should attach variable names relating to ports and inlet listeners', () => {
+    describe('attachAccessorsVariableNames', () => {
+        it('should attach accessors variable names', () => {
             const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
@@ -289,12 +289,12 @@ describe('compileToAssemblyscript', () => {
                     },
                 })
             )
-            const portSpecs: PortSpecs = {
+            const accessorSpecs: AccessorSpecs = {
                 node1_INS_inlet1: { access: 'r', type: 'float' },
                 node1_INS_inlet2: { access: 'rw', type: 'messages' },
             }
-            attachPortsVariableNames(engineVariableNames, portSpecs)
-            assert.deepStrictEqual(engineVariableNames.ports, {
+            attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
+            assert.deepStrictEqual(engineVariableNames.accessors, {
                 node1_INS_inlet1: {
                     r: 'read_node1_INS_inlet1',
                 },

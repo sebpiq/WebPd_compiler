@@ -10,8 +10,8 @@
  */
 
 import { Compilation, CompilerTarget } from './types'
-import { attachPortsVariableNames as jsAttachPortsVariableNames } from './engine-javascript/compile-to-javascript'
-import { attachPortsVariableNames as ascAttachPortsVariableNames } from './engine-assemblyscript/compile-to-assemblyscript'
+import { attachAccessorsVariableNames as jsAttachAccessorsVariableNames } from './engine-javascript/compile-to-javascript'
+import { attachAccessorsVariableNames as ascAttachAccessorsVariableNames } from './engine-assemblyscript/compile-to-assemblyscript'
 import {
     generateEngineVariableNames,
     attachInletListenersVariableNames,
@@ -38,8 +38,8 @@ export const makeCompilation = (
     const target: CompilerTarget = compilation.target
     const nodeImplementations = compilation.nodeImplementations || {}
     const graph = compilation.graph || {}
-    const portSpecs = compilation.portSpecs || {}
-    const inletListeners = compilation.inletListeners || {}
+    const accessorSpecs = compilation.accessorSpecs || {}
+    const inletListeners = compilation.inletListenerSpecs || {}
     const engineVariableNames = generateEngineVariableNames(
         nodeImplementations,
         graph
@@ -49,9 +49,9 @@ export const makeCompilation = (
         channelCount: 2,
     }
     if (target === 'javascript') {
-        jsAttachPortsVariableNames(engineVariableNames, portSpecs)
+        jsAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
     } else if (target === 'assemblyscript') {
-        ascAttachPortsVariableNames(engineVariableNames, portSpecs)
+        ascAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
     }
     attachInletListenersVariableNames(engineVariableNames, inletListeners)
     return {
@@ -60,8 +60,8 @@ export const makeCompilation = (
         graph,
         nodeImplementations,
         audioSettings,
-        portSpecs,
-        inletListeners,
+        accessorSpecs,
+        inletListenerSpecs: inletListeners,
         macros: getMacros(target),
         engineVariableNames,
     }

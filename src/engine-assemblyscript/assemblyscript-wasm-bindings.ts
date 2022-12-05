@@ -19,7 +19,12 @@
  * @module
  */
 
-import { CodeVariableName, EnginePorts, Engine, AudioSettings } from '../types'
+import {
+    CodeVariableName,
+    EngineAccessors,
+    Engine,
+    AudioSettings,
+} from '../types'
 import {
     AssemblyScriptWasmExports,
     EngineMetadata,
@@ -57,7 +62,7 @@ export interface BindingsSettings {
  */
 export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
-    public ports: EnginePorts
+    public accessors: EngineAccessors
     public metadata: EngineMetadata
     private settings: BindingsSettings
     private wasmBuffer: ArrayBuffer
@@ -75,7 +80,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             input: this._makeMessageListenersWasmImports(),
         })
         this.wasmExports = (wasmInstance.exports as unknown) as AssemblyScriptWasmExports
-        this.ports = this._bindPorts()
+        this.accessors = this._bindAccessors()
     }
 
     configure(sampleRate: number, blockSize: number): void {
@@ -109,16 +114,16 @@ export class AssemblyScriptWasmEngine implements Engine {
         this.wasmExports.setArray(stringPointer, bufferPointer)
     }
 
-    _bindPorts(): EnginePorts {
-        const ports: EnginePorts = {}
+    _bindAccessors(): EngineAccessors {
+        const accessors: EngineAccessors = {}
         const wasmExports = this.wasmExports as any
-        Object.entries(this.metadata.compilation.portSpecs || {}).forEach(
+        Object.entries(this.metadata.compilation.accessorSpecs || {}).forEach(
             ([variableName, spec]) => {
                 if (spec.access.includes('w')) {
                     const portVariableName = this.metadata.compilation
-                        .engineVariableNames.ports[variableName].w
+                        .engineVariableNames.accessors[variableName].w
                     if (spec.type === 'messages') {
-                        ports[portVariableName] = (messages) => {
+                        accessors[portVariableName] = (messages) => {
                             const messageArrayPointer = lowerMessageArray(
                                 this.wasmExports,
                                 messages
@@ -126,15 +131,16 @@ export class AssemblyScriptWasmEngine implements Engine {
                             wasmExports[portVariableName](messageArrayPointer)
                         }
                     } else {
-                        ports[portVariableName] = wasmExports[portVariableName]
+                        accessors[portVariableName] =
+                            wasmExports[portVariableName]
                     }
                 }
 
                 if (spec.access.includes('r')) {
                     const portVariableNames = this.metadata.compilation
-                        .engineVariableNames.ports[variableName]
+                        .engineVariableNames.accessors[variableName]
                     if (spec.type === 'messages') {
-                        ports[portVariableNames.r] = () => {
+                        accessors[portVariableNames.r] = () => {
                             const messagesCount = wasmExports[
                                 portVariableNames.r_length
                             ]()
@@ -153,14 +159,14 @@ export class AssemblyScriptWasmEngine implements Engine {
                             return messages
                         }
                     } else {
-                        ports[portVariableNames.r] =
+                        accessors[portVariableNames.r] =
                             wasmExports[portVariableNames.r]
                     }
                 }
             }
         )
 
-        return ports
+        return accessors
     }
 
     _makeMessageListenersWasmImports() {
@@ -175,9 +181,9 @@ export class AssemblyScriptWasmEngine implements Engine {
                     const inletVariableName = this.metadata.compilation
                         .engineVariableNames.n[nodeId].ins[inletId]
                     const portVariableName = this.metadata.compilation
-                        .engineVariableNames.ports[inletVariableName].r
+                        .engineVariableNames.accessors[inletVariableName].r
                     wasmImports[listenerName] = () => {
-                        callback(this.ports[portVariableName]())
+                        callback(this.accessors[portVariableName]())
                     }
                 })
             }

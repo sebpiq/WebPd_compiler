@@ -10,14 +10,13 @@
  */
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
-import compile, { generatePortSpecs, validateSettings } from './compile'
+import compile, { generateAccessorSpecs, validateSettings } from './compile'
 import { generateEngineVariableNames } from './engine-variable-names'
 import {
     CompilerSettings,
-    EngineVariableNames,
-    InletListeners,
+    InletListenerSpecs,
     NodeImplementations,
-    PortSpecs,
+    AccessorSpecs,
 } from './types'
 
 describe('compile', () => {
@@ -77,8 +76,8 @@ describe('compile', () => {
         })
     })
 
-    describe('generatePortSpecs', () => {
-        it('should generate portSpecs according to inletListeners', () => {
+    describe('generateAccessorSpecs', () => {
+        it('should generate accessorSpecs according to inletListeners', () => {
             const engineVariableNames = generateEngineVariableNames(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
@@ -95,15 +94,15 @@ describe('compile', () => {
                     },
                 })
             )
-            const inletListeners: InletListeners = {
+            const inletListeners: InletListenerSpecs = {
                 node1: ['inlet1', 'inlet2'],
                 node2: ['inlet1'],
             }
-            const portSpecs: PortSpecs = generatePortSpecs(
+            const accessorSpecs: AccessorSpecs = generateAccessorSpecs(
                 engineVariableNames,
                 inletListeners
             )
-            assert.deepStrictEqual(portSpecs, {
+            assert.deepStrictEqual(accessorSpecs, {
                 node1_INS_inlet1: { type: 'messages', access: 'r' },
                 node1_INS_inlet2: { type: 'messages', access: 'r' },
                 node2_INS_inlet1: { type: 'messages', access: 'r' },

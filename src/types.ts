@@ -26,8 +26,8 @@ export type Code = string
 // Name of a variable in generated code
 export type CodeVariableName = string
 
-// Map of public engine ports for accessing data inside the engine
-export type EnginePorts = { [portName: string]: (...args: any) => any }
+// Map of public variable accessors for an engine
+export type EngineAccessors = { [accessorName: string]: (...args: any) => any }
 
 /**
  *  Base interface for DSP engine
@@ -39,7 +39,7 @@ export interface Engine {
         arrayName: string,
         data: Float32Array | Float64Array | Array<number>
     ) => void
-    ports: EnginePorts
+    accessors: EngineAccessors
 }
 
 export interface Compilation {
@@ -47,8 +47,8 @@ export interface Compilation {
     readonly graph: PdDspGraph.Graph
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
-    readonly portSpecs: PortSpecs
-    readonly inletListeners: InletListeners
+    readonly accessorSpecs: AccessorSpecs
+    readonly inletListenerSpecs: InletListenerSpecs
     readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
 }
@@ -144,7 +144,7 @@ export interface EngineVariableNames {
     }
 
     // Namespace for port functions
-    ports: {
+    accessors: {
         [variableName: CodeVariableName]: {
             r?: CodeVariableName
             r_length?: CodeVariableName
@@ -179,14 +179,14 @@ export interface NodeImplementation {
 
 export type NodeImplementations = { [nodeType: string]: NodeImplementation }
 
-export type PortSpecs = {
+export type AccessorSpecs = {
     [variableName: CodeVariableName]: {
         access: 'r' | 'w' | 'rw'
         type: 'float' | 'messages'
     }
 }
 
-export type InletListeners = {
+export type InletListenerSpecs = {
     [nodeId: PdDspGraph.NodeId]: Array<PdDspGraph.PortletId>
 }
 
@@ -198,5 +198,5 @@ export interface AudioSettings {
 export interface CompilerSettings {
     audioSettings: AudioSettings
     target: CompilerTarget
-    inletListeners?: InletListeners
+    inletListeners?: InletListenerSpecs
 }

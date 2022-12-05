@@ -14,7 +14,7 @@ import {
     NodeImplementations,
     EngineVariableNames,
     NodeVariableNames,
-    InletListeners,
+    InletListenerSpecs,
 } from './types'
 
 /**
@@ -84,7 +84,7 @@ export const generateEngineVariableNames = (
         sampleRate: 'SAMPLE_RATE',
         output: 'OUTPUT',
     },
-    ports: createNamespace({}),
+    accessors: createNamespace({}),
     inletListeners: createNamespace({}),
 })
 
@@ -96,7 +96,7 @@ export const generateEngineVariableNames = (
  */
 export const attachInletListenersVariableNames = (
     engineVariableNames: EngineVariableNames,
-    inletListeners: InletListeners
+    inletListeners: InletListenerSpecs
 ): void => {
     Object.entries(inletListeners).forEach(([nodeId, inletIds]) => {
         engineVariableNames.inletListeners[nodeId] = {}

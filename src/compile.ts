@@ -16,15 +16,15 @@ import {
     Compilation,
     CompilerSettings,
     EngineVariableNames,
-    InletListeners,
+    InletListenerSpecs,
     NodeImplementations,
-    PortSpecs,
+    AccessorSpecs,
 } from './types'
 import compileToJavascript, {
-    attachPortsVariableNames as jsAttachPortsVariableNames,
+    attachAccessorsVariableNames as jsAttachAccessorsVariableNames,
 } from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript, {
-    attachPortsVariableNames as ascAttachPortsVariableNames,
+    attachAccessorsVariableNames as ascAttachAccessorsVariableNames,
 } from './engine-assemblyscript/compile-to-assemblyscript'
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
@@ -46,13 +46,16 @@ export default (
         nodeImplementations,
         graph
     )
-    const portSpecs = generatePortSpecs(engineVariableNames, inletListeners)
+    const accessorSpecs = generateAccessorSpecs(
+        engineVariableNames,
+        inletListeners
+    )
     attachInletListenersVariableNames(engineVariableNames, inletListeners)
 
     if (target === 'javascript') {
-        jsAttachPortsVariableNames(engineVariableNames, portSpecs)
+        jsAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
     } else if (target === 'assemblyscript') {
-        ascAttachPortsVariableNames(engineVariableNames, portSpecs)
+        ascAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
     }
 
     const compilation: Compilation = {
@@ -60,8 +63,8 @@ export default (
         graph,
         nodeImplementations,
         audioSettings,
-        inletListeners,
-        portSpecs,
+        inletListenerSpecs: inletListeners,
+        accessorSpecs,
         engineVariableNames,
         macros,
     }
@@ -76,28 +79,28 @@ export default (
 }
 
 /**
- * Helper to generate `portSpecs` from various settings.
+ * Helper to generate `accessorSpecs` from various settings.
  *
  * @param inletListeners
  * @returns
  */
-export const generatePortSpecs = (
+export const generateAccessorSpecs = (
     engineVariableNames: EngineVariableNames,
-    inletListeners: InletListeners
-): PortSpecs => {
-    const portSpecs: PortSpecs = {}
+    inletListeners: InletListenerSpecs
+): AccessorSpecs => {
+    const accessorSpecs: AccessorSpecs = {}
 
     // An inlet listener needs to have read access to the variable representing the inlets it's listening to.
     Object.entries(inletListeners).map(([nodeId, inletIds]) => {
         inletIds.forEach((inletId) => {
             const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
-            portSpecs[inletVariableName] = {
+            accessorSpecs[inletVariableName] = {
                 access: 'r',
                 type: 'messages',
             }
         })
     })
-    return portSpecs
+    return accessorSpecs
 }
 
 /**

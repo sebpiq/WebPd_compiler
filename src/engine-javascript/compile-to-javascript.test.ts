@@ -15,12 +15,12 @@ import { generateEngineVariableNames } from '../engine-variable-names'
 import { makeCompilation } from '../test-helpers'
 import {
     EngineVariableNames,
-    InletListeners,
+    InletListenerSpecs,
     NodeImplementations,
-    PortSpecs,
+    AccessorSpecs,
 } from '../types'
 import compileToJavascript, {
-    attachPortsVariableNames,
+    attachAccessorsVariableNames,
 } from './compile-to-javascript'
 import macros from './macros'
 import { JavaScriptEngine } from './types'
@@ -40,11 +40,11 @@ describe('compileToJavascript', () => {
         },
     }
 
-    it('should create the specified ports', () => {
+    it('should create the specified accessors', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             nodeImplementations: NODE_IMPLEMENTATIONS,
-            portSpecs: {
+            accessorSpecs: {
                 bla: { access: 'r', type: 'float' },
                 blo: { access: 'w', type: 'messages' },
                 bli: { access: 'rw', type: 'float' },
@@ -62,7 +62,7 @@ describe('compileToJavascript', () => {
             ${code}
         `)()
 
-        assert.deepStrictEqual(Object.keys(engine.ports), [
+        assert.deepStrictEqual(Object.keys(engine.accessors), [
             'read_bla',
             'write_blo',
             'read_bli',
@@ -71,21 +71,21 @@ describe('compileToJavascript', () => {
             'write_blu',
         ])
 
-        assert.strictEqual(engine.ports.read_bla(), 1)
+        assert.strictEqual(engine.accessors.read_bla(), 1)
 
-        assert.strictEqual(engine.ports.read_bli(), 2)
-        engine.ports.write_bli(666.666)
-        assert.strictEqual(engine.ports.read_bli(), 666.666)
+        assert.strictEqual(engine.accessors.read_bli(), 2)
+        engine.accessors.write_bli(666.666)
+        assert.strictEqual(engine.accessors.read_bli(), 666.666)
 
-        const blu = engine.ports.read_blu()
+        const blu = engine.accessors.read_blu()
         assert.deepStrictEqual(blu, [[123.123, 'bang']])
         blu.push(['I am blu'])
-        assert.deepStrictEqual(engine.ports.read_blu(), [
+        assert.deepStrictEqual(engine.accessors.read_blu(), [
             [123.123, 'bang'],
             ['I am blu'],
         ])
-        engine.ports.write_blu([['blurg']])
-        assert.deepStrictEqual(engine.ports.read_blu(), [['blurg']])
+        engine.accessors.write_blu([['blurg']])
+        assert.deepStrictEqual(engine.accessors.read_blu(), [['blurg']])
     })
 
     it('should be a JavaScript engine when evaled', () => {
@@ -112,7 +112,7 @@ describe('compileToJavascript', () => {
             configure: (_: number) => {},
             loop: () => new Float32Array(),
             setArray: () => undefined,
-            ports: {},
+            accessors: {},
         }
         const engine = new Function(code)()
 
@@ -148,7 +148,7 @@ describe('compileToJavascript', () => {
             },
         })
 
-        const inletListeners: InletListeners = {
+        const inletListeners: InletListenerSpecs = {
             ['someNode']: ['someInlet'],
         }
 
@@ -158,8 +158,8 @@ describe('compileToJavascript', () => {
                 graph,
                 nodeImplementations,
                 macros: macros,
-                inletListeners,
-                portSpecs: {
+                inletListenerSpecs: inletListeners,
+                accessorSpecs: {
                     [inletVariableName]: {
                         access: 'r',
                         type: 'messages',
@@ -170,7 +170,9 @@ describe('compileToJavascript', () => {
 
         const engine = new Function('inletListener_someNode_someInlet', code)(
             () => {
-                const messages = engine.ports['read_someNode_INS_someInlet']()
+                const messages = engine.accessors[
+                    'read_someNode_INS_someInlet'
+                ]()
                 called.push(messages)
             }
         )
@@ -181,8 +183,8 @@ describe('compileToJavascript', () => {
         assert.deepStrictEqual(called, [[[0]], [[4]], [[8]], [[12]]])
     })
 
-    describe('attachPortsVariableNames', () => {
-        it('should attach variable names relating to ports and inlet listeners', () => {
+    describe('attachAccessorsVariableNames', () => {
+        it('should attach accessors variable names', () => {
             const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
@@ -194,12 +196,12 @@ describe('compileToJavascript', () => {
                     },
                 })
             )
-            const portSpecs: PortSpecs = {
+            const accessorSpecs: AccessorSpecs = {
                 node1_INS_inlet1: { access: 'r', type: 'float' },
                 node1_INS_inlet2: { access: 'rw', type: 'float' },
             }
-            attachPortsVariableNames(engineVariableNames, portSpecs)
-            assert.deepStrictEqual(engineVariableNames.ports, {
+            attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
+            assert.deepStrictEqual(engineVariableNames.accessors, {
                 node1_INS_inlet1: {
                     r: 'read_node1_INS_inlet1',
                 },

@@ -19,22 +19,22 @@ import {
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation, EngineVariableNames, PortSpecs } from '../types'
+import { Compilation, EngineVariableNames, AccessorSpecs } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
         audioSettings,
-        portSpecs,
-        inletListeners,
+        accessorSpecs,
+        inletListenerSpecs: inletListeners,
         engineVariableNames,
     } = compilation
     const { bitDepth, channelCount } = audioSettings
     const metadata: EngineMetadata = {
         compilation: {
             audioSettings,
-            portSpecs,
+            accessorSpecs,
             inletListeners,
             engineVariableNames,
         },
@@ -101,35 +101,35 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 }
 
 export const compilePorts = (
-    { portSpecs, engineVariableNames }: Compilation,
+    { accessorSpecs, engineVariableNames }: Compilation,
     { FloatType }: { FloatType: string }
 ) => {
     // prettier-ignore
     return renderCode`
-        ${Object.entries(portSpecs).map(([variableName, spec]) => {
+        ${Object.entries(accessorSpecs).map(([variableName, spec]) => {
             // TODO : uniformize names of types 'float', 'messages', etc ...
-            const portsVariableNames = engineVariableNames.ports[variableName]
+            const accessorsVariableNames = engineVariableNames.accessors[variableName]
             return `
                 ${spec.access.includes('r') && spec.type === 'float' ? `
-                    export function ${portsVariableNames.r}(): ${FloatType} { 
+                    export function ${accessorsVariableNames.r}(): ${FloatType} { 
                         return ${variableName} 
                     }
                     `: ''}
                 ${spec.access.includes('r') && spec.type === 'messages' ? `
-                    export function ${portsVariableNames.r_length}(): i32 { 
+                    export function ${accessorsVariableNames.r_length}(): i32 { 
                         return ${variableName}.length
                     }
-                    export function ${portsVariableNames.r_elem}(index: i32): Message { 
+                    export function ${accessorsVariableNames.r_elem}(index: i32): Message { 
                         return ${variableName}[index]
                     }
                 `: ''}
                 ${spec.access.includes('w') && spec.type === 'float' ? `
-                    export function ${portsVariableNames.w}(value: ${FloatType}): void { 
+                    export function ${accessorsVariableNames.w}(value: ${FloatType}): void { 
                         ${variableName} = value
                     }
                 `: ''}
                 ${spec.access.includes('w') && spec.type === 'messages' ? `
-                    export function ${portsVariableNames.w}(messages: Message[]): void { 
+                    export function ${accessorsVariableNames.w}(messages: Message[]): void { 
                         ${variableName} = messages
                     }
                 `: ''}
@@ -140,48 +140,49 @@ export const compilePorts = (
 
 export const compileInletListeners = (compilation: Compilation) => {
     return renderCode`
-        ${Object.entries(compilation.inletListeners).map(([nodeId, inletIds]) =>
-            inletIds.map((inletId) => {
-                const inletListenerVariableName =
-                    compilation.engineVariableNames.inletListeners[nodeId][
-                        inletId
-                    ]
-                // prettier-ignore
-                return `
+        ${Object.entries(compilation.inletListenerSpecs).map(
+            ([nodeId, inletIds]) =>
+                inletIds.map((inletId) => {
+                    const inletListenerVariableName =
+                        compilation.engineVariableNames.inletListeners[nodeId][
+                            inletId
+                        ]
+                    // prettier-ignore
+                    return `
                     export declare function ${inletListenerVariableName}(): void
                 `
-            })
+                })
         )}
     `
 }
 
-export const attachPortsVariableNames = (
+export const attachAccessorsVariableNames = (
     engineVariableNames: EngineVariableNames,
-    portSpecs: PortSpecs
+    accessorSpecs: AccessorSpecs
 ): void => {
-    Object.entries(portSpecs).forEach(([variableName, portSpec]) => {
-        engineVariableNames.ports[variableName] = {}
-        if (portSpec.access.includes('r')) {
-            if (portSpec.type === 'messages') {
+    Object.entries(accessorSpecs).forEach(([variableName, accessorSpec]) => {
+        engineVariableNames.accessors[variableName] = {}
+        if (accessorSpec.access.includes('r')) {
+            if (accessorSpec.type === 'messages') {
                 // Implemented by engine
-                engineVariableNames.ports[variableName][
+                engineVariableNames.accessors[variableName][
                     'r_length'
                 ] = `read_${variableName}_length`
-                engineVariableNames.ports[variableName][
+                engineVariableNames.accessors[variableName][
                     'r_elem'
                 ] = `read_${variableName}_elem`
                 // Implemented by bindings
-                engineVariableNames.ports[variableName][
+                engineVariableNames.accessors[variableName][
                     'r'
                 ] = `read_${variableName}`
             } else {
-                engineVariableNames.ports[variableName][
+                engineVariableNames.accessors[variableName][
                     'r'
                 ] = `read_${variableName}`
             }
         }
-        if (portSpec.access.includes('w')) {
-            engineVariableNames.ports[variableName][
+        if (accessorSpec.access.includes('w')) {
+            engineVariableNames.accessors[variableName][
                 'w'
             ] = `write_${variableName}`
         }

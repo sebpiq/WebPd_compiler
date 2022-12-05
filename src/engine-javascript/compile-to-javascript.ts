@@ -14,12 +14,12 @@ import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation, EngineVariableNames, PortSpecs } from '../types'
+import { Compilation, EngineVariableNames, AccessorSpecs } from '../types'
 import { JavaScriptEngineCode } from './types'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { portSpecs, engineVariableNames } = compilation
-    attachPortsVariableNames(engineVariableNames, portSpecs)
+    const { accessorSpecs, engineVariableNames } = compilation
+    attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
 
@@ -44,14 +44,14 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             setArray: (arrayName, array) => { 
                 ${globs.arrays}.set(arrayName, array)
             },
-            ports: {
-                ${Object.entries(portSpecs).map(([variableName, spec]) => {
-                    const portsVariableNames = compilation.engineVariableNames.ports[variableName]
+            accessors: {
+                ${Object.entries(accessorSpecs).map(([variableName, spec]) => {
+                    const accessorsVariableNames = compilation.engineVariableNames.accessors[variableName]
                     return `
                         ${spec.access.includes('r') ? 
-                            `${portsVariableNames.r}: () => ${variableName},`: ''}
+                            `${accessorsVariableNames.r}: () => ${variableName},`: ''}
                         ${spec.access.includes('w') ? 
-                            `${portsVariableNames.w}: (value) => ${variableName} = value,`: ''}
+                            `${accessorsVariableNames.w}: (value) => ${variableName} = value,`: ''}
                     `
                 })}
             }
@@ -59,19 +59,19 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     `
 }
 
-export const attachPortsVariableNames = (
+export const attachAccessorsVariableNames = (
     engineVariableNames: EngineVariableNames,
-    portSpecs: PortSpecs
+    accessorSpecs: AccessorSpecs
 ): void => {
-    Object.entries(portSpecs).forEach(([variableName, portSpec]) => {
-        engineVariableNames.ports[variableName] = {}
-        if (portSpec.access.includes('r')) {
-            engineVariableNames.ports[variableName][
+    Object.entries(accessorSpecs).forEach(([variableName, accessorSpec]) => {
+        engineVariableNames.accessors[variableName] = {}
+        if (accessorSpec.access.includes('r')) {
+            engineVariableNames.accessors[variableName][
                 'r'
             ] = `read_${variableName}`
         }
-        if (portSpec.access.includes('w')) {
-            engineVariableNames.ports[variableName][
+        if (accessorSpec.access.includes('w')) {
+            engineVariableNames.accessors[variableName][
                 'w'
             ] = `write_${variableName}`
         }

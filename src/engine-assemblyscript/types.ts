@@ -50,8 +50,8 @@ export type ArrayBufferOfFloatsPointer = number
 export interface EngineMetadata {
     compilation: {
         readonly audioSettings: Compilation['audioSettings']
-        readonly portSpecs: Compilation['portSpecs']
-        readonly inletListeners: Compilation['inletListeners']
+        readonly accessorSpecs: Compilation['accessorSpecs']
+        readonly inletListeners: Compilation['inletListenerSpecs']
         readonly engineVariableNames: Compilation['engineVariableNames']
     }
 }

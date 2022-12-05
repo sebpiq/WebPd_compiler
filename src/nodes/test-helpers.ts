@@ -16,7 +16,7 @@ import {
     CompilerSettings,
     Engine,
     NodeImplementations,
-    PortSpecs,
+    AccessorSpecs,
 } from '../types'
 import { renderCode } from '../compile-helpers'
 import {
@@ -49,7 +49,7 @@ const setNodeInlet = (
     value: GenericInletValue
 ) => {
     const inletVariableName = `${nodeId}_INS_${inletId}`
-    engine.ports[`write_${inletVariableName}`](value)
+    engine.accessors[`write_${inletVariableName}`](value)
 }
 
 const setNodeOutlet = (
@@ -59,7 +59,7 @@ const setNodeOutlet = (
     value: GenericInletValue
 ) => {
     const outletVariableName = `${nodeId}_OUTS_${outletId}`
-    engine.ports[`write_${outletVariableName}`](value)
+    engine.accessors[`write_${outletVariableName}`](value)
 }
 
 const getNodeState = (
@@ -68,7 +68,7 @@ const getNodeState = (
     name: string
 ) => {
     const variableName = `${nodeId}_STATE_${name}`
-    return engine.ports[`read_${variableName}`]()
+    return engine.accessors[`read_${variableName}`]()
 }
 
 export type Frame = {
@@ -195,26 +195,29 @@ export const generateFramesForNode = async (
     }
 
     // --------------- Compile code & engine
-    const portSpecs: PortSpecs = {}
+    const accessorSpecs: AccessorSpecs = {}
     inputFrames.forEach((inputFrame) => {
         // Ports to write input values
         Object.keys(inputFrame).forEach((inletId) => {
             const inlet = testNode.inlets[inletId]
             const portType = inlet.type === 'signal' ? 'float' : 'messages'
             const inletVariableName = `${testNode.id}_INS_${inletId}`
-            portSpecs[inletVariableName] = { access: 'w', type: portType }
+            accessorSpecs[inletVariableName] = { access: 'w', type: portType }
 
             // We need a port to write to the output of the fakeSourceNode only if it is connected
             if (_isConnectedToFakeNode(inletId)) {
                 const outletVariableName = `${fakeSourceNode.id}_OUTS_${inletId}`
-                portSpecs[outletVariableName] = { access: 'w', type: portType }
+                accessorSpecs[outletVariableName] = {
+                    access: 'w',
+                    type: portType,
+                }
             }
         })
 
         // Ports to read output values
         Object.entries(recorderNode.inlets).forEach(([inletId, inlet]) => {
             const variableName = `${recorderNode.id}_STATE_${'mem' + inletId}`
-            portSpecs[variableName] = {
+            accessorSpecs[variableName] = {
                 access: 'r',
                 type: inlet.type === 'signal' ? 'float' : 'messages',
             }
@@ -230,7 +233,7 @@ export const generateFramesForNode = async (
             channelCount: 2,
             bitDepth: 64,
         },
-        portSpecs,
+        accessorSpecs,
     })
 
     let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode

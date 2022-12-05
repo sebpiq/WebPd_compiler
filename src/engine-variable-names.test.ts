@@ -18,7 +18,7 @@ import {
 } from './engine-variable-names'
 import {
     EngineVariableNames,
-    InletListeners,
+    InletListenerSpecs,
     NodeImplementations,
 } from './types'
 
@@ -134,7 +134,7 @@ describe('engine-variable-names', () => {
     })
 
     describe('attachInletListenersVariableNames', () => {
-        it('should attach variable names relating to ports and inlet listeners', () => {
+        it('should attach inlet listeners variable names', () => {
             const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
@@ -146,7 +146,7 @@ describe('engine-variable-names', () => {
                     },
                 })
             )
-            const inletListeners: InletListeners = {
+            const inletListeners: InletListenerSpecs = {
                 node1: ['inlet1'],
             }
             attachInletListenersVariableNames(

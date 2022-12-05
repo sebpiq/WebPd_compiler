@@ -26,12 +26,12 @@ import {
     lowerArrayBufferOfIntegers,
     lowerMessage,
 } from './assemblyscript-wasm-bindings'
-import { Code, Compilation, PortSpecs } from '../types'
+import { Code, Compilation, AccessorSpecs } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
-import { AssemblyScriptWasmExports, EngineMetadata } from './types'
+import { EngineMetadata } from './types'
 import { makeGraph } from '@webpd/shared/test-helpers'
 
 describe('AssemblyScriptWasmEngine', () => {
@@ -62,10 +62,13 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
-            const portSpecs: PortSpecs = {
+            const accessorSpecs: AccessorSpecs = {
                 bla: { access: 'r', type: 'float' },
             }
-            const compilation = makeCompilation({ ...COMPILATION, portSpecs })
+            const compilation = makeCompilation({
+                ...COMPILATION,
+                accessorSpecs,
+            })
             const wasmBuffer = await compileWasmModule(
                 // prettier-ignore
                 compileToAssemblyscript(compilation) + `
@@ -77,8 +80,8 @@ describe('AssemblyScriptWasmEngine', () => {
             assert.deepStrictEqual(metadata, {
                 compilation: {
                     audioSettings: compilation.audioSettings,
-                    portSpecs,
-                    inletListeners: compilation.inletListeners,
+                    accessorSpecs,
+                    inletListeners: compilation.inletListenerSpecs,
                     engineVariableNames: compilation.engineVariableNames,
                 },
             } as EngineMetadata)
@@ -293,12 +296,12 @@ describe('AssemblyScriptWasmEngine', () => {
 
         describe('metadata', () => {
             it('should attach the metadata to the engine', async () => {
-                const portSpecs: PortSpecs = {
+                const accessorSpecs: AccessorSpecs = {
                     bla: { access: 'r', type: 'float' },
                 }
                 const compilation = makeCompilation({
                     ...COMPILATION,
-                    portSpecs,
+                    accessorSpecs,
                 })
                 const { engine } = await getEngine(
                     // prettier-ignore
@@ -310,8 +313,8 @@ describe('AssemblyScriptWasmEngine', () => {
                 assert.deepStrictEqual(engine.metadata, {
                     compilation: {
                         audioSettings: compilation.audioSettings,
-                        portSpecs,
-                        inletListeners: compilation.inletListeners,
+                        accessorSpecs,
+                        inletListeners: compilation.inletListenerSpecs,
                         engineVariableNames: compilation.engineVariableNames,
                     },
                 } as EngineMetadata)
@@ -383,11 +386,11 @@ describe('AssemblyScriptWasmEngine', () => {
             })
         })
 
-        describe('ports', () => {
-            it('should generate port to read message arrays', async () => {
+        describe('accessors', () => {
+            it('should generate accessor to read message arrays', async () => {
                 const compilation = makeCompilation({
                     target: 'assemblyscript',
-                    portSpecs: {
+                    accessorSpecs: {
                         someMessageArray: {
                             type: 'messages',
                             access: 'r',
@@ -413,19 +416,19 @@ describe('AssemblyScriptWasmEngine', () => {
                         someMessageArray.push(m2)
                 `
                 )
-                assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
+                assert.deepStrictEqual(Object.keys(engine.accessors).sort(), [
                     'read_someMessageArray',
                 ])
-                assert.deepStrictEqual(engine.ports.read_someMessageArray(), [
-                    [666.5],
-                    ['bla', 123],
-                ])
+                assert.deepStrictEqual(
+                    engine.accessors.read_someMessageArray(),
+                    [[666.5], ['bla', 123]]
+                )
             })
 
-            it('should generate port to write message arrays', async () => {
+            it('should generate accessors to write message arrays', async () => {
                 const compilation = makeCompilation({
                     target: 'assemblyscript',
-                    portSpecs: {
+                    accessorSpecs: {
                         someMessageArray: {
                             type: 'messages',
                             access: 'rw',
@@ -439,21 +442,21 @@ describe('AssemblyScriptWasmEngine', () => {
                         let someMessageArray: Message[] = []
                     `
                 )
-                assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
+                assert.deepStrictEqual(Object.keys(engine.accessors).sort(), [
                     'read_someMessageArray',
                     'write_someMessageArray',
                 ])
-                engine.ports.write_someMessageArray([[777, 'hello'], [111]])
-                assert.deepStrictEqual(engine.ports.read_someMessageArray(), [
-                    [777, 'hello'],
-                    [111],
-                ])
+                engine.accessors.write_someMessageArray([[777, 'hello'], [111]])
+                assert.deepStrictEqual(
+                    engine.accessors.read_someMessageArray(),
+                    [[777, 'hello'], [111]]
+                )
             })
 
-            it('should generate port to read floats', async () => {
+            it('should generate accessors to read floats', async () => {
                 const compilation = makeCompilation({
                     target: 'assemblyscript',
-                    portSpecs: {
+                    accessorSpecs: {
                         someFloat: {
                             type: 'float',
                             access: 'r',
@@ -467,16 +470,16 @@ describe('AssemblyScriptWasmEngine', () => {
                         const someFloat: f32 = 999
                     `
                 )
-                assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
+                assert.deepStrictEqual(Object.keys(engine.accessors).sort(), [
                     'read_someFloat',
                 ])
-                assert.strictEqual(engine.ports.read_someFloat(), 999)
+                assert.strictEqual(engine.accessors.read_someFloat(), 999)
             })
 
-            it('should generate port to write floats', async () => {
+            it('should generate accessors to write floats', async () => {
                 const compilation = makeCompilation({
                     target: 'assemblyscript',
-                    portSpecs: {
+                    accessorSpecs: {
                         someFloat: {
                             type: 'float',
                             access: 'rw',
@@ -490,12 +493,12 @@ describe('AssemblyScriptWasmEngine', () => {
                         let someFloat: f32 = 456
                     `
                 )
-                assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
+                assert.deepStrictEqual(Object.keys(engine.accessors).sort(), [
                     'read_someFloat',
                     'write_someFloat',
                 ])
-                engine.ports.write_someFloat(666)
-                assert.strictEqual(engine.ports.read_someFloat(), 666)
+                engine.accessors.write_someFloat(666)
+                assert.strictEqual(engine.accessors.read_someFloat(), 666)
             })
         })
 
@@ -510,10 +513,10 @@ describe('AssemblyScriptWasmEngine', () => {
                             inlets: { blo: { id: 'blo', type: 'control' } },
                         },
                     }),
-                    portSpecs: {
+                    accessorSpecs: {
                         bla_INS_blo: { access: 'r', type: 'messages' },
                     },
-                    inletListeners: { bla: ['blo'] },
+                    inletListenerSpecs: { bla: ['blo'] },
                 })
                 const { engine, wasmExports } = await getEngine(
                     // prettier-ignore
