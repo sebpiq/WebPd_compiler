@@ -57,8 +57,8 @@ describe('compileToAssemblyscript', () => {
         bindingsSettings: BindingsSettings = {}
     ) => {
         const code = compileToAssemblyscript(compilation)
-        const wasmModule = await compileWasmModule(`${extraCode}\n${code}`)
-        return createEngine(wasmModule, bindingsSettings)
+        const wasmBuffer = await compileWasmModule(`${extraCode}\n${code}`)
+        return createEngine(wasmBuffer, bindingsSettings)
     }
 
     it('should create the specified ports', async () => {

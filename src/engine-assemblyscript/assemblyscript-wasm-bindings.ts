@@ -69,12 +69,12 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     async initialize() {
-        const wasmModule = await instantiateWasmModule(this.wasmBuffer, {
+        // We need to read metadata before everything, because it is used by other initialization functions
+        this.metadata = await readMetadata(this.wasmBuffer)
+        const wasmInstance = await instantiateWasmModule(this.wasmBuffer, {
             input: this._makeMessageListenersWasmImports(),
         })
-        this.wasmExports = (wasmModule.instance
-            .exports as unknown) as AssemblyScriptWasmExports
-        this.metadata = this._getMetadata()
+        this.wasmExports = (wasmInstance.exports as unknown) as AssemblyScriptWasmExports
         this.ports = this._bindPorts()
     }
 
@@ -218,12 +218,6 @@ export class AssemblyScriptWasmEngine implements Engine {
         return lowerBuffer(this.wasmExports, buffer)
     }
 
-    _getMetadata(): EngineMetadata {
-        const stringPointer = this.wasmExports.metadata.valueOf()
-        const metadataJSON = liftString(this.wasmExports, stringPointer)
-        return JSON.parse(metadataJSON)
-    }
-
     _bindPorts(): EnginePorts {
         const ports: EnginePorts = {}
         const wasmExports = this.wasmExports as any
@@ -272,10 +266,11 @@ export class AssemblyScriptWasmEngine implements Engine {
         Object.entries(this.settings.inletListenersCallbacks || {}).forEach(
             ([nodeId, callbacks]) => {
                 Object.entries(callbacks).forEach(([inletId, callback]) => {
-                    // TODO : Shouldn't regenerate the variable names on the fly like dat
-                    const listenerName = `inletListener_${nodeId}_${inletId}`
+                    const listenerName = this.metadata.compilation.engineVariableNames.inletListeners[nodeId][inletId]
+                    const inletVariableName = this.metadata.compilation.engineVariableNames.n[nodeId].ins[inletId]
+                    const portVariableName = this.metadata.compilation.engineVariableNames.ports[inletVariableName].r
                     wasmImports[listenerName] = () => {
-                        callback(this.ports[`read_${nodeId}_INS_${inletId}`]())
+                        callback(this.ports[portVariableName]())
                     }
                 })
             }
@@ -358,12 +353,35 @@ export const lowerBuffer = (
     return pointer
 }
 
+export const readMetadata = async (wasmBuffer: ArrayBuffer): Promise<EngineMetadata> => {
+    // In order to read metadata, we need to introspect the module to get the imports
+    const inputImports: {
+        [listenerName: CodeVariableName]: () => void
+    } = {}
+    const wasmModule = WebAssembly.Module.imports(new WebAssembly.Module(wasmBuffer))
+
+    // Then we generate dummy functions to be able to instantiate the module
+    wasmModule
+        .filter(imprt => imprt.module === 'input' && imprt.kind === 'function')
+        .forEach(imprt => inputImports[imprt.name] = () => undefined)
+    const wasmInstance = await instantiateWasmModule(wasmBuffer, {
+        input: inputImports,
+    })
+
+    // Finally, once the module instantiated, we read the metadata
+    const wasmExports = (wasmInstance.exports as unknown) as AssemblyScriptWasmExports
+    const stringPointer = wasmExports.metadata.valueOf()
+    const metadataJSON = liftString(wasmExports, stringPointer)
+    return JSON.parse(metadataJSON)
+}
+
 // REF : Assemblyscript ESM bindings
+// TODO: Reuse module instead of rebuilding each time.
 export const instantiateWasmModule = async (
     wasmBuffer: ArrayBuffer,
     wasmImports: any = {}
 ) => {
-    const wasmModule = await WebAssembly.instantiate(wasmBuffer, {
+    const instanceAndModule = await WebAssembly.instantiate(wasmBuffer, {
         env: {
             abort: (
                 messagePointer: StringPointer,
@@ -393,7 +411,6 @@ export const instantiateWasmModule = async (
         },
         ...wasmImports,
     })
-    const wasmExports = (wasmModule.instance
-        .exports as unknown) as AssemblyScriptWasmExports
-    return wasmModule
+    const wasmExports = (instanceAndModule.instance.exports as unknown) as AssemblyScriptWasmExports
+    return instanceAndModule.instance
 }

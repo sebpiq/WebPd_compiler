@@ -14,12 +14,13 @@ import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
-import { compileWasmModule, getAssemblyscriptCoreCode } from './test-helpers'
+import { compileWasmModule } from './test-helpers'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     createEngine,
     lowerString,
     BindingsSettings,
+    readMetadata,
 } from './assemblyscript-wasm-bindings'
 import { Code, Compilation, PortSpecs } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
@@ -27,9 +28,9 @@ import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
 import { EngineMetadata } from './types'
+import { makeGraph } from '@webpd/shared/test-helpers'
 
 describe('AssemblyScriptWasmEngine', () => {
-    const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
 
     const BINDINGS_SETTINGS: BindingsSettings = {}
 
@@ -88,8 +89,33 @@ describe('AssemblyScriptWasmEngine', () => {
         })
     })
 
+    describe('readMetadata', () => {
+        it('should extract the metadata', async () => {
+            const portSpecs: PortSpecs = {
+                bla: { access: 'r', type: 'float' },
+            }
+            const compilation = makeCompilation({...COMPILATION, portSpecs})
+            const wasmBuffer = await compileWasmModule(
+                // prettier-ignore
+                compileToAssemblyscript(compilation) + `
+                    let bla: f32 = 1
+                `
+            )
+            const metadata = await readMetadata(wasmBuffer)
+
+            assert.deepStrictEqual(metadata, {
+                compilation: {
+                    audioSettings: compilation.audioSettings,
+                    portSpecs,
+                    inletListeners: compilation.inletListeners,
+                    engineVariableNames: compilation.engineVariableNames,
+                },
+            } as EngineMetadata)
+        })
+    })
+
     describe('metadata', () => {
-        it('should attach the metadata as a global string when compiled', async () => {
+        it('should attach the metadata to the engine', async () => {
             const portSpecs: PortSpecs = {
                 bla: { access: 'r', type: 'float' },
             }
@@ -463,6 +489,12 @@ describe('AssemblyScriptWasmEngine', () => {
             const called: Array<Array<PdSharedTypes.ControlValue>> = []
             const compilation = makeCompilation({
                 ...COMPILATION,
+                nodeImplementations: {'DUMMY': {loop: () => undefined}},
+                graph: makeGraph({
+                    'bla': {
+                        inlets: {'blo': {id: 'blo', type: 'control'}}
+                    }
+                }),
                 portSpecs: {bla_INS_blo: {access: 'r', type: 'messages'}},
                 inletListeners: {'bla': ['blo']}
             })
