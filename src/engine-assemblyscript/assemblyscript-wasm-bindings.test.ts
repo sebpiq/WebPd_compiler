@@ -19,12 +19,10 @@ import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     createEngine,
     lowerString,
-    EngineSettings,
+    BindingsSettings,
 } from './assemblyscript-wasm-bindings'
 import { Code, Compilation, PortSpecs } from '../types'
-import compileToAssemblyscript, {
-    compilePorts,
-} from './compile-to-assemblyscript'
+import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
@@ -33,12 +31,16 @@ import { EngineMetadata } from './types'
 describe('AssemblyScriptWasmEngine', () => {
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
 
-    const ENGINE_SETTINGS: EngineSettings = {
+    const BINDINGS_SETTINGS: BindingsSettings = {}
+
+    const COMPILATION: Compilation = makeCompilation({
+        target: 'assemblyscript',
+        macros,
         audioSettings: {
-            bitDepth: 32,
+            bitDepth: 64,
             channelCount: 2,
-        },
-    }
+        }
+    })
 
     const float64ToInt32Array = (value: number) => {
         const dataView = new DataView(
@@ -48,9 +50,9 @@ describe('AssemblyScriptWasmEngine', () => {
         return [dataView.getInt32(0), dataView.getInt32(4)]
     }
 
-    const getEngine = async (code: Code) => {
+    const getEngine = async (code: Code, bindingsSettings: BindingsSettings = BINDINGS_SETTINGS) => {
         const buffer = await compileWasmModule(code)
-        const engine = await createEngine(buffer, ENGINE_SETTINGS)
+        const engine = await createEngine(buffer, bindingsSettings)
         const wasmExports = engine.wasmExports as any
         return { engine, wasmExports }
     }
@@ -58,15 +60,11 @@ describe('AssemblyScriptWasmEngine', () => {
     describe('configure/loop', () => {
         it('should configure and return an output block of the right size', async () => {
             let block: Float32Array | Float64Array
-            const compilation = makeCompilation({
-                target: 'assemblyscript',
-                macros,
-            })
             const { engine: engine2Channels } = await getEngine(
                 compileToAssemblyscript({
-                    ...compilation,
+                    ...COMPILATION,
                     audioSettings: {
-                        ...compilation.audioSettings,
+                        ...COMPILATION.audioSettings,
                         channelCount: 2,
                     },
                 })
@@ -77,9 +75,9 @@ describe('AssemblyScriptWasmEngine', () => {
 
             const { engine: engine3Channels } = await getEngine(
                 compileToAssemblyscript({
-                    ...compilation,
+                    ...COMPILATION,
                     audioSettings: {
-                        ...compilation.audioSettings,
+                        ...COMPILATION.audioSettings,
                         channelCount: 3,
                     },
                 })
@@ -90,24 +88,20 @@ describe('AssemblyScriptWasmEngine', () => {
         })
     })
 
-    describe('getMetadata', () => {
+    describe('metadata', () => {
         it('should attach the metadata as a global string when compiled', async () => {
             const portSpecs: PortSpecs = {
                 bla: { access: 'r', type: 'float' },
             }
-            const compilation = makeCompilation({
-                target: 'assemblyscript',
-                portSpecs,
-                macros,
-            })
+            const compilation = makeCompilation({...COMPILATION, portSpecs})
             const { engine } = await getEngine(
-                compileToAssemblyscript(compilation) + // prettier-ignore
-                    `
+                // prettier-ignore
+                compileToAssemblyscript(compilation) + `
                     let bla: f32 = 1
                 `
             )
 
-            assert.deepStrictEqual(engine.getMetadata(), {
+            assert.deepStrictEqual(engine.metadata, {
                 compilation: {
                     audioSettings: compilation.audioSettings,
                     portSpecs,
@@ -119,51 +113,34 @@ describe('AssemblyScriptWasmEngine', () => {
     })
 
     describe('ports', () => {
-        const getEngine = async (portSpecs: PortSpecs, extraCode: Code) => {
-            const engineSettings: EngineSettings = {
-                ...ENGINE_SETTINGS,
-                portSpecs,
-            }
-            const compilation = makeCompilation({
-                target: 'assemblyscript',
-                portSpecs,
-            })
-            const code =
-                ASSEMBLY_SCRIPT_CORE_CODE +
-                extraCode +
-                `
-                ${compilePorts(compilation, {
-                    FloatType: 'f32',
-                })}
-            `
-            const buffer = await compileWasmModule(code)
-            const engine = await createEngine(buffer, engineSettings)
-            return engine
-        }
 
         it('should generate port to read message arrays', async () => {
-            const portSpecs: PortSpecs = {
-                someMessageArray: {
-                    type: 'messages',
-                    access: 'r',
+            const compilation = makeCompilation({
+                target: 'assemblyscript',
+                portSpecs: {
+                    someMessageArray: {
+                        type: 'messages',
+                        access: 'r',
+                    },
                 },
-            }
-            const engine = await getEngine(
-                portSpecs,
-                `
-                const someMessageArray: Message[] = []
-                const m1 = Message.fromTemplate([
-                    ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
-                ])
-                const m2 = Message.fromTemplate([
-                    ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 3,
-                    ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
-                ])
-                writeFloatDatum(m1, 0, 666.5)
-                writeStringDatum(m2, 0, 'bla')
-                writeFloatDatum(m2, 1, 123)
-                someMessageArray.push(m1)
-                someMessageArray.push(m2)
+                macros,
+            })
+            const { engine } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(compilation) + `
+                    const someMessageArray: Message[] = []
+                    const m1 = Message.fromTemplate([
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
+                    ])
+                    const m2 = Message.fromTemplate([
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 3,
+                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
+                    ])
+                    writeFloatDatum(m1, 0, 666.5)
+                    writeStringDatum(m2, 0, 'bla')
+                    writeFloatDatum(m2, 1, 123)
+                    someMessageArray.push(m1)
+                    someMessageArray.push(m2)
             `
             )
             assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
@@ -176,17 +153,21 @@ describe('AssemblyScriptWasmEngine', () => {
         })
 
         it('should generate port to write message arrays', async () => {
-            const portSpecs: PortSpecs = {
-                someMessageArray: {
-                    type: 'messages',
-                    access: 'rw',
+            const compilation = makeCompilation({
+                target: 'assemblyscript',
+                portSpecs: {
+                    someMessageArray: {
+                        type: 'messages',
+                        access: 'rw',
+                    },
                 },
-            }
-            const engine = await getEngine(
-                portSpecs,
+                macros,
+            })
+            const { engine } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(compilation) + `
+                    let someMessageArray: Message[] = []
                 `
-                let someMessageArray: Message[] = []
-            `
             )
             assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
                 'read_someMessageArray',
@@ -200,17 +181,21 @@ describe('AssemblyScriptWasmEngine', () => {
         })
 
         it('should generate port to read floats', async () => {
-            const portSpecs: PortSpecs = {
-                someFloat: {
-                    type: 'float',
-                    access: 'r',
+            const compilation = makeCompilation({
+                target: 'assemblyscript',
+                portSpecs: {
+                    someFloat: {
+                        type: 'float',
+                        access: 'r',
+                    },
                 },
-            }
-            const engine = await getEngine(
-                portSpecs,
+                macros,
+            })
+            const { engine } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(compilation) + `
+                    const someFloat: f32 = 999
                 `
-                const someFloat: f32 = 999
-            `
             )
             assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
                 'read_someFloat',
@@ -219,17 +204,21 @@ describe('AssemblyScriptWasmEngine', () => {
         })
 
         it('should generate port to write floats', async () => {
-            const portSpecs: PortSpecs = {
-                someFloat: {
-                    type: 'float',
-                    access: 'rw',
+            const compilation = makeCompilation({
+                target: 'assemblyscript',
+                portSpecs: {
+                    someFloat: {
+                        type: 'float',
+                        access: 'rw',
+                    },
                 },
-            }
-            const engine = await getEngine(
-                portSpecs,
+                macros,
+            })
+            const { engine } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(compilation) + `
+                    let someFloat: f32 = 456
                 `
-                let someFloat: f32 = 456
-            `
             )
             assert.deepStrictEqual(Object.keys(engine.ports).sort(), [
                 'read_someFloat',
@@ -242,17 +231,13 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('setArray', () => {
         it('should set the array', async () => {
-            const compilation: Compilation = makeCompilation({
-                target: 'assemblyscript',
-                macros: macros,
-            })
             const { engine, wasmExports } = await getEngine(
-                compileToAssemblyscript(compilation) +
-                    `
-                export function testReadArray (arrayName: string, index: i32): f64 {
-                    return ARRAYS[arrayName][index]
-                }
-            `
+                // prettier-ignore
+                compileToAssemblyscript(COMPILATION) + `
+                    export function testReadArray (arrayName: string, index: i32): f64 {
+                        return ARRAYS[arrayName][index]
+                    }
+                `
             )
 
             engine.setArray('array1', new Float32Array([11.1, 22.2, 33.3]))
@@ -280,13 +265,15 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('lowerArrayBufferOfIntegers', () => {
         it('should correctly lower the given array to an ArrayBuffer of integers', async () => {
-            const { engine, wasmExports } = await getEngine(`
-                export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: i32): i32 {
-                    const dataView = new DataView(buffer)
-                    return dataView.getInt32(index * sizeof<i32>())
-                }
-                ${ASSEMBLY_SCRIPT_CORE_CODE}
-            `)
+            const { engine, wasmExports } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(COMPILATION) + `
+                    export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: i32): i32 {
+                        const dataView = new DataView(buffer)
+                        return dataView.getInt32(index * sizeof<i32>())
+                    }
+                `
+            )
 
             const bufferPointer = engine.lowerArrayBufferOfIntegers([
                 1,
@@ -316,12 +303,14 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('lowerMessage', () => {
         it('should create the message with correct header and filled-in data', async () => {
-            const { engine, wasmExports } = await getEngine(`
-                export function testReadMessageData(message: Message, index: i32): i32 {
-                    return message.dataView.getInt32(index * sizeof<i32>())
-                }
-                ${ASSEMBLY_SCRIPT_CORE_CODE}
-            `)
+            const { engine, wasmExports } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(COMPILATION) + `
+                    export function testReadMessageData(message: Message, index: i32): i32 {
+                        return message.dataView.getInt32(index * sizeof<i32>())
+                    }
+                `
+            )
 
             const messagePointer = engine.lowerMessage(['bla', 2.3])
 
@@ -388,18 +377,20 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('liftMessage', () => {
         it('should read message to a JavaScript array', async () => {
-            const { engine, wasmExports } = await getEngine(`
-                export function testCreateMessage(): Message {
-                    const message: Message = Message.fromTemplate([
-                        MESSAGE_DATUM_TYPE_STRING, 5,
-                        MESSAGE_DATUM_TYPE_FLOAT,
-                    ])
-                    writeStringDatum(message, 0, "hello")
-                    writeFloatDatum(message, 1, 666)
-                    return message
-                }
-                ${ASSEMBLY_SCRIPT_CORE_CODE}
-            `)
+            const { engine, wasmExports } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(COMPILATION) + `
+                    export function testCreateMessage(): Message {
+                        const message: Message = Message.fromTemplate([
+                            MESSAGE_DATUM_TYPE_STRING, 5,
+                            MESSAGE_DATUM_TYPE_FLOAT,
+                        ])
+                        writeStringDatum(message, 0, "hello")
+                        writeFloatDatum(message, 1, 666)
+                        return message
+                    }
+                `
+            )
             const messagePointer = wasmExports.testCreateMessage()
             assert.deepStrictEqual(engine.liftMessage(messagePointer), [
                 'hello',
@@ -410,15 +401,17 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('createMessageArray / pushMessageToArray', () => {
         it('should create message array and push message to array', async () => {
-            const { engine, wasmExports } = await getEngine(`
-                export function testMessageArray(messageArray: Message[], index: i32): Message {
-                    return messageArray[index]
-                }
-                export function testReadMessageData(message: Message, index: i32): i32 {
-                    return message.dataView.getInt32(index * sizeof<i32>())
-                }
-                ${ASSEMBLY_SCRIPT_CORE_CODE}
-            `)
+            const { engine, wasmExports } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(COMPILATION) + `
+                    export function testMessageArray(messageArray: Message[], index: i32): Message {
+                        return messageArray[index]
+                    }
+                    export function testReadMessageData(message: Message, index: i32): i32 {
+                        return message.dataView.getInt32(index * sizeof<i32>())
+                    }
+                `
+            )
 
             const messagePointer1 = engine.lowerMessage(['\x00\x00'])
             const messagePointer2 = engine.lowerMessage([0])
@@ -468,49 +461,42 @@ describe('AssemblyScriptWasmEngine', () => {
     describe('inlet listeners callbacks', () => {
         it('should call callback when new message sent to inlet', async () => {
             const called: Array<Array<PdSharedTypes.ControlValue>> = []
-            const buffer = await compileWasmModule(`
-                ${ASSEMBLY_SCRIPT_CORE_CODE}
-                const bla_INS_blo: Message[] = [
-                    Message.fromTemplate([
-                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]},
-                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
-                    ]),
-                    Message.fromTemplate([
-                        ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 2
-                    ]),
-                ]
-                writeFloatDatum(bla_INS_blo[0], 0, 123)
-                writeFloatDatum(bla_INS_blo[0], 1, 456)
-                writeStringDatum(bla_INS_blo[1], 0, 'oh')
-                export declare function inletListener_bla_blo(): void
-
-                export function read_bla_INS_blo_length(): i32 { 
-                    return bla_INS_blo.length
-                }
-
-                export function read_bla_INS_blo_elem(index: i32): Message { 
-                    return bla_INS_blo[index]
-                }
-
-                export function notifyMessage(): void {
-                    inletListener_bla_blo()
-                }
-            `)
-            const engine = await createEngine(buffer, {
-                ...ENGINE_SETTINGS,
-                inletListenersCallbacks: {
-                    bla: {
-                        blo: (messages: Array<PdSharedTypes.ControlValue>) =>
-                            called.push(messages),
-                    },
-                },
-                portSpecs: {
-                    bla_INS_blo: { type: 'messages', access: 'r' },
-                },
+            const compilation = makeCompilation({
+                ...COMPILATION,
+                portSpecs: {bla_INS_blo: {access: 'r', type: 'messages'}},
+                inletListeners: {'bla': ['blo']}
             })
+            const { engine, wasmExports } = await getEngine(
+                // prettier-ignore
+                compileToAssemblyscript(compilation) + `
+                    const bla_INS_blo: Message[] = [
+                        Message.fromTemplate([
+                            ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]},
+                            ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
+                        ]),
+                        Message.fromTemplate([
+                            ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 2
+                        ]),
+                    ]
+                    writeFloatDatum(bla_INS_blo[0], 0, 123)
+                    writeFloatDatum(bla_INS_blo[0], 1, 456)
+                    writeStringDatum(bla_INS_blo[1], 0, 'oh')
+
+                    export function notifyMessage(): void {
+                        inletListener_bla_blo()
+                    }
+                `, {
+                    ...BINDINGS_SETTINGS,
+                    inletListenersCallbacks: {
+                        bla: {
+                            blo: (messages: Array<PdSharedTypes.ControlValue>) =>
+                                called.push(messages),
+                        },
+                    },
+                }
+            )
             ;(engine.wasmExports as any).notifyMessage()
             assert.deepStrictEqual(called, [[[123, 456], ['oh']]])
-            const wasmExports = engine.wasmExports as any
             return { engine, wasmExports }
         })
     })

@@ -24,7 +24,7 @@ import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports, EngineMetadata } from './types'
 import {
     createEngine,
-    EngineSettings,
+    BindingsSettings,
     liftString,
 } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
@@ -54,14 +54,11 @@ describe('compileToAssemblyscript', () => {
     const compileEngine = async (
         compilation: Compilation,
         extraCode: string = '',
-        extraEngineSettings: Partial<EngineSettings> = {}
+        bindingsSettings: BindingsSettings = {}
     ) => {
         const code = compileToAssemblyscript(compilation)
         const wasmModule = await compileWasmModule(`${extraCode}\n${code}`)
-        return createEngine(wasmModule, {
-            ...compilation,
-            ...extraEngineSettings,
-        })
+        return createEngine(wasmModule, bindingsSettings)
     }
 
     it('should create the specified ports', async () => {

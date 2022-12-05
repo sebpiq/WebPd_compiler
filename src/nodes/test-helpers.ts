@@ -245,7 +245,7 @@ export const generateFramesForNode = async (
         engine = new Function(code)() as JavaScriptEngine
     } else {
         const wasmBuffer = await compileWasmModule(code)
-        engine = await createEngine(wasmBuffer, compilation)
+        engine = await createEngine(wasmBuffer, {})
     }
 
     if (arrays) {

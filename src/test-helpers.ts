@@ -9,7 +9,6 @@
  *
  */
 
-import macros from './engine-javascript/macros'
 import { Compilation, CompilerTarget } from './types'
 import { attachPortsVariableNames as jsAttachPortsVariableNames } from './engine-javascript/compile-to-javascript'
 import { attachPortsVariableNames as ascAttachPortsVariableNames } from './engine-assemblyscript/compile-to-assemblyscript'
@@ -17,6 +16,7 @@ import {
     generateEngineVariableNames,
     attachInletListenersVariableNames,
 } from './engine-variable-names'
+import { getMacros } from './compile'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -44,6 +44,10 @@ export const makeCompilation = (
         nodeImplementations,
         graph
     )
+    const audioSettings = compilation.audioSettings || {
+        bitDepth: 32,
+        channelCount: 2,
+    }
     if (target === 'javascript') {
         jsAttachPortsVariableNames(engineVariableNames, portSpecs)
     } else if (target === 'assemblyscript') {
@@ -51,17 +55,14 @@ export const makeCompilation = (
     }
     attachInletListenersVariableNames(engineVariableNames, inletListeners)
     return {
+        ...compilation,
         target,
         graph,
         nodeImplementations,
-        audioSettings: {
-            bitDepth: 32,
-            channelCount: 2,
-        },
+        audioSettings,
         portSpecs,
         inletListeners,
-        macros: macros,
-        engineVariableNames: engineVariableNames,
-        ...compilation,
+        macros: getMacros(target),
+        engineVariableNames,
     }
 }

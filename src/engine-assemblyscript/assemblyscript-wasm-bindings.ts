@@ -19,7 +19,7 @@
  * @module
  */
 
-import { CodeVariableName, Compilation, EnginePorts, Engine } from '../types'
+import { CodeVariableName, EnginePorts, Engine } from '../types'
 import {
     AssemblyScriptWasmExports,
     EngineMetadata,
@@ -41,10 +41,7 @@ type TypedArrayConstructor =
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
-// TODO : Rethink what info should be passed to the bindings constructor
-// (e.g. variable names, portSpecs are generated automatically by the compilation, i.e. shouldnt be public settings)
-export interface EngineSettings {
-    portSpecs?: Compilation['portSpecs']
+export interface BindingsSettings {
     inletListenersCallbacks?: {
         [nodeId: PdDspGraph.NodeId]: {
             [inletId: PdDspGraph.PortletId]: (
@@ -52,7 +49,6 @@ export interface EngineSettings {
             ) => void
         }
     }
-    audioSettings: Compilation['audioSettings']
 }
 
 /**
@@ -62,11 +58,12 @@ export interface EngineSettings {
 export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
     public ports: EnginePorts
-    private settings: EngineSettings
+    public metadata: EngineMetadata
+    private settings: BindingsSettings
     private wasmBuffer: ArrayBuffer
     private wasmOutputPointer: TypedArrayPointer
 
-    constructor(wasmBuffer: ArrayBuffer, settings: EngineSettings) {
+    constructor(wasmBuffer: ArrayBuffer, settings: BindingsSettings) {
         this.wasmBuffer = wasmBuffer
         this.settings = settings
     }
@@ -77,6 +74,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         })
         this.wasmExports = (wasmModule.instance
             .exports as unknown) as AssemblyScriptWasmExports
+        this.metadata = this._getMetadata()
         this.ports = this._bindPorts()
     }
 
@@ -91,7 +89,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         this.wasmExports.loop()
         return liftTypedArray(
             this.wasmExports,
-            this.settings.audioSettings.bitDepth === 32
+            this.metadata.compilation.audioSettings.bitDepth === 32
                 ? Float32Array
                 : Float64Array,
             this.wasmOutputPointer
@@ -105,12 +103,6 @@ export class AssemblyScriptWasmEngine implements Engine {
         const stringPointer = lowerString(this.wasmExports, arrayName)
         const bufferPointer = this.lowerArrayBufferOfFloats(data)
         this.wasmExports.setArray(stringPointer, bufferPointer)
-    }
-
-    getMetadata(): EngineMetadata {
-        const stringPointer = this.wasmExports.metadata.valueOf()
-        const metadataJSON = liftString(this.wasmExports, stringPointer)
-        return JSON.parse(metadataJSON)
     }
 
     // TODO : ---- V ----  Private API ?
@@ -213,11 +205,11 @@ export class AssemblyScriptWasmEngine implements Engine {
     lowerArrayBufferOfFloats(
         floats: Array<number> | Float32Array | Float64Array
     ) {
-        const bytesPerElement = this.settings.audioSettings.bitDepth / 8
+        const bytesPerElement = this.metadata.compilation.audioSettings.bitDepth / 8
         const buffer = new ArrayBuffer(bytesPerElement * floats.length)
         const dataView = new DataView(buffer)
         const setFloatName =
-            this.settings.audioSettings.bitDepth === 32
+            this.metadata.compilation.audioSettings.bitDepth === 32
                 ? 'setFloat32'
                 : 'setFloat64'
         for (let i = 0; i < floats.length; i++) {
@@ -226,46 +218,45 @@ export class AssemblyScriptWasmEngine implements Engine {
         return lowerBuffer(this.wasmExports, buffer)
     }
 
+    _getMetadata(): EngineMetadata {
+        const stringPointer = this.wasmExports.metadata.valueOf()
+        const metadataJSON = liftString(this.wasmExports, stringPointer)
+        return JSON.parse(metadataJSON)
+    }
+
     _bindPorts(): EnginePorts {
         const ports: EnginePorts = {}
         const wasmExports = this.wasmExports as any
-        Object.entries(this.settings.portSpecs || {}).forEach(
+        Object.entries(this.metadata.compilation.portSpecs || {}).forEach(
             ([variableName, spec]) => {
-                // TODO : Shouldn't regenerate the variable names on the fly like dat
                 if (spec.access.includes('w')) {
+                    const portVariableName = this.metadata.compilation.engineVariableNames.ports[variableName].w
                     if (spec.type === 'messages') {
-                        ports[`write_${variableName}`] = (messages) => {
-                            const messageArrayPointer = this.lowerMessageArray(
-                                messages
-                            )
-                            wasmExports[`write_${variableName}`](
-                                messageArrayPointer
-                            )
+                        ports[portVariableName] = (messages) => {
+                            const messageArrayPointer = this.lowerMessageArray(messages)
+                            wasmExports[portVariableName](messageArrayPointer)
                         }
                     } else {
-                        ports[`write_${variableName}`] =
-                            wasmExports[`write_${variableName}`]
+                        ports[portVariableName] =
+                            wasmExports[portVariableName]
                     }
                 }
 
                 if (spec.access.includes('r')) {
+                    const portVariableNames = this.metadata.compilation.engineVariableNames.ports[variableName]
                     if (spec.type === 'messages') {
-                        ports[`read_${variableName}`] = () => {
-                            const messagesCount = wasmExports[
-                                `read_${variableName}_length`
-                            ]()
+                        ports[portVariableNames.r] = () => {
+                            const messagesCount = wasmExports[portVariableNames.r_length]()
                             const messages: Array<PdSharedTypes.ControlValue> = []
                             for (let i = 0; i < messagesCount; i++) {
-                                const messagePointer = wasmExports[
-                                    `read_${variableName}_elem`
-                                ](i)
+                                const messagePointer = wasmExports[portVariableNames.r_elem](i)
                                 messages.push(this.liftMessage(messagePointer))
                             }
                             return messages
                         }
                     } else {
-                        ports[`read_${variableName}`] =
-                            wasmExports[`read_${variableName}`]
+                        ports[portVariableNames.r] =
+                            wasmExports[portVariableNames.r]
                     }
                 }
             }
@@ -295,7 +286,7 @@ export class AssemblyScriptWasmEngine implements Engine {
 
 export const createEngine = async (
     wasmBuffer: ArrayBuffer,
-    settings: EngineSettings
+    settings: BindingsSettings
 ) => {
     const engine = new AssemblyScriptWasmEngine(wasmBuffer, settings)
     await engine.initialize()
