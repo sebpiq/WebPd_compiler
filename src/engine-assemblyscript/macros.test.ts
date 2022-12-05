@@ -20,7 +20,8 @@ import macros from './macros'
 
 describe('macros', () => {
     const COMPILATION = makeCompilation({
-        macros: macros,
+        target: 'assemblyscript',
+        macros,
     })
 
     describe('createMessage', () => {

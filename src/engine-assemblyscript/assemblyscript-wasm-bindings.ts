@@ -19,7 +19,7 @@
  * @module
  */
 
-import { CodeVariableName, Compilation, EnginePorts } from '../types'
+import { CodeVariableName, Compilation, EnginePorts, Engine } from '../types'
 import {
     AssemblyScriptWasmExports,
     InternalPointer,
@@ -58,7 +58,7 @@ export interface EngineSettings {
  * Class to interact more easily with a Wasm module compiled from assemblyscript code.
  * Use `createEngine` for more convenient instantiation.
  */
-export class AssemblyScriptWasmEngine {
+export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
     public ports: EnginePorts
     private settings: EngineSettings
@@ -101,10 +101,6 @@ export class AssemblyScriptWasmEngine {
         arrayName: string,
         data: Array<number> | Float32Array | Float64Array
     ) {
-        if (!this.wasmExports.setArray) {
-            console.warn(`Wasm exports doesn't define "setArray"`)
-            return
-        }
         const stringPointer = lowerString(this.wasmExports, arrayName)
         const bufferPointer = this.lowerArrayBufferOfFloats(data)
         this.wasmExports.setArray(stringPointer, bufferPointer)

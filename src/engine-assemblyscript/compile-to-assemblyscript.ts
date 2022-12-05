@@ -19,7 +19,7 @@ import {
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation } from '../types'
+import { Compilation, EngineVariableNames, PortSpecs } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode } from './types'
 
@@ -58,7 +58,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
     
         ${compileDeclare(compilation, graphTraversal)}
-        ${compileMessageListeners(compilation)}
+        ${compileInletListeners(compilation)}
         ${compilePorts(compilation, { FloatType })}
         
         export function configure(sampleRate: ${FloatType}, blockSize: i32): ${FloatArrayType} {
@@ -101,10 +101,10 @@ export const compilePorts = (
                     }
                     `: ''}
                 ${spec.access.includes('r') && spec.type === 'messages' ? `
-                    export function ${portsVariableNames.r}_length(): i32 { 
+                    export function ${portsVariableNames.r_length}(): i32 { 
                         return ${variableName}.length
                     }
-                    export function ${portsVariableNames.r}_elem(index: i32): Message { 
+                    export function ${portsVariableNames.r_elem}(index: i32): Message { 
                         return ${variableName}[index]
                     }
                 `: ''}
@@ -123,7 +123,7 @@ export const compilePorts = (
     `
 }
 
-export const compileMessageListeners = (compilation: Compilation) => {
+export const compileInletListeners = (compilation: Compilation) => {
     return renderCode`
         ${Object.entries(compilation.inletListeners).map(([nodeId, inletIds]) =>
             inletIds.map((inletId) => {
@@ -138,4 +138,32 @@ export const compileMessageListeners = (compilation: Compilation) => {
             })
         )}
     `
+}
+
+export const attachPortsVariableNames = (
+    engineVariableNames: EngineVariableNames,
+    portSpecs: PortSpecs
+): void => {
+    Object.entries(portSpecs).forEach(([variableName, portSpec]) => {
+        engineVariableNames.ports[variableName] = {}
+        if (portSpec.access.includes('r')) {
+            if (portSpec.type === 'messages') {
+                engineVariableNames.ports[variableName][
+                    'r_length'
+                ] = `read_${variableName}_length`
+                engineVariableNames.ports[variableName][
+                    'r_elem'
+                ] = `read_${variableName}_elem`
+            } else {
+                engineVariableNames.ports[variableName][
+                    'r'
+                ] = `read_${variableName}`
+            }
+        }
+        if (portSpec.access.includes('w')) {
+            engineVariableNames.ports[variableName][
+                'w'
+            ] = `write_${variableName}`
+        }
+    })
 }

@@ -48,43 +48,6 @@ const renderCodeLines = (codeLines: CodeLines | Code): Code => {
     return codeLines
 }
 
-/**
- * Helper to generate VariableNames, essentially a proxy object that throws an error
- * when trying to access undefined properties.
- *
- * @param namespace
- * @returns
- */
-export const createNamespace = <T extends Object>(namespace: T) => {
-    return new Proxy<T>(namespace, {
-        get: (target, k) => {
-            const key = String(k)
-            if (!target.hasOwnProperty(key)) {
-                if (key[0] === '$' && target.hasOwnProperty(key.slice(1))) {
-                    return (target as any)[key.slice(1)]
-                }
-
-                // Whitelist some fields that are undefined but accessed at
-                // some point or another by our code.
-                if (
-                    [
-                        'toJSON',
-                        'Symbol(Symbol.toStringTag)',
-                        'constructor',
-                        '$$typeof',
-                        '@@__IMMUTABLE_ITERABLE__@@',
-                        '@@__IMMUTABLE_RECORD__@@',
-                    ].includes(key)
-                ) {
-                    return undefined
-                }
-                throw new Error(`Namespace doesn't know key "${String(key)}"`)
-            }
-            return (target as any)[key]
-        },
-    })
-}
-
 export const wrapMacros = (
     codeMacros: CodeMacros,
     compilation: Compilation

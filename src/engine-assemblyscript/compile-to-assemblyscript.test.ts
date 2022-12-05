@@ -11,13 +11,21 @@
 
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
-import { Compilation, NodeImplementations } from '../types'
-import compileToAssemblyscript from './compile-to-assemblyscript'
+import {
+    Compilation,
+    EngineVariableNames,
+    NodeImplementations,
+    PortSpecs,
+} from '../types'
+import compileToAssemblyscript, {
+    attachPortsVariableNames,
+} from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports } from './types'
 import { createEngine, EngineSettings } from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import macros from './macros'
+import { generateEngineVariableNames } from '../engine-variable-names'
 
 describe('compileToAssemblyscript', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
@@ -55,8 +63,9 @@ describe('compileToAssemblyscript', () => {
     it('should create the specified ports', async () => {
         const engine = await compileEngine(
             makeCompilation({
+                target: 'assemblyscript',
                 nodeImplementations: NODE_IMPLEMENTATIONS,
-                macros: macros,
+                macros,
                 portSpecs: {
                     bla: { access: 'r', type: 'float' },
                     blo: { access: 'w', type: 'messages' },
@@ -158,9 +167,10 @@ describe('compileToAssemblyscript', () => {
 
         const engine = await compileEngine(
             makeCompilation({
+                target: 'assemblyscript',
                 graph,
                 nodeImplementations,
-                macros: macros,
+                macros,
                 inletListeners: {
                     someNode: ['someInlet'],
                 },
@@ -189,84 +199,12 @@ describe('compileToAssemblyscript', () => {
         assert.deepStrictEqual(called, [[[0]], [[5]], [[10]], [[15]]])
     })
 
-    it('should create the specified ports', async () => {
-        const engine = await compileEngine(
-            makeCompilation({
-                nodeImplementations: NODE_IMPLEMENTATIONS,
-                macros: macros,
-                portSpecs: {
-                    bla: { access: 'r', type: 'float' },
-                    blo: { access: 'w', type: 'messages' },
-                    bli: { access: 'rw', type: 'float' },
-                    blu: { access: 'rw', type: 'messages' },
-                },
-            }),
-            // prettier-ignore
-            `
-                let bla: f32 = 1
-                let blo: Message[]
-                let bli: f32 = 2
-                let bluMessage1: Message = Message.fromTemplate([ MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING, 4 ])
-                let bluMessage2: Message = Message.fromTemplate([ MESSAGE_DATUM_TYPE_FLOAT ])
-                let blu: Message[] = [bluMessage1, bluMessage2]
-                let blu2: Message[] = [bluMessage2]
-
-                export function getBlu2(): Message[] {
-                    return blu2
-                }
-                export function getBluMessage1(): Message {
-                    return bluMessage1
-                }
-                export function getBluMessage2(): Message {
-                    return bluMessage2
-                }
-            `
-        )
-        const wasmExports = engine.wasmExports as any
-
-        assert.deepStrictEqual(
-            filterPortFunctionKeys(wasmExports).sort(),
-            [
-                'read_bla',
-                'write_blo',
-                'read_bli',
-                'write_bli',
-                'read_blu_length',
-                'read_blu_elem',
-                'write_blu',
-            ].sort()
-        )
-
-        assert.strictEqual(wasmExports.read_bla(), 1)
-
-        assert.strictEqual(wasmExports.read_bli(), 2)
-        wasmExports.write_bli(666.666)
-        assert.strictEqual(round(wasmExports.read_bli()), 666.666)
-
-        assert.deepStrictEqual(wasmExports.read_blu_length(), 2)
-        assert.strictEqual(
-            wasmExports.read_blu_elem(0),
-            wasmExports.getBluMessage1()
-        )
-        assert.strictEqual(
-            wasmExports.read_blu_elem(1),
-            wasmExports.getBluMessage2()
-        )
-
-        const blu2Pointer = wasmExports.getBlu2()
-        wasmExports.write_blu(blu2Pointer)
-        assert.deepStrictEqual(wasmExports.read_blu_length(), 1)
-        assert.strictEqual(
-            wasmExports.read_blu_elem(0),
-            wasmExports.getBluMessage2()
-        )
-    })
-
     it('should be a wasm engine when compiled', async () => {
         const { wasmExports } = await compileEngine(
             makeCompilation({
+                target: 'assemblyscript',
                 nodeImplementations: NODE_IMPLEMENTATIONS,
-                macros: macros,
+                macros,
             })
         )
 
@@ -305,5 +243,36 @@ describe('compileToAssemblyscript', () => {
             actualExportsKeys.sort(),
             Object.keys(expectedExports).sort()
         )
+    })
+
+    describe('attachPortsVariableNames', () => {
+        it('should attach variable names relating to ports and inlet listeners', () => {
+            const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
+                NODE_IMPLEMENTATIONS,
+                makeGraph({
+                    node1: {
+                        inlets: {
+                            inlet1: { type: 'control', id: 'inlet1' },
+                            inlet2: { type: 'control', id: 'inlet2' },
+                        },
+                    },
+                })
+            )
+            const portSpecs: PortSpecs = {
+                node1_INS_inlet1: { access: 'r', type: 'float' },
+                node1_INS_inlet2: { access: 'rw', type: 'messages' },
+            }
+            attachPortsVariableNames(engineVariableNames, portSpecs)
+            assert.deepStrictEqual(engineVariableNames.ports, {
+                node1_INS_inlet1: {
+                    r: 'read_node1_INS_inlet1',
+                },
+                node1_INS_inlet2: {
+                    r_length: 'read_node1_INS_inlet2_length',
+                    r_elem: 'read_node1_INS_inlet2_elem',
+                    w: 'write_node1_INS_inlet2',
+                },
+            })
+        })
     })
 })

@@ -9,17 +9,14 @@
  *
  */
 
-import { Code, EnginePorts } from '../types'
+import { Code, Engine } from '../types'
 
-// JavaScript Code that allows to create a JavaScriptEngine when evaled
+/**
+ * JavaScript Code that allows to create a JavaScriptEngine when evaled
+ */
 export type JavaScriptEngineCode = Code
 
-export interface JavaScriptEngine {
-    configure: (sampleRate: number, blockSize: number) => void
-    loop: () => Float32Array
-    setArray: (
-        arrayName: string,
-        data: Float32Array | Float64Array | Array<number>
-    ) => void
-    ports: EnginePorts
-}
+/**
+ * Interface for JavaScript DSP engine.
+ */
+export type JavaScriptEngine = Engine

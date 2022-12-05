@@ -11,9 +11,17 @@
 
 import { makeGraph } from '@webpd/shared/test-helpers'
 import assert from 'assert'
+import { generateEngineVariableNames } from '../engine-variable-names'
 import { makeCompilation } from '../test-helpers'
-import { InletListeners, NodeImplementations } from '../types'
-import compileToJavascript from './compile-to-javascript'
+import {
+    EngineVariableNames,
+    InletListeners,
+    NodeImplementations,
+    PortSpecs,
+} from '../types'
+import compileToJavascript, {
+    attachPortsVariableNames,
+} from './compile-to-javascript'
 import macros from './macros'
 import { JavaScriptEngine } from './types'
 
@@ -27,10 +35,14 @@ describe('compileToJavascript', () => {
             initialize: () => `// [dac~] setup`,
             loop: () => `// [dac~] loop`,
         },
+        DUMMY: {
+            loop: () => '',
+        },
     }
 
     it('should create the specified ports', () => {
         const compilation = makeCompilation({
+            target: 'javascript',
             nodeImplementations: NODE_IMPLEMENTATIONS,
             portSpecs: {
                 bla: { access: 'r', type: 'float' },
@@ -90,6 +102,7 @@ describe('compileToJavascript', () => {
             },
         })
         const compilation = makeCompilation({
+            target: 'javascript',
             graph,
             nodeImplementations: NODE_IMPLEMENTATIONS,
             macros: macros,
@@ -141,6 +154,7 @@ describe('compileToJavascript', () => {
 
         const code = compileToJavascript(
             makeCompilation({
+                target: 'javascript',
                 graph,
                 nodeImplementations,
                 macros: macros,
@@ -165,5 +179,35 @@ describe('compileToJavascript', () => {
         engine.configure(44100, blockSize)
         engine.loop()
         assert.deepStrictEqual(called, [[[0]], [[4]], [[8]], [[12]]])
+    })
+
+    describe('attachPortsVariableNames', () => {
+        it('should attach variable names relating to ports and inlet listeners', () => {
+            const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
+                NODE_IMPLEMENTATIONS,
+                makeGraph({
+                    node1: {
+                        inlets: {
+                            inlet1: { type: 'control', id: 'inlet1' },
+                            inlet2: { type: 'control', id: 'inlet2' },
+                        },
+                    },
+                })
+            )
+            const portSpecs: PortSpecs = {
+                node1_INS_inlet1: { access: 'r', type: 'float' },
+                node1_INS_inlet2: { access: 'rw', type: 'float' },
+            }
+            attachPortsVariableNames(engineVariableNames, portSpecs)
+            assert.deepStrictEqual(engineVariableNames.ports, {
+                node1_INS_inlet1: {
+                    r: 'read_node1_INS_inlet1',
+                },
+                node1_INS_inlet2: {
+                    r: 'read_node1_INS_inlet2',
+                    w: 'write_node1_INS_inlet2',
+                },
+            })
+        })
     })
 })

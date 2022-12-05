@@ -9,12 +9,14 @@
  *
  */
 
-import {
-    attachPortsAndMessageListenersVariableNames,
-    generateEngineVariableNames,
-} from './compile'
 import macros from './engine-javascript/macros'
-import { Compilation } from './types'
+import { Compilation, CompilerTarget } from './types'
+import { attachPortsVariableNames as jsAttachPortsVariableNames } from './engine-javascript/compile-to-javascript'
+import { attachPortsVariableNames as ascAttachPortsVariableNames } from './engine-assemblyscript/compile-to-assemblyscript'
+import {
+    generateEngineVariableNames,
+    attachInletListenersVariableNames,
+} from './engine-variable-names'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -30,26 +32,34 @@ export const round = (v: number, decimals: number = 3) =>
 export const makeCompilation = (
     compilation: Partial<Compilation>
 ): Compilation => {
+    if (!compilation.target) {
+        throw new Error(`Compilation target must be provided`)
+    }
+    const target: CompilerTarget = compilation.target
     const nodeImplementations = compilation.nodeImplementations || {}
     const graph = compilation.graph || {}
+    const portSpecs = compilation.portSpecs || {}
+    const inletListeners = compilation.inletListeners || {}
     const engineVariableNames = generateEngineVariableNames(
         nodeImplementations,
         graph
     )
-    attachPortsAndMessageListenersVariableNames(
-        engineVariableNames,
-        compilation.portSpecs || {},
-        compilation.inletListeners || {}
-    )
+    if (target === 'javascript') {
+        jsAttachPortsVariableNames(engineVariableNames, portSpecs)
+    } else if (target === 'assemblyscript') {
+        ascAttachPortsVariableNames(engineVariableNames, portSpecs)
+    }
+    attachInletListenersVariableNames(engineVariableNames, inletListeners)
     return {
+        target,
         graph,
         nodeImplementations,
         audioSettings: {
             bitDepth: 32,
             channelCount: 2,
         },
-        portSpecs: {},
-        inletListeners: {},
+        portSpecs,
+        inletListeners,
         macros: macros,
         engineVariableNames: engineVariableNames,
         ...compilation,

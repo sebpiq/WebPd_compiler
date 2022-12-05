@@ -14,6 +14,7 @@ import NODE_IMPLEMENTATIONS from '.'
 import {
     Compilation,
     CompilerSettings,
+    Engine,
     NodeImplementations,
     PortSpecs,
 } from '../types'
@@ -22,10 +23,7 @@ import {
     JavaScriptEngine,
     JavaScriptEngineCode,
 } from '../engine-javascript/types'
-import {
-    createEngine,
-    AssemblyScriptWasmEngine,
-} from '../engine-assemblyscript/assemblyscript-wasm-bindings'
+import { createEngine } from '../engine-assemblyscript/assemblyscript-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
@@ -45,7 +43,7 @@ type GenericInletValue =
     | Array<PdSharedTypes.ControlValue>
 
 const setNodeInlet = (
-    engine: AssemblyScriptWasmEngine | JavaScriptEngine,
+    engine: Engine,
     nodeId: PdDspGraph.NodeId,
     inletId: PdDspGraph.PortletId,
     value: GenericInletValue
@@ -55,7 +53,7 @@ const setNodeInlet = (
 }
 
 const setNodeOutlet = (
-    engine: AssemblyScriptWasmEngine | JavaScriptEngine,
+    engine: Engine,
     nodeId: PdDspGraph.NodeId,
     outletId: PdDspGraph.PortletId,
     value: GenericInletValue
@@ -65,7 +63,7 @@ const setNodeOutlet = (
 }
 
 const getNodeState = (
-    engine: AssemblyScriptWasmEngine | JavaScriptEngine,
+    engine: Engine,
     nodeId: PdDspGraph.NodeId,
     name: string
 ) => {
@@ -224,6 +222,7 @@ export const generateFramesForNode = async (
     })
 
     const compilation: Compilation = makeCompilation({
+        target,
         graph,
         nodeImplementations,
         macros: getMacros(target),
@@ -241,7 +240,7 @@ export const generateFramesForNode = async (
         code = compileToAssemblyscript(compilation)
     }
 
-    let engine: JavaScriptEngine | AssemblyScriptWasmEngine
+    let engine: Engine
     if (target === 'javascript') {
         engine = new Function(code)() as JavaScriptEngine
     } else {

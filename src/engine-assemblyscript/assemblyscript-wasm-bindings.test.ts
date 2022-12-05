@@ -57,7 +57,10 @@ describe('AssemblyScriptWasmEngine', () => {
     describe('configure/loop', () => {
         it('should configure and return an output block of the right size', async () => {
             let block: Float32Array | Float64Array
-            const compilation = makeCompilation({ macros: macros })
+            const compilation = makeCompilation({
+                target: 'assemblyscript',
+                macros,
+            })
             const { engine: engine2Channels } = await getEngine(
                 compileToAssemblyscript({
                     ...compilation,
@@ -93,6 +96,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 portSpecs,
             }
             const compilation = makeCompilation({
+                target: 'assemblyscript',
                 portSpecs,
             })
             const code =
@@ -209,7 +213,10 @@ describe('AssemblyScriptWasmEngine', () => {
 
     describe('setArray', () => {
         it('should set the array', async () => {
-            const compilation: Compilation = makeCompilation({ macros: macros })
+            const compilation: Compilation = makeCompilation({
+                target: 'assemblyscript',
+                macros: macros,
+            })
             const { engine, wasmExports } = await getEngine(
                 compileToAssemblyscript(compilation) +
                     `

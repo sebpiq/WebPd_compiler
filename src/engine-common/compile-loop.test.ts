@@ -81,6 +81,7 @@ describe('compileLoop', () => {
         })
 
         const compilation = makeCompilation({
+            target: 'assemblyscript',
             graph,
             nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {
@@ -169,6 +170,7 @@ describe('compileLoop', () => {
         })
 
         const compilation = makeCompilation({
+            target: 'javascript',
             graph,
             nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {
@@ -239,6 +241,7 @@ describe('compileLoop', () => {
         })
 
         const compilation = makeCompilation({
+            target: 'javascript',
             graph,
             nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {

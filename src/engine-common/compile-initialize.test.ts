@@ -54,6 +54,7 @@ describe('compileInitialize', () => {
         }
 
         const compilation = makeCompilation({
+            target: 'assemblyscript',
             graph,
             nodeImplementations,
             audioSettings: {
@@ -122,6 +123,7 @@ describe('compileInitialize', () => {
         }
 
         const compilation = makeCompilation({
+            target: 'assemblyscript',
             graph,
             nodeImplementations,
             audioSettings: {

@@ -11,32 +11,47 @@
 
 import { Code } from '../types'
 
-// AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
+/**
+ * AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
+ */
 export type AssemblyScriptWasmEngineCode = Code
 
 export type StringPointer = number
 
+/**
+ * Pointer to a typed array.
+ */
 export type TypedArrayPointer = number
 
-// Pointer to data of unknown type that stays in the wasm space (`Message` for example).
+/**
+ * Pointer to data of unknown type that stays in the wasm space (`Message` for example).
+ */
 export type InternalPointer = number
 
-// Pointer to an array buffer that contains i32 integers.
-// This is what we use to pass generic data back and forth from the module.
-// Because the memory layout is not fixed for data types other than strings
-// REF : https://www.assemblyscript.org/runtime.html#memory-layout
+/**
+ * Pointer to an array buffer that contains i32 integers.
+ * This is what we use to pass generic data back and forth from the module.
+ * Because the memory layout is not fixed for data types other than strings
+ * REF : https://www.assemblyscript.org/runtime.html#memory-layout
+ */
 export type ArrayBufferOfIntegersPointer = number
 
-// Pointer to an array buffer that contains floats (f32 or f64 depending on setting bitDepth).
-// This is what we use to pass audio data back and forth from the module.
-// Because the memory layout is not fixed for data types other than strings
-// REF : https://www.assemblyscript.org/runtime.html#memory-layout
+/**
+ * Pointer to an array buffer that contains floats (f32 or f64 depending on setting bitDepth).
+ * This is what we use to pass audio data back and forth from the module.
+ * Because the memory layout is not fixed for data types other than strings
+ * REF : https://www.assemblyscript.org/runtime.html#memory-layout
+ */
 export type ArrayBufferOfFloatsPointer = number
 
+/**
+ * Interface for members that are exported in the WASM module resulting from compilation of
+ * WebPd assemblyscript code.
+ */
 export interface AssemblyScriptWasmExports {
     configure: (sampleRate: number, blockSize: number) => TypedArrayPointer
     loop: () => void
-    setArray?: (
+    setArray: (
         arrayName: StringPointer,
         buffer: ArrayBufferOfFloatsPointer
     ) => void

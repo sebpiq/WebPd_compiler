@@ -18,6 +18,8 @@ export type MessageDatumType =
     | typeof MESSAGE_DATUM_TYPE_STRING
     | typeof MESSAGE_DATUM_TYPE_FLOAT
 
+export type CompilerTarget = 'assemblyscript' | 'javascript'
+
 // Code stored in string variable for later evaluation.
 export type Code = string
 
@@ -27,7 +29,21 @@ export type CodeVariableName = string
 // Map of public engine ports for accessing data inside the engine
 export type EnginePorts = { [portName: string]: (...args: any) => any }
 
+/**
+ *  Base interface for DSP engine
+ */
+export interface Engine {
+    configure: (sampleRate: number, blockSize: number) => void
+    loop: () => Float32Array | Float64Array
+    setArray: (
+        arrayName: string,
+        data: Float32Array | Float64Array | Array<number>
+    ) => void
+    ports: EnginePorts
+}
+
 export interface Compilation {
+    readonly target: CompilerTarget
     readonly graph: PdDspGraph.Graph
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
@@ -131,6 +147,8 @@ export interface EngineVariableNames {
     ports: {
         [variableName: CodeVariableName]: {
             r?: CodeVariableName
+            r_length?: CodeVariableName
+            r_elem?: CodeVariableName
             w?: CodeVariableName
         }
     }
@@ -179,6 +197,6 @@ export interface AudioSettings {
 
 export interface CompilerSettings {
     audioSettings: AudioSettings
-    target: 'assemblyscript' | 'javascript'
+    target: CompilerTarget
     inletListeners?: InletListeners
 }

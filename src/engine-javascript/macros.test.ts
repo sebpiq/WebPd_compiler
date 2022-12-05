@@ -19,7 +19,8 @@ import macros from './macros'
 
 describe('macros', () => {
     const COMPILATION = makeCompilation({
-        macros: macros,
+        target: 'javascript',
+        macros,
     })
 
     describe('isMessageMatching', () => {

@@ -14,11 +14,12 @@ import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation } from '../types'
+import { Compilation, EngineVariableNames, PortSpecs } from '../types'
 import { JavaScriptEngineCode } from './types'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { portSpecs } = compilation
+    const { portSpecs, engineVariableNames } = compilation
+    attachPortsVariableNames(engineVariableNames, portSpecs)
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
 
@@ -56,4 +57,23 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             }
         }
     `
+}
+
+export const attachPortsVariableNames = (
+    engineVariableNames: EngineVariableNames,
+    portSpecs: PortSpecs
+): void => {
+    Object.entries(portSpecs).forEach(([variableName, portSpec]) => {
+        engineVariableNames.ports[variableName] = {}
+        if (portSpec.access.includes('r')) {
+            engineVariableNames.ports[variableName][
+                'r'
+            ] = `read_${variableName}`
+        }
+        if (portSpec.access.includes('w')) {
+            engineVariableNames.ports[variableName][
+                'w'
+            ] = `write_${variableName}`
+        }
+    })
 }

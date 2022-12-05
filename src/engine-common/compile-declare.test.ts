@@ -54,13 +54,14 @@ describe('compileDeclare', () => {
         }
 
         const compilation = makeCompilation({
+            target: 'javascript',
             graph,
             nodeImplementations,
             audioSettings: {
                 channelCount: 2,
                 bitDepth: 32,
             },
-            macros: macros,
+            macros,
         })
 
         const declareCode = compileDeclare(compilation, [graph.osc, graph.dac])
@@ -121,6 +122,7 @@ describe('compileDeclare', () => {
         }
 
         const compilation = makeCompilation({
+            target: 'javascript',
             graph,
             nodeImplementations,
             audioSettings: {
