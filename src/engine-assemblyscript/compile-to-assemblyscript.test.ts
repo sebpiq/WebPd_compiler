@@ -21,8 +21,12 @@ import compileToAssemblyscript, {
     attachPortsVariableNames,
 } from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
-import { AssemblyScriptWasmExports } from './types'
-import { createEngine, EngineSettings } from './assemblyscript-wasm-bindings'
+import { AssemblyScriptWasmExports, EngineMetadata } from './types'
+import {
+    createEngine,
+    EngineSettings,
+    liftString,
+} from './assemblyscript-wasm-bindings'
 import { makeGraph } from '@webpd/shared/test-helpers'
 import macros from './macros'
 import { generateEngineVariableNames } from '../engine-variable-names'
@@ -199,6 +203,35 @@ describe('compileToAssemblyscript', () => {
         assert.deepStrictEqual(called, [[[0]], [[5]], [[10]], [[15]]])
     })
 
+    it('should attach the metadata as a global string when compiled', async () => {
+        const compilation = makeCompilation({
+            target: 'assemblyscript',
+            nodeImplementations: NODE_IMPLEMENTATIONS,
+            macros,
+            portSpecs: {
+                bla: { access: 'rw', type: 'float' },
+            },
+        })
+        const { wasmExports } = await compileEngine(
+            compilation, // prettier-ignore
+            `
+                let bla: f32 = 1
+            `
+        )
+
+        const metadata = JSON.parse(
+            liftString(wasmExports, wasmExports.metadata.valueOf())
+        )
+        assert.deepStrictEqual(metadata, {
+            compilation: {
+                audioSettings: compilation.audioSettings,
+                portSpecs: compilation.portSpecs,
+                inletListeners: compilation.inletListeners,
+                engineVariableNames: compilation.engineVariableNames,
+            },
+        } as EngineMetadata)
+    })
+
     it('should be a wasm engine when compiled', async () => {
         const { wasmExports } = await compileEngine(
             makeCompilation({
@@ -212,7 +245,7 @@ describe('compileToAssemblyscript', () => {
             configure: (_: number) => 0,
             loop: () => new Float32Array(),
             setArray: () => undefined,
-            memory: new WebAssembly.Memory({ initial: 128 }),
+            metadata: new WebAssembly.Global({ value: 'i32' }),
             MESSAGE_DATUM_TYPE_FLOAT: new WebAssembly.Global({ value: 'i32' }),
             MESSAGE_DATUM_TYPE_STRING: new WebAssembly.Global({ value: 'i32' }),
             createMessage: () => 0,
@@ -224,6 +257,7 @@ describe('compileToAssemblyscript', () => {
             readStringDatum: () => 0,
             readFloatDatum: () => 0,
             __new: () => 0,
+            memory: new WebAssembly.Memory({ initial: 128 }),
         }
 
         // Plenty of low-level exported function are added by asc compiler when using
@@ -270,6 +304,7 @@ describe('compileToAssemblyscript', () => {
                 node1_INS_inlet2: {
                     r_length: 'read_node1_INS_inlet2_length',
                     r_elem: 'read_node1_INS_inlet2_elem',
+                    r: 'read_node1_INS_inlet2',
                     w: 'write_node1_INS_inlet2',
                 },
             })

@@ -21,11 +21,24 @@ import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation, EngineVariableNames, PortSpecs } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
-import { AssemblyScriptWasmEngineCode } from './types'
+import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { audioSettings } = compilation
+    const {
+        audioSettings,
+        portSpecs,
+        inletListeners,
+        engineVariableNames,
+    } = compilation
     const { bitDepth, channelCount } = audioSettings
+    const metadata: EngineMetadata = {
+        compilation: {
+            audioSettings,
+            portSpecs,
+            inletListeners,
+            engineVariableNames,
+        },
+    }
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const macros = compilation.macros
@@ -82,6 +95,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             const array = bufferToArrayOfFloats(buffer)
             ${globs.arrays}.set(arrayName, array)
         }
+
+        export const metadata: string = '${JSON.stringify(metadata)}'
     `
 }
 
@@ -148,12 +163,17 @@ export const attachPortsVariableNames = (
         engineVariableNames.ports[variableName] = {}
         if (portSpec.access.includes('r')) {
             if (portSpec.type === 'messages') {
+                // Implemented by engine
                 engineVariableNames.ports[variableName][
                     'r_length'
                 ] = `read_${variableName}_length`
                 engineVariableNames.ports[variableName][
                     'r_elem'
                 ] = `read_${variableName}_elem`
+                // Implemented by bindings
+                engineVariableNames.ports[variableName][
+                    'r'
+                ] = `read_${variableName}`
             } else {
                 engineVariableNames.ports[variableName][
                     'r'

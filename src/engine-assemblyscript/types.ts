@@ -9,7 +9,7 @@
  *
  */
 
-import { Code } from '../types'
+import { Code, Compilation } from '../types'
 
 /**
  * AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
@@ -45,6 +45,18 @@ export type ArrayBufferOfIntegersPointer = number
 export type ArrayBufferOfFloatsPointer = number
 
 /**
+ * Metadata of an assemblyscript compiled engine
+ */
+export interface EngineMetadata {
+    compilation: {
+        readonly audioSettings: Compilation['audioSettings']
+        readonly portSpecs: Compilation['portSpecs']
+        readonly inletListeners: Compilation['inletListeners']
+        readonly engineVariableNames: Compilation['engineVariableNames']
+    }
+}
+
+/**
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
@@ -56,7 +68,8 @@ export interface AssemblyScriptWasmExports {
         buffer: ArrayBufferOfFloatsPointer
     ) => void
 
-    memory: WebAssembly.Memory
+    // Pointer to a JSON string representation of `EngineMetadata`
+    metadata: WebAssembly.Global
 
     MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
     MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
@@ -88,6 +101,8 @@ export interface AssemblyScriptWasmExports {
         messagePointer: InternalPointer,
         datumIndex: number
     ) => number
+
+    memory: WebAssembly.Memory
 
     // Signatures of internal methods that enable to access wasm memory.
     // REF : https://www.assemblyscript.org/runtime.html#interface

@@ -28,6 +28,7 @@ import compileToAssemblyscript, {
 import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
+import { EngineMetadata } from './types'
 
 describe('AssemblyScriptWasmEngine', () => {
     const ASSEMBLY_SCRIPT_CORE_CODE = getAssemblyscriptCoreCode()
@@ -86,6 +87,34 @@ describe('AssemblyScriptWasmEngine', () => {
             engine3Channels.configure(48000, 5)
             block = engine3Channels.loop()
             assert.strictEqual(block.length, 3 * 5)
+        })
+    })
+
+    describe('getMetadata', () => {
+        it('should attach the metadata as a global string when compiled', async () => {
+            const portSpecs: PortSpecs = {
+                bla: { access: 'r', type: 'float' },
+            }
+            const compilation = makeCompilation({
+                target: 'assemblyscript',
+                portSpecs,
+                macros,
+            })
+            const { engine } = await getEngine(
+                compileToAssemblyscript(compilation) + // prettier-ignore
+                    `
+                    let bla: f32 = 1
+                `
+            )
+
+            assert.deepStrictEqual(engine.getMetadata(), {
+                compilation: {
+                    audioSettings: compilation.audioSettings,
+                    portSpecs,
+                    inletListeners: compilation.inletListeners,
+                    engineVariableNames: compilation.engineVariableNames,
+                },
+            } as EngineMetadata)
         })
     })
 

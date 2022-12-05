@@ -22,6 +22,7 @@
 import { CodeVariableName, Compilation, EnginePorts, Engine } from '../types'
 import {
     AssemblyScriptWasmExports,
+    EngineMetadata,
     InternalPointer,
     StringPointer,
     TypedArrayPointer,
@@ -104,6 +105,12 @@ export class AssemblyScriptWasmEngine implements Engine {
         const stringPointer = lowerString(this.wasmExports, arrayName)
         const bufferPointer = this.lowerArrayBufferOfFloats(data)
         this.wasmExports.setArray(stringPointer, bufferPointer)
+    }
+
+    getMetadata(): EngineMetadata {
+        const stringPointer = this.wasmExports.metadata.valueOf()
+        const metadataJSON = liftString(this.wasmExports, stringPointer)
+        return JSON.parse(metadataJSON)
     }
 
     // TODO : ---- V ----  Private API ?
