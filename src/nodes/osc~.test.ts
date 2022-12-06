@@ -43,7 +43,35 @@ describe('osc~', () => {
         )
     })
 
-    it('should work with frequency message', async () => {
+    it('should work with signal frequency settings phase', async () => {
+        const { sampleRate } = COMPILER_OPTIONS
+        const frequency = 100
+        const J = (2 * Math.PI * frequency) / sampleRate
+
+        await assertNodeOutput(
+            { 
+                type: 'osc~', 
+                args: { frequency },
+                connectedSources: ['0_signal'],
+            },
+            [
+                { '0_signal': frequency, '1': [] },
+                { '0_signal': frequency, '1': [] },
+                { '0_signal': frequency, '1': [[0]] },
+                { '0_signal': frequency, '1': [[0.25]] },
+                { '0_signal': frequency, '1': [[-2.5]] },
+            ],
+            [
+                { '0': Math.cos(0) },
+                { '0': Math.cos(1 * J) },
+                { '0': 1.0 },
+                { '0': 0.0 },
+                { '0': -1.0 },
+            ]
+        )
+    })
+
+    it('should work with message frequency', async () => {
         const { sampleRate } = COMPILER_OPTIONS
         const frequency1 = 100
         const frequency2 = 300
@@ -64,6 +92,30 @@ describe('osc~', () => {
                 { '0': Math.cos(2 * J) },
                 { '0': Math.cos(5 * J) },
                 { '0': Math.cos(8 * J) },
+            ]
+        )
+    })
+
+    it('should work with message frequency settings phase', async () => {
+        const { sampleRate } = COMPILER_OPTIONS
+        const frequency = 100
+        const J = (2 * Math.PI * frequency) / sampleRate
+
+        await assertNodeOutput(
+            { type: 'osc~', args: { frequency } },
+            [
+                { '1': [] },
+                { '1': [] },
+                { '1': [[0]] },
+                { '1': [[0.25]] },
+                { '1': [[-2.5]] },
+            ],
+            [
+                { '0': Math.cos(0) },
+                { '0': Math.cos(1 * J) },
+                { '0': 1.0 },
+                { '0': 0.0 },
+                { '0': -1.0 },
             ]
         )
     })
