@@ -72,7 +72,7 @@ export const wrapMacros = (
  */
 export const getNodeImplementation = (
     nodeImplementations: NodeImplementations,
-    nodeType: PdSharedTypes.NodeType
+    nodeType: DspGraph.NodeType
 ): NodeImplementation => {
     const nodeImplementation = nodeImplementations[nodeType]
     if (!nodeImplementation) {
