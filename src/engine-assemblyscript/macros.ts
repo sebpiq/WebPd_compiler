@@ -19,6 +19,7 @@ import {
     CodeMacros,
     CodeVariableName,
     Compilation,
+    Message,
     MessageDatumType,
 } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
@@ -60,7 +61,7 @@ const functionHeader = (_: Compilation, ...functionArgs: Array<Code>) =>
 const createMessage = (
     _: Compilation,
     name: CodeVariableName,
-    message: PdSharedTypes.ControlValue
+    message: Message
 ) => {
     return renderCode`
         const ${name}: Message = Message.fromTemplate([${message

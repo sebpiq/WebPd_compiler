@@ -17,6 +17,8 @@ import {
     Engine,
     NodeImplementations,
     AccessorSpecs,
+    Message,
+    Signal,
 } from '../types'
 import { renderCode } from '../compile-helpers'
 import {
@@ -38,9 +40,7 @@ interface NodeSummary {
     connectedSources?: Array<PdDspGraph.PortletId>
 }
 
-type GenericInletValue =
-    | PdSharedTypes.SignalValue
-    | Array<PdSharedTypes.ControlValue>
+type GenericInletValue = Signal | Array<Message>
 
 const setNodeInlet = (
     engine: Engine,
@@ -72,9 +72,7 @@ const getNodeState = (
 }
 
 export type Frame = {
-    [portletId: string]:
-        | Array<PdSharedTypes.ControlValue>
-        | PdSharedTypes.SignalValue
+    [portletId: string]: Array<Message> | Signal
 }
 
 export const generateFramesForNode = async (
@@ -200,16 +198,15 @@ export const generateFramesForNode = async (
         // Ports to write input values
         Object.keys(inputFrame).forEach((inletId) => {
             const inlet = testNode.inlets[inletId]
-            const portType = inlet.type === 'signal' ? 'float' : 'messages'
             const inletVariableName = `${testNode.id}_INS_${inletId}`
-            accessorSpecs[inletVariableName] = { access: 'w', type: portType }
+            accessorSpecs[inletVariableName] = { access: 'w', type: inlet.type }
 
             // We need a port to write to the output of the fakeSourceNode only if it is connected
             if (_isConnectedToFakeNode(inletId)) {
                 const outletVariableName = `${fakeSourceNode.id}_OUTS_${inletId}`
                 accessorSpecs[outletVariableName] = {
                     access: 'w',
-                    type: portType,
+                    type: inlet.type,
                 }
             }
         })
@@ -219,7 +216,7 @@ export const generateFramesForNode = async (
             const variableName = `${recorderNode.id}_STATE_${'mem' + inletId}`
             accessorSpecs[variableName] = {
                 access: 'r',
-                type: inlet.type === 'signal' ? 'float' : 'messages',
+                type: inlet.type,
             }
         })
     })

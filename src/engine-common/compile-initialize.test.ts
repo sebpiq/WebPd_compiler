@@ -25,7 +25,7 @@ describe('compileInitialize', () => {
                     frequency: 440,
                 },
                 inlets: {
-                    '0_control': { id: '0_control', type: 'control' },
+                    '0_message': { id: '0_message', type: 'message' },
                     '0_signal': { id: '0_signal', type: 'signal' },
                 },
                 outlets: { '0': { id: '0', type: 'signal' } },
@@ -76,7 +76,7 @@ describe('compileInitialize', () => {
             O = 0
             FRAME = -1
 
-            osc_INS_0_control = []
+            osc_INS_0_message = []
             osc_INS_0_signal = 0
             osc_OUTS_0 = 0
             // [osc~] frequency 440
@@ -96,7 +96,7 @@ describe('compileInitialize', () => {
                     frequency: 440,
                 },
                 inlets: {
-                    '0_control': { id: '0_control', type: 'control' },
+                    '0_message': { id: '0_message', type: 'message' },
                     '0_signal': { id: '0_signal', type: 'signal' },
                 },
                 outlets: { '0': { id: '0', type: 'signal' } },

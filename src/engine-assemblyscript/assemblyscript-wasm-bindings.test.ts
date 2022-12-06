@@ -26,7 +26,7 @@ import {
     lowerArrayBufferOfIntegers,
     lowerMessage,
 } from './assemblyscript-wasm-bindings'
-import { Code, Compilation, AccessorSpecs } from '../types'
+import { Code, Compilation, AccessorSpecs, Message } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
@@ -63,7 +63,7 @@ describe('AssemblyScriptWasmEngine', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
             const accessorSpecs: AccessorSpecs = {
-                bla: { access: 'r', type: 'float' },
+                bla: { access: 'r', type: 'signal' },
             }
             const compilation = makeCompilation({
                 ...COMPILATION,
@@ -297,7 +297,7 @@ describe('AssemblyScriptWasmEngine', () => {
         describe('metadata', () => {
             it('should attach the metadata to the engine', async () => {
                 const accessorSpecs: AccessorSpecs = {
-                    bla: { access: 'r', type: 'float' },
+                    bla: { access: 'r', type: 'signal' },
                 }
                 const compilation = makeCompilation({
                     ...COMPILATION,
@@ -392,7 +392,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     target: 'assemblyscript',
                     accessorSpecs: {
                         someMessageArray: {
-                            type: 'messages',
+                            type: 'message',
                             access: 'r',
                         },
                     },
@@ -430,7 +430,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     target: 'assemblyscript',
                     accessorSpecs: {
                         someMessageArray: {
-                            type: 'messages',
+                            type: 'message',
                             access: 'rw',
                         },
                     },
@@ -458,7 +458,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     target: 'assemblyscript',
                     accessorSpecs: {
                         someFloat: {
-                            type: 'float',
+                            type: 'signal',
                             access: 'r',
                         },
                     },
@@ -481,7 +481,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     target: 'assemblyscript',
                     accessorSpecs: {
                         someFloat: {
-                            type: 'float',
+                            type: 'signal',
                             access: 'rw',
                         },
                     },
@@ -504,17 +504,17 @@ describe('AssemblyScriptWasmEngine', () => {
 
         describe('inlet listeners callbacks', () => {
             it('should call callback when new message sent to inlet', async () => {
-                const called: Array<Array<PdSharedTypes.ControlValue>> = []
+                const called: Array<Array<Message>> = []
                 const compilation = makeCompilation({
                     ...COMPILATION,
                     nodeImplementations: { DUMMY: { loop: () => undefined } },
                     graph: makeGraph({
                         bla: {
-                            inlets: { blo: { id: 'blo', type: 'control' } },
+                            inlets: { blo: { id: 'blo', type: 'message' } },
                         },
                     }),
                     accessorSpecs: {
-                        bla_INS_blo: { access: 'r', type: 'messages' },
+                        bla_INS_blo: { access: 'r', type: 'message' },
                     },
                     inletListenerSpecs: { bla: ['blo'] },
                 })
@@ -542,9 +542,8 @@ describe('AssemblyScriptWasmEngine', () => {
                         ...BINDINGS_SETTINGS,
                         inletListenersCallbacks: {
                             bla: {
-                                blo: (
-                                    messages: Array<PdSharedTypes.ControlValue>
-                                ) => called.push(messages),
+                                blo: (messages: Array<Message>) =>
+                                    called.push(messages),
                             },
                         },
                     }

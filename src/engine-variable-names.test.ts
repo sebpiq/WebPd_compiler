@@ -46,11 +46,11 @@ describe('engine-variable-names', () => {
                     type: 'osc~',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
-                        '1': { type: 'control', id: '1' },
+                        '1': { type: 'message', id: '1' },
                     },
                     outlets: {
                         '0': { type: 'signal', id: '0' },
-                        '1': { type: 'control', id: '1' },
+                        '1': { type: 'message', id: '1' },
                     },
                 },
                 myDac: {
@@ -140,8 +140,8 @@ describe('engine-variable-names', () => {
                 makeGraph({
                     node1: {
                         inlets: {
-                            inlet1: { type: 'control', id: 'inlet1' },
-                            inlet2: { type: 'control', id: 'inlet2' },
+                            inlet1: { type: 'message', id: 'inlet1' },
+                            inlet2: { type: 'message', id: 'inlet2' },
                         },
                     },
                 })

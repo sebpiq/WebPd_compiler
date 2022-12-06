@@ -14,6 +14,16 @@ import {
     MESSAGE_DATUM_TYPE_FLOAT,
 } from './constants'
 
+/**
+ * Type for messages sent through the control flow.
+ */
+export type Message = Array<string | number>
+
+/**
+ * Type for values sent through the signal flow.
+ */
+export type Signal = number
+
 export type MessageDatumType =
     | typeof MESSAGE_DATUM_TYPE_STRING
     | typeof MESSAGE_DATUM_TYPE_FLOAT
@@ -76,7 +86,7 @@ export type CodeMacros = {
     createMessage: (
         compilation: Compilation,
         name: CodeVariableName,
-        message: PdSharedTypes.ControlValue
+        message: Message
     ) => Code
     isMessageMatching: (
         compilation: Compilation,
@@ -182,7 +192,7 @@ export type NodeImplementations = { [nodeType: string]: NodeImplementation }
 export type AccessorSpecs = {
     [variableName: CodeVariableName]: {
         access: 'r' | 'w' | 'rw'
-        type: 'float' | 'messages'
+        type: PdDspGraph.PortletType
     }
 }
 

@@ -16,7 +16,7 @@ export const declare: NodeCodeGenerator = (...args) => {
     const [node] = args
     return _hasSignalInput(node)
         ? declareSignal(...args)
-        : declareControl(...args)
+        : declareMessage(...args)
 }
 
 const declareSignal: NodeCodeGenerator = (_, { state, macros }) => `
@@ -24,7 +24,7 @@ const declareSignal: NodeCodeGenerator = (_, { state, macros }) => `
     let ${macros.typedVarFloat(state.J)}
 `
 
-const declareControl: NodeCodeGenerator = (_, { state, globs, macros }) => `
+const declareMessage: NodeCodeGenerator = (_, { state, globs, macros }) => `
     let ${macros.typedVarFloat(state.phase)}
     let ${macros.typedVarFloat(state.currentFrequency)}
     let ${macros.typedVarFloat(state.K)}
@@ -39,7 +39,7 @@ export const initialize: NodeCodeGenerator = (...args) => {
     const [node] = args
     return _hasSignalInput(node)
         ? initializeSignal(...args)
-        : initializeControl(...args)
+        : initializeMessage(...args)
 }
 
 const initializeSignal: NodeCodeGenerator = (node, { ins, state, globs }) => `
@@ -48,7 +48,7 @@ const initializeSignal: NodeCodeGenerator = (node, { ins, state, globs }) => `
     ${ins.$0_signal} = ${node.args.frequency || 0}
 `
 
-const initializeControl: NodeCodeGenerator = (node, { state }) => `
+const initializeMessage: NodeCodeGenerator = (node, { state }) => `
     ${state.phase} = 0
     ${state.currentFrequency} = ${(node.args.frequency as number) || 0}
     ${state.K} = 0
@@ -59,7 +59,7 @@ const initializeControl: NodeCodeGenerator = (node, { state }) => `
 // TODO: right inlet, reset phase
 export const loop: NodeCodeGenerator = (...args) => {
     const [node] = args
-    return _hasSignalInput(node) ? loopSignal(...args) : loopControl(...args)
+    return _hasSignalInput(node) ? loopSignal(...args) : loopMessage(...args)
 }
 
 const loopSignal: NodeCodeGenerator = (_, { state, ins, outs }) => `
@@ -68,9 +68,9 @@ const loopSignal: NodeCodeGenerator = (_, { state, ins, outs }) => `
 `
 
 // Take only the last received frequency message (first in the list)
-const loopControl: NodeCodeGenerator = (_, { state, ins, outs, macros }) => `
-    if (${ins.$0_control}.length) {
-        const ${macros.typedVarMessage('m')} = ${ins.$0_control}.pop()
+const loopMessage: NodeCodeGenerator = (_, { state, ins, outs, macros }) => `
+    if (${ins.$0_message}.length) {
+        const ${macros.typedVarMessage('m')} = ${ins.$0_message}.pop()
         ${state.currentFrequency} = ${macros.readMessageFloatDatum('m', 0)}
         ${state.refreshK}()
     }

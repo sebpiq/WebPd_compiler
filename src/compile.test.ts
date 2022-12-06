@@ -83,13 +83,13 @@ describe('compile', () => {
                 makeGraph({
                     node1: {
                         inlets: {
-                            inlet1: { type: 'control', id: 'inlet1' },
-                            inlet2: { type: 'control', id: 'inlet2' },
+                            inlet1: { type: 'message', id: 'inlet1' },
+                            inlet2: { type: 'message', id: 'inlet2' },
                         },
                     },
                     node2: {
                         inlets: {
-                            inlet1: { type: 'control', id: 'inlet1' },
+                            inlet1: { type: 'message', id: 'inlet1' },
                         },
                     },
                 })
@@ -103,9 +103,9 @@ describe('compile', () => {
                 inletListeners
             )
             assert.deepStrictEqual(accessorSpecs, {
-                node1_INS_inlet1: { type: 'messages', access: 'r' },
-                node1_INS_inlet2: { type: 'messages', access: 'r' },
-                node2_INS_inlet1: { type: 'messages', access: 'r' },
+                node1_INS_inlet1: { type: 'message', access: 'r' },
+                node1_INS_inlet2: { type: 'message', access: 'r' },
+                node2_INS_inlet1: { type: 'message', access: 'r' },
             })
         })
     })

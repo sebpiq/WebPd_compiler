@@ -19,6 +19,7 @@ import {
     CodeMacros,
     CodeVariableName,
     Compilation,
+    Message,
     MessageDatumType,
 } from '../types'
 
@@ -50,7 +51,7 @@ const functionHeader = (_: Compilation, ...functionArgs: Array<Code>) =>
 const createMessage = (
     _: Compilation,
     name: CodeVariableName,
-    message: PdSharedTypes.ControlValue
+    message: Message
 ) => `const ${name} = ${JSON.stringify(message)}`
 
 const isMessageMatching = (

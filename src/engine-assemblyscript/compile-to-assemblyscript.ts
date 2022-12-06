@@ -107,15 +107,15 @@ export const compilePorts = (
     // prettier-ignore
     return renderCode`
         ${Object.entries(accessorSpecs).map(([variableName, spec]) => {
-            // TODO : uniformize names of types 'float', 'messages', etc ...
+            // TODO : uniformize names of types 'signal', 'message', etc ...
             const accessorsVariableNames = engineVariableNames.accessors[variableName]
             return `
-                ${spec.access.includes('r') && spec.type === 'float' ? `
+                ${spec.access.includes('r') && spec.type === 'signal' ? `
                     export function ${accessorsVariableNames.r}(): ${FloatType} { 
                         return ${variableName} 
                     }
                     `: ''}
-                ${spec.access.includes('r') && spec.type === 'messages' ? `
+                ${spec.access.includes('r') && spec.type === 'message' ? `
                     export function ${accessorsVariableNames.r_length}(): i32 { 
                         return ${variableName}.length
                     }
@@ -123,12 +123,12 @@ export const compilePorts = (
                         return ${variableName}[index]
                     }
                 `: ''}
-                ${spec.access.includes('w') && spec.type === 'float' ? `
+                ${spec.access.includes('w') && spec.type === 'signal' ? `
                     export function ${accessorsVariableNames.w}(value: ${FloatType}): void { 
                         ${variableName} = value
                     }
                 `: ''}
-                ${spec.access.includes('w') && spec.type === 'messages' ? `
+                ${spec.access.includes('w') && spec.type === 'message' ? `
                     export function ${accessorsVariableNames.w}(messages: Message[]): void { 
                         ${variableName} = messages
                     }
@@ -163,7 +163,7 @@ export const attachAccessorsVariableNames = (
     Object.entries(accessorSpecs).forEach(([variableName, accessorSpec]) => {
         engineVariableNames.accessors[variableName] = {}
         if (accessorSpec.access.includes('r')) {
-            if (accessorSpec.type === 'messages') {
+            if (accessorSpec.type === 'message') {
                 // Implemented by engine
                 engineVariableNames.accessors[variableName][
                     'r_length'

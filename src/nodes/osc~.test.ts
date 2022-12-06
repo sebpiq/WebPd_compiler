@@ -43,7 +43,7 @@ describe('osc~', () => {
         )
     })
 
-    it('should work with control frequency', async () => {
+    it('should work with frequency message', async () => {
         const { sampleRate } = COMPILER_OPTIONS
         const frequency1 = 100
         const frequency2 = 300
@@ -52,11 +52,11 @@ describe('osc~', () => {
         await assertNodeOutput(
             { type: 'osc~', args: { frequency: frequency1 } },
             [
-                { '0_control': [] },
-                { '0_control': [] },
-                { '0_control': [[frequency2]] },
-                { '0_control': [] },
-                { '0_control': [] },
+                { '0_message': [] },
+                { '0_message': [] },
+                { '0_message': [[frequency2]] },
+                { '0_message': [] },
+                { '0_message': [] },
             ],
             [
                 { '0': Math.cos(0) },

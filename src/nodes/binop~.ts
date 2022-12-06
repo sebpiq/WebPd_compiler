@@ -20,12 +20,12 @@ export const makeDeclare = (): NodeCodeGenerator => (...args) => {
     const [node] = args
     return _hasSignalInput(node)
         ? declareSignal(...args)
-        : declareControl(...args)
+        : declareMessage(...args)
 }
 
 const declareSignal: NodeCodeGenerator = () => ``
 
-const declareControl: NodeCodeGenerator = (_, { state, macros }) =>
+const declareMessage: NodeCodeGenerator = (_, { state, macros }) =>
     `let ${macros.typedVarFloat(state.rightOp)}`
 
 // ------------------------------ initialize ------------------------------ //
@@ -34,10 +34,10 @@ export const makeInitialize = (defaultValue: number): NodeCodeGenerator => (
 ) => {
     const [node] = args
     const initializeSignal = makeInitializeSignal(defaultValue)
-    const initializeControl = makeInitializeControl(defaultValue)
+    const initializeMessage = makeInitializeMessage(defaultValue)
     return _hasSignalInput(node)
         ? initializeSignal(...args)
-        : initializeControl(...args)
+        : initializeMessage(...args)
 }
 
 const makeInitializeSignal = (defaultValue: number): NodeCodeGenerator => (
@@ -45,7 +45,7 @@ const makeInitializeSignal = (defaultValue: number): NodeCodeGenerator => (
     { ins }
 ) => `${ins.$1_signal} = ${node.args.value || defaultValue}`
 
-const makeInitializeControl = (defaultValue: number): NodeCodeGenerator => (
+const makeInitializeMessage = (defaultValue: number): NodeCodeGenerator => (
     node,
     { state }
 ) => `${state.rightOp} = ${(node.args.value as string) || defaultValue}`
@@ -53,12 +53,12 @@ const makeInitializeControl = (defaultValue: number): NodeCodeGenerator => (
 // ------------------------------- loop ------------------------------ //
 export const makeLoop = (operator: string): NodeCodeGenerator => {
     const loopSignal = makeLoopSignal(operator)
-    const loopControl = makeLoopControl(operator)
+    const loopMessage = makeLoopMessage(operator)
     return (...args) => {
         const [node] = args
         return _hasSignalInput(node)
             ? loopSignal(...args)
-            : loopControl(...args)
+            : loopMessage(...args)
     }
 }
 
@@ -67,17 +67,18 @@ const makeLoopSignal = (operator: string): NodeCodeGenerator => (
     { ins, outs }
 ) => `${outs.$0} = ${ins.$0} ${operator} ${ins.$1_signal}`
 
-const makeLoopControl = (operator: string): NodeCodeGenerator => (
+const makeLoopMessage = (operator: string): NodeCodeGenerator => (
     _,
     { ins, outs, state, macros }
-) => `
-        if (${ins.$1_control}.length) {
-            const ${macros.typedVarMessage('inMessage')} = ${
-    ins.$1_control
-}.pop()
+) =>
+    // prettier-ignore
+    `
+        if (${ins.$1_message}.length) {
+            const ${macros.typedVarMessage('inMessage')} = ${ins.$1_message}.pop()
             ${state.rightOp} = ${macros.readMessageFloatDatum('inMessage', 0)}
         }
-        ${outs.$0} = ${ins.$0} ${operator} ${state.rightOp}`
+        ${outs.$0} = ${ins.$0} ${operator} ${state.rightOp}
+    `
 
 // ------------------------------------------------------------------- //
 export const stateVariables: NodeImplementation['stateVariables'] = ['rightOp']

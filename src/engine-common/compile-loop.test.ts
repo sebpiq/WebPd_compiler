@@ -45,7 +45,7 @@ describe('compileLoop', () => {
         },
     }
 
-    it('should compile the loop function, pass around control messages, and cleanup control inlets and outlets', () => {
+    it('should compile the loop function, pass around control messages, and cleanup message inlets and outlets', () => {
         const graph = makeGraph({
             msg: {
                 type: 'msg',
@@ -58,7 +58,7 @@ describe('compileLoop', () => {
                 args: {
                     value: 2,
                 },
-                outlets: { '0': { id: '0', type: 'control' } },
+                outlets: { '0': { id: '0', type: 'message' } },
             },
             plus: {
                 type: '+',
@@ -68,15 +68,15 @@ describe('compileLoop', () => {
                 args: {
                     value: 1,
                 },
-                inlets: { '0': { id: '0', type: 'control' } },
-                outlets: { '0': { id: '0', type: 'control' } },
+                inlets: { '0': { id: '0', type: 'message' } },
+                outlets: { '0': { id: '0', type: 'message' } },
             },
             print: {
                 type: 'print',
                 args: {
                     value: 'bla',
                 },
-                inlets: { '0': { id: '0', type: 'control' } },
+                inlets: { '0': { id: '0', type: 'message' } },
             },
         })
 

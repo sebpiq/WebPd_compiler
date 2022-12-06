@@ -18,6 +18,7 @@ import {
     InletListenerSpecs,
     NodeImplementations,
     AccessorSpecs,
+    Message,
 } from '../types'
 import compileToJavascript, {
     attachAccessorsVariableNames,
@@ -45,10 +46,10 @@ describe('compileToJavascript', () => {
             target: 'javascript',
             nodeImplementations: NODE_IMPLEMENTATIONS,
             accessorSpecs: {
-                bla: { access: 'r', type: 'float' },
-                blo: { access: 'w', type: 'messages' },
-                bli: { access: 'rw', type: 'float' },
-                blu: { access: 'rw', type: 'messages' },
+                bla: { access: 'r', type: 'signal' },
+                blo: { access: 'w', type: 'message' },
+                bli: { access: 'rw', type: 'signal' },
+                blu: { access: 'rw', type: 'message' },
             },
             macros: macros,
         })
@@ -96,7 +97,7 @@ describe('compileToJavascript', () => {
                     frequency: 440,
                 },
                 inlets: {
-                    '0_control': { id: '0_control', type: 'control' },
+                    '0_message': { id: '0_message', type: 'message' },
                 },
                 outlets: { '0': { id: '0', type: 'signal' } },
             },
@@ -120,7 +121,7 @@ describe('compileToJavascript', () => {
     })
 
     it('should create inlet listeners and trigger them whenever inlets receive new messages', async () => {
-        const called: Array<Array<PdSharedTypes.ControlValue>> = []
+        const called: Array<Array<Message>> = []
         const inletVariableName = 'someNode_INS_someInlet'
         const nodeImplementations: NodeImplementations = {
             messageGeneratorType: {
@@ -138,13 +139,13 @@ describe('compileToJavascript', () => {
         const graph = makeGraph({
             messageGenerator: {
                 type: 'messageGeneratorType',
-                outlets: { someOutlet: { type: 'control', id: 'someOutlet' } },
+                outlets: { someOutlet: { type: 'message', id: 'someOutlet' } },
                 sinks: { someOutlet: [['someNode', 'someInlet']] },
             },
             someNode: {
                 type: 'someNodeType',
                 isEndSink: true,
-                inlets: { someInlet: { type: 'control', id: 'someInlet' } },
+                inlets: { someInlet: { type: 'message', id: 'someInlet' } },
             },
         })
 
@@ -162,7 +163,7 @@ describe('compileToJavascript', () => {
                 accessorSpecs: {
                     [inletVariableName]: {
                         access: 'r',
-                        type: 'messages',
+                        type: 'message',
                     },
                 },
             })
@@ -190,15 +191,15 @@ describe('compileToJavascript', () => {
                 makeGraph({
                     node1: {
                         inlets: {
-                            inlet1: { type: 'control', id: 'inlet1' },
-                            inlet2: { type: 'control', id: 'inlet2' },
+                            inlet1: { type: 'message', id: 'inlet1' },
+                            inlet2: { type: 'message', id: 'inlet2' },
                         },
                     },
                 })
             )
             const accessorSpecs: AccessorSpecs = {
-                node1_INS_inlet1: { access: 'r', type: 'float' },
-                node1_INS_inlet2: { access: 'rw', type: 'float' },
+                node1_INS_inlet1: { access: 'r', type: 'signal' },
+                node1_INS_inlet2: { access: 'rw', type: 'signal' },
             }
             attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
             assert.deepStrictEqual(engineVariableNames.accessors, {

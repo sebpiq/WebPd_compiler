@@ -24,6 +24,7 @@ import {
     EngineAccessors,
     Engine,
     AudioSettings,
+    Message,
 } from '../types'
 import {
     AssemblyScriptWasmExports,
@@ -49,9 +50,7 @@ export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 export interface BindingsSettings {
     inletListenersCallbacks?: {
         [nodeId: PdDspGraph.NodeId]: {
-            [inletId: PdDspGraph.PortletId]: (
-                messages: Array<PdSharedTypes.ControlValue>
-            ) => void
+            [inletId: PdDspGraph.PortletId]: (messages: Array<Message>) => void
         }
     }
 }
@@ -122,7 +121,7 @@ export class AssemblyScriptWasmEngine implements Engine {
                 if (spec.access.includes('w')) {
                     const portVariableName = this.metadata.compilation
                         .engineVariableNames.accessors[variableName].w
-                    if (spec.type === 'messages') {
+                    if (spec.type === 'message') {
                         accessors[portVariableName] = (messages) => {
                             const messageArrayPointer = lowerMessageArray(
                                 this.wasmExports,
@@ -139,12 +138,12 @@ export class AssemblyScriptWasmEngine implements Engine {
                 if (spec.access.includes('r')) {
                     const portVariableNames = this.metadata.compilation
                         .engineVariableNames.accessors[variableName]
-                    if (spec.type === 'messages') {
+                    if (spec.type === 'message') {
                         accessors[portVariableNames.r] = () => {
                             const messagesCount = wasmExports[
                                 portVariableNames.r_length
                             ]()
-                            const messages: Array<PdSharedTypes.ControlValue> = []
+                            const messages: Array<Message> = []
                             for (let i = 0; i < messagesCount; i++) {
                                 const messagePointer = wasmExports[
                                     portVariableNames.r_elem
@@ -273,7 +272,7 @@ export const instantiateWasmModule = async (
 export const liftMessage = (
     wasmExports: AssemblyScriptWasmExports,
     messagePointer: InternalPointer
-): PdSharedTypes.ControlValue => {
+): Message => {
     const messageDatumTypesPointer = wasmExports.getMessageDatumTypes(
         messagePointer
     )
@@ -282,7 +281,7 @@ export const liftMessage = (
         Int32Array,
         messageDatumTypesPointer
     )
-    const message: PdSharedTypes.ControlValue = []
+    const message: Message = []
     messageDatumTypes.forEach((datumType, datumIndex) => {
         if (datumType === wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf()) {
             message.push(wasmExports.readFloatDatum(messagePointer, datumIndex))
@@ -301,7 +300,7 @@ export const liftMessage = (
 
 export const lowerMessage = (
     wasmExports: AssemblyScriptWasmExports,
-    message: PdSharedTypes.ControlValue
+    message: Message
 ): InternalPointer => {
     const messageTemplate: Array<number> = message.reduce((template, value) => {
         if (typeof value === 'number') {
@@ -333,7 +332,7 @@ export const lowerMessage = (
 
 export const lowerMessageArray = (
     wasmExports: AssemblyScriptWasmExports,
-    messages: Array<PdSharedTypes.ControlValue>
+    messages: Array<Message>
 ): InternalPointer => {
     const messageArrayPointer = wasmExports.createMessageArray()
     messages.forEach((message) => {

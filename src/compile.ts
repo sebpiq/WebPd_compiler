@@ -96,7 +96,7 @@ export const generateAccessorSpecs = (
             const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
             accessorSpecs[inletVariableName] = {
                 access: 'r',
-                type: 'messages',
+                type: 'message',
             }
         })
     })

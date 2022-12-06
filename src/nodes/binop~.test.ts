@@ -28,30 +28,30 @@ describe('binop~', () => {
             )
         })
 
-        it('should have default control value 0', async () => {
+        it('should have default message value 0', async () => {
             await assertNodeOutput(
                 {
                     type: '+~',
                     args: {},
-                    connectedSources: ['1_control'],
+                    connectedSources: ['1_message'],
                 },
                 [{ '0': 123 }],
                 [{ '0': 123 }]
             )
         })
 
-        it('should work with control messages to inlet 1', async () => {
+        it('should work with message messages to inlet 1', async () => {
             await assertNodeOutput(
                 {
                     type: '+~',
                     args: { value: 10 },
-                    connectedSources: ['1_control'],
+                    connectedSources: ['1_message'],
                 },
                 [
                     { '0': 1 },
-                    { '0': 2, '1_control': [[0.1]] },
+                    { '0': 2, '1_message': [[0.1]] },
                     { '0': 3 },
-                    { '0': 4, '1_control': [[0.2]] },
+                    { '0': 4, '1_message': [[0.2]] },
                     { '0': 5 },
                 ],
                 [
@@ -82,30 +82,30 @@ describe('binop~', () => {
             )
         })
 
-        it('should have default control value 1', async () => {
+        it('should have default message value 1', async () => {
             await assertNodeOutput(
                 {
                     type: '*~',
                     args: {},
-                    connectedSources: ['1_control'],
+                    connectedSources: ['1_message'],
                 },
                 [{ '0': 123 }],
                 [{ '0': 123 }]
             )
         })
 
-        it('should work with control messages to inlet 1', async () => {
+        it('should work with messages to inlet 1', async () => {
             await assertNodeOutput(
                 {
                     type: '*~',
                     args: { value: 2 },
-                    connectedSources: ['1_control'],
+                    connectedSources: ['1_message'],
                 },
                 [
                     { '0': 1 },
-                    { '0': 2, '1_control': [[3]] },
+                    { '0': 2, '1_message': [[3]] },
                     { '0': 3 },
-                    { '0': 4, '1_control': [[4]] },
+                    { '0': 4, '1_message': [[4]] },
                     { '0': 5 },
                 ],
                 [{ '0': 2 }, { '0': 6 }, { '0': 9 }, { '0': 16 }, { '0': 20 }]

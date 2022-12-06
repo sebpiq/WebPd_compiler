@@ -75,7 +75,7 @@ export default (
                             const { ins: sinkIns } = compilation.engineVariableNames.n[
                                 sinkNodeId
                             ]
-                            return getters.getOutlet(node, outletId).type === 'control' ? `
+                            return getters.getOutlet(node, outletId).type === 'message' ? `
                             for (${globs.iterOutlet} = 0; ${globs.iterOutlet} < ${sourceOuts[outletId]}.length; ${globs.iterOutlet}++) {
                                 ${sinkIns[inletId]}.push(${sourceOuts[outletId]}[${globs.iterOutlet}])
                             }` : `${sinkIns[inletId]} = ${sourceOuts[outletId]}`
@@ -83,19 +83,19 @@ export default (
                     ),
             ]
         }),
-        // 3. Control inlets / outlets cleanup
+        // 3. Message inlets / outlets cleanup
         graphTraversal.map((node) => {
             const { ins, outs } = compilation.engineVariableNames.n[node.id]
             return [
                 Object.values(node.inlets)
-                    .filter((inlet) => inlet.type === 'control')
+                    .filter((inlet) => inlet.type === 'message')
                     .map((inlet) => `
                         if (${ins[inlet.id]}.length) {
                             ${ins[inlet.id]} = []
                         }
                     `),
                 Object.values(node.outlets)
-                    .filter((outlet) => outlet.type === 'control')
+                    .filter((outlet) => outlet.type === 'message')
                     .map((outlet) => `
                         if (${outs[outlet.id]}.length) {
                             ${outs[outlet.id]} = []

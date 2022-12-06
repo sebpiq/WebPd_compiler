@@ -33,12 +33,12 @@ export default (
             const nodeInitialize = getNodeImplementation(compilation.nodeImplementations, node.type).initialize
             return [
                 Object.values(node.inlets).map((inlet) =>
-                    inlet.type === 'control'
+                    inlet.type === 'message'
                         ? `${ins[inlet.id]} = []`
                         : `${ins[inlet.id]} = 0`
                 ),
                 Object.values(node.outlets).map((outlet) =>
-                    outlet.type === 'control'
+                    outlet.type === 'message'
                         ? `${outs[outlet.id]} = []`
                         : `${outs[outlet.id]} = 0`
                 ),

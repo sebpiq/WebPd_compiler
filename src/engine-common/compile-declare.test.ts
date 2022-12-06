@@ -25,7 +25,7 @@ describe('compileDeclare', () => {
                     frequency: 440,
                 },
                 inlets: {
-                    '0_control': { id: '0_control', type: 'control' },
+                    '0_message': { id: '0_message', type: 'message' },
                     '0_signal': { id: '0_signal', type: 'signal' },
                 },
                 outlets: { '0': { id: '0', type: 'signal' } },
@@ -75,7 +75,7 @@ describe('compileDeclare', () => {
             let BLOCK_SIZE
             let SAMPLE_RATE
 
-            let osc_INS_0_control
+            let osc_INS_0_message
             let osc_INS_0_signal
             let osc_OUTS_0
             // [osc~] frequency 440
@@ -95,7 +95,7 @@ describe('compileDeclare', () => {
                     frequency: 440,
                 },
                 inlets: {
-                    '0_control': { id: '0_control', type: 'control' },
+                    '0_message': { id: '0_message', type: 'message' },
                     '0_signal': { id: '0_signal', type: 'signal' },
                 },
                 outlets: { '0': { id: '0', type: 'signal' } },

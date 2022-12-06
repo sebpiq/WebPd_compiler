@@ -16,6 +16,7 @@ import {
     EngineVariableNames,
     NodeImplementations,
     AccessorSpecs,
+    Message,
 } from '../types'
 import compileToAssemblyscript, {
     attachAccessorsVariableNames,
@@ -68,10 +69,10 @@ describe('compileToAssemblyscript', () => {
                 nodeImplementations: NODE_IMPLEMENTATIONS,
                 macros,
                 accessorSpecs: {
-                    bla: { access: 'r', type: 'float' },
-                    blo: { access: 'w', type: 'messages' },
-                    bli: { access: 'rw', type: 'float' },
-                    blu: { access: 'rw', type: 'messages' },
+                    bla: { access: 'r', type: 'signal' },
+                    blo: { access: 'w', type: 'message' },
+                    bli: { access: 'rw', type: 'signal' },
+                    blu: { access: 'rw', type: 'message' },
                 },
             }),
             // prettier-ignore
@@ -136,7 +137,7 @@ describe('compileToAssemblyscript', () => {
     })
 
     it('should create inlet listeners and trigger them whenever inlets receive new messages', async () => {
-        const called: Array<Array<PdSharedTypes.ControlValue>> = []
+        const called: Array<Array<Message>> = []
         const inletVariableName = 'someNode_INS_someInlet'
         const nodeImplementations: NodeImplementations = {
             messageGeneratorType: {
@@ -156,13 +157,13 @@ describe('compileToAssemblyscript', () => {
         const graph = makeGraph({
             messageGenerator: {
                 type: 'messageGeneratorType',
-                outlets: { someOutlet: { type: 'control', id: 'someOutlet' } },
+                outlets: { someOutlet: { type: 'message', id: 'someOutlet' } },
                 sinks: { someOutlet: [['someNode', 'someInlet']] },
             },
             someNode: {
                 type: 'someNodeType',
                 isEndSink: true,
-                inlets: { someInlet: { type: 'control', id: 'someInlet' } },
+                inlets: { someInlet: { type: 'message', id: 'someInlet' } },
             },
         })
 
@@ -178,7 +179,7 @@ describe('compileToAssemblyscript', () => {
                 accessorSpecs: {
                     [inletVariableName]: {
                         access: 'r',
-                        type: 'messages',
+                        type: 'message',
                     },
                 },
             }),
@@ -186,9 +187,8 @@ describe('compileToAssemblyscript', () => {
             {
                 inletListenersCallbacks: {
                     someNode: {
-                        someInlet: (
-                            messages: Array<PdSharedTypes.ControlValue>
-                        ) => called.push(messages),
+                        someInlet: (messages: Array<Message>) =>
+                            called.push(messages),
                     },
                 },
             }
@@ -206,7 +206,7 @@ describe('compileToAssemblyscript', () => {
             nodeImplementations: NODE_IMPLEMENTATIONS,
             macros,
             accessorSpecs: {
-                bla: { access: 'rw', type: 'float' },
+                bla: { access: 'rw', type: 'signal' },
             },
         })
         const { wasmExports } = await compileEngine(
@@ -283,15 +283,15 @@ describe('compileToAssemblyscript', () => {
                 makeGraph({
                     node1: {
                         inlets: {
-                            inlet1: { type: 'control', id: 'inlet1' },
-                            inlet2: { type: 'control', id: 'inlet2' },
+                            inlet1: { type: 'message', id: 'inlet1' },
+                            inlet2: { type: 'message', id: 'inlet2' },
                         },
                     },
                 })
             )
             const accessorSpecs: AccessorSpecs = {
-                node1_INS_inlet1: { access: 'r', type: 'float' },
-                node1_INS_inlet2: { access: 'rw', type: 'messages' },
+                node1_INS_inlet1: { access: 'r', type: 'signal' },
+                node1_INS_inlet2: { access: 'rw', type: 'message' },
             }
             attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
             assert.deepStrictEqual(engineVariableNames.accessors, {
