@@ -1,4 +1,4 @@
-import { buildRollupConfig } from '@webpd/shared/configs/rollup.mjs'
+import { buildRollupConfig } from '@webpd/dev/configs/rollup.mjs'
 export default buildRollupConfig({
     importAsString: ['**/*.asc'],
 })

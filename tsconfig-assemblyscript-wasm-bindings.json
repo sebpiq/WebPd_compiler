@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "rootDir": "src",
         "outDir": "bindings",
         "module": "ESNext",
         "target": "es2021",
@@ -12,6 +13,5 @@
         "moduleResolution": "node"
     },
     "typeRoots": ["./node_modules/@types"],
-    "files": ["./src/engine-assemblyscript/assemblyscript-wasm-bindings.ts"],
-    "include": ["node_modules/@webpd/dev/types/*.ts"]
+    "files": ["./src/engine-assemblyscript/assemblyscript-wasm-bindings.ts"]
 }
