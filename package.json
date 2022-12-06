@@ -6,11 +6,11 @@
     "types": "./dist/types/index.d.ts",
     "type": "module",
     "scripts": {
-        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/shared/configs/jest.js",
+        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",
         "rollup": "npx rollup --config rollup.mjs",
         "rollup:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
-        "prettier": "npm explore @webpd/shared -- npm run prettier $(pwd)",
-        "eslint": "npm explore @webpd/shared -- npm run eslint $(pwd)/src",
+        "prettier": "npm explore @webpd/dev -- npm run prettier $(pwd)",
+        "eslint": "npm explore @webpd/dev -- npm run eslint $(pwd)/src",
         "all": "npm run test-bail && npm run prettier && npm run eslint"
     },
     "repository": {
@@ -30,7 +30,7 @@
         "@types/jest": "^27.5.1",
         "@types/node": "^14.14.7",
         "@webpd/pd-to-dsp-graph": "file:../WebPd_pd-to-dsp-graph",
-        "@webpd/shared": "file:../WebPd_shared",
+        "@webpd/dev": "file:../WebPd_dev",
         "assemblyscript": "^0.20.12",
         "jest": "^28.1.0",
         "rollup": "^2.74.1",

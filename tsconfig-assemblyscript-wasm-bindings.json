@@ -13,5 +13,5 @@
     },
     "typeRoots": ["./node_modules/@types"],
     "files": ["./src/engine-assemblyscript/assemblyscript-wasm-bindings.ts"],
-    "include": ["node_modules/@webpd/shared/types/*.ts"]
+    "include": ["node_modules/@webpd/dev/types/*.ts"]
 }
