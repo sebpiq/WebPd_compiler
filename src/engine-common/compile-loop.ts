@@ -9,7 +9,7 @@
  *
  */
 
-import { traversal, getters } from '@webpd/dsp-graph'
+import { traversal, getters, PdDspGraph } from '@webpd/dsp-graph'
 import {
     getNodeImplementation,
     renderCode,

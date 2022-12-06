@@ -9,6 +9,7 @@
  *
  */
 
+import { PdDspGraph } from '@webpd/dsp-graph'
 import {
     MESSAGE_DATUM_TYPE_STRING,
     MESSAGE_DATUM_TYPE_FLOAT,

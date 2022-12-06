@@ -33,6 +33,7 @@ import { getMacros } from '../compile'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/types'
 import compileToAssemblyscript from '../engine-assemblyscript/compile-to-assemblyscript'
 import compileToJavascript from '../engine-javascript/compile-to-javascript'
+import { PdDspGraph } from '@webpd/dsp-graph'
 
 interface NodeSummary {
     type: PdDspGraph.Node['type']

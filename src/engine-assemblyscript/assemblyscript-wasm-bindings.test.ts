@@ -32,7 +32,7 @@ import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
 import { EngineMetadata } from './types'
-import { makeGraph } from '@webpd/shared/test-helpers'
+import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 
 describe('AssemblyScriptWasmEngine', () => {
     const BINDINGS_SETTINGS: BindingsSettings = {}

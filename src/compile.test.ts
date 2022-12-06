@@ -8,7 +8,7 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-import { makeGraph } from '@webpd/shared/test-helpers'
+import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import compile, { generateAccessorSpecs, validateSettings } from './compile'
 import { generateEngineVariableNames } from './engine-variable-names'

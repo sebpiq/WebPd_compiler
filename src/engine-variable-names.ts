@@ -9,6 +9,7 @@
  *
  */
 
+import { PdDspGraph } from '@webpd/dsp-graph'
 import { getNodeImplementation } from './compile-helpers'
 import {
     NodeImplementations,

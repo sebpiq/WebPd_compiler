@@ -19,6 +19,7 @@
  * @module
  */
 
+import { PdDspGraph } from '@webpd/dsp-graph'
 import {
     CodeVariableName,
     EngineAccessors,

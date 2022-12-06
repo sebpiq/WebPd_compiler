@@ -9,7 +9,7 @@
  *
  */
 
-import { makeGraph } from '@webpd/shared/test-helpers'
+import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import { generateEngineVariableNames } from '../engine-variable-names'
 import { makeCompilation } from '../test-helpers'

@@ -28,7 +28,7 @@ import {
     BindingsSettings,
     liftString,
 } from './assemblyscript-wasm-bindings'
-import { makeGraph } from '@webpd/shared/test-helpers'
+import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import macros from './macros'
 import { generateEngineVariableNames } from '../engine-variable-names'
 

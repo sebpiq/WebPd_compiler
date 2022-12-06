@@ -32,6 +32,7 @@ import {
     attachInletListenersVariableNames,
     generateEngineVariableNames,
 } from './engine-variable-names'
+import { PdDspGraph } from '@webpd/dsp-graph'
 
 export default (
     graph: PdDspGraph.Graph,

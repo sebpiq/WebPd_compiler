@@ -9,6 +9,7 @@
  *
  */
 
+import { PdDspGraph } from '@webpd/dsp-graph'
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ declare ------------------------------ //

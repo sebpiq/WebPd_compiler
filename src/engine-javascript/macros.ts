@@ -9,6 +9,7 @@
  *
  */
 
+import { PdDspGraph } from '@webpd/dsp-graph'
 import { buildMessageTransferOperations } from '../compile-helpers'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
