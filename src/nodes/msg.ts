@@ -9,12 +9,12 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import { NodeCodeGenerator } from '../types'
 
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (node, { ins, outs, macros }) => {
-    const template = node.args.template as Array<PdDspGraph.NodeArgument>
+    const template = node.args.template as Array<DspGraph.NodeArgument>
 
     return `
         while (${ins.$0}.length) {

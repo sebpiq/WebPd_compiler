@@ -19,7 +19,7 @@
  * @module
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import {
     CodeVariableName,
     EngineAccessors,
@@ -50,8 +50,8 @@ export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
 export interface BindingsSettings {
     inletListenersCallbacks?: {
-        [nodeId: PdDspGraph.NodeId]: {
-            [inletId: PdDspGraph.PortletId]: (messages: Array<Message>) => void
+        [nodeId: DspGraph.NodeId]: {
+            [inletId: DspGraph.PortletId]: (messages: Array<Message>) => void
         }
     }
 }

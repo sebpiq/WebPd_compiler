@@ -9,7 +9,7 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import {
     Code,
     CodeMacros,
@@ -82,7 +82,7 @@ export const getNodeImplementation = (
 }
 
 export const buildMessageTransferOperations = (
-    template: Array<PdDspGraph.NodeArgument>
+    template: Array<DspGraph.NodeArgument>
 ): Array<MessageTransferOperation> => {
     // Creates an array of transfer functions `inVal -> outVal`.
     return template.map((templateElem) => {

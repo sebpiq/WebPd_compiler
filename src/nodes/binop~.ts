@@ -9,7 +9,7 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import {
     NodeCodeGenerator,
     NodeImplementation,
@@ -84,7 +84,7 @@ const makeLoopMessage = (operator: string): NodeCodeGenerator => (
 // ------------------------------------------------------------------- //
 export const stateVariables: NodeImplementation['stateVariables'] = ['rightOp']
 
-const _hasSignalInput = (node: PdDspGraph.Node) =>
+const _hasSignalInput = (node: DspGraph.Node) =>
     node.sources['1_signal'] && node.sources['1_signal'].length
 
 const binopTilde: NodeImplementations = {

@@ -9,7 +9,7 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import {
     MESSAGE_DATUM_TYPE_STRING,
     MESSAGE_DATUM_TYPE_FLOAT,
@@ -55,7 +55,7 @@ export interface Engine {
 
 export interface Compilation {
     readonly target: CompilerTarget
-    readonly graph: PdDspGraph.Graph
+    readonly graph: DspGraph.Graph
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
     readonly accessorSpecs: AccessorSpecs
@@ -117,7 +117,7 @@ export type CodeMacros = {
     //
     messageTransfer: (
         compilation: Compilation,
-        template: Array<PdDspGraph.NodeArgument>,
+        template: Array<DspGraph.NodeArgument>,
         inVariableName: CodeVariableName,
         outVariableName: CodeVariableName
     ) => Code
@@ -134,14 +134,14 @@ type OmitFirstArgFromFunctionMap<Type extends FunctionMap> = {
 export type WrappedCodeMacros = OmitFirstArgFromFunctionMap<CodeMacros>
 
 export interface NodeVariableNames {
-    ins: { [portletId: PdDspGraph.PortletId]: CodeVariableName }
-    outs: { [portletId: PdDspGraph.PortletId]: CodeVariableName }
+    ins: { [portletId: DspGraph.PortletId]: CodeVariableName }
+    outs: { [portletId: DspGraph.PortletId]: CodeVariableName }
     state: { [key: string]: CodeVariableName }
 }
 
 export interface EngineVariableNames {
     // Namespace for individual nodes
-    n: { [nodeId: PdDspGraph.NodeId]: NodeVariableNames }
+    n: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
     // Namespace for global variables
     g: {
@@ -166,14 +166,14 @@ export interface EngineVariableNames {
 
     // Namespace for inlet listener callbacks
     inletListeners: {
-        [nodeId: PdDspGraph.NodeId]: {
-            [inletId: PdDspGraph.PortletId]: CodeVariableName
+        [nodeId: DspGraph.NodeId]: {
+            [inletId: DspGraph.PortletId]: CodeVariableName
         }
     }
 }
 
 export type NodeCodeGenerator = (
-    node: PdDspGraph.Node,
+    node: DspGraph.Node,
     variableNames: NodeVariableNames & {
         globs: EngineVariableNames['g']
         macros: WrappedCodeMacros
@@ -193,12 +193,12 @@ export type NodeImplementations = { [nodeType: string]: NodeImplementation }
 export type AccessorSpecs = {
     [variableName: CodeVariableName]: {
         access: 'r' | 'w' | 'rw'
-        type: PdDspGraph.PortletType
+        type: DspGraph.PortletType
     }
 }
 
 export type InletListenerSpecs = {
-    [nodeId: PdDspGraph.NodeId]: Array<PdDspGraph.PortletId>
+    [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
 }
 
 export interface AudioSettings {

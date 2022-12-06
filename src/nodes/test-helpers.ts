@@ -33,20 +33,20 @@ import { getMacros } from '../compile'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/types'
 import compileToAssemblyscript from '../engine-assemblyscript/compile-to-assemblyscript'
 import compileToJavascript from '../engine-javascript/compile-to-javascript'
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 
 interface NodeSummary {
-    type: PdDspGraph.Node['type']
-    args: PdDspGraph.Node['args']
-    connectedSources?: Array<PdDspGraph.PortletId>
+    type: DspGraph.Node['type']
+    args: DspGraph.Node['args']
+    connectedSources?: Array<DspGraph.PortletId>
 }
 
 type GenericInletValue = Signal | Array<Message>
 
 const setNodeInlet = (
     engine: Engine,
-    nodeId: PdDspGraph.NodeId,
-    inletId: PdDspGraph.PortletId,
+    nodeId: DspGraph.NodeId,
+    inletId: DspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const inletVariableName = `${nodeId}_INS_${inletId}`
@@ -55,8 +55,8 @@ const setNodeInlet = (
 
 const setNodeOutlet = (
     engine: Engine,
-    nodeId: PdDspGraph.NodeId,
-    outletId: PdDspGraph.PortletId,
+    nodeId: DspGraph.NodeId,
+    outletId: DspGraph.PortletId,
     value: GenericInletValue
 ) => {
     const outletVariableName = `${nodeId}_OUTS_${outletId}`
@@ -65,7 +65,7 @@ const setNodeOutlet = (
 
 const getNodeState = (
     engine: Engine,
-    nodeId: PdDspGraph.NodeId,
+    nodeId: DspGraph.NodeId,
     name: string
 ) => {
     const variableName = `${nodeId}_STATE_${name}`
@@ -82,7 +82,7 @@ export const generateFramesForNode = async (
     inputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
 ): Promise<Array<Frame>> => {
-    const _isConnectedToFakeNode = (inletId: PdDspGraph.PortletId) =>
+    const _isConnectedToFakeNode = (inletId: DspGraph.PortletId) =>
         testNode.sources[inletId] &&
         testNode.sources[inletId].filter(
             (source) => source.nodeId === fakeSourceNode.id
@@ -94,10 +94,10 @@ export const generateFramesForNode = async (
         nodeSummary.type
     ].build(nodeSummary.args)
 
-    const fakeSourceNodeSinks: PdDspGraph.ConnectionEndpointMap = {}
-    const testNodeSources: PdDspGraph.ConnectionEndpointMap = {}
-    const testNodeSinks: PdDspGraph.ConnectionEndpointMap = {}
-    const recorderNodeSources: PdDspGraph.ConnectionEndpointMap = {}
+    const fakeSourceNodeSinks: DspGraph.ConnectionEndpointMap = {}
+    const testNodeSources: DspGraph.ConnectionEndpointMap = {}
+    const testNodeSinks: DspGraph.ConnectionEndpointMap = {}
+    const recorderNodeSources: DspGraph.ConnectionEndpointMap = {}
 
     Object.values(testNodeOutlets).forEach((outlet) => {
         testNodeSinks[outlet.id] = [
@@ -120,7 +120,7 @@ export const generateFramesForNode = async (
     // Fake source, only useful for simultating connections
     // to the node we want to test.
     // Ignored if no fake connections are declared
-    const fakeSourceNode: PdDspGraph.Node = {
+    const fakeSourceNode: DspGraph.Node = {
         id: 'fakeSourceNode',
         type: 'fake-source-node',
         args: {},
@@ -131,7 +131,7 @@ export const generateFramesForNode = async (
     }
 
     // Node to test
-    const testNode: PdDspGraph.Node = {
+    const testNode: DspGraph.Node = {
         ...nodeSummary,
         id: 'testNode',
         sources: testNodeSources,
@@ -141,7 +141,7 @@ export const generateFramesForNode = async (
     }
 
     // Node to record output of testNode
-    const recorderNode: PdDspGraph.Node = {
+    const recorderNode: DspGraph.Node = {
         id: 'recorderNode',
         type: 'recorder-node',
         args: {},
@@ -152,7 +152,7 @@ export const generateFramesForNode = async (
         isEndSink: true,
     }
 
-    const graph: PdDspGraph.Graph = {
+    const graph: DspGraph.Graph = {
         testNode,
         recorderNode,
         fakeSourceNode,

@@ -9,7 +9,7 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import { getNodeImplementation } from './compile-helpers'
 import {
     NodeImplementations,
@@ -27,7 +27,7 @@ import {
  */
 export const generateEngineVariableNames = (
     nodeImplementations: NodeImplementations,
-    graph: PdDspGraph.Graph
+    graph: DspGraph.Graph
 ): EngineVariableNames => ({
     n: createNamespace(
         Object.values(graph).reduce<EngineVariableNames['n']>(

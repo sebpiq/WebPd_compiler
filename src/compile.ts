@@ -32,10 +32,10 @@ import {
     attachInletListenersVariableNames,
     generateEngineVariableNames,
 } from './engine-variable-names'
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 
 export default (
-    graph: PdDspGraph.Graph,
+    graph: DspGraph.Graph,
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {

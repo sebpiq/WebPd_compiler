@@ -9,7 +9,7 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import { buildMessageTransferOperations } from '../compile-helpers'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
@@ -100,7 +100,7 @@ const fillInLoopOutput = (
 
 const messageTransfer = (
     _: Compilation,
-    template: Array<PdDspGraph.NodeArgument>,
+    template: Array<DspGraph.NodeArgument>,
     inVariableName: CodeVariableName,
     outVariableName: CodeVariableName
 ) => {

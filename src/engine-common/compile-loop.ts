@@ -9,7 +9,7 @@
  *
  */
 
-import { traversal, getters, PdDspGraph } from '@webpd/dsp-graph'
+import { traversal, getters, DspGraph } from '@webpd/dsp-graph'
 import {
     getNodeImplementation,
     renderCode,
@@ -19,7 +19,7 @@ import { Code, Compilation } from '../types'
 
 export default (
     compilation: Compilation,
-    graphTraversal: PdDspGraph.GraphTraversal
+    graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const {

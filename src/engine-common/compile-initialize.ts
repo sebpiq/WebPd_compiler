@@ -9,7 +9,7 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import {
     getNodeImplementation,
     renderCode,
@@ -19,7 +19,7 @@ import { Code, Compilation } from '../types'
 
 export default (
     compilation: Compilation,
-    graphTraversal: PdDspGraph.GraphTraversal
+    graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const globs = compilation.engineVariableNames.g
     const macros = wrapMacros(compilation.macros, compilation)

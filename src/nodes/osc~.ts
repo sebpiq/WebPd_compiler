@@ -9,7 +9,7 @@
  *
  */
 
-import { PdDspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '@webpd/dsp-graph'
 import { NodeCodeGenerator, NodeImplementation } from '../types'
 
 // ------------------------------ declare ------------------------------ //
@@ -88,5 +88,5 @@ export const stateVariables: NodeImplementation['stateVariables'] = [
     'K',
 ]
 
-const _hasSignalInput = (node: PdDspGraph.Node) =>
+const _hasSignalInput = (node: DspGraph.Node) =>
     node.sources['0_signal'] && node.sources['0_signal'].length
