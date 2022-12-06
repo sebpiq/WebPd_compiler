@@ -15,19 +15,20 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/sebpiq/WebPd_dsp-graph.git"
+        "url": "git+https://github.com/sebpiq/WebPd_compiler-js.git"
     },
     "author": "Sébastien Piquemal",
     "license": "BSD-2-Clause",
     "bugs": {
-        "url": "https://github.com/sebpiq/WebPd_dsp-graph/issues"
+        "url": "https://github.com/sebpiq/WebPd_compiler-js/issues"
     },
-    "homepage": "https://github.com/sebpiq/WebPd_dsp-graph#readme",
+    "homepage": "https://github.com/sebpiq/WebPd_compiler-js#readme",
     "devDependencies": {
         "@rollup/plugin-typescript": "^8.3.2",
         "@types/jest": "^27.5.1",
         "@types/node": "^14.14.7",
         "@webpd/engine-live-eval": "file:../WebPd_engine-live-eval",
+        "@webpd/pd-to-dsp-graph": "file:../WebPd_pd-to-dsp-graph",
         "@webpd/shared": "file:../WebPd_shared",
         "assemblyscript": "^0.20.12",
         "jest": "^28.1.0",

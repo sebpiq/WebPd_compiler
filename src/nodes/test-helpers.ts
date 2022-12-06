@@ -9,7 +9,7 @@
  *
  */
 
-import { NODE_BUILDERS } from '@webpd/dsp-graph'
+import { NODE_BUILDERS } from '@webpd/pd-to-dsp-graph'
 import NODE_IMPLEMENTATIONS from '.'
 import {
     Compilation,
