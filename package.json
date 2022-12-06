@@ -27,7 +27,6 @@
         "@rollup/plugin-typescript": "^8.3.2",
         "@types/jest": "^27.5.1",
         "@types/node": "^14.14.7",
-        "@webpd/engine-live-eval": "file:../WebPd_engine-live-eval",
         "@webpd/pd-to-dsp-graph": "file:../WebPd_pd-to-dsp-graph",
         "@webpd/shared": "file:../WebPd_shared",
         "assemblyscript": "^0.20.12",
