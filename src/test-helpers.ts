@@ -10,13 +10,11 @@
  */
 
 import { Compilation, CompilerTarget } from './types'
-import { attachAccessorsVariableNames as jsAttachAccessorsVariableNames } from './engine-javascript/compile-to-javascript'
-import { attachAccessorsVariableNames as ascAttachAccessorsVariableNames } from './engine-assemblyscript/compile-to-assemblyscript'
 import {
     generateEngineVariableNames,
     attachInletListenersVariableNames,
 } from './engine-variable-names'
-import { getMacros } from './compile'
+import { attachAccessorsVariableNames, getMacros } from './compile'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -39,7 +37,7 @@ export const makeCompilation = (
     const nodeImplementations = compilation.nodeImplementations || {}
     const graph = compilation.graph || {}
     const accessorSpecs = compilation.accessorSpecs || {}
-    const inletListeners = compilation.inletListenerSpecs || {}
+    const inletListenerSpecs = compilation.inletListenerSpecs || {}
     const engineVariableNames = generateEngineVariableNames(
         nodeImplementations,
         graph
@@ -48,12 +46,10 @@ export const makeCompilation = (
         bitDepth: 32,
         channelCount: 2,
     }
-    if (target === 'javascript') {
-        jsAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
-    } else if (target === 'assemblyscript') {
-        ascAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
-    }
-    attachInletListenersVariableNames(engineVariableNames, inletListeners)
+    
+    attachInletListenersVariableNames(engineVariableNames, inletListenerSpecs)
+    attachAccessorsVariableNames(target, engineVariableNames, accessorSpecs)
+
     return {
         ...compilation,
         target,
@@ -61,7 +57,7 @@ export const makeCompilation = (
         nodeImplementations,
         audioSettings,
         accessorSpecs,
-        inletListenerSpecs: inletListeners,
+        inletListenerSpecs,
         macros: getMacros(target),
         engineVariableNames,
     }

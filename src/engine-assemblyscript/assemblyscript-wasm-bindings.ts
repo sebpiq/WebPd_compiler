@@ -56,6 +56,11 @@ export interface BindingsSettings {
     }
 }
 
+interface AudioConfig {
+    sampleRate: number
+    blockSize: number
+}
+
 /**
  * Class to interact more easily with a Wasm module compiled from assemblyscript code.
  * Use `createEngine` for more convenient instantiation.
@@ -67,6 +72,7 @@ export class AssemblyScriptWasmEngine implements Engine {
     private settings: BindingsSettings
     private wasmBuffer: ArrayBuffer
     private wasmOutputPointer: TypedArrayPointer
+    private audioConfig: AudioConfig
 
     constructor(wasmBuffer: ArrayBuffer, settings: BindingsSettings) {
         this.wasmBuffer = wasmBuffer
@@ -84,21 +90,33 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     configure(sampleRate: number, blockSize: number): void {
+        this.audioConfig = {
+            sampleRate, blockSize
+        }
         this.wasmOutputPointer = this.wasmExports.configure(
             sampleRate,
             blockSize
         )
     }
 
-    loop(): Float32Array | Float64Array {
+    loop(output: Array<Float32Array | Float64Array>) {
         this.wasmExports.loop()
-        return liftTypedArray(
+        const wasmOutput = liftTypedArray(
             this.wasmExports,
             this.metadata.compilation.audioSettings.bitDepth === 32
                 ? Float32Array
                 : Float64Array,
             this.wasmOutputPointer
         ) as Float32Array | Float64Array
+
+        for (let channel = 0; channel < output.length; channel++) {
+            output[channel].set(
+                wasmOutput.subarray(
+                    this.audioConfig.blockSize * channel,
+                    this.audioConfig.blockSize * (channel + 1)
+                )
+            )
+        }
     }
 
     setArray(

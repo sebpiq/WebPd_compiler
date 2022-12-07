@@ -11,18 +11,26 @@
 
 import { NodeCodeGenerator } from '../types'
 
-// ------------------------------ initialize ------------------------------ //
-// TODO : args
-
 // ------------------------------- loop ------------------------------ //
 export const loop: NodeCodeGenerator = (
-    _,
+    node,
     { ins, macros },
     { audioSettings }
 ) => {
     let loopStr = ''
+    const defaultChannelMapping: Array<number> = []
     for (let channel = 0; channel < audioSettings.channelCount; channel++) {
-        loopStr += `\n${macros.fillInLoopOutput(channel, ins[`${channel}`])}`
+        defaultChannelMapping.push(channel)
+    }
+    // Map inputs to corresponding channel
+    const channelMapping: Array<number> = node.args.channels as Array<number> || defaultChannelMapping
+    for (let i = 0; i < channelMapping.length; i++) {
+        const destination = channelMapping[i]
+        // Ignore channels that are out of bounds
+        if (destination < 0 || audioSettings.channelCount <= destination) {
+            continue
+        }
+        loopStr += `\n${macros.fillInLoopOutput(destination, ins[`${i}`])}`
     }
     return loopStr
 }

@@ -9,11 +9,11 @@
  *
  */
 
-import { assertNodeOutput, COMPILER_OPTIONS } from './test-helpers'
+import { assertNodeOutput, ENGINE_DSP_PARAMS } from './test-helpers'
 
 describe('osc~', () => {
     it('should work with signal frequency', async () => {
-        const { sampleRate } = COMPILER_OPTIONS
+        const { sampleRate } = ENGINE_DSP_PARAMS
         const frequency1 = 100
         const frequency2 = 200
         const frequency3 = 50
@@ -44,7 +44,7 @@ describe('osc~', () => {
     })
 
     it('should work with signal frequency settings phase', async () => {
-        const { sampleRate } = COMPILER_OPTIONS
+        const { sampleRate } = ENGINE_DSP_PARAMS
         const frequency = 100
         const J = (2 * Math.PI * frequency) / sampleRate
 
@@ -72,7 +72,7 @@ describe('osc~', () => {
     })
 
     it('should work with message frequency', async () => {
-        const { sampleRate } = COMPILER_OPTIONS
+        const { sampleRate } = ENGINE_DSP_PARAMS
         const frequency1 = 100
         const frequency2 = 300
         const J = (2 * Math.PI * frequency1) / sampleRate
@@ -97,7 +97,7 @@ describe('osc~', () => {
     })
 
     it('should work with message frequency settings phase', async () => {
-        const { sampleRate } = COMPILER_OPTIONS
+        const { sampleRate } = ENGINE_DSP_PARAMS
         const frequency = 100
         const J = (2 * Math.PI * frequency) / sampleRate
 

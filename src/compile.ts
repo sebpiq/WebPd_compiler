@@ -19,6 +19,7 @@ import {
     InletListenerSpecs,
     NodeImplementations,
     AccessorSpecs,
+    CompilerTarget,
 } from './types'
 import compileToJavascript, {
     attachAccessorsVariableNames as jsAttachAccessorsVariableNames,
@@ -52,14 +53,8 @@ export default (
         inletListeners
     )
     attachInletListenersVariableNames(engineVariableNames, inletListeners)
-
-    if (target === 'javascript') {
-        jsAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
-    } else if (target === 'assemblyscript') {
-        ascAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
-    }
-
-    const compilation: Compilation = {
+    attachAccessorsVariableNames(target, engineVariableNames, accessorSpecs)
+    return executeCompilation({
         target,
         graph,
         nodeImplementations,
@@ -68,22 +63,11 @@ export default (
         accessorSpecs,
         engineVariableNames,
         macros,
-    }
-
-    if (target === 'javascript') {
-        return compileToJavascript(compilation)
-    } else if (target === 'assemblyscript') {
-        return compileToAssemblyscript(compilation)
-    } else {
-        throw new Error(`Invalid target ${target}`)
-    }
+    })
 }
 
 /**
  * Helper to generate `accessorSpecs` from various settings.
- *
- * @param inletListeners
- * @returns
  */
 export const generateAccessorSpecs = (
     engineVariableNames: EngineVariableNames,
@@ -106,9 +90,6 @@ export const generateAccessorSpecs = (
 
 /**
  * Asserts settings are valid (or throws error) and sets default values.
- *
- * @param settings
- * @returns
  */
 export const validateSettings = (
     settings: CompilerSettings
@@ -124,11 +105,33 @@ export const validateSettings = (
 }
 
 /**
+ * Helper to attach accessors to variable names depending on compile target.
+ */
+export const attachAccessorsVariableNames = (target: CompilerTarget, engineVariableNames: EngineVariableNames, accessorSpecs: AccessorSpecs) => {
+    if (target === 'javascript') {
+        jsAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
+    } else if (target === 'assemblyscript') {
+        ascAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
+    }
+}
+
+/**
  * Helper to get code macros from compile target.
- * @param target
- * @returns
  */
 export const getMacros = (target: CompilerSettings['target']): CodeMacros =>
     ({ javascript: jsMacros, assemblyscript: ascMacros }[target])
+
+/**
+ * Helper to execute compilation
+ */
+export const executeCompilation = (compilation: Compilation) => {
+    if (compilation.target === 'javascript') {
+        return compileToJavascript(compilation)
+    } else if (compilation.target === 'assemblyscript') {
+        return compileToAssemblyscript(compilation)
+    } else {
+        throw new Error(`Invalid compilation.target ${compilation.target}`)
+    }
+}
 
 class InvalidSettingsError extends Error {}

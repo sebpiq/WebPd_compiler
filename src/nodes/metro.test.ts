@@ -9,14 +9,14 @@
  *
  */
 
-import { assertNodeOutput, COMPILER_OPTIONS } from './test-helpers'
+import { assertNodeOutput, ENGINE_DSP_PARAMS } from './test-helpers'
 
 describe('metro', () => {
     it('should start metro at rate passed as arg', async () => {
         await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (2 * 1000) / COMPILER_OPTIONS.sampleRate },
+                args: { rate: (2 * 1000) / ENGINE_DSP_PARAMS.sampleRate },
             },
             [
                 {}, // frame 1
@@ -42,7 +42,7 @@ describe('metro', () => {
         await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILER_OPTIONS.sampleRate },
+                args: { rate: (1 * 1000) / ENGINE_DSP_PARAMS.sampleRate },
             },
             [
                 {
@@ -59,7 +59,7 @@ describe('metro', () => {
         await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (2 * 1000) / COMPILER_OPTIONS.sampleRate },
+                args: { rate: (2 * 1000) / ENGINE_DSP_PARAMS.sampleRate },
             },
             [
                 {
@@ -69,7 +69,7 @@ describe('metro', () => {
                 {}, // frame 2
                 {
                     // frame 3
-                    '1': [[1000 / COMPILER_OPTIONS.sampleRate]],
+                    '1': [[1000 / ENGINE_DSP_PARAMS.sampleRate]],
                 },
                 {}, // frame 4
                 {}, // frame 5
@@ -88,7 +88,7 @@ describe('metro', () => {
         await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILER_OPTIONS.sampleRate },
+                args: { rate: (1 * 1000) / ENGINE_DSP_PARAMS.sampleRate },
             },
             [
                 {
@@ -109,7 +109,7 @@ describe('metro', () => {
         await assertNodeOutput(
             {
                 type: 'metro',
-                args: { rate: (1 * 1000) / COMPILER_OPTIONS.sampleRate },
+                args: { rate: (1 * 1000) / ENGINE_DSP_PARAMS.sampleRate },
             },
             [
                 {

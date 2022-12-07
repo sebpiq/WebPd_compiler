@@ -26,13 +26,14 @@ import {
     lowerArrayBufferOfIntegers,
     lowerMessage,
 } from './assemblyscript-wasm-bindings'
-import { Code, Compilation, AccessorSpecs, Message } from '../types'
+import { Code, Compilation, AccessorSpecs, Message, NodeImplementations } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation, round } from '../test-helpers'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
 import { EngineMetadata } from './types'
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
+import { DspGraph } from '@webpd/dsp-graph'
 
 describe('AssemblyScriptWasmEngine', () => {
     const BINDINGS_SETTINGS: BindingsSettings = {}
@@ -323,32 +324,71 @@ describe('AssemblyScriptWasmEngine', () => {
 
         describe('configure/loop', () => {
             it('should configure and return an output block of the right size', async () => {
-                let block: Float32Array | Float64Array
-                const { engine: engine2Channels } = await getEngine(
-                    compileToAssemblyscript({
-                        ...COMPILATION,
-                        audioSettings: {
-                            ...COMPILATION.audioSettings,
-                            channelCount: 2,
-                        },
-                    })
-                )
-                engine2Channels.configure(44100, 4)
-                block = engine2Channels.loop()
-                assert.strictEqual(block.length, 4 * 2)
+                const nodeImplementations: NodeImplementations = {
+                    DUMMY: {
+                        loop: (_, {globs}, {audioSettings: {channelCount}}) => `
+                            for (let channel: i32 = 0; channel < ${channelCount}; channel++) {
+                                ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] = 2.0
+                            }
+                        `
+                    }
+                }
 
-                const { engine: engine3Channels } = await getEngine(
-                    compileToAssemblyscript({
-                        ...COMPILATION,
-                        audioSettings: {
-                            ...COMPILATION.audioSettings,
-                            channelCount: 3,
-                        },
-                    })
+                const graph: DspGraph.Graph = makeGraph({
+                    'outputNode': {
+                        type: 'DUMMY',
+                        isEndSink: true,
+                    }
+                })
+
+                let compilation = makeCompilation({
+                    ...COMPILATION,
+                    nodeImplementations,
+                    graph,
+                    audioSettings: {
+                        ...COMPILATION.audioSettings,
+                        channelCount: 2,
+                    },
+                })
+                let blockSize = 4
+                let output: Array<Float32Array> = [
+                    new Float32Array(blockSize),
+                    new Float32Array(blockSize)
+                ]
+
+                const { engine: engine2Channels } = await getEngine(
+                    compileToAssemblyscript(compilation)
                 )
-                engine3Channels.configure(48000, 5)
-                block = engine3Channels.loop()
-                assert.strictEqual(block.length, 3 * 5)
+                engine2Channels.configure(44100, blockSize)
+                engine2Channels.loop(output)
+                assert.deepStrictEqual(output, [
+                    new Float32Array([2, 2, 2, 2]),
+                    new Float32Array([2, 2, 2, 2]),
+                ])
+
+                compilation = makeCompilation({
+                    ...COMPILATION,
+                    nodeImplementations,
+                    graph,
+                    audioSettings: {
+                        ...COMPILATION.audioSettings,
+                        channelCount: 2,
+                    },
+                })
+                blockSize = 5
+                output = [
+                    new Float32Array(blockSize),
+                    new Float32Array(blockSize)
+                ]
+                const { engine: engine3Channels } = await getEngine(
+                    compileToAssemblyscript(compilation)
+                )
+                engine3Channels.configure(48000, blockSize)
+                engine3Channels.loop(output)
+                assert.deepStrictEqual(output, [
+                    new Float32Array([2, 2, 2, 2, 2]),
+                    new Float32Array([2, 2, 2, 2, 2]),
+                ])
             })
         })
 

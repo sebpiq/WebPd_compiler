@@ -45,7 +45,7 @@ export type EngineAccessors = { [accessorName: string]: (...args: any) => any }
  */
 export interface Engine {
     configure: (sampleRate: number, blockSize: number) => void
-    loop: () => Float32Array | Float64Array
+    loop: (output: Array<Float32Array | Float64Array>) => void
     setArray: (
         arrayName: string,
         data: Float32Array | Float64Array | Array<number>

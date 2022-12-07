@@ -12,33 +12,31 @@
 import { NODE_BUILDERS } from '@webpd/pd-to-dsp-graph'
 import NODE_IMPLEMENTATIONS from '.'
 import {
-    Compilation,
     CompilerSettings,
     Engine,
     NodeImplementations,
     AccessorSpecs,
     Message,
     Signal,
+    CompilerTarget,
+    Code,
 } from '../types'
 import { renderCode } from '../compile-helpers'
 import {
     JavaScriptEngine,
-    JavaScriptEngineCode,
 } from '../engine-javascript/types'
 import { createEngine } from '../engine-assemblyscript/assemblyscript-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
-import { getMacros } from '../compile'
-import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/types'
-import compileToAssemblyscript from '../engine-assemblyscript/compile-to-assemblyscript'
-import compileToJavascript from '../engine-javascript/compile-to-javascript'
+import { executeCompilation, getMacros } from '../compile'
 import { DspGraph } from '@webpd/dsp-graph'
 
-interface NodeSummary {
+interface NodeTestSettings {
     type: DspGraph.Node['type']
     args: DspGraph.Node['args']
     connectedSources?: Array<DspGraph.PortletId>
+    engineDspParams?: typeof ENGINE_DSP_PARAMS
 }
 
 type GenericInletValue = Signal | Array<Message>
@@ -78,10 +76,12 @@ export type Frame = {
 
 export const generateFramesForNode = async (
     target: CompilerSettings['target'],
-    nodeSummary: NodeSummary,
+    nodeTestSettings: NodeTestSettings,
     inputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
 ): Promise<Array<Frame>> => {
+    nodeTestSettings.engineDspParams = nodeTestSettings.engineDspParams || ENGINE_DSP_PARAMS
+
     const _isConnectedToFakeNode = (inletId: DspGraph.PortletId) =>
         testNode.sources[inletId] &&
         testNode.sources[inletId].filter(
@@ -91,8 +91,8 @@ export const generateFramesForNode = async (
     // --------------- Generating test graph
     //   [fakeSourceNode] -> [testNode] -> [recorderNode]
     const { inlets: testNodeInlets, outlets: testNodeOutlets } = NODE_BUILDERS[
-        nodeSummary.type
-    ].build(nodeSummary.args)
+        nodeTestSettings.type
+    ].build(nodeTestSettings.args)
 
     const fakeSourceNodeSinks: DspGraph.ConnectionEndpointMap = {}
     const testNodeSources: DspGraph.ConnectionEndpointMap = {}
@@ -108,8 +108,8 @@ export const generateFramesForNode = async (
         ]
     })
 
-    if (nodeSummary.connectedSources) {
-        nodeSummary.connectedSources.forEach((portletId) => {
+    if (nodeTestSettings.connectedSources) {
+        nodeTestSettings.connectedSources.forEach((portletId) => {
             testNodeSources[portletId] = [
                 { nodeId: 'fakeSourceNode', portletId },
             ]
@@ -132,7 +132,7 @@ export const generateFramesForNode = async (
 
     // Node to test
     const testNode: DspGraph.Node = {
-        ...nodeSummary,
+        ...nodeTestSettings,
         id: 'testNode',
         sources: testNodeSources,
         sinks: testNodeSinks,
@@ -222,32 +222,19 @@ export const generateFramesForNode = async (
         })
     })
 
-    const compilation: Compilation = makeCompilation({
+    const compilation = makeCompilation({
         target,
         graph,
         nodeImplementations,
         macros: getMacros(target),
         audioSettings: {
-            channelCount: 2,
+            channelCount: nodeTestSettings.engineDspParams.channelCount,
             bitDepth: 64,
         },
         accessorSpecs,
     })
-
-    let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
-    if (target === 'javascript') {
-        code = compileToJavascript(compilation)
-    } else {
-        code = compileToAssemblyscript(compilation)
-    }
-
-    let engine: Engine
-    if (target === 'javascript') {
-        engine = new Function(code)() as JavaScriptEngine
-    } else {
-        const wasmBuffer = await compileWasmModule(code)
-        engine = await createEngine(wasmBuffer, {})
-    }
+    const code = executeCompilation(compilation)
+    const engine = await getEngine(compilation.target, code)
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -271,10 +258,12 @@ export const generateFramesForNode = async (
         g[key] = undefined
     })
 
-    // blockSize = 1
-    engine.configure(COMPILER_OPTIONS.sampleRate, 1)
+    const blockSize = 1
+    engine.configure(nodeTestSettings.engineDspParams.sampleRate, blockSize)
 
     const outputFrames: Array<Frame> = []
+    const engineOutput = buildEngineOutput(Float32Array, nodeTestSettings.engineDspParams.channelCount, blockSize)
+
     inputFrames.forEach((inputFrame) => {
         Object.entries(inputFrame).forEach(([inletId, value]) => {
             // TODO : if working set only inlet
@@ -300,9 +289,9 @@ export const generateFramesForNode = async (
             }
         })
 
-        engine.loop()
-
         const outputFrame: Frame = {}
+        engine.loop(engineOutput)
+
         Object.keys(recorderNode.inlets).forEach((inletId) => {
             outputFrame[inletId] = getNodeState(
                 engine,
@@ -323,7 +312,7 @@ export const generateFramesForNode = async (
 }
 
 export const assertNodeOutput = async (
-    nodeSummary: NodeSummary,
+    nodeTestSettings: NodeTestSettings,
     inputFrames: Array<Frame>,
     expectedOutputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
@@ -331,7 +320,7 @@ export const assertNodeOutput = async (
     let actualOutputFrames: Array<Frame>
     actualOutputFrames = await generateFramesForNode(
         'javascript',
-        nodeSummary,
+        nodeTestSettings,
         inputFrames,
         arrays
     )
@@ -342,7 +331,7 @@ export const assertNodeOutput = async (
     )
     actualOutputFrames = await generateFramesForNode(
         'assemblyscript',
-        nodeSummary,
+        nodeTestSettings,
         inputFrames,
         arrays
     )
@@ -372,7 +361,24 @@ const roundFloatsInFrames = (frames: Array<Frame>) =>
         return roundedFrame
     })
 
-export const COMPILER_OPTIONS = {
+export const getEngine = async (target: CompilerTarget, code: Code) => {
+    if (target === 'javascript') {
+        return new Function(code)() as JavaScriptEngine
+    } else {
+        const wasmBuffer = await compileWasmModule(code)
+        return await createEngine(wasmBuffer, {})
+    }
+}
+
+export const buildEngineOutput = (constructor: typeof Float32Array | typeof Float64Array, channelCount: number, blockSize: number) => {
+    const engineOutput: Array<Float32Array | Float64Array> = []
+    for (let channel = 0; channel < channelCount; channel++) {
+        engineOutput.push(new constructor(blockSize))
+    }
+    return engineOutput
+}
+
+export const ENGINE_DSP_PARAMS = {
     sampleRate: 44100,
     channelCount: 2,
 }
