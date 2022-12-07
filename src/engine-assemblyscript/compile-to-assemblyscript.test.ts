@@ -196,7 +196,7 @@ describe('compileToAssemblyscript', () => {
 
         const blockSize = 18
         engine.configure(44100, blockSize)
-        engine.loop()
+        engine.loop([])
         assert.deepStrictEqual(called, [[[0]], [[5]], [[10]], [[15]]])
     })
 
