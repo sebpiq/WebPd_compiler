@@ -23,7 +23,8 @@ export const loop: NodeCodeGenerator = (
         defaultChannelMapping.push(channel)
     }
     // Map inputs to corresponding channel
-    const channelMapping: Array<number> = node.args.channels as Array<number> || defaultChannelMapping
+    const channelMapping: Array<number> =
+        (node.args.channels as Array<number>) || defaultChannelMapping
     for (let i = 0; i < channelMapping.length; i++) {
         const destination = channelMapping[i]
         // Ignore channels that are out of bounds

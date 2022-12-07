@@ -46,7 +46,7 @@ export const makeCompilation = (
         bitDepth: 32,
         channelCount: 2,
     }
-    
+
     attachInletListenersVariableNames(engineVariableNames, inletListenerSpecs)
     attachAccessorsVariableNames(target, engineVariableNames, accessorSpecs)
 

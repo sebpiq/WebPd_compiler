@@ -66,7 +66,10 @@ export const loop: NodeCodeGenerator = (...args) => {
 const loopSignal: NodeCodeGenerator = (_, { state, ins, outs, macros }) => `
     if (${ins.$1}.length) {
         const ${macros.typedVarMessage('m')} = ${ins.$1}.pop()
-        ${state.phase} = ${macros.readMessageFloatDatum('m', 0)} % 1.0 * 2 * Math.PI
+        ${state.phase} = ${macros.readMessageFloatDatum(
+    'm',
+    0
+)} % 1.0 * 2 * Math.PI
     }
     ${outs.$0} = Math.cos(${state.phase})
     ${state.phase} += ${state.J} * ${ins.$0_signal}
@@ -81,7 +84,10 @@ const loopMessage: NodeCodeGenerator = (_, { state, ins, outs, macros }) => `
     }
     if (${ins.$1}.length) {
         const ${macros.typedVarMessage('m')} = ${ins.$1}.pop()
-        ${state.phase} = ${macros.readMessageFloatDatum('m', 0)} % 1.0 * 2 * Math.PI
+        ${state.phase} = ${macros.readMessageFloatDatum(
+    'm',
+    0
+)} % 1.0 * 2 * Math.PI
     }
     ${outs.$0} = Math.cos(${state.phase})
     ${state.phase} += ${state.K}

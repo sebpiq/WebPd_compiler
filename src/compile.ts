@@ -107,7 +107,11 @@ export const validateSettings = (
 /**
  * Helper to attach accessors to variable names depending on compile target.
  */
-export const attachAccessorsVariableNames = (target: CompilerTarget, engineVariableNames: EngineVariableNames, accessorSpecs: AccessorSpecs) => {
+export const attachAccessorsVariableNames = (
+    target: CompilerTarget,
+    engineVariableNames: EngineVariableNames,
+    accessorSpecs: AccessorSpecs
+) => {
     if (target === 'javascript') {
         jsAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
     } else if (target === 'assemblyscript') {

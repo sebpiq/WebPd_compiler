@@ -22,9 +22,7 @@ import {
     Code,
 } from '../types'
 import { renderCode } from '../compile-helpers'
-import {
-    JavaScriptEngine,
-} from '../engine-javascript/types'
+import { JavaScriptEngine } from '../engine-javascript/types'
 import { createEngine } from '../engine-assemblyscript/assemblyscript-wasm-bindings'
 import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
 import assert from 'assert'
@@ -80,7 +78,8 @@ export const generateFramesForNode = async (
     inputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
 ): Promise<Array<Frame>> => {
-    nodeTestSettings.engineDspParams = nodeTestSettings.engineDspParams || ENGINE_DSP_PARAMS
+    nodeTestSettings.engineDspParams =
+        nodeTestSettings.engineDspParams || ENGINE_DSP_PARAMS
 
     const _isConnectedToFakeNode = (inletId: DspGraph.PortletId) =>
         testNode.sources[inletId] &&
@@ -262,7 +261,11 @@ export const generateFramesForNode = async (
     engine.configure(nodeTestSettings.engineDspParams.sampleRate, blockSize)
 
     const outputFrames: Array<Frame> = []
-    const engineOutput = buildEngineOutput(Float32Array, nodeTestSettings.engineDspParams.channelCount, blockSize)
+    const engineOutput = buildEngineOutput(
+        Float32Array,
+        nodeTestSettings.engineDspParams.channelCount,
+        blockSize
+    )
 
     inputFrames.forEach((inputFrame) => {
         Object.entries(inputFrame).forEach(([inletId, value]) => {
@@ -370,7 +373,11 @@ export const getEngine = async (target: CompilerTarget, code: Code) => {
     }
 }
 
-export const buildEngineOutput = (constructor: typeof Float32Array | typeof Float64Array, channelCount: number, blockSize: number) => {
+export const buildEngineOutput = (
+    constructor: typeof Float32Array | typeof Float64Array,
+    channelCount: number,
+    blockSize: number
+) => {
     const engineOutput: Array<Float32Array | Float64Array> = []
     for (let channel = 0; channel < channelCount; channel++) {
         engineOutput.push(new constructor(blockSize))

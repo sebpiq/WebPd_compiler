@@ -91,7 +91,8 @@ export class AssemblyScriptWasmEngine implements Engine {
 
     configure(sampleRate: number, blockSize: number): void {
         this.audioConfig = {
-            sampleRate, blockSize
+            sampleRate,
+            blockSize,
         }
         this.wasmOutputPointer = this.wasmExports.configure(
             sampleRate,

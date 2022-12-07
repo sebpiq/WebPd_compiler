@@ -49,8 +49,8 @@ describe('osc~', () => {
         const J = (2 * Math.PI * frequency) / sampleRate
 
         await assertNodeOutput(
-            { 
-                type: 'osc~', 
+            {
+                type: 'osc~',
                 args: { frequency },
                 connectedSources: ['0_signal'],
             },
