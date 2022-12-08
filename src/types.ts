@@ -172,8 +172,8 @@ export interface EngineVariableNames {
     }
 }
 
-export type NodeCodeGenerator = (
-    node: DspGraph.Node,
+export type NodeCodeGenerator<NodeArgsType> = (
+    node: DspGraph.Node<NodeArgsType>,
     variableNames: NodeVariableNames & {
         globs: EngineVariableNames['g']
         macros: WrappedCodeMacros
@@ -181,14 +181,16 @@ export type NodeCodeGenerator = (
     compilation: Compilation
 ) => Code
 
-export interface NodeImplementation {
-    declare?: NodeCodeGenerator
-    initialize?: NodeCodeGenerator
-    loop: NodeCodeGenerator
+export interface NodeImplementation<NodeArgsType> {
+    declare?: NodeCodeGenerator<NodeArgsType>
+    initialize?: NodeCodeGenerator<NodeArgsType>
+    loop: NodeCodeGenerator<NodeArgsType>
     stateVariables?: Array<string>
 }
 
-export type NodeImplementations = { [nodeType: string]: NodeImplementation }
+export type NodeImplementations = {
+    [nodeType: string]: NodeImplementation<any>
+}
 
 export type AccessorSpecs = {
     [variableName: CodeVariableName]: {

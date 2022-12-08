@@ -9,30 +9,30 @@
  *
  */
 
-import { NODE_BUILDERS } from '@webpd/pd-to-dsp-graph'
-import NODE_IMPLEMENTATIONS from '.'
+import assert from 'assert'
+import { DspGraph } from '@webpd/dsp-graph'
+import { getMacros, executeCompilation } from './compile'
+import { renderCode } from './compile-helpers'
+import { createEngine } from './engine-assemblyscript/assemblyscript-wasm-bindings'
+import { compileWasmModule } from './engine-assemblyscript/test-helpers'
+import { JavaScriptEngine } from './engine-javascript/types'
+import { makeCompilation, round } from './test-helpers'
 import {
-    CompilerSettings,
+    Signal,
+    Message,
     Engine,
+    CompilerSettings,
     NodeImplementations,
     AccessorSpecs,
-    Message,
-    Signal,
     CompilerTarget,
     Code,
-} from '../types'
-import { renderCode } from '../compile-helpers'
-import { JavaScriptEngine } from '../engine-javascript/types'
-import { createEngine } from '../engine-assemblyscript/assemblyscript-wasm-bindings'
-import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
-import assert from 'assert'
-import { makeCompilation, round } from '../test-helpers'
-import { executeCompilation, getMacros } from '../compile'
-import { DspGraph } from '@webpd/dsp-graph'
+} from './types'
+export { executeCompilation } from './compile'
+export { makeCompilation } from './test-helpers'
 
 interface NodeTestSettings {
-    type: DspGraph.Node['type']
-    args: DspGraph.Node['args']
+    node: DspGraph.Node
+    nodeImplementations: NodeImplementations
     connectedSources?: Array<DspGraph.PortletId>
     engineDspParams?: typeof ENGINE_DSP_PARAMS
 }
@@ -89,9 +89,10 @@ export const generateFramesForNode = async (
 
     // --------------- Generating test graph
     //   [fakeSourceNode] -> [testNode] -> [recorderNode]
-    const { inlets: testNodeInlets, outlets: testNodeOutlets } = NODE_BUILDERS[
-        nodeTestSettings.type
-    ].build(nodeTestSettings.args)
+    const {
+        inlets: testNodeInlets,
+        outlets: testNodeOutlets,
+    } = nodeTestSettings.node
 
     const fakeSourceNodeSinks: DspGraph.ConnectionEndpointMap = {}
     const testNodeSources: DspGraph.ConnectionEndpointMap = {}
@@ -131,7 +132,7 @@ export const generateFramesForNode = async (
 
     // Node to test
     const testNode: DspGraph.Node = {
-        ...nodeTestSettings,
+        ...nodeTestSettings.node,
         id: 'testNode',
         sources: testNodeSources,
         sinks: testNodeSinks,
@@ -159,7 +160,7 @@ export const generateFramesForNode = async (
 
     // --------------- Generating implementation for testing recorder & engine
     const nodeImplementations: NodeImplementations = {
-        ...NODE_IMPLEMENTATIONS,
+        ...nodeTestSettings.nodeImplementations,
         // This is a dummy node, it's only useful to fake connections
         'fake-source-node': {
             loop: () => ``,

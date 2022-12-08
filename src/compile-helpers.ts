@@ -73,7 +73,7 @@ export const wrapMacros = (
 export const getNodeImplementation = (
     nodeImplementations: NodeImplementations,
     nodeType: DspGraph.NodeType
-): NodeImplementation => {
+): NodeImplementation<DspGraph.NodeArguments> => {
     const nodeImplementation = nodeImplementations[nodeType]
     if (!nodeImplementation) {
         throw new Error(`node ${nodeType} is not implemented`)

@@ -18,8 +18,7 @@ import { Compilation, EngineVariableNames, AccessorSpecs } from '../types'
 import { JavaScriptEngineCode } from './types'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { accessorSpecs, engineVariableNames } = compilation
-    attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
+    const { accessorSpecs } = compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
 
