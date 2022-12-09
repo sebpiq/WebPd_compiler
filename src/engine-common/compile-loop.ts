@@ -23,7 +23,7 @@ export default (
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const {
-        inletListenerSpecs: inletListeners,
+        inletListenerSpecs: inletListenerSpecs,
         engineVariableNames,
     } = compilation
     const globs = compilation.engineVariableNames.g
@@ -34,9 +34,9 @@ export default (
             const nodeVariableNames = compilation.engineVariableNames.n[node.id]
             return [
                 // 0. Call inlet listeners if some inlets have new messages
-                (inletListeners[node.id] || [])
+                (inletListenerSpecs[node.id] || [])
                     .map(inletId => {
-                        const listenerVariableName = engineVariableNames.inletListeners[node.id][inletId]
+                        const listenerVariableName = engineVariableNames.inletListenerSpecs[node.id][inletId]
                         const inletVariableName = nodeVariableNames.ins[inletId]
                         return `
                             if (${inletVariableName}.length) {

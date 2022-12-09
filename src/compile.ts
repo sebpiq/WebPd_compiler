@@ -40,7 +40,7 @@ export default (
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletListeners, target } = validateSettings(
+    const { audioSettings, inletListenerSpecs, target } = validateSettings(
         compilerSettings
     )
     const macros = getMacros(target)
@@ -50,16 +50,16 @@ export default (
     )
     const accessorSpecs = generateAccessorSpecs(
         engineVariableNames,
-        inletListeners
+        inletListenerSpecs
     )
-    attachInletListenersVariableNames(engineVariableNames, inletListeners)
+    attachInletListenersVariableNames(engineVariableNames, inletListenerSpecs)
     attachAccessorsVariableNames(target, engineVariableNames, accessorSpecs)
     return executeCompilation({
         target,
         graph,
         nodeImplementations,
         audioSettings,
-        inletListenerSpecs: inletListeners,
+        inletListenerSpecs: inletListenerSpecs,
         accessorSpecs,
         engineVariableNames,
         macros,
@@ -71,12 +71,12 @@ export default (
  */
 export const generateAccessorSpecs = (
     engineVariableNames: EngineVariableNames,
-    inletListeners: InletListenerSpecs
+    inletListenerSpecs: InletListenerSpecs
 ): AccessorSpecs => {
     const accessorSpecs: AccessorSpecs = {}
 
     // An inlet listener needs to have read access to the variable representing the inlets it's listening to.
-    Object.entries(inletListeners).map(([nodeId, inletIds]) => {
+    Object.entries(inletListenerSpecs).map(([nodeId, inletIds]) => {
         inletIds.forEach((inletId) => {
             const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
             accessorSpecs[inletVariableName] = {
@@ -94,13 +94,13 @@ export const generateAccessorSpecs = (
 export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettings => {
-    const inletListeners = settings.inletListeners || {}
+    const inletListenerSpecs = settings.inletListenerSpecs || {}
     if (![32, 64].includes(settings.audioSettings.bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }
     return {
         ...settings,
-        inletListeners,
+        inletListenerSpecs,
     }
 }
 

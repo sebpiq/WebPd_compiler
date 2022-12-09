@@ -149,7 +149,7 @@ describe('compileToJavascript', () => {
             },
         })
 
-        const inletListeners: InletListenerSpecs = {
+        const inletListenerSpecs: InletListenerSpecs = {
             ['someNode']: ['someInlet'],
         }
 
@@ -159,7 +159,7 @@ describe('compileToJavascript', () => {
                 graph,
                 nodeImplementations,
                 macros: macros,
-                inletListenerSpecs: inletListeners,
+                inletListenerSpecs: inletListenerSpecs,
                 accessorSpecs: {
                     [inletVariableName]: {
                         access: 'r',

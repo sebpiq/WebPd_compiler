@@ -86,23 +86,23 @@ export const generateEngineVariableNames = (
         output: 'OUTPUT',
     },
     accessors: createNamespace({}),
-    inletListeners: createNamespace({}),
+    inletListenerSpecs: createNamespace({}),
 })
 
 /**
  * Helper that attaches to the generated `engineVariableNames` the names of specified inlet listeners.
  *
  * @param engineVariableNames
- * @param inletListeners
+ * @param inletListenerSpecs
  */
 export const attachInletListenersVariableNames = (
     engineVariableNames: EngineVariableNames,
-    inletListeners: InletListenerSpecs
+    inletListenerSpecs: InletListenerSpecs
 ): void => {
-    Object.entries(inletListeners).forEach(([nodeId, inletIds]) => {
-        engineVariableNames.inletListeners[nodeId] = {}
+    Object.entries(inletListenerSpecs).forEach(([nodeId, inletIds]) => {
+        engineVariableNames.inletListenerSpecs[nodeId] = {}
         inletIds.forEach((inletId) => {
-            engineVariableNames.inletListeners[nodeId][
+            engineVariableNames.inletListenerSpecs[nodeId][
                 inletId
             ] = `inletListener_${nodeId}_${inletId}`
         })

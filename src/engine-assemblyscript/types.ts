@@ -51,7 +51,7 @@ export interface EngineMetadata {
     compilation: {
         readonly audioSettings: Compilation['audioSettings']
         readonly accessorSpecs: Compilation['accessorSpecs']
-        readonly inletListeners: Compilation['inletListenerSpecs']
+        readonly inletListenerSpecs: Compilation['inletListenerSpecs']
         readonly engineVariableNames: Compilation['engineVariableNames']
     }
 }

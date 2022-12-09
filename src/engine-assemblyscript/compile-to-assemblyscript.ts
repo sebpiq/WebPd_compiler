@@ -27,7 +27,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
         audioSettings,
         accessorSpecs,
-        inletListenerSpecs: inletListeners,
+        inletListenerSpecs: inletListenerSpecs,
         engineVariableNames,
     } = compilation
     const { bitDepth, channelCount } = audioSettings
@@ -35,7 +35,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         compilation: {
             audioSettings,
             accessorSpecs,
-            inletListeners,
+            inletListenerSpecs,
             engineVariableNames,
         },
     }
@@ -144,7 +144,7 @@ export const compileInletListeners = (compilation: Compilation) => {
             ([nodeId, inletIds]) =>
                 inletIds.map((inletId) => {
                     const inletListenerVariableName =
-                        compilation.engineVariableNames.inletListeners[nodeId][
+                        compilation.engineVariableNames.inletListenerSpecs[nodeId][
                             inletId
                         ]
                     // prettier-ignore

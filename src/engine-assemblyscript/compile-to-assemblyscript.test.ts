@@ -223,7 +223,7 @@ describe('compileToAssemblyscript', () => {
             compilation: {
                 audioSettings: compilation.audioSettings,
                 accessorSpecs: compilation.accessorSpecs,
-                inletListeners: compilation.inletListenerSpecs,
+                inletListenerSpecs: compilation.inletListenerSpecs,
                 engineVariableNames: compilation.engineVariableNames,
             },
         } as EngineMetadata)

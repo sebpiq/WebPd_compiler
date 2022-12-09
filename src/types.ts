@@ -165,7 +165,7 @@ export interface EngineVariableNames {
     }
 
     // Namespace for inlet listener callbacks
-    inletListeners: {
+    inletListenerSpecs: {
         [nodeId: DspGraph.NodeId]: {
             [inletId: DspGraph.PortletId]: CodeVariableName
         }
@@ -211,5 +211,5 @@ export interface AudioSettings {
 export interface CompilerSettings {
     audioSettings: AudioSettings
     target: CompilerTarget
-    inletListeners?: InletListenerSpecs
+    inletListenerSpecs?: InletListenerSpecs
 }

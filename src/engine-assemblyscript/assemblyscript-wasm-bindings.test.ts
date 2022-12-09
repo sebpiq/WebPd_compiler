@@ -88,7 +88,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 compilation: {
                     audioSettings: compilation.audioSettings,
                     accessorSpecs,
-                    inletListeners: compilation.inletListenerSpecs,
+                    inletListenerSpecs: compilation.inletListenerSpecs,
                     engineVariableNames: compilation.engineVariableNames,
                 },
             } as EngineMetadata)
@@ -321,7 +321,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     compilation: {
                         audioSettings: compilation.audioSettings,
                         accessorSpecs,
-                        inletListeners: compilation.inletListenerSpecs,
+                        inletListenerSpecs: compilation.inletListenerSpecs,
                         engineVariableNames: compilation.engineVariableNames,
                     },
                 } as EngineMetadata)

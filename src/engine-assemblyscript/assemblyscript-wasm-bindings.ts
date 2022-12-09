@@ -196,7 +196,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             ([nodeId, callbacks]) => {
                 Object.entries(callbacks).forEach(([inletId, callback]) => {
                     const listenerName = this.metadata.compilation
-                        .engineVariableNames.inletListeners[nodeId][inletId]
+                        .engineVariableNames.inletListenerSpecs[nodeId][inletId]
                     const inletVariableName = this.metadata.compilation
                         .engineVariableNames.n[nodeId].ins[inletId]
                     const portVariableName = this.metadata.compilation

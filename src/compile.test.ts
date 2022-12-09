@@ -61,7 +61,7 @@ describe('compile', () => {
                     bitDepth: 32,
                 },
             })
-            assert.deepStrictEqual(settings.inletListeners, {})
+            assert.deepStrictEqual(settings.inletListenerSpecs, {})
         })
 
         it('should throw error if bitDepth invalid', () => {
@@ -77,7 +77,7 @@ describe('compile', () => {
     })
 
     describe('generateAccessorSpecs', () => {
-        it('should generate accessorSpecs according to inletListeners', () => {
+        it('should generate accessorSpecs according to inletListenerSpecs', () => {
             const engineVariableNames = generateEngineVariableNames(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
@@ -94,13 +94,13 @@ describe('compile', () => {
                     },
                 })
             )
-            const inletListeners: InletListenerSpecs = {
+            const inletListenerSpecs: InletListenerSpecs = {
                 node1: ['inlet1', 'inlet2'],
                 node2: ['inlet1'],
             }
             const accessorSpecs: AccessorSpecs = generateAccessorSpecs(
                 engineVariableNames,
-                inletListeners
+                inletListenerSpecs
             )
             assert.deepStrictEqual(accessorSpecs, {
                 node1_INS_inlet1: { type: 'message', access: 'r' },

@@ -146,14 +146,14 @@ describe('engine-variable-names', () => {
                     },
                 })
             )
-            const inletListeners: InletListenerSpecs = {
+            const inletListenerSpecs: InletListenerSpecs = {
                 node1: ['inlet1'],
             }
             attachInletListenersVariableNames(
                 engineVariableNames,
-                inletListeners
+                inletListenerSpecs
             )
-            assert.deepStrictEqual(engineVariableNames.inletListeners, {
+            assert.deepStrictEqual(engineVariableNames.inletListenerSpecs, {
                 node1: { inlet1: 'inletListener_node1_inlet1' },
             })
         })
