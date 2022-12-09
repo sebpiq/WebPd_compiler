@@ -4,6 +4,6 @@
         "src",
         "@types/**/*.d.ts",
         "node_modules/@webpd/dev/types/*.ts",
-        "*.ts"
+        "*.d.ts"
     ]
 }
