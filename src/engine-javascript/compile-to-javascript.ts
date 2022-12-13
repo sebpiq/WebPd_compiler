@@ -34,7 +34,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${globs.blockSize} = blockSize
                 ${compileInitialize(compilation, graphTraversal)}
             },
-            loop: (${globs.output}) => {
+            loop: (${globs.input}, ${globs.output}) => {
                 for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
                     ${globs.frame}++
                     ${compileLoop(compilation, graphTraversal)}

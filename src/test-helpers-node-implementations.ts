@@ -89,10 +89,8 @@ export const generateFramesForNode = async (
 
     // --------------- Generating test graph
     //   [fakeSourceNode] -> [testNode] -> [recorderNode]
-    const {
-        inlets: testNodeInlets,
-        outlets: testNodeOutlets,
-    } = nodeTestSettings.node
+    const { inlets: testNodeInlets, outlets: testNodeOutlets } =
+        nodeTestSettings.node
 
     const fakeSourceNodeSinks: DspGraph.ConnectionEndpointMap = {}
     const testNodeSources: DspGraph.ConnectionEndpointMap = {}

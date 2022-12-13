@@ -41,10 +41,11 @@ describe('macros', () => {
         })
 
         it('should generate the right code for float', () => {
-            const code = macros.createMessage(COMPILATION, 'myMessage', [
-                1.234,
-                888,
-            ])
+            const code = macros.createMessage(
+                COMPILATION,
+                'myMessage',
+                [1.234, 888]
+            )
             assert.strictEqual(
                 normalizeCode(code),
                 normalizeCode(`

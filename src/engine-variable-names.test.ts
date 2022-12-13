@@ -135,17 +135,18 @@ describe('engine-variable-names', () => {
 
     describe('attachInletListenersVariableNames', () => {
         it('should attach inlet listeners variable names', () => {
-            const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
-                NODE_IMPLEMENTATIONS,
-                makeGraph({
-                    node1: {
-                        inlets: {
-                            inlet1: { type: 'message', id: 'inlet1' },
-                            inlet2: { type: 'message', id: 'inlet2' },
+            const engineVariableNames: EngineVariableNames =
+                generateEngineVariableNames(
+                    NODE_IMPLEMENTATIONS,
+                    makeGraph({
+                        node1: {
+                            inlets: {
+                                inlet1: { type: 'message', id: 'inlet1' },
+                                inlet2: { type: 'message', id: 'inlet2' },
+                            },
                         },
-                    },
-                })
-            )
+                    })
+                )
             const inletListenerSpecs: InletListenerSpecs = {
                 node1: ['inlet1'],
             }

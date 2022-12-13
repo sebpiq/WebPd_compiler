@@ -107,12 +107,10 @@ describe('AssemblyScriptWasmEngine', () => {
                 `
             )
 
-            const bufferPointer = lowerArrayBufferOfIntegers(wasmExports, [
-                1,
-                22,
-                333,
-                4444,
-            ])
+            const bufferPointer = lowerArrayBufferOfIntegers(
+                wasmExports,
+                [1, 22, 333, 4444]
+            )
 
             assert.strictEqual(
                 wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 0),
@@ -361,6 +359,10 @@ describe('AssemblyScriptWasmEngine', () => {
                     },
                 })
                 let blockSize = 4
+                const input: Array<Float32Array> = [
+                    new Float32Array(blockSize),
+                    new Float32Array(blockSize),
+                ]
                 let output: Array<Float32Array> = [
                     new Float32Array(blockSize),
                     new Float32Array(blockSize),
@@ -370,7 +372,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     compileToAssemblyscript(compilation)
                 )
                 engine2Channels.configure(44100, blockSize)
-                engine2Channels.loop(output)
+                engine2Channels.loop(input, output)
                 assert.deepStrictEqual(output, [
                     new Float32Array([2, 2, 2, 2]),
                     new Float32Array([2, 2, 2, 2]),
@@ -394,10 +396,63 @@ describe('AssemblyScriptWasmEngine', () => {
                     compileToAssemblyscript(compilation)
                 )
                 engine3Channels.configure(48000, blockSize)
-                engine3Channels.loop(output)
+                engine3Channels.loop(input, output)
                 assert.deepStrictEqual(output, [
                     new Float32Array([2, 2, 2, 2, 2]),
                     new Float32Array([2, 2, 2, 2, 2]),
+                ])
+            })
+
+            it('should take input block and pass it to the loop', async () => {
+                const nodeImplementations: NodeImplementations = {
+                    DUMMY: {
+                        loop: (
+                            _,
+                            { globs },
+                            { audioSettings: { channelCount } }
+                        ) => `
+                            for (let channel: i32 = 0; channel < ${channelCount}; channel++) {
+                                ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] 
+                                    = ${globs.input}[${globs.iterFrame} + ${globs.blockSize} * channel]
+                            }
+                        `,
+                    },
+                }
+
+                const graph: DspGraph.Graph = makeGraph({
+                    outputNode: {
+                        type: 'DUMMY',
+                        isEndSink: true,
+                    },
+                })
+
+                let compilation = makeCompilation({
+                    ...COMPILATION,
+                    nodeImplementations,
+                    graph,
+                    audioSettings: {
+                        ...COMPILATION.audioSettings,
+                        channelCount: 2,
+                    },
+                })
+                let blockSize = 4
+                let input: Array<Float32Array> = [
+                    new Float32Array([2, 4, 6, 8]),
+                    new Float32Array([1, 3, 5, 7]),
+                ]
+                let output: Array<Float32Array> = [
+                    new Float32Array(blockSize),
+                    new Float32Array(blockSize),
+                ]
+
+                const { engine } = await getEngine(
+                    compileToAssemblyscript(compilation)
+                )
+                engine.configure(44100, blockSize)
+                engine.loop(input, output)
+                assert.deepStrictEqual(output, [
+                    new Float32Array([2, 4, 6, 8]),
+                    new Float32Array([1, 3, 5, 7]),
                 ])
             })
         })

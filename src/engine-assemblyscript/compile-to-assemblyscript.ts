@@ -69,18 +69,26 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         ${CORE_CODE}
 
         let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
+        let ${macros.typedVarFloatArray(compilation, globs.input)} = new ${FloatArrayType}(0)
+        export const metadata: string = '${JSON.stringify(metadata)}'
     
         ${compileDeclare(compilation, graphTraversal)}
         ${compileInletListeners(compilation)}
         ${compilePorts(compilation, { FloatType })}
         
-        export function configure(sampleRate: ${FloatType}, blockSize: i32): ${FloatArrayType} {
+        export function configure(sampleRate: ${FloatType}, blockSize: i32): void {
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
             ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
+            ${globs.input} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
+            ${globs.input}[0] = 1.1
+            ${globs.input}[1] = 2.2
+            ${globs.input}[2] = 3.3
             ${compileInitialize(compilation, graphTraversal)}
-            return ${globs.output}
         }
+
+        export function getOutput(): ${FloatArrayType} { return ${globs.output} }
+        export function getInput(): ${FloatArrayType} { return ${globs.input} }
 
         export function loop(): void {
             for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
@@ -95,8 +103,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             const array = bufferToArrayOfFloats(buffer)
             ${globs.arrays}.set(arrayName, array)
         }
-
-        export const metadata: string = '${JSON.stringify(metadata)}'
     `
 }
 
@@ -144,9 +150,9 @@ export const compileInletListeners = (compilation: Compilation) => {
             ([nodeId, inletIds]) =>
                 inletIds.map((inletId) => {
                     const inletListenerVariableName =
-                        compilation.engineVariableNames.inletListenerSpecs[nodeId][
-                            inletId
-                        ]
+                        compilation.engineVariableNames.inletListenerSpecs[
+                            nodeId
+                        ][inletId]
                     // prettier-ignore
                     return `
                     export declare function ${inletListenerVariableName}(): void

@@ -22,10 +22,8 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const {
-        inletListenerSpecs: inletListenerSpecs,
-        engineVariableNames,
-    } = compilation
+    const { inletListenerSpecs: inletListenerSpecs, engineVariableNames } =
+        compilation
     const globs = compilation.engineVariableNames.g
     const macros = wrapMacros(compilation.macros, compilation)
     // prettier-ignore

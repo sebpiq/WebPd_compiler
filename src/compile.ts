@@ -40,9 +40,8 @@ export default (
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletListenerSpecs, target } = validateSettings(
-        compilerSettings
-    )
+    const { audioSettings, inletListenerSpecs, target } =
+        validateSettings(compilerSettings)
     const macros = getMacros(target)
     const engineVariableNames = generateEngineVariableNames(
         nodeImplementations,

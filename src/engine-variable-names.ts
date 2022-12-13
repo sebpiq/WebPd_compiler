@@ -84,6 +84,7 @@ export const generateEngineVariableNames = (
         blockSize: 'BLOCK_SIZE',
         sampleRate: 'SAMPLE_RATE',
         output: 'OUTPUT',
+        input: 'INPUT',
     },
     accessors: createNamespace({}),
     inletListenerSpecs: createNamespace({}),

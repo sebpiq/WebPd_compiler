@@ -97,7 +97,8 @@ export const buildMessageTransferOperations = (
                 const inIndex = parseInt(matchDollar[1], 10) - 1
                 return { type: 'noop', inIndex }
             } else if (matchDollar) {
-                const variables: MessageTransferOperationStringTemplate['variables'] = []
+                const variables: MessageTransferOperationStringTemplate['variables'] =
+                    []
                 let matched: RegExpMatchArray | null
                 while ((matched = DOLLAR_VAR_RE_GLOB.exec(templateElem))) {
                     // position -1, because $1 corresponds to value 0.

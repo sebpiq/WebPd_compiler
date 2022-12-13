@@ -61,12 +61,16 @@ export interface EngineMetadata {
  * WebPd assemblyscript code.
  */
 export interface AssemblyScriptWasmExports {
-    configure: (sampleRate: number, blockSize: number) => TypedArrayPointer
+    configure: (sampleRate: number, blockSize: number) => void
     loop: () => void
     setArray: (
         arrayName: StringPointer,
         buffer: ArrayBufferOfFloatsPointer
     ) => void
+
+    // Pointers to input and output buffers
+    getOutput: () => TypedArrayPointer
+    getInput: () => TypedArrayPointer
 
     // Pointer to a JSON string representation of `EngineMetadata`
     metadata: WebAssembly.Global

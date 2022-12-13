@@ -171,9 +171,8 @@ describe('compileToJavascript', () => {
 
         const engine = new Function('inletListener_someNode_someInlet', code)(
             () => {
-                const messages = engine.accessors[
-                    'read_someNode_INS_someInlet'
-                ]()
+                const messages =
+                    engine.accessors['read_someNode_INS_someInlet']()
                 called.push(messages)
             }
         )
@@ -186,17 +185,18 @@ describe('compileToJavascript', () => {
 
     describe('attachAccessorsVariableNames', () => {
         it('should attach accessors variable names', () => {
-            const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
-                NODE_IMPLEMENTATIONS,
-                makeGraph({
-                    node1: {
-                        inlets: {
-                            inlet1: { type: 'message', id: 'inlet1' },
-                            inlet2: { type: 'message', id: 'inlet2' },
+            const engineVariableNames: EngineVariableNames =
+                generateEngineVariableNames(
+                    NODE_IMPLEMENTATIONS,
+                    makeGraph({
+                        node1: {
+                            inlets: {
+                                inlet1: { type: 'message', id: 'inlet1' },
+                                inlet2: { type: 'message', id: 'inlet2' },
+                            },
                         },
-                    },
-                })
-            )
+                    })
+                )
             const accessorSpecs: AccessorSpecs = {
                 node1_INS_inlet1: { access: 'r', type: 'signal' },
                 node1_INS_inlet2: { access: 'rw', type: 'signal' },

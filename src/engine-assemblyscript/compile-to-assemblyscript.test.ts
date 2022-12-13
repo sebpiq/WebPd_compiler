@@ -196,7 +196,7 @@ describe('compileToAssemblyscript', () => {
 
         const blockSize = 18
         engine.configure(44100, blockSize)
-        engine.loop([])
+        engine.loop([], [])
         assert.deepStrictEqual(called, [[[0]], [[5]], [[10]], [[15]]])
     })
 
@@ -239,7 +239,9 @@ describe('compileToAssemblyscript', () => {
         )
 
         const expectedExports: AssemblyScriptWasmExports = {
-            configure: (_: number) => 0,
+            configure: (_: number) => undefined,
+            getOutput: () => 0,
+            getInput: () => 0,
             loop: () => new Float32Array(),
             setArray: () => undefined,
             metadata: new WebAssembly.Global({ value: 'i32' }),
@@ -278,17 +280,18 @@ describe('compileToAssemblyscript', () => {
 
     describe('attachAccessorsVariableNames', () => {
         it('should attach accessors variable names', () => {
-            const engineVariableNames: EngineVariableNames = generateEngineVariableNames(
-                NODE_IMPLEMENTATIONS,
-                makeGraph({
-                    node1: {
-                        inlets: {
-                            inlet1: { type: 'message', id: 'inlet1' },
-                            inlet2: { type: 'message', id: 'inlet2' },
+            const engineVariableNames: EngineVariableNames =
+                generateEngineVariableNames(
+                    NODE_IMPLEMENTATIONS,
+                    makeGraph({
+                        node1: {
+                            inlets: {
+                                inlet1: { type: 'message', id: 'inlet1' },
+                                inlet2: { type: 'message', id: 'inlet2' },
+                            },
                         },
-                    },
-                })
-            )
+                    })
+                )
             const accessorSpecs: AccessorSpecs = {
                 node1_INS_inlet1: { access: 'r', type: 'signal' },
                 node1_INS_inlet2: { access: 'rw', type: 'message' },
