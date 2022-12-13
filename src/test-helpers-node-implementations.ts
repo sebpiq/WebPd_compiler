@@ -260,7 +260,12 @@ export const generateFramesForNode = async (
     engine.configure(nodeTestSettings.engineDspParams.sampleRate, blockSize)
 
     const outputFrames: Array<Frame> = []
-    const engineOutput = buildEngineOutput(
+    const engineOutput = buildEngineBlock(
+        Float32Array,
+        nodeTestSettings.engineDspParams.channelCount,
+        blockSize
+    )
+    const engineInput = buildEngineBlock(
         Float32Array,
         nodeTestSettings.engineDspParams.channelCount,
         blockSize
@@ -292,7 +297,7 @@ export const generateFramesForNode = async (
         })
 
         const outputFrame: Frame = {}
-        engine.loop(engineOutput)
+        engine.loop(engineInput, engineOutput)
 
         Object.keys(recorderNode.inlets).forEach((inletId) => {
             outputFrame[inletId] = getNodeState(
@@ -372,7 +377,7 @@ export const getEngine = async (target: CompilerTarget, code: Code) => {
     }
 }
 
-export const buildEngineOutput = (
+export const buildEngineBlock = (
     constructor: typeof Float32Array | typeof Float64Array,
     channelCount: number,
     blockSize: number

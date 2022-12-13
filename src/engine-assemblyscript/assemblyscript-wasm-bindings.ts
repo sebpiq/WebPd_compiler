@@ -153,56 +153,47 @@ export class AssemblyScriptWasmEngine implements Engine {
     _bindAccessors(): EngineAccessors {
         const accessors: EngineAccessors = {}
         const wasmExports = this.wasmExports as any
-        Object.entries(this.metadata.compilation.accessorSpecs || {}).forEach(
-            ([variableName, spec]) => {
-                if (spec.access.includes('w')) {
-                    const portVariableName =
-                        this.metadata.compilation.engineVariableNames.accessors[
-                            variableName
-                        ].w
-                    if (spec.type === 'message') {
-                        accessors[portVariableName] = (messages) => {
-                            const messageArrayPointer = lowerMessageArray(
-                                this.wasmExports,
-                                messages
-                            )
-                            wasmExports[portVariableName](messageArrayPointer)
-                        }
-                    } else {
-                        accessors[portVariableName] =
-                            wasmExports[portVariableName]
+        const { accessorSpecs, engineVariableNames } = this.metadata.compilation
+        Object.entries(accessorSpecs || {}).forEach(([variableName, spec]) => {
+            if (spec.access.includes('w')) {
+                const portVariableName =
+                    engineVariableNames.accessors[variableName].w
+                if (spec.type === 'message') {
+                    accessors[portVariableName] = (messages) => {
+                        const messageArrayPointer = lowerMessageArray(
+                            this.wasmExports,
+                            messages
+                        )
+                        wasmExports[portVariableName](messageArrayPointer)
                     }
-                }
-
-                if (spec.access.includes('r')) {
-                    const portVariableNames =
-                        this.metadata.compilation.engineVariableNames.accessors[
-                            variableName
-                        ]
-                    if (spec.type === 'message') {
-                        accessors[portVariableNames.r] = () => {
-                            const messagesCount =
-                                wasmExports[portVariableNames.r_length]()
-                            const messages: Array<Message> = []
-                            for (let i = 0; i < messagesCount; i++) {
-                                const messagePointer =
-                                    wasmExports[portVariableNames.r_elem](i)
-                                messages.push(
-                                    liftMessage(
-                                        this.wasmExports,
-                                        messagePointer
-                                    )
-                                )
-                            }
-                            return messages
-                        }
-                    } else {
-                        accessors[portVariableNames.r] =
-                            wasmExports[portVariableNames.r]
-                    }
+                } else {
+                    accessors[portVariableName] = wasmExports[portVariableName]
                 }
             }
-        )
+
+            if (spec.access.includes('r')) {
+                const portVariableNames =
+                    engineVariableNames.accessors[variableName]
+                if (spec.type === 'message') {
+                    accessors[portVariableNames.r] = () => {
+                        const messagesCount =
+                            wasmExports[portVariableNames.r_length]()
+                        const messages: Array<Message> = []
+                        for (let i = 0; i < messagesCount; i++) {
+                            const messagePointer =
+                                wasmExports[portVariableNames.r_elem](i)
+                            messages.push(
+                                liftMessage(this.wasmExports, messagePointer)
+                            )
+                        }
+                        return messages
+                    }
+                } else {
+                    accessors[portVariableNames.r] =
+                        wasmExports[portVariableNames.r]
+                }
+            }
+        })
 
         return accessors
     }
@@ -211,19 +202,16 @@ export class AssemblyScriptWasmEngine implements Engine {
         const wasmImports: {
             [listenerName: CodeVariableName]: () => void
         } = {}
+        const { engineVariableNames } = this.metadata.compilation
         Object.entries(this.settings.inletListenersCallbacks || {}).forEach(
             ([nodeId, callbacks]) => {
                 Object.entries(callbacks).forEach(([inletId, callback]) => {
                     const listenerName =
-                        this.metadata.compilation.engineVariableNames
-                            .inletListenerSpecs[nodeId][inletId]
+                        engineVariableNames.inletListenerSpecs[nodeId][inletId]
                     const inletVariableName =
-                        this.metadata.compilation.engineVariableNames.n[nodeId]
-                            .ins[inletId]
+                        engineVariableNames.n[nodeId].ins[inletId]
                     const portVariableName =
-                        this.metadata.compilation.engineVariableNames.accessors[
-                            inletVariableName
-                        ].r
+                        engineVariableNames.accessors[inletVariableName].r
                     wasmImports[listenerName] = () => {
                         callback(this.accessors[portVariableName]())
                     }

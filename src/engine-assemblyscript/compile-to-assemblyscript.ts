@@ -81,9 +81,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             ${globs.blockSize} = blockSize
             ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
             ${globs.input} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
-            ${globs.input}[0] = 1.1
-            ${globs.input}[1] = 2.2
-            ${globs.input}[2] = 3.3
             ${compileInitialize(compilation, graphTraversal)}
         }
 
