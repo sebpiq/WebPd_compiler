@@ -48,7 +48,7 @@ describe('compileDeclare', () => {
             },
             'dac~': {
                 declare: (_, __, { audioSettings }) =>
-                    `// [dac~] channelCount ${audioSettings.channelCount}`,
+                    `// [dac~] channelCount ${audioSettings.channelCount.out}`,
                 loop: () => ``,
             },
         }
@@ -58,7 +58,7 @@ describe('compileDeclare', () => {
             graph,
             nodeImplementations,
             audioSettings: {
-                channelCount: 2,
+                channelCount: { in: 2, out: 2 },
                 bitDepth: 32,
             },
             macros,
@@ -126,7 +126,7 @@ describe('compileDeclare', () => {
             graph,
             nodeImplementations,
             audioSettings: {
-                channelCount: 2,
+                channelCount: { in: 2, out: 2 },
                 bitDepth: 32,
             },
             macros: macros,

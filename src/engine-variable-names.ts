@@ -78,8 +78,11 @@ export const generateEngineVariableNames = (
     ),
     g: {
         arrays: 'ARRAYS',
+        // Reusable variable to iterate over outlets
         iterOutlet: 'O',
+        // Frame count, reinitialized at each loop start
         iterFrame: 'F',
+        // Frame count, never reinitialized
         frame: 'FRAME',
         blockSize: 'BLOCK_SIZE',
         sampleRate: 'SAMPLE_RATE',

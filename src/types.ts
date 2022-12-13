@@ -107,10 +107,15 @@ export type CodeMacros = {
         name: CodeVariableName,
         tokenIndex: number
     ) => Code
+    fillInLoopInput: (
+        compilation: Compilation,
+        inputChannel: number,
+        destinationName: CodeVariableName
+    ) => Code
     fillInLoopOutput: (
         compilation: Compilation,
-        channel: number,
-        value: CodeVariableName
+        outputChannel: number,
+        sourceName: CodeVariableName
     ) => Code
     // Takes a message array as input, and constructs the output message using `template` argument.
     // For example :
@@ -208,7 +213,10 @@ export type InletListenerSpecs = {
 }
 
 export interface AudioSettings {
-    channelCount: number
+    channelCount: {
+        in: number
+        out: number
+    }
     bitDepth: 32 | 64
 }
 

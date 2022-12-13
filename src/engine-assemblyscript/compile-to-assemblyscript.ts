@@ -68,8 +68,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     return renderCode`
         ${CORE_CODE}
 
-        let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
         let ${macros.typedVarFloatArray(compilation, globs.input)} = new ${FloatArrayType}(0)
+        let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
         export const metadata: string = '${JSON.stringify(metadata)}'
     
         ${compileDeclare(compilation, graphTraversal)}
@@ -79,13 +79,13 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export function configure(sampleRate: ${FloatType}, blockSize: i32): void {
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
-            ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
-            ${globs.input} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.toString()})
+            ${globs.input} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.in.toString()})
+            ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.out.toString()})
             ${compileInitialize(compilation, graphTraversal)}
         }
 
-        export function getOutput(): ${FloatArrayType} { return ${globs.output} }
         export function getInput(): ${FloatArrayType} { return ${globs.input} }
+        export function getOutput(): ${FloatArrayType} { return ${globs.output} }
 
         export function loop(): void {
             for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {

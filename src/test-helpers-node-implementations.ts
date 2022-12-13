@@ -25,6 +25,7 @@ import {
     NodeImplementations,
     AccessorSpecs,
     CompilerTarget,
+    Compilation,
     Code,
 } from './types'
 export { executeCompilation } from './compile'
@@ -260,14 +261,14 @@ export const generateFramesForNode = async (
     engine.configure(nodeTestSettings.engineDspParams.sampleRate, blockSize)
 
     const outputFrames: Array<Frame> = []
-    const engineOutput = buildEngineBlock(
-        Float32Array,
-        nodeTestSettings.engineDspParams.channelCount,
-        blockSize
-    )
     const engineInput = buildEngineBlock(
         Float32Array,
-        nodeTestSettings.engineDspParams.channelCount,
+        nodeTestSettings.engineDspParams.channelCount.in,
+        blockSize
+    )
+    const engineOutput = buildEngineBlock(
+        Float32Array,
+        nodeTestSettings.engineDspParams.channelCount.out,
         blockSize
     )
 
@@ -391,5 +392,5 @@ export const buildEngineBlock = (
 
 export const ENGINE_DSP_PARAMS = {
     sampleRate: 44100,
-    channelCount: 2,
+    channelCount: { in: 2, out: 2 },
 }

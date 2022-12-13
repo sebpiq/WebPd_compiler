@@ -44,7 +44,7 @@ export const makeCompilation = (
     )
     const audioSettings = compilation.audioSettings || {
         bitDepth: 32,
-        channelCount: 2,
+        channelCount: { in: 2, out: 2 },
     }
 
     attachInletListenersVariableNames(engineVariableNames, inletListenerSpecs)

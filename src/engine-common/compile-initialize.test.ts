@@ -48,7 +48,7 @@ describe('compileInitialize', () => {
             },
             'dac~': {
                 initialize: (_, __, { audioSettings }) =>
-                    `// [dac~] channelCount ${audioSettings.channelCount}`,
+                    `// [dac~] channelCount ${audioSettings.channelCount.out}`,
                 loop: () => ``,
             },
         }
@@ -58,7 +58,7 @@ describe('compileInitialize', () => {
             graph,
             nodeImplementations,
             audioSettings: {
-                channelCount: 2,
+                channelCount: { in: 2, out: 2 },
                 bitDepth: 32,
             },
             macros: macros,
@@ -117,7 +117,7 @@ describe('compileInitialize', () => {
             },
             'dac~': {
                 initialize: (_, __, { audioSettings }) =>
-                    `// [dac~] channelCount ${audioSettings.channelCount}`,
+                    `// [dac~] channelCount ${audioSettings.channelCount.out}`,
                 loop: () => ``,
             },
         }
@@ -127,7 +127,7 @@ describe('compileInitialize', () => {
             graph,
             nodeImplementations,
             audioSettings: {
-                channelCount: 2,
+                channelCount: { in: 2, out: 2 },
                 bitDepth: 32,
             },
             macros: macros,

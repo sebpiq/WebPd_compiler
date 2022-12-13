@@ -115,7 +115,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             this.arrayType,
             this.wasmInputPointer
         )
-        for (let channel = 0; channel < output.length; channel++) {
+        for (let channel = 0; channel < input.length; channel++) {
             wasmInput.set(input[channel], channel * this.audioConfig.blockSize)
         }
 

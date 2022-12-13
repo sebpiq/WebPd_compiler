@@ -89,13 +89,22 @@ const readMessageFloatDatum = (
     tokenIndex: number
 ) => `${name}[${tokenIndex}]`
 
+const fillInLoopInput = (
+    compilation: Compilation,
+    channel: number,
+    destinationName: CodeVariableName
+) => {
+    const globs = compilation.engineVariableNames.g
+    return `${destinationName} = ${globs.input}[${channel}][${globs.iterFrame}]`
+}
+
 const fillInLoopOutput = (
     compilation: Compilation,
     channel: number,
-    value: CodeVariableName
+    sourceName: CodeVariableName
 ) => {
     const globs = compilation.engineVariableNames.g
-    return `${globs.output}[${channel}][${globs.iterFrame}] = ${value}`
+    return `${globs.output}[${channel}][${globs.iterFrame}] = ${sourceName}`
 }
 
 const messageTransfer = (
@@ -141,6 +150,7 @@ const macros: CodeMacros = {
     isMessageMatching,
     readMessageStringDatum,
     readMessageFloatDatum,
+    fillInLoopInput,
     fillInLoopOutput,
     messageTransfer,
 }

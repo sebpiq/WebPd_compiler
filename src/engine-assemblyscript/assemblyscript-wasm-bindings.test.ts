@@ -49,7 +49,7 @@ describe('AssemblyScriptWasmEngine', () => {
         macros,
         audioSettings: {
             bitDepth: 64,
-            channelCount: 2,
+            channelCount: { in: 2, out: 2 },
         },
     })
 
@@ -335,7 +335,7 @@ describe('AssemblyScriptWasmEngine', () => {
                             { globs },
                             { audioSettings: { channelCount } }
                         ) => `
-                            for (let channel: i32 = 0; channel < ${channelCount}; channel++) {
+                            for (let channel: i32 = 0; channel < ${channelCount.out}; channel++) {
                                 ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] = 2.0
                             }
                         `,
@@ -355,7 +355,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     graph,
                     audioSettings: {
                         ...COMPILATION.audioSettings,
-                        channelCount: 2,
+                        channelCount: { in: 2, out: 2 },
                     },
                 })
                 let blockSize = 4
@@ -384,7 +384,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     graph,
                     audioSettings: {
                         ...COMPILATION.audioSettings,
-                        channelCount: 2,
+                        channelCount: { in: 2, out: 2 },
                     },
                 })
                 blockSize = 5
@@ -411,7 +411,7 @@ describe('AssemblyScriptWasmEngine', () => {
                             { globs },
                             { audioSettings: { channelCount } }
                         ) => `
-                            for (let channel: i32 = 0; channel < ${channelCount}; channel++) {
+                            for (let channel: i32 = 0; channel < ${channelCount.in}; channel++) {
                                 ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] 
                                     = ${globs.input}[${globs.iterFrame} + ${globs.blockSize} * channel]
                             }
@@ -432,7 +432,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     graph,
                     audioSettings: {
                         ...COMPILATION.audioSettings,
-                        channelCount: 2,
+                        channelCount: { in: 2, out: 3 },
                     },
                 })
                 let blockSize = 4
@@ -441,6 +441,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     new Float32Array([1, 3, 5, 7]),
                 ]
                 let output: Array<Float32Array> = [
+                    new Float32Array(blockSize),
                     new Float32Array(blockSize),
                     new Float32Array(blockSize),
                 ]
@@ -453,6 +454,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 assert.deepStrictEqual(output, [
                     new Float32Array([2, 4, 6, 8]),
                     new Float32Array([1, 3, 5, 7]),
+                    new Float32Array([0, 0, 0, 0]),
                 ])
             })
         })

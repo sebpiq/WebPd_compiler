@@ -22,7 +22,7 @@ import {
 describe('compile', () => {
     const COMPILER_SETTINGS_AS: CompilerSettings = {
         audioSettings: {
-            channelCount: 2,
+            channelCount: { in: 2, out: 2 },
             bitDepth: 32,
         },
         target: 'assemblyscript',
@@ -30,7 +30,7 @@ describe('compile', () => {
 
     const COMPILER_SETTINGS_JS: CompilerSettings = {
         audioSettings: {
-            channelCount: 2,
+            channelCount: { in: 2, out: 2 },
             bitDepth: 32,
         },
         target: 'javascript',
@@ -57,7 +57,7 @@ describe('compile', () => {
             const settings = validateSettings({
                 target: 'assemblyscript',
                 audioSettings: {
-                    channelCount: 2,
+                    channelCount: { in: 2, out: 2 },
                     bitDepth: 32,
                 },
             })
@@ -68,7 +68,7 @@ describe('compile', () => {
             assert.throws(() =>
                 validateSettings({
                     target: 'assemblyscript',
-                    channelCount: 2,
+                    channelCount: { in: 2, out: 2 },
                     sampleRate: 44100,
                     bitDepth: 666,
                 } as any)
