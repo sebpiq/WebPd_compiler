@@ -74,7 +74,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     
         ${compileDeclare(compilation, graphTraversal)}
         ${compileInletListeners(compilation)}
-        ${compilePorts(compilation, { FloatType })}
+        ${compileAccessors(compilation, { FloatType })}
         
         export function configure(sampleRate: ${FloatType}, blockSize: i32): void {
             ${globs.sampleRate} = sampleRate
@@ -103,7 +103,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     `
 }
 
-export const compilePorts = (
+export const compileAccessors = (
     { accessorSpecs, engineVariableNames }: Compilation,
     { FloatType }: { FloatType: string }
 ) => {

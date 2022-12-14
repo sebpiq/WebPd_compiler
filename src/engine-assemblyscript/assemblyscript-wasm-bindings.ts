@@ -89,7 +89,7 @@ export class AssemblyScriptWasmEngine implements Engine {
                 ? Float32Array
                 : Float64Array
         const wasmInstance = await instantiateWasmModule(this.wasmBuffer, {
-            input: this._makeMessageListenersWasmImports(),
+            input: this._makeInletListenersWasmImports(),
         })
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
@@ -198,7 +198,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         return accessors
     }
 
-    _makeMessageListenersWasmImports() {
+    _makeInletListenersWasmImports() {
         const wasmImports: {
             [listenerName: CodeVariableName]: () => void
         } = {}
