@@ -144,7 +144,7 @@ describe('compileToAssemblyscript', () => {
                 loop: (_, { outs, globs, macros }) => `
                     if (${globs.frame} % 5 === 0) {
                         ${macros.createMessage('m', [0])}
-                        writeFloatDatum(m, 0, f32(${globs.frame}))
+                        msg_writeFloatDatum(m, 0, f32(${globs.frame}))
                         ${outs.someOutlet}.push(m)
                     }
                 `,
@@ -247,14 +247,14 @@ describe('compileToAssemblyscript', () => {
             metadata: new WebAssembly.Global({ value: 'i32' }),
             MESSAGE_DATUM_TYPE_FLOAT: new WebAssembly.Global({ value: 'i32' }),
             MESSAGE_DATUM_TYPE_STRING: new WebAssembly.Global({ value: 'i32' }),
-            createMessage: () => 0,
-            getMessageDatumTypes: () => 0,
-            createMessageArray: () => 0,
-            pushMessageToArray: () => undefined,
-            writeStringDatum: () => undefined,
-            writeFloatDatum: () => undefined,
-            readStringDatum: () => 0,
-            readFloatDatum: () => 0,
+            msg_create: () => 0,
+            msg_getDatumTypes: () => 0,
+            msg_createArray: () => 0,
+            msg_pushToArray: () => undefined,
+            msg_writeStringDatum: () => undefined,
+            msg_writeFloatDatum: () => undefined,
+            msg_readStringDatum: () => 0,
+            msg_readFloatDatum: () => 0,
             __new: () => 0,
             memory: new WebAssembly.Memory({ initial: 128 }),
         }

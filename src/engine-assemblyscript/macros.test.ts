@@ -34,8 +34,8 @@ describe('macros', () => {
                 normalizeCode(code),
                 normalizeCode(`
                 const myMessage: Message = Message.fromTemplate([${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 4, ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 3])
-                writeStringDatum(myMessage, 0, "bang")
-                writeStringDatum(myMessage, 1, "lol")
+                msg_writeStringDatum(myMessage, 0, "bang")
+                msg_writeStringDatum(myMessage, 1, "lol")
             `)
             )
         })
@@ -50,8 +50,8 @@ describe('macros', () => {
                 normalizeCode(code),
                 normalizeCode(`
                 const myMessage: Message = Message.fromTemplate([${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}, ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}])
-                writeFloatDatum(myMessage, 0, 1.234)
-                writeFloatDatum(myMessage, 1, 888)
+                msg_writeFloatDatum(myMessage, 0, 1.234)
+                msg_writeFloatDatum(myMessage, 1, 888)
             `)
             )
         })

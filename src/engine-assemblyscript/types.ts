@@ -78,37 +78,37 @@ export interface AssemblyScriptWasmExports {
     MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
     MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
 
-    createMessage: (
+    // Message manipulation primitives
+    msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
     ) => InternalPointer
-    getMessageDatumTypes: (messagePointer: InternalPointer) => TypedArrayPointer
-    createMessageArray: () => InternalPointer
-    pushMessageToArray: (
+    msg_getDatumTypes: (messagePointer: InternalPointer) => TypedArrayPointer
+    msg_createArray: () => InternalPointer
+    msg_pushToArray: (
         messageArrayPointer: InternalPointer,
         messagePointer: InternalPointer
     ) => void
-    writeStringDatum: (
+    msg_writeStringDatum: (
         messagePointer: InternalPointer,
         datumIndex: number,
         stringPointer: StringPointer
     ) => void
-    writeFloatDatum: (
+    msg_writeFloatDatum: (
         messagePointer: InternalPointer,
         datumIndex: number,
         value: number
     ) => void
-    readStringDatum: (
+    msg_readStringDatum: (
         messagePointer: InternalPointer,
         datumIndex: number
     ) => StringPointer
-    readFloatDatum: (
+    msg_readFloatDatum: (
         messagePointer: InternalPointer,
         datumIndex: number
     ) => number
 
-    memory: WebAssembly.Memory
-
     // Signatures of internal methods that enable to access wasm memory.
     // REF : https://www.assemblyscript.org/runtime.html#interface
     __new: (length: number, classType: number) => InternalPointer
+    memory: WebAssembly.Memory
 }

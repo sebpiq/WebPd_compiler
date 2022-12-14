@@ -306,7 +306,7 @@ export const liftMessage = (
     messagePointer: InternalPointer
 ): Message => {
     const messageDatumTypesPointer =
-        wasmExports.getMessageDatumTypes(messagePointer)
+        wasmExports.msg_getDatumTypes(messagePointer)
     const messageDatumTypes = readTypedArray(
         wasmExports,
         Int32Array,
@@ -315,11 +315,13 @@ export const liftMessage = (
     const message: Message = []
     messageDatumTypes.forEach((datumType, datumIndex) => {
         if (datumType === wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf()) {
-            message.push(wasmExports.readFloatDatum(messagePointer, datumIndex))
+            message.push(
+                wasmExports.msg_readFloatDatum(messagePointer, datumIndex)
+            )
         } else if (
             datumType === wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf()
         ) {
-            const stringPointer = wasmExports.readStringDatum(
+            const stringPointer = wasmExports.msg_readStringDatum(
                 messagePointer,
                 datumIndex
             )
@@ -345,16 +347,20 @@ export const lowerMessage = (
         return template
     }, [] as Array<number>)
 
-    const messagePointer = wasmExports.createMessage(
+    const messagePointer = wasmExports.msg_create(
         lowerArrayBufferOfIntegers(wasmExports, messageTemplate)
     )
 
     message.forEach((value, index) => {
         if (typeof value === 'number') {
-            wasmExports.writeFloatDatum(messagePointer, index, value)
+            wasmExports.msg_writeFloatDatum(messagePointer, index, value)
         } else if (typeof value === 'string') {
             const stringPointer = lowerString(wasmExports, value)
-            wasmExports.writeStringDatum(messagePointer, index, stringPointer)
+            wasmExports.msg_writeStringDatum(
+                messagePointer,
+                index,
+                stringPointer
+            )
         }
     })
 
@@ -365,9 +371,9 @@ export const lowerMessageArray = (
     wasmExports: AssemblyScriptWasmExports,
     messages: Array<Message>
 ): InternalPointer => {
-    const messageArrayPointer = wasmExports.createMessageArray()
+    const messageArrayPointer = wasmExports.msg_createArray()
     messages.forEach((message) => {
-        wasmExports.pushMessageToArray(
+        wasmExports.msg_pushToArray(
             messageArrayPointer,
             lowerMessage(wasmExports, message)
         )

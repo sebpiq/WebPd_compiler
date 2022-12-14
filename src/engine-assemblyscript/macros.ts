@@ -90,11 +90,11 @@ const createMessage = (
 
         ${message.map((value, datumIndex) => {
             if (typeof value === 'number') {
-                return `writeFloatDatum(${name}, ${datumIndex}, ${value.toString(
+                return `msg_writeFloatDatum(${name}, ${datumIndex}, ${value.toString(
                     10
                 )})`
             } else if (typeof value === 'string') {
-                return `writeStringDatum(${name}, ${datumIndex}, "${value}")`
+                return `msg_writeStringDatum(${name}, ${datumIndex}, "${value}")`
             } else {
                 throw new Error(`invalid value for message : ${value}`)
             }
@@ -205,9 +205,9 @@ const messageTransfer = (
             // prettier-ignore
             outMessageSetCode.push(`
                 if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
-                    writeFloatDatum(outMessage, ${outIndex}, readFloatDatum(${inVariableName}, ${inIndex}))
+                    msg_writeFloatDatum(outMessage, ${outIndex}, readFloatDatum(${inVariableName}, ${inIndex}))
                 } else if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
-                    writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
+                    msg_writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
                 }
             `)
             stringMemCount++
@@ -237,7 +237,7 @@ const messageTransfer = (
                 outTemplate.push(stringDatum.length)
             `)
             outMessageSetCode.push(`
-                writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
+                msg_writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
             `)
             stringMemCount++
         } else if (operation.type === 'string-constant') {
@@ -248,7 +248,7 @@ const messageTransfer = (
             `)
 
             outMessageSetCode.push(`
-                writeStringDatum(outMessage, ${outIndex}, "${operation.value}")
+                msg_writeStringDatum(outMessage, ${outIndex}, "${operation.value}")
             `)
         } else if (operation.type === 'float-constant') {
             outMessageTemplateCode.push(`
@@ -256,7 +256,7 @@ const messageTransfer = (
             `)
 
             outMessageSetCode.push(`
-                writeFloatDatum(outMessage, ${outIndex}, ${operation.value})
+                msg_writeFloatDatum(outMessage, ${outIndex}, ${operation.value})
             `)
         }
     })

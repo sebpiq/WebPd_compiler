@@ -215,8 +215,8 @@ describe('AssemblyScriptWasmEngine', () => {
                             MESSAGE_DATUM_TYPE_STRING, 5,
                             MESSAGE_DATUM_TYPE_FLOAT,
                         ])
-                        writeStringDatum(message, 0, "hello")
-                        writeFloatDatum(message, 1, 666)
+                        msg_writeStringDatum(message, 0, "hello")
+                        msg_writeFloatDatum(message, 1, 666)
                         return message
                     }
                 `
@@ -229,7 +229,7 @@ describe('AssemblyScriptWasmEngine', () => {
         })
     })
 
-    describe('createMessageArray / pushMessageToArray', () => {
+    describe('msg_createArray / msg_pushToArray', () => {
         it('should create message array and push message to array', async () => {
             const wasmExports = await getWasmExports(
                 // prettier-ignore
@@ -246,9 +246,9 @@ describe('AssemblyScriptWasmEngine', () => {
             const messagePointer1 = lowerMessage(wasmExports, ['\x00\x00'])
             const messagePointer2 = lowerMessage(wasmExports, [0])
 
-            const messageArrayPointer = wasmExports.createMessageArray()
-            wasmExports.pushMessageToArray(messageArrayPointer, messagePointer1)
-            wasmExports.pushMessageToArray(messageArrayPointer, messagePointer2)
+            const messageArrayPointer = wasmExports.msg_createArray()
+            wasmExports.msg_pushToArray(messageArrayPointer, messagePointer1)
+            wasmExports.msg_pushToArray(messageArrayPointer, messagePointer2)
 
             const messagePointer1Bis: number = wasmExports.testMessageArray(
                 messageArrayPointer,
@@ -516,9 +516,9 @@ describe('AssemblyScriptWasmEngine', () => {
                             ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 3,
                             ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
                         ])
-                        writeFloatDatum(m1, 0, 666.5)
-                        writeStringDatum(m2, 0, 'bla')
-                        writeFloatDatum(m2, 1, 123)
+                        msg_writeFloatDatum(m1, 0, 666.5)
+                        msg_writeStringDatum(m2, 0, 'bla')
+                        msg_writeFloatDatum(m2, 1, 123)
                         someMessageArray.push(m1)
                         someMessageArray.push(m2)
                 `
@@ -637,9 +637,9 @@ describe('AssemblyScriptWasmEngine', () => {
                                 ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 2
                             ]),
                         ]
-                        writeFloatDatum(bla_INS_blo[0], 0, 123)
-                        writeFloatDatum(bla_INS_blo[0], 1, 456)
-                        writeStringDatum(bla_INS_blo[1], 0, 'oh')
+                        msg_writeFloatDatum(bla_INS_blo[0], 0, 123)
+                        msg_writeFloatDatum(bla_INS_blo[0], 1, 456)
+                        msg_writeStringDatum(bla_INS_blo[1], 0, 'oh')
 
                         export function notifyMessage(): void {
                             inletListener_bla_blo()
