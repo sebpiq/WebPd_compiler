@@ -24,9 +24,10 @@ import {
     CodeVariableName,
     EngineAccessors,
     Engine,
-    AudioSettings,
     Message,
 } from '../types'
+import { FsListenersCallbacks, makeFileListenersWasmImports } from './assemblyscript-core/fs-bindings'
+import { lowerTypedArray, readTypedArray } from './assemblyscript-core/tarray-bindings'
 import {
     AssemblyScriptWasmExports,
     EngineMetadata,
@@ -34,17 +35,6 @@ import {
     StringPointer,
     TypedArrayPointer,
 } from './types'
-
-type TypedArrayConstructor =
-    | typeof Int8Array
-    | typeof Uint8Array
-    | typeof Int16Array
-    | typeof Uint16Array
-    | typeof Int32Array
-    | typeof Uint32Array
-    | typeof Uint8ClampedArray
-    | typeof Float32Array
-    | typeof Float64Array
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
@@ -54,6 +44,7 @@ export interface BindingsSettings {
             [inletId: DspGraph.PortletId]: (messages: Array<Message>) => void
         }
     }
+    fsListenersCallbacks?: FsListenersCallbacks
 }
 
 interface AudioConfig {
@@ -89,7 +80,10 @@ export class AssemblyScriptWasmEngine implements Engine {
                 ? Float32Array
                 : Float64Array
         const wasmInstance = await instantiateWasmModule(this.wasmBuffer, {
-            input: this._makeInletListenersWasmImports(),
+            input: {
+                ...makeFileListenersWasmImports(this.settings.fsListenersCallbacks),
+                ...this._makeInletListenersWasmImports(),
+            },
         })
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
@@ -142,12 +136,12 @@ export class AssemblyScriptWasmEngine implements Engine {
         data: Array<number> | Float32Array | Float64Array
     ) {
         const stringPointer = lowerString(this.wasmExports, arrayName)
-        const bufferPointer = lowerArrayBufferOfFloats(
+        const tarrayPointer = lowerTypedArray(
             this.wasmExports,
             this.metadata.compilation.audioSettings.bitDepth,
             data
         )
-        this.wasmExports.setArray(stringPointer, bufferPointer)
+        this.wasmExports.setArray(stringPointer, tarrayPointer)
     }
 
     _bindAccessors(): EngineAccessors {
@@ -395,37 +389,7 @@ export const lowerArrayBufferOfIntegers = (
     return lowerBuffer(wasmExports, buffer)
 }
 
-export const lowerArrayBufferOfFloats = (
-    wasmExports: AssemblyScriptWasmExports,
-    bitDepth: AudioSettings['bitDepth'],
-    floats: Array<number> | Float32Array | Float64Array
-) => {
-    const bytesPerElement = bitDepth / 8
-    const buffer = new ArrayBuffer(bytesPerElement * floats.length)
-    const dataView = new DataView(buffer)
-    const setFloatName = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
-    for (let i = 0; i < floats.length; i++) {
-        dataView[setFloatName](bytesPerElement * i, floats[i])
-    }
-    return lowerBuffer(wasmExports, buffer)
-}
-
 // ------------------------ Primitives
-
-// REF : Assemblyscript ESM bindings `liftTypedArray`
-export const readTypedArray = (
-    wasmExports: AssemblyScriptWasmExports,
-    constructor: TypedArrayConstructor,
-    pointer: InternalPointer
-) => {
-    if (!pointer) return null
-    const memoryU32 = new Uint32Array(wasmExports.memory.buffer)
-    return new constructor(
-        wasmExports.memory.buffer,
-        memoryU32[(pointer + 4) >>> 2],
-        memoryU32[(pointer + 8) >>> 2] / constructor.BYTES_PER_ELEMENT
-    )
-}
 
 // REF : Assemblyscript ESM bindings
 export const liftString = (

@@ -10,6 +10,7 @@
  */
 
 import { Code, Compilation } from '../types'
+import { tarray_WasmExports } from './assemblyscript-core/tarray-bindings'
 
 /**
  * AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
@@ -37,14 +38,6 @@ export type InternalPointer = number
 export type ArrayBufferOfIntegersPointer = number
 
 /**
- * Pointer to an array buffer that contains floats (f32 or f64 depending on setting bitDepth).
- * This is what we use to pass audio data back and forth from the module.
- * Because the memory layout is not fixed for data types other than strings
- * REF : https://www.assemblyscript.org/runtime.html#memory-layout
- */
-export type ArrayBufferOfFloatsPointer = number
-
-/**
  * Metadata of an assemblyscript compiled engine
  */
 export interface EngineMetadata {
@@ -60,12 +53,12 @@ export interface EngineMetadata {
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
-export interface AssemblyScriptWasmExports {
+export type AssemblyScriptWasmExports = tarray_WasmExports & {
     configure: (sampleRate: number, blockSize: number) => void
     loop: () => void
     setArray: (
         arrayName: StringPointer,
-        buffer: ArrayBufferOfFloatsPointer
+        arrayPointer: TypedArrayPointer
     ) => void
 
     // Pointers to input and output buffers
@@ -75,10 +68,10 @@ export interface AssemblyScriptWasmExports {
     // Pointer to a JSON string representation of `EngineMetadata`
     metadata: WebAssembly.Global
 
+    // Message manipulation primitives
     MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
     MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
 
-    // Message manipulation primitives
     msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
     ) => InternalPointer

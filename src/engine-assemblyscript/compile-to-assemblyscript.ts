@@ -12,6 +12,7 @@
 import { traversal } from '@webpd/dsp-graph'
 import { renderCode } from '../compile-helpers'
 import assemblyscriptCoreCode from './core-code.asc'
+import tarrayCode from './assemblyscript-core/tarray.asc'
 import {
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
@@ -42,11 +43,12 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const macros = compilation.macros
+    // TODO ASC : move out of here
     const FloatType = bitDepth === 32 ? 'f32' : 'f64'
     const FloatArrayType = macros.floatArrayType(compilation)
     const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
     const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
-    const CORE_CODE = assemblyscriptCoreCode
+    const CORE_CODE = (tarrayCode + assemblyscriptCoreCode)
         .replaceAll('${FloatType}', FloatType)
         .replaceAll('${FloatArrayType}', FloatArrayType)
         .replaceAll('${getFloat}', getFloat)
@@ -71,6 +73,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         let ${macros.typedVarFloatArray(compilation, globs.input)} = new ${FloatArrayType}(0)
         let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
         export const metadata: string = '${JSON.stringify(metadata)}'
+        const ${globs.arrays} = new Map<string,${FloatArrayType}>()
     
         ${compileDeclare(compilation, graphTraversal)}
         ${compileInletListeners(compilation)}
@@ -85,6 +88,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         }
 
         export function getInput(): ${FloatArrayType} { return ${globs.input} }
+
         export function getOutput(): ${FloatArrayType} { return ${globs.output} }
 
         export function loop(): void {
@@ -94,10 +98,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             }
         }
 
-        const ${globs.arrays} = new Map<string,${FloatArrayType}>()
-
-        export function setArray(arrayName: string, buffer: ArrayBuffer): void {
-            const array = bufferToArrayOfFloats(buffer)
+        export function setArray(arrayName: string, array: TypedArray): void {
             ${globs.arrays}.set(arrayName, array)
         }
     `
