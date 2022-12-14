@@ -154,13 +154,13 @@ const readMessageStringDatum = (
     _: Compilation,
     name: CodeVariableName,
     tokenIndex: number
-) => `readStringDatum(${name}, ${tokenIndex})`
+) => `msg_readStringDatum(${name}, ${tokenIndex})`
 
 const readMessageFloatDatum = (
     _: Compilation,
     name: CodeVariableName,
     tokenIndex: number
-) => `readFloatDatum(${name}, ${tokenIndex})`
+) => `msg_readFloatDatum(${name}, ${tokenIndex})`
 
 const fillInLoopInput = (
     compilation: Compilation,
@@ -197,7 +197,7 @@ const messageTransfer = (
             outMessageTemplateCode.push(`
                 outTemplate.push(${inVariableName}.datumTypes[${inIndex}])
                 if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
-                    const stringDatum: string = readStringDatum(${inVariableName}, ${inIndex})
+                    const stringDatum: string = msg_readStringDatum(${inVariableName}, ${inIndex})
                     stringMem[${stringMemCount}] = stringDatum
                     outTemplate.push(stringDatum.length)
                 }
@@ -205,7 +205,7 @@ const messageTransfer = (
             // prettier-ignore
             outMessageSetCode.push(`
                 if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
-                    msg_writeFloatDatum(outMessage, ${outIndex}, readFloatDatum(${inVariableName}, ${inIndex}))
+                    msg_writeFloatDatum(outMessage, ${outIndex}, msg_readFloatDatum(${inVariableName}, ${inIndex}))
                 } else if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
                     msg_writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
                 }
@@ -217,7 +217,7 @@ const messageTransfer = (
                 let stringDatum: string = "${operation.template}"
                 ${operation.variables.map(({placeholder, inIndex}) => `
                     if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
-                        let value: string = readFloatDatum(${inVariableName}, ${inIndex}).toString()
+                        let value: string = msg_readFloatDatum(${inVariableName}, ${inIndex}).toString()
                         if (value.endsWith('.0')) {
                             value = value.slice(0, -2)
                         }
@@ -228,7 +228,7 @@ const messageTransfer = (
                     } else if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
                         stringDatum = stringDatum.replace(
                             "${placeholder}",
-                            readStringDatum(${inVariableName}, ${inIndex})
+                            msg_readStringDatum(${inVariableName}, ${inIndex})
                         )
                     }`
                 )}

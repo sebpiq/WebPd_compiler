@@ -76,7 +76,7 @@ describe('macros', () => {
             ])
             assert.strictEqual(
                 code,
-                `(myMessage.datumCount === 2 && myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && readStringDatum(myMessage, 0) === "blabla" && readFloatDatum(myMessage, 1) === 123.5)`
+                `(myMessage.datumCount === 2 && myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && msg_readStringDatum(myMessage, 0) === "blabla" && msg_readFloatDatum(myMessage, 1) === 123.5)`
             )
         })
 
@@ -87,7 +87,7 @@ describe('macros', () => {
             ])
             assert.strictEqual(
                 code,
-                `(myMessage.datumCount === 2 && myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && readStringDatum(myMessage, 1) === "bla")`
+                `(myMessage.datumCount === 2 && myMessage.datumTypes[0] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]} && myMessage.datumTypes[1] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]} && msg_readStringDatum(myMessage, 1) === "bla")`
             )
         })
     })
