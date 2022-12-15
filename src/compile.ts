@@ -21,12 +21,10 @@ import {
     AccessorSpecs,
     CompilerTarget,
 } from './types'
-import compileToJavascript, {
-    attachAccessorsVariableNames as jsAttachAccessorsVariableNames,
-} from './engine-javascript/compile-to-javascript'
-import compileToAssemblyscript, {
-    attachAccessorsVariableNames as ascAttachAccessorsVariableNames,
-} from './engine-assemblyscript/compile-to-assemblyscript'
+import { attachAccessorsVariableNames as jsAttachAccessorsVariableNames } from './engine-javascript/engine-variable-names'
+import compileToJavascript from './engine-javascript/compile-to-javascript'
+import { attachAccessorsVariableNames as ascAttachAccessorsVariableNames } from './engine-assemblyscript/engine-variable-names'
+import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
 import {

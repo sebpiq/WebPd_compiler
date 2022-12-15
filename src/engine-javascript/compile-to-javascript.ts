@@ -57,22 +57,3 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         }
     `
 }
-
-export const attachAccessorsVariableNames = (
-    engineVariableNames: EngineVariableNames,
-    accessorSpecs: AccessorSpecs
-): void => {
-    Object.entries(accessorSpecs).forEach(([variableName, accessorSpec]) => {
-        engineVariableNames.accessors[variableName] = {}
-        if (accessorSpec.access.includes('r')) {
-            engineVariableNames.accessors[variableName][
-                'r'
-            ] = `read_${variableName}`
-        }
-        if (accessorSpec.access.includes('w')) {
-            engineVariableNames.accessors[variableName][
-                'w'
-            ] = `write_${variableName}`
-        }
-    })
-}

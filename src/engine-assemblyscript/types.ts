@@ -10,6 +10,8 @@
  */
 
 import { Code, Compilation } from '../types'
+import { core_WasmExports } from './assemblyscript-core/core-bindings'
+import { msg_WasmExports } from './assemblyscript-core/msg-bindings'
 import { tarray_WasmExports } from './assemblyscript-core/tarray-bindings'
 
 /**
@@ -53,7 +55,7 @@ export interface EngineMetadata {
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
-export type AssemblyScriptWasmExports = tarray_WasmExports & {
+export type AssemblyScriptWasmExports = tarray_WasmExports & core_WasmExports & msg_WasmExports & {
     configure: (sampleRate: number, blockSize: number) => void
     loop: () => void
     setArray: (
@@ -67,41 +69,4 @@ export type AssemblyScriptWasmExports = tarray_WasmExports & {
 
     // Pointer to a JSON string representation of `EngineMetadata`
     metadata: WebAssembly.Global
-
-    // Message manipulation primitives
-    MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
-    MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
-
-    msg_create: (
-        templatePointer: ArrayBufferOfIntegersPointer
-    ) => InternalPointer
-    msg_getDatumTypes: (messagePointer: InternalPointer) => TypedArrayPointer
-    msg_createArray: () => InternalPointer
-    msg_pushToArray: (
-        messageArrayPointer: InternalPointer,
-        messagePointer: InternalPointer
-    ) => void
-    msg_writeStringDatum: (
-        messagePointer: InternalPointer,
-        datumIndex: number,
-        stringPointer: StringPointer
-    ) => void
-    msg_writeFloatDatum: (
-        messagePointer: InternalPointer,
-        datumIndex: number,
-        value: number
-    ) => void
-    msg_readStringDatum: (
-        messagePointer: InternalPointer,
-        datumIndex: number
-    ) => StringPointer
-    msg_readFloatDatum: (
-        messagePointer: InternalPointer,
-        datumIndex: number
-    ) => number
-
-    // Signatures of internal methods that enable to access wasm memory.
-    // REF : https://www.assemblyscript.org/runtime.html#interface
-    __new: (length: number, classType: number) => InternalPointer
-    memory: WebAssembly.Memory
 }

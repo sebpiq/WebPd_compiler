@@ -34,7 +34,7 @@ export default (
                 // 0. Call inlet listeners if some inlets have new messages
                 (inletListenerSpecs[node.id] || [])
                     .map(inletId => {
-                        const listenerVariableName = engineVariableNames.inletListenerSpecs[node.id][inletId]
+                        const listenerVariableName = engineVariableNames.inletListeners[node.id][inletId]
                         const inletVariableName = nodeVariableNames.ins[inletId]
                         return `
                             if (${inletVariableName}.length) {

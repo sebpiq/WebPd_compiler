@@ -20,7 +20,7 @@ import {
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation, EngineVariableNames, AccessorSpecs } from '../types'
+import { Compilation } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
 
@@ -148,7 +148,7 @@ export const compileInletListeners = (compilation: Compilation) => {
             ([nodeId, inletIds]) =>
                 inletIds.map((inletId) => {
                     const inletListenerVariableName =
-                        compilation.engineVariableNames.inletListenerSpecs[
+                        compilation.engineVariableNames.inletListeners[
                             nodeId
                         ][inletId]
                     // prettier-ignore
@@ -158,37 +158,4 @@ export const compileInletListeners = (compilation: Compilation) => {
                 })
         )}
     `
-}
-
-export const attachAccessorsVariableNames = (
-    engineVariableNames: EngineVariableNames,
-    accessorSpecs: AccessorSpecs
-): void => {
-    Object.entries(accessorSpecs).forEach(([variableName, accessorSpec]) => {
-        engineVariableNames.accessors[variableName] = {}
-        if (accessorSpec.access.includes('r')) {
-            if (accessorSpec.type === 'message') {
-                // Implemented by engine
-                engineVariableNames.accessors[variableName][
-                    'r_length'
-                ] = `read_${variableName}_length`
-                engineVariableNames.accessors[variableName][
-                    'r_elem'
-                ] = `read_${variableName}_elem`
-                // Implemented by bindings
-                engineVariableNames.accessors[variableName][
-                    'r'
-                ] = `read_${variableName}`
-            } else {
-                engineVariableNames.accessors[variableName][
-                    'r'
-                ] = `read_${variableName}`
-            }
-        }
-        if (accessorSpec.access.includes('w')) {
-            engineVariableNames.accessors[variableName][
-                'w'
-            ] = `write_${variableName}`
-        }
-    })
 }

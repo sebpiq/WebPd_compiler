@@ -43,9 +43,7 @@ export const generateEngineVariableNames = (
                         Object.values(node.inlets).reduce<
                             NodeVariableNames['ins']
                         >((nameMap, inlet) => {
-                            nameMap[inlet.id] = `${assertValidNamePart(
-                                node.id
-                            )}_INS_${assertValidNamePart(inlet.id)}`
+                            nameMap[inlet.id] = `${_v(node.id)}_INS_${_v(inlet.id)}`
                             return nameMap
                         }, {})
                     ),
@@ -53,18 +51,14 @@ export const generateEngineVariableNames = (
                         Object.values(node.outlets).reduce<
                             NodeVariableNames['outs']
                         >((nameMap, outlet) => {
-                            nameMap[outlet.id] = `${assertValidNamePart(
-                                node.id
-                            )}_OUTS_${assertValidNamePart(outlet.id)}`
+                            nameMap[outlet.id] = `${_v(node.id)}_OUTS_${_v(outlet.id)}`
                             return nameMap
                         }, {})
                     ),
                     state: createNamespace(
                         nodeStateVariables.reduce<NodeVariableNames['state']>(
                             (nameMap, stateVariable) => {
-                                nameMap[stateVariable] = `${assertValidNamePart(
-                                    node.id
-                                )}_STATE_${assertValidNamePart(stateVariable)}`
+                                nameMap[stateVariable] = `${_v(node.id)}_STATE_${_v(stateVariable)}`
                                 return nameMap
                             },
                             {}
@@ -90,7 +84,8 @@ export const generateEngineVariableNames = (
         input: 'INPUT',
     },
     accessors: createNamespace({}),
-    inletListenerSpecs: createNamespace({}),
+    inletListeners: createNamespace({}),
+    types: {}
 })
 
 /**
@@ -104,26 +99,14 @@ export const attachInletListenersVariableNames = (
     inletListenerSpecs: InletListenerSpecs
 ): void => {
     Object.entries(inletListenerSpecs).forEach(([nodeId, inletIds]) => {
-        engineVariableNames.inletListenerSpecs[nodeId] = {}
+        engineVariableNames.inletListeners[nodeId] = {}
         inletIds.forEach((inletId) => {
-            engineVariableNames.inletListenerSpecs[nodeId][
+            engineVariableNames.inletListeners[nodeId][
                 inletId
             ] = `inletListener_${nodeId}_${inletId}`
         })
     })
 }
-
-export const assertValidNamePart = (namePart: string) => {
-    const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)
-    if (isInvalid) {
-        throw new Error(
-            `Invalid variable name for code generation "${namePart}"`
-        )
-    }
-    return namePart
-}
-
-const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/
 
 /**
  * Helper to generate VariableNames, essentially a proxy object that throws an error
@@ -161,3 +144,16 @@ export const createNamespace = <T extends Object>(namespace: T) => {
         },
     })
 }
+
+export const assertValidNamePart = (namePart: string) => {
+    const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)
+    if (isInvalid) {
+        throw new Error(
+            `Invalid variable name for code generation "${namePart}"`
+        )
+    }
+    return namePart
+}
+const _v = assertValidNamePart
+
+const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/

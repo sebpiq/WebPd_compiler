@@ -163,6 +163,9 @@ export interface EngineVariableNames {
         input: string
     }
 
+    // Names of types used by the engine (e.g. especially depending on the bitdepth)
+    types: { [key: string]: string }
+
     // Namespace for port functions
     accessors: {
         [variableName: CodeVariableName]: {
@@ -174,7 +177,7 @@ export interface EngineVariableNames {
     }
 
     // Namespace for inlet listener callbacks
-    inletListenerSpecs: {
+    inletListeners: {
         [nodeId: DspGraph.NodeId]: {
             [inletId: DspGraph.PortletId]: CodeVariableName
         }

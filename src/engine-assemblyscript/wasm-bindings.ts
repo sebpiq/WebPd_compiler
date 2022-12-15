@@ -26,19 +26,18 @@ import {
     Engine,
     Message,
 } from '../types'
+import { liftString, lowerString, readTypedArray } from './assemblyscript-core/core-bindings'
 import { FsListenersCallbacks, makeFileListenersWasmImports } from './assemblyscript-core/fs-bindings'
-import { lowerTypedArray, readTypedArray } from './assemblyscript-core/tarray-bindings'
+import { liftMessage, lowerMessageArray } from './assemblyscript-core/msg-bindings'
+import { lowerTypedArray } from './assemblyscript-core/tarray-bindings'
 import {
     AssemblyScriptWasmExports,
     EngineMetadata,
-    InternalPointer,
     StringPointer,
     TypedArrayPointer,
 } from './types'
 
-export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
-
-export interface BindingsSettings {
+export interface EngineSettings {
     inletListenersCallbacks?: {
         [nodeId: DspGraph.NodeId]: {
             [inletId: DspGraph.PortletId]: (messages: Array<Message>) => void
@@ -60,14 +59,14 @@ export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
     public accessors: EngineAccessors
     public metadata: EngineMetadata
-    private settings: BindingsSettings
+    private settings: EngineSettings
     private wasmBuffer: ArrayBuffer
     private wasmOutputPointer: TypedArrayPointer
     private wasmInputPointer: TypedArrayPointer
     private audioConfig: AudioConfig
     private arrayType: typeof Float32Array | typeof Float64Array
 
-    constructor(wasmBuffer: ArrayBuffer, settings: BindingsSettings) {
+    constructor(wasmBuffer: ArrayBuffer, settings: EngineSettings) {
         this.wasmBuffer = wasmBuffer
         this.settings = settings
     }
@@ -201,7 +200,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             ([nodeId, callbacks]) => {
                 Object.entries(callbacks).forEach(([inletId, callback]) => {
                     const listenerName =
-                        engineVariableNames.inletListenerSpecs[nodeId][inletId]
+                        engineVariableNames.inletListeners[nodeId][inletId]
                     const inletVariableName =
                         engineVariableNames.n[nodeId].ins[inletId]
                     const portVariableName =
@@ -247,7 +246,7 @@ export const readMetadata = async (
 
 export const createEngine = async (
     wasmBuffer: ArrayBuffer,
-    settings: BindingsSettings
+    settings: EngineSettings
 ) => {
     const engine = new AssemblyScriptWasmEngine(wasmBuffer, settings)
     await engine.initialize()
@@ -255,7 +254,6 @@ export const createEngine = async (
 }
 
 // REF : Assemblyscript ESM bindings
-// TODO: Reuse module instead of rebuilding each time.
 export const instantiateWasmModule = async (
     wasmBuffer: ArrayBuffer,
     wasmImports: any = {}
@@ -293,150 +291,4 @@ export const instantiateWasmModule = async (
     const wasmExports = instanceAndModule.instance
         .exports as unknown as AssemblyScriptWasmExports
     return instanceAndModule.instance
-}
-
-export const liftMessage = (
-    wasmExports: AssemblyScriptWasmExports,
-    messagePointer: InternalPointer
-): Message => {
-    const messageDatumTypesPointer =
-        wasmExports.msg_getDatumTypes(messagePointer)
-    const messageDatumTypes = readTypedArray(
-        wasmExports,
-        Int32Array,
-        messageDatumTypesPointer
-    )
-    const message: Message = []
-    messageDatumTypes.forEach((datumType, datumIndex) => {
-        if (datumType === wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf()) {
-            message.push(
-                wasmExports.msg_readFloatDatum(messagePointer, datumIndex)
-            )
-        } else if (
-            datumType === wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf()
-        ) {
-            const stringPointer = wasmExports.msg_readStringDatum(
-                messagePointer,
-                datumIndex
-            )
-            message.push(liftString(wasmExports, stringPointer))
-        }
-    })
-    return message
-}
-
-export const lowerMessage = (
-    wasmExports: AssemblyScriptWasmExports,
-    message: Message
-): InternalPointer => {
-    const messageTemplate: Array<number> = message.reduce((template, value) => {
-        if (typeof value === 'number') {
-            template.push(wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf())
-        } else if (typeof value === 'string') {
-            template.push(wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf())
-            template.push(value.length)
-        } else {
-            throw new Error(`invalid message value ${value}`)
-        }
-        return template
-    }, [] as Array<number>)
-
-    const messagePointer = wasmExports.msg_create(
-        lowerArrayBufferOfIntegers(wasmExports, messageTemplate)
-    )
-
-    message.forEach((value, index) => {
-        if (typeof value === 'number') {
-            wasmExports.msg_writeFloatDatum(messagePointer, index, value)
-        } else if (typeof value === 'string') {
-            const stringPointer = lowerString(wasmExports, value)
-            wasmExports.msg_writeStringDatum(
-                messagePointer,
-                index,
-                stringPointer
-            )
-        }
-    })
-
-    return messagePointer
-}
-
-export const lowerMessageArray = (
-    wasmExports: AssemblyScriptWasmExports,
-    messages: Array<Message>
-): InternalPointer => {
-    const messageArrayPointer = wasmExports.msg_createArray()
-    messages.forEach((message) => {
-        wasmExports.msg_pushToArray(
-            messageArrayPointer,
-            lowerMessage(wasmExports, message)
-        )
-    })
-    return messageArrayPointer
-}
-
-export const lowerArrayBufferOfIntegers = (
-    wasmExports: AssemblyScriptWasmExports,
-    integers: Array<number>
-) => {
-    const buffer = new ArrayBuffer(
-        INT_ARRAY_BYTES_PER_ELEMENT * integers.length
-    )
-    const dataView = new DataView(buffer)
-    for (let i = 0; i < integers.length; i++) {
-        dataView.setInt32(INT_ARRAY_BYTES_PER_ELEMENT * i, integers[i])
-    }
-    return lowerBuffer(wasmExports, buffer)
-}
-
-// ------------------------ Primitives
-
-// REF : Assemblyscript ESM bindings
-export const liftString = (
-    wasmExports: AssemblyScriptWasmExports,
-    pointer: number
-) => {
-    if (!pointer) return null
-    pointer = pointer >>> 0
-    const end =
-        (pointer +
-            new Uint32Array(wasmExports.memory.buffer)[(pointer - 4) >>> 2]) >>>
-        1
-    const memoryU16 = new Uint16Array(wasmExports.memory.buffer)
-    let start = pointer >>> 1
-    let string = ''
-    while (end - start > 1024) {
-        string += String.fromCharCode(
-            ...memoryU16.subarray(start, (start += 1024))
-        )
-    }
-    return string + String.fromCharCode(...memoryU16.subarray(start, end))
-}
-
-// REF : Assemblyscript ESM bindings
-export const lowerString = (
-    wasmExports: AssemblyScriptWasmExports,
-    value: string
-) => {
-    if (value == null) return 0
-    const length = value.length,
-        pointer = wasmExports.__new(length << 1, 1) >>> 0,
-        memoryU16 = new Uint16Array(wasmExports.memory.buffer)
-    for (let i = 0; i < length; ++i)
-        memoryU16[(pointer >>> 1) + i] = value.charCodeAt(i)
-    return pointer
-}
-
-// REF : Assemblyscript ESM bindings
-export const lowerBuffer = (
-    wasmExports: AssemblyScriptWasmExports,
-    value: ArrayBuffer
-) => {
-    if (value == null) return 0
-    const pointer = wasmExports.__new(value.byteLength, 0) >>> 0
-    new Uint8Array(wasmExports.memory.buffer).set(
-        new Uint8Array(value),
-        pointer
-    )
-    return pointer
 }

@@ -13,24 +13,19 @@ import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
 import {
     Compilation,
-    EngineVariableNames,
     NodeImplementations,
-    AccessorSpecs,
     Message,
 } from '../types'
-import compileToAssemblyscript, {
-    attachAccessorsVariableNames,
-} from './compile-to-assemblyscript'
+import compileToAssemblyscript from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports, EngineMetadata } from './types'
 import {
     createEngine,
-    BindingsSettings,
-    liftString,
-} from './assemblyscript-wasm-bindings'
+    EngineSettings,
+} from './wasm-bindings'
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import macros from './macros'
-import { generateEngineVariableNames } from '../engine-variable-names'
+import { liftString } from './assemblyscript-core/core-bindings'
 
 describe('compileToAssemblyscript', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
@@ -55,7 +50,7 @@ describe('compileToAssemblyscript', () => {
     const compileEngine = async (
         compilation: Compilation,
         extraCode: string = '',
-        bindingsSettings: BindingsSettings = {}
+        bindingsSettings: EngineSettings = {}
     ) => {
         const code = compileToAssemblyscript(compilation)
         const wasmBuffer = await compileWasmModule(`${extraCode}\n${code}`)
@@ -279,38 +274,5 @@ describe('compileToAssemblyscript', () => {
             actualExportsKeys.sort(),
             Object.keys(expectedExports).sort()
         )
-    })
-
-    describe('attachAccessorsVariableNames', () => {
-        it('should attach accessors variable names', () => {
-            const engineVariableNames: EngineVariableNames =
-                generateEngineVariableNames(
-                    NODE_IMPLEMENTATIONS,
-                    makeGraph({
-                        node1: {
-                            inlets: {
-                                inlet1: { type: 'message', id: 'inlet1' },
-                                inlet2: { type: 'message', id: 'inlet2' },
-                            },
-                        },
-                    })
-                )
-            const accessorSpecs: AccessorSpecs = {
-                node1_INS_inlet1: { access: 'r', type: 'signal' },
-                node1_INS_inlet2: { access: 'rw', type: 'message' },
-            }
-            attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
-            assert.deepStrictEqual(engineVariableNames.accessors, {
-                node1_INS_inlet1: {
-                    r: 'read_node1_INS_inlet1',
-                },
-                node1_INS_inlet2: {
-                    r_length: 'read_node1_INS_inlet2_length',
-                    r_elem: 'read_node1_INS_inlet2_elem',
-                    r: 'read_node1_INS_inlet2',
-                    w: 'write_node1_INS_inlet2',
-                },
-            })
-        })
     })
 })

@@ -11,18 +11,13 @@
 
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
-import { generateEngineVariableNames } from '../engine-variable-names'
 import { makeCompilation } from '../test-helpers'
 import {
-    EngineVariableNames,
     InletListenerSpecs,
     NodeImplementations,
-    AccessorSpecs,
     Message,
 } from '../types'
-import compileToJavascript, {
-    attachAccessorsVariableNames,
-} from './compile-to-javascript'
+import compileToJavascript from './compile-to-javascript'
 import macros from './macros'
 import { JavaScriptEngine } from './types'
 
@@ -181,36 +176,5 @@ describe('compileToJavascript', () => {
         engine.configure(44100, blockSize)
         engine.loop()
         assert.deepStrictEqual(called, [[[0]], [[4]], [[8]], [[12]]])
-    })
-
-    describe('attachAccessorsVariableNames', () => {
-        it('should attach accessors variable names', () => {
-            const engineVariableNames: EngineVariableNames =
-                generateEngineVariableNames(
-                    NODE_IMPLEMENTATIONS,
-                    makeGraph({
-                        node1: {
-                            inlets: {
-                                inlet1: { type: 'message', id: 'inlet1' },
-                                inlet2: { type: 'message', id: 'inlet2' },
-                            },
-                        },
-                    })
-                )
-            const accessorSpecs: AccessorSpecs = {
-                node1_INS_inlet1: { access: 'r', type: 'signal' },
-                node1_INS_inlet2: { access: 'rw', type: 'signal' },
-            }
-            attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
-            assert.deepStrictEqual(engineVariableNames.accessors, {
-                node1_INS_inlet1: {
-                    r: 'read_node1_INS_inlet1',
-                },
-                node1_INS_inlet2: {
-                    r: 'read_node1_INS_inlet2',
-                    w: 'write_node1_INS_inlet2',
-                },
-            })
-        })
     })
 })
