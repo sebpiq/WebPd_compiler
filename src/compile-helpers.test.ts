@@ -20,7 +20,7 @@ import {
 import { makeCompilation } from './test-helpers'
 import { NodeImplementations } from './types'
 
-describe('code-helpers', () => {
+describe('compile-helpers', () => {
     describe('renderCode', () => {
         it('should render code lines with arbitrary depth', () => {
             const code = renderCode`bla

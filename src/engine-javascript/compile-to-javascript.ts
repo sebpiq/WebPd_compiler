@@ -14,7 +14,7 @@ import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation, EngineVariableNames, AccessorSpecs } from '../types'
+import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {

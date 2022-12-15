@@ -15,11 +15,7 @@ import {
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
 import { compileWasmModule } from './test-helpers'
-import {
-    createEngine,
-    EngineSettings,
-    readMetadata,
-} from './wasm-bindings'
+import { createEngine, EngineSettings, readMetadata } from './wasm-bindings'
 import {
     Code,
     Compilation,
@@ -34,7 +30,7 @@ import macros from './macros'
 import { EngineMetadata } from './types'
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import { DspGraph } from '@webpd/dsp-graph'
-import { lowerString } from './assemblyscript-core/core-bindings'
+import { lowerString } from './core-code/core-bindings'
 
 describe('AssemblyScriptWasmEngine', () => {
     const BINDINGS_SETTINGS: EngineSettings = {}

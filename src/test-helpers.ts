@@ -10,11 +10,8 @@
  */
 
 import { Compilation, CompilerTarget } from './types'
-import {
-    generateEngineVariableNames,
-    attachInletListenersVariableNames,
-} from './engine-variable-names'
-import { attachAccessorsVariableNames, getMacros } from './compile'
+import * as variableNames from './engine-variable-names'
+import { getMacros } from './compile'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -38,7 +35,7 @@ export const makeCompilation = (
     const graph = compilation.graph || {}
     const accessorSpecs = compilation.accessorSpecs || {}
     const inletListenerSpecs = compilation.inletListenerSpecs || {}
-    const engineVariableNames = generateEngineVariableNames(
+    const engineVariableNames = variableNames.generate(
         nodeImplementations,
         graph
     )
@@ -47,8 +44,13 @@ export const makeCompilation = (
         channelCount: { in: 2, out: 2 },
     }
 
-    attachInletListenersVariableNames(engineVariableNames, inletListenerSpecs)
-    attachAccessorsVariableNames(target, engineVariableNames, accessorSpecs)
+    variableNames.attachInletListeners(engineVariableNames, inletListenerSpecs)
+    variableNames.attachAccessors(target, engineVariableNames, accessorSpecs)
+    variableNames.attachTypes(
+        target,
+        engineVariableNames,
+        audioSettings.bitDepth
+    )
 
     return {
         ...compilation,

@@ -9,16 +9,19 @@
  *
  */
 
-import { AudioSettings } from "../../types"
-import { core_WasmExports, lowerBuffer } from "./core-bindings"
-import { InternalPointer, TypedArrayPointer } from "../types"
+import { AudioSettings } from '../../types'
+import { core_WasmExports, lowerBuffer } from './core-bindings'
+import { InternalPointer, TypedArrayPointer } from '../types'
 
 // TODO ASC : Supports only float32 and float64 but readTypedArray supports all types
 
 export interface tarray_WasmExports extends core_WasmExports {
     tarray_unpack: (bufferPointer: InternalPointer) => TypedArrayPointer
     tarray_createArray: () => InternalPointer
-    tarray_pushToArray: (arrays: InternalPointer, array: TypedArrayPointer) => void
+    tarray_pushToArray: (
+        arrays: InternalPointer,
+        array: TypedArrayPointer
+    ) => void
 }
 
 export const lowerTypedArray = (
@@ -26,11 +29,7 @@ export const lowerTypedArray = (
     bitDepth: AudioSettings['bitDepth'],
     data: Array<number> | Float32Array | Float64Array
 ): TypedArrayPointer => {
-    const bufferPointer = lowerArrayBufferOfFloats(
-        wasmExports,
-        bitDepth,
-        data,
-    )
+    const bufferPointer = lowerArrayBufferOfFloats(wasmExports, bitDepth, data)
     return wasmExports.tarray_unpack(bufferPointer)
 }
 

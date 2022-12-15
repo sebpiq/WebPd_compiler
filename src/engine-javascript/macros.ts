@@ -24,11 +24,6 @@ import {
     MessageDatumType,
 } from '../types'
 
-const floatArrayType = (compilation: Compilation) => {
-    const { bitDepth } = compilation.audioSettings
-    return bitDepth === 32 ? 'Float32Array' : 'Float64Array'
-}
-
 const typedVarInt = (_: Compilation, name: CodeVariableName) => `${name}`
 
 const typedVarFloat = (_: Compilation, name: CodeVariableName) => `${name}`
@@ -136,7 +131,6 @@ const messageTransfer = (
 }
 
 const macros: CodeMacros = {
-    floatArrayType,
     typedVarInt,
     typedVarFloat,
     typedVarString,

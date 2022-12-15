@@ -20,16 +20,18 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
+import { CodeVariableName, EngineAccessors, Engine, Message } from '../types'
 import {
-    CodeVariableName,
-    EngineAccessors,
-    Engine,
-    Message,
-} from '../types'
-import { liftString, lowerString, readTypedArray } from './assemblyscript-core/core-bindings'
-import { FsListenersCallbacks, makeFileListenersWasmImports } from './assemblyscript-core/fs-bindings'
-import { liftMessage, lowerMessageArray } from './assemblyscript-core/msg-bindings'
-import { lowerTypedArray } from './assemblyscript-core/tarray-bindings'
+    liftString,
+    lowerString,
+    readTypedArray,
+} from './core-code/core-bindings'
+import {
+    FsListenersCallbacks,
+    makeFileListenersWasmImports,
+} from './core-code/fs-bindings'
+import { liftMessage, lowerMessageArray } from './core-code/msg-bindings'
+import { lowerTypedArray } from './core-code/tarray-bindings'
 import {
     AssemblyScriptWasmExports,
     EngineMetadata,
@@ -80,7 +82,9 @@ export class AssemblyScriptWasmEngine implements Engine {
                 : Float64Array
         const wasmInstance = await instantiateWasmModule(this.wasmBuffer, {
             input: {
-                ...makeFileListenersWasmImports(this.settings.fsListenersCallbacks),
+                ...makeFileListenersWasmImports(
+                    this.settings.fsListenersCallbacks
+                ),
                 ...this._makeInletListenersWasmImports(),
             },
         })

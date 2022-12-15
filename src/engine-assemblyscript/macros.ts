@@ -25,16 +25,13 @@ import {
 } from '../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 
-const floatArrayType = (compilation: Compilation) => {
-    const { bitDepth } = compilation.audioSettings
-    return bitDepth === 32 ? 'Float32Array' : 'Float64Array'
-}
-
 const typedVarInt = (_: Compilation, name: CodeVariableName) => `${name}: i32`
 
-const typedVarFloat = (compilation: Compilation, name: CodeVariableName) => {
-    const { bitDepth } = compilation.audioSettings
-    return `${name}: f${bitDepth}`
+const typedVarFloat = (
+    { engineVariableNames }: Compilation,
+    name: CodeVariableName
+) => {
+    return `${name}: ${engineVariableNames.types.FloatType}`
 }
 
 const typedVarString = (_: Compilation, name: CodeVariableName) =>
@@ -43,17 +40,21 @@ const typedVarString = (_: Compilation, name: CodeVariableName) =>
 const typedVarMessage = (_: Compilation, name: CodeVariableName) =>
     `${name}: Message`
 
-const typedVarFloatArray = (compilation: Compilation, name: CodeVariableName) =>
-    `${name}: ${compilation.macros.floatArrayType(compilation)}`
+const typedVarFloatArray = (
+    { engineVariableNames }: Compilation,
+    name: CodeVariableName
+) => `${name}: ${engineVariableNames.types.FloatArrayType}`
 
 const typedVarMessageArray = (_: Compilation, name: CodeVariableName) =>
     `${name}: Message[]`
 
 const castToInt = (_: Compilation, name: CodeVariableName) => `i32(${name})`
 
-const castToFloat = (compilation: Compilation, name: CodeVariableName) => {
-    const { bitDepth } = compilation.audioSettings
-    return bitDepth === 32 ? `f32(${name})` : `f64(${name})`
+const castToFloat = (
+    { engineVariableNames }: Compilation,
+    name: CodeVariableName
+) => {
+    return `${engineVariableNames.types.FloatType}(${name})`
 }
 
 const functionHeader = (_: Compilation, ...functionArgs: Array<Code>) =>
@@ -277,7 +278,6 @@ const messageTransfer = (
 }
 
 const macros: CodeMacros = {
-    floatArrayType,
     typedVarInt,
     typedVarFloat,
     typedVarString,

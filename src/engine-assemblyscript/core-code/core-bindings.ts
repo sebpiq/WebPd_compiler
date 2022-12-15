@@ -1,4 +1,4 @@
-import { InternalPointer, TypedArrayPointer } from "../types"
+import { InternalPointer, TypedArrayPointer } from '../types'
 
 type TypedArrayConstructor =
     | typeof Int8Array
@@ -19,10 +19,7 @@ export interface core_WasmExports {
 }
 
 // REF : Assemblyscript ESM bindings
-export const liftString = (
-    wasmExports: core_WasmExports,
-    pointer: number
-) => {
+export const liftString = (wasmExports: core_WasmExports, pointer: number) => {
     if (!pointer) return null
     pointer = pointer >>> 0
     const end =
@@ -41,10 +38,7 @@ export const liftString = (
 }
 
 // REF : Assemblyscript ESM bindings
-export const lowerString = (
-    wasmExports: core_WasmExports,
-    value: string
-) => {
+export const lowerString = (wasmExports: core_WasmExports, value: string) => {
     if (value == null) return 0
     const length = value.length,
         pointer = wasmExports.__new(length << 1, 1) >>> 0,
@@ -68,9 +62,8 @@ export const lowerBuffer = (
     return pointer
 }
 
-
 // REF : Assemblyscript ESM bindings `liftTypedArray`
-// TODO : move to other file ? 
+// TODO : move to other file ?
 export const readTypedArray = (
     wasmExports: core_WasmExports,
     constructor: TypedArrayConstructor,

@@ -19,10 +19,13 @@
  * @module
  */
 
+import { Message } from '../../types'
 import {
-    Message,
-} from '../../types'
-import { core_WasmExports, liftString, lowerBuffer, lowerString } from './core-bindings'
+    core_WasmExports,
+    liftString,
+    lowerBuffer,
+    lowerString,
+} from './core-bindings'
 import { readTypedArray } from './core-bindings'
 import {
     ArrayBufferOfIntegersPointer,
@@ -62,7 +65,6 @@ export interface msg_WasmExports extends core_WasmExports {
         messagePointer: InternalPointer,
         datumIndex: number
     ) => number
-
 }
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT

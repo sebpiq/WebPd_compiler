@@ -9,11 +9,15 @@
  *
  */
 
-import { makeGraph } from "@webpd/dsp-graph/src/test-helpers"
-import assert from "assert"
-import { generateEngineVariableNames } from "../engine-variable-names"
-import { EngineVariableNames, AccessorSpecs, NodeImplementations } from "../types"
-import { attachAccessorsVariableNames } from "./engine-variable-names"
+import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
+import assert from 'assert'
+import { generate } from '../engine-variable-names'
+import {
+    EngineVariableNames,
+    AccessorSpecs,
+    NodeImplementations,
+} from '../types'
+import { attachAccessors } from './engine-variable-names'
 
 describe('engine-javascript.engine-variable-names', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
@@ -32,23 +36,22 @@ describe('engine-javascript.engine-variable-names', () => {
 
     describe('attachAccessorsVariableNames', () => {
         it('should attach accessors variable names', () => {
-            const engineVariableNames: EngineVariableNames =
-                generateEngineVariableNames(
-                    NODE_IMPLEMENTATIONS,
-                    makeGraph({
-                        node1: {
-                            inlets: {
-                                inlet1: { type: 'message', id: 'inlet1' },
-                                inlet2: { type: 'message', id: 'inlet2' },
-                            },
+            const engineVariableNames: EngineVariableNames = generate(
+                NODE_IMPLEMENTATIONS,
+                makeGraph({
+                    node1: {
+                        inlets: {
+                            inlet1: { type: 'message', id: 'inlet1' },
+                            inlet2: { type: 'message', id: 'inlet2' },
                         },
-                    })
-                )
+                    },
+                })
+            )
             const accessorSpecs: AccessorSpecs = {
                 node1_INS_inlet1: { access: 'r', type: 'signal' },
                 node1_INS_inlet2: { access: 'rw', type: 'signal' },
             }
-            attachAccessorsVariableNames(engineVariableNames, accessorSpecs)
+            attachAccessors(engineVariableNames, accessorSpecs)
             assert.deepStrictEqual(engineVariableNames.accessors, {
                 node1_INS_inlet1: {
                     r: 'read_node1_INS_inlet1',

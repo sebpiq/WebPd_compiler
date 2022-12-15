@@ -11,17 +11,11 @@
 
 import { traversal } from '@webpd/dsp-graph'
 import { renderCode } from '../compile-helpers'
-import assemblyscriptCoreCode from './core-code.asc'
-import tarrayCode from './assemblyscript-core/tarray.asc'
-import {
-    MESSAGE_DATUM_TYPE_FLOAT,
-    MESSAGE_DATUM_TYPE_STRING,
-} from '../constants'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import { generate as generateCoreCode } from './core-code'
 import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
@@ -31,7 +25,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         inletListenerSpecs: inletListenerSpecs,
         engineVariableNames,
     } = compilation
-    const { bitDepth, channelCount } = audioSettings
+    const { channelCount } = audioSettings
     const metadata: EngineMetadata = {
         compilation: {
             audioSettings,
@@ -43,32 +37,12 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const macros = compilation.macros
-    // TODO ASC : move out of here
-    const FloatType = bitDepth === 32 ? 'f32' : 'f64'
-    const FloatArrayType = macros.floatArrayType(compilation)
-    const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
-    const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
-    const CORE_CODE = (tarrayCode + assemblyscriptCoreCode)
-        .replaceAll('${FloatType}', FloatType)
-        .replaceAll('${FloatArrayType}', FloatArrayType)
-        .replaceAll('${getFloat}', getFloat)
-        .replaceAll('${setFloat}', setFloat)
-        .replaceAll(
-            '${MESSAGE_DATUM_TYPE_FLOAT}',
-            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MESSAGE_DATUM_TYPE_FLOAT
-            ].toString()
-        )
-        .replaceAll(
-            '${MESSAGE_DATUM_TYPE_STRING}',
-            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MESSAGE_DATUM_TYPE_STRING
-            ].toString()
-        )
+    const { FloatType, FloatArrayType } = engineVariableNames.types
+    const coreCode = generateCoreCode(engineVariableNames)
 
     // prettier-ignore
     return renderCode`
-        ${CORE_CODE}
+        ${coreCode}
 
         let ${macros.typedVarFloatArray(compilation, globs.input)} = new ${FloatArrayType}(0)
         let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
@@ -148,9 +122,9 @@ export const compileInletListeners = (compilation: Compilation) => {
             ([nodeId, inletIds]) =>
                 inletIds.map((inletId) => {
                     const inletListenerVariableName =
-                        compilation.engineVariableNames.inletListeners[
-                            nodeId
-                        ][inletId]
+                        compilation.engineVariableNames.inletListeners[nodeId][
+                            inletId
+                        ]
                     // prettier-ignore
                     return `
                     export declare function ${inletListenerVariableName}(): void

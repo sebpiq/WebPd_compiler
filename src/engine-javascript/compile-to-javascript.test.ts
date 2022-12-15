@@ -12,11 +12,7 @@
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
-import {
-    InletListenerSpecs,
-    NodeImplementations,
-    Message,
-} from '../types'
+import { InletListenerSpecs, NodeImplementations, Message } from '../types'
 import compileToJavascript from './compile-to-javascript'
 import macros from './macros'
 import { JavaScriptEngine } from './types'

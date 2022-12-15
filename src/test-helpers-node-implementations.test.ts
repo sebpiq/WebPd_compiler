@@ -15,20 +15,18 @@ import * as nodeImplementationsTestHelpers from './test-helpers-node-implementat
 import { NodeImplementations } from './types'
 
 describe('test-helpers-node-implementations', () => {
-
     describe('assertNodeOutput', () => {
         it('should work with simple node', async () => {
             const nodeImplementations: NodeImplementations = {
-                'counter': {
-                    loop: (_, {ins, outs}) => 
-                        `${outs.$0} = ${ins.$0} + 0.1`
-                }
+                counter: {
+                    loop: (_, { ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
+                },
             }
-        
+
             const node: DspGraph.Node = {
                 ...nodeDefaults('someNode', 'counter'),
-                inlets: {'0': {id: '0', type: 'signal'}},
-                outlets: {'0': {id: '0', type: 'signal'}},
+                inlets: { '0': { id: '0', type: 'signal' } },
+                outlets: { '0': { id: '0', type: 'signal' } },
             }
 
             await nodeImplementationsTestHelpers.assertNodeOutput(
@@ -37,17 +35,9 @@ describe('test-helpers-node-implementations', () => {
                     nodeImplementations,
                 },
                 // Inputs
-                [
-                    { '0': 1 },
-                    { '0': 2 },
-                    { '0': 3 },
-                ],
+                [{ '0': 1 }, { '0': 2 }, { '0': 3 }],
                 // Expected outputsmessage
-                [
-                    { '0': 1.1 }, 
-                    { '0': 2.1 }, 
-                    { '0': 3.1 }
-                ]
+                [{ '0': 1.1 }, { '0': 2.1 }, { '0': 3.1 }]
             )
         })
     })

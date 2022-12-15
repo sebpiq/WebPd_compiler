@@ -19,18 +19,12 @@ import {
     InletListenerSpecs,
     NodeImplementations,
     AccessorSpecs,
-    CompilerTarget,
 } from './types'
-import { attachAccessorsVariableNames as jsAttachAccessorsVariableNames } from './engine-javascript/engine-variable-names'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
-import { attachAccessorsVariableNames as ascAttachAccessorsVariableNames } from './engine-assemblyscript/engine-variable-names'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
-import {
-    attachInletListenersVariableNames,
-    generateEngineVariableNames,
-} from './engine-variable-names'
+import * as variableNames from './engine-variable-names'
 import { DspGraph } from '@webpd/dsp-graph'
 
 export default (
@@ -41,7 +35,7 @@ export default (
     const { audioSettings, inletListenerSpecs, target } =
         validateSettings(compilerSettings)
     const macros = getMacros(target)
-    const engineVariableNames = generateEngineVariableNames(
+    const engineVariableNames = variableNames.generate(
         nodeImplementations,
         graph
     )
@@ -49,8 +43,13 @@ export default (
         engineVariableNames,
         inletListenerSpecs
     )
-    attachInletListenersVariableNames(engineVariableNames, inletListenerSpecs)
-    attachAccessorsVariableNames(target, engineVariableNames, accessorSpecs)
+    variableNames.attachInletListeners(engineVariableNames, inletListenerSpecs)
+    variableNames.attachAccessors(target, engineVariableNames, accessorSpecs)
+    variableNames.attachTypes(
+        target,
+        engineVariableNames,
+        audioSettings.bitDepth
+    )
     return executeCompilation({
         target,
         graph,
@@ -98,21 +97,6 @@ export const validateSettings = (
     return {
         ...settings,
         inletListenerSpecs,
-    }
-}
-
-/**
- * Helper to attach accessors to variable names depending on compile target.
- */
-export const attachAccessorsVariableNames = (
-    target: CompilerTarget,
-    engineVariableNames: EngineVariableNames,
-    accessorSpecs: AccessorSpecs
-) => {
-    if (target === 'javascript') {
-        jsAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
-    } else if (target === 'assemblyscript') {
-        ascAttachAccessorsVariableNames(engineVariableNames, accessorSpecs)
     }
 }
 

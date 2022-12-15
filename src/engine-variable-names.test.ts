@@ -12,9 +12,9 @@ import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import {
     assertValidNamePart,
-    attachInletListenersVariableNames,
+    attachInletListeners,
     createNamespace,
-    generateEngineVariableNames,
+    generate,
 } from './engine-variable-names'
 import {
     EngineVariableNames,
@@ -29,7 +29,7 @@ describe('engine-variable-names', () => {
         },
     }
 
-    describe('generateEngineVariableNames', () => {
+    describe('generate', () => {
         it('should create variable names for nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
@@ -58,10 +58,7 @@ describe('engine-variable-names', () => {
                 },
             })
 
-            const variableNames = generateEngineVariableNames(
-                nodeImplementations,
-                graph
-            )
+            const variableNames = generate(nodeImplementations, graph)
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNames.n })),
@@ -110,10 +107,7 @@ describe('engine-variable-names', () => {
                 },
             })
 
-            const variableNames = generateEngineVariableNames(
-                nodeImplementations,
-                graph
-            )
+            const variableNames = generate(nodeImplementations, graph)
 
             assert.throws(() => variableNames.n.unknownNode)
             assert.throws(() => variableNames.n.myOsc.ins['unknown portlet'])
@@ -133,27 +127,23 @@ describe('engine-variable-names', () => {
         })
     })
 
-    describe('attachInletListenersVariableNames', () => {
+    describe('attachInletListeners', () => {
         it('should attach inlet listeners variable names', () => {
-            const engineVariableNames: EngineVariableNames =
-                generateEngineVariableNames(
-                    NODE_IMPLEMENTATIONS,
-                    makeGraph({
-                        node1: {
-                            inlets: {
-                                inlet1: { type: 'message', id: 'inlet1' },
-                                inlet2: { type: 'message', id: 'inlet2' },
-                            },
+            const engineVariableNames: EngineVariableNames = generate(
+                NODE_IMPLEMENTATIONS,
+                makeGraph({
+                    node1: {
+                        inlets: {
+                            inlet1: { type: 'message', id: 'inlet1' },
+                            inlet2: { type: 'message', id: 'inlet2' },
                         },
-                    })
-                )
+                    },
+                })
+            )
             const inletListenerSpecs: InletListenerSpecs = {
                 node1: ['inlet1'],
             }
-            attachInletListenersVariableNames(
-                engineVariableNames,
-                inletListenerSpecs
-            )
+            attachInletListeners(engineVariableNames, inletListenerSpecs)
             assert.deepStrictEqual(engineVariableNames.inletListeners, {
                 node1: { inlet1: 'inletListener_node1_inlet1' },
             })

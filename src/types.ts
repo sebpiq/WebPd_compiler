@@ -68,7 +68,6 @@ export interface Compilation {
 }
 
 export type CodeMacros = {
-    floatArrayType: (compilation: Compilation) => Code
     typedVarInt: (compilation: Compilation, name: CodeVariableName) => Code
     typedVarFloat: (compilation: Compilation, name: CodeVariableName) => Code
     typedVarString: (compilation: Compilation, name: CodeVariableName) => Code
@@ -164,7 +163,12 @@ export interface EngineVariableNames {
     }
 
     // Names of types used by the engine (e.g. especially depending on the bitdepth)
-    types: { [key: string]: string }
+    types: {
+        FloatType?: 'f32' | 'f64'
+        FloatArrayType?: 'Float32Array' | 'Float64Array'
+        getFloat?: 'getFloat32' | 'getFloat64'
+        setFloat?: 'setFloat32' | 'setFloat64'
+    }
 
     // Namespace for port functions
     accessors: {

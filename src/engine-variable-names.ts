@@ -11,11 +11,16 @@
 
 import { DspGraph } from '@webpd/dsp-graph'
 import { getNodeImplementation } from './compile-helpers'
+import * as jsVariableNames from './engine-javascript/engine-variable-names'
+import * as ascVariableNames from './engine-assemblyscript/engine-variable-names'
 import {
     NodeImplementations,
     EngineVariableNames,
     NodeVariableNames,
     InletListenerSpecs,
+    AccessorSpecs,
+    CompilerTarget,
+    AudioSettings,
 } from './types'
 
 /**
@@ -25,7 +30,7 @@ import {
  * @param graph
  * @returns
  */
-export const generateEngineVariableNames = (
+export const generate = (
     nodeImplementations: NodeImplementations,
     graph: DspGraph.Graph
 ): EngineVariableNames => ({
@@ -43,7 +48,9 @@ export const generateEngineVariableNames = (
                         Object.values(node.inlets).reduce<
                             NodeVariableNames['ins']
                         >((nameMap, inlet) => {
-                            nameMap[inlet.id] = `${_v(node.id)}_INS_${_v(inlet.id)}`
+                            nameMap[inlet.id] = `${_v(node.id)}_INS_${_v(
+                                inlet.id
+                            )}`
                             return nameMap
                         }, {})
                     ),
@@ -51,14 +58,18 @@ export const generateEngineVariableNames = (
                         Object.values(node.outlets).reduce<
                             NodeVariableNames['outs']
                         >((nameMap, outlet) => {
-                            nameMap[outlet.id] = `${_v(node.id)}_OUTS_${_v(outlet.id)}`
+                            nameMap[outlet.id] = `${_v(node.id)}_OUTS_${_v(
+                                outlet.id
+                            )}`
                             return nameMap
                         }, {})
                     ),
                     state: createNamespace(
                         nodeStateVariables.reduce<NodeVariableNames['state']>(
                             (nameMap, stateVariable) => {
-                                nameMap[stateVariable] = `${_v(node.id)}_STATE_${_v(stateVariable)}`
+                                nameMap[stateVariable] = `${_v(
+                                    node.id
+                                )}_STATE_${_v(stateVariable)}`
                                 return nameMap
                             },
                             {}
@@ -70,7 +81,7 @@ export const generateEngineVariableNames = (
             {}
         )
     ),
-    g: {
+    g: createNamespace({
         arrays: 'ARRAYS',
         // Reusable variable to iterate over outlets
         iterOutlet: 'O',
@@ -82,10 +93,10 @@ export const generateEngineVariableNames = (
         sampleRate: 'SAMPLE_RATE',
         output: 'OUTPUT',
         input: 'INPUT',
-    },
+    }),
     accessors: createNamespace({}),
     inletListeners: createNamespace({}),
-    types: {}
+    types: createNamespace({}),
 })
 
 /**
@@ -94,7 +105,7 @@ export const generateEngineVariableNames = (
  * @param engineVariableNames
  * @param inletListenerSpecs
  */
-export const attachInletListenersVariableNames = (
+export const attachInletListeners = (
     engineVariableNames: EngineVariableNames,
     inletListenerSpecs: InletListenerSpecs
 ): void => {
@@ -106,6 +117,36 @@ export const attachInletListenersVariableNames = (
             ] = `inletListener_${nodeId}_${inletId}`
         })
     })
+}
+
+/**
+ * Helper to attach accessors to variable names depending on compile target.
+ */
+export const attachAccessors = (
+    target: CompilerTarget,
+    engineVariableNames: EngineVariableNames,
+    accessorSpecs: AccessorSpecs
+) => {
+    if (target === 'javascript') {
+        jsVariableNames.attachAccessors(engineVariableNames, accessorSpecs)
+    } else if (target === 'assemblyscript') {
+        ascVariableNames.attachAccessors(engineVariableNames, accessorSpecs)
+    }
+}
+
+/**
+ * Helper to attach types to variable names depending on compile target and bitDepth.
+ */
+export const attachTypes = (
+    target: CompilerTarget,
+    engineVariableNames: EngineVariableNames,
+    bitDepth: AudioSettings['bitDepth']
+) => {
+    if (target === 'javascript') {
+        jsVariableNames.attachTypes(engineVariableNames, bitDepth)
+    } else if (target === 'assemblyscript') {
+        ascVariableNames.attachTypes(engineVariableNames, bitDepth)
+    }
 }
 
 /**

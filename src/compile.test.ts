@@ -11,7 +11,7 @@
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import compile, { generateAccessorSpecs, validateSettings } from './compile'
-import { generateEngineVariableNames } from './engine-variable-names'
+import { generate } from './engine-variable-names'
 import {
     CompilerSettings,
     InletListenerSpecs,
@@ -78,7 +78,7 @@ describe('compile', () => {
 
     describe('generateAccessorSpecs', () => {
         it('should generate accessorSpecs according to inletListenerSpecs', () => {
-            const engineVariableNames = generateEngineVariableNames(
+            const engineVariableNames = generate(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
                     node1: {

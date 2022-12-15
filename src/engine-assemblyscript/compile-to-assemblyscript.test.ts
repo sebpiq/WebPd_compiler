@@ -11,21 +11,14 @@
 
 import assert from 'assert'
 import { makeCompilation, round } from '../test-helpers'
-import {
-    Compilation,
-    NodeImplementations,
-    Message,
-} from '../types'
+import { Compilation, NodeImplementations, Message } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { compileWasmModule } from './test-helpers'
 import { AssemblyScriptWasmExports, EngineMetadata } from './types'
-import {
-    createEngine,
-    EngineSettings,
-} from './wasm-bindings'
+import { createEngine, EngineSettings } from './wasm-bindings'
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import macros from './macros'
-import { liftString } from './assemblyscript-core/core-bindings'
+import { liftString } from './core-code/core-bindings'
 
 describe('compileToAssemblyscript', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {

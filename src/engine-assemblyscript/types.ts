@@ -10,9 +10,9 @@
  */
 
 import { Code, Compilation } from '../types'
-import { core_WasmExports } from './assemblyscript-core/core-bindings'
-import { msg_WasmExports } from './assemblyscript-core/msg-bindings'
-import { tarray_WasmExports } from './assemblyscript-core/tarray-bindings'
+import { core_WasmExports } from './core-code/core-bindings'
+import { msg_WasmExports } from './core-code/msg-bindings'
+import { tarray_WasmExports } from './core-code/tarray-bindings'
 
 /**
  * AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
@@ -55,18 +55,20 @@ export interface EngineMetadata {
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
-export type AssemblyScriptWasmExports = tarray_WasmExports & core_WasmExports & msg_WasmExports & {
-    configure: (sampleRate: number, blockSize: number) => void
-    loop: () => void
-    setArray: (
-        arrayName: StringPointer,
-        arrayPointer: TypedArrayPointer
-    ) => void
+export type AssemblyScriptWasmExports = tarray_WasmExports &
+    core_WasmExports &
+    msg_WasmExports & {
+        configure: (sampleRate: number, blockSize: number) => void
+        loop: () => void
+        setArray: (
+            arrayName: StringPointer,
+            arrayPointer: TypedArrayPointer
+        ) => void
 
-    // Pointers to input and output buffers
-    getOutput: () => TypedArrayPointer
-    getInput: () => TypedArrayPointer
+        // Pointers to input and output buffers
+        getOutput: () => TypedArrayPointer
+        getInput: () => TypedArrayPointer
 
-    // Pointer to a JSON string representation of `EngineMetadata`
-    metadata: WebAssembly.Global
-}
+        // Pointer to a JSON string representation of `EngineMetadata`
+        metadata: WebAssembly.Global
+    }
