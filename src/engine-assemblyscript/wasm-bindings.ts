@@ -32,12 +32,8 @@ import {
 } from './core-code/fs-bindings'
 import { liftMessage, lowerMessageArray } from './core-code/msg-bindings'
 import { lowerTypedArray } from './core-code/tarray-bindings'
-import {
-    AssemblyScriptWasmExports,
-    EngineMetadata,
-    StringPointer,
-    TypedArrayPointer,
-} from './types'
+import { AssemblyScriptWasmExports, EngineMetadata } from './types'
+import { instantiateWasmModule } from './wasm-helpers'
 
 export interface EngineSettings {
     inletListenersCallbacks?: {
@@ -54,6 +50,18 @@ interface AudioConfig {
 }
 
 /**
+ * Convenience function to create and initialize an engine.
+ */
+export const createEngine = async (
+    wasmBuffer: ArrayBuffer,
+    settings: EngineSettings
+) => {
+    const engine = new AssemblyScriptWasmEngine(wasmBuffer, settings)
+    await engine.initialize()
+    return engine
+}
+
+/**
  * Class to interact more easily with a Wasm module compiled from assemblyscript code.
  * Use `createEngine` for more convenient instantiation.
  */
@@ -63,8 +71,8 @@ export class AssemblyScriptWasmEngine implements Engine {
     public metadata: EngineMetadata
     private settings: EngineSettings
     private wasmBuffer: ArrayBuffer
-    private wasmOutputPointer: TypedArrayPointer
-    private wasmInputPointer: TypedArrayPointer
+    private wasmOutput: Float32Array | Float64Array
+    private wasmInput: Float32Array | Float64Array
     private audioConfig: AudioConfig
     private arrayType: typeof Float32Array | typeof Float64Array
 
@@ -99,34 +107,32 @@ export class AssemblyScriptWasmEngine implements Engine {
             blockSize,
         }
         this.wasmExports.configure(sampleRate, blockSize)
-        this.wasmOutputPointer = this.wasmExports.getOutput()
-        this.wasmInputPointer = this.wasmExports.getInput()
+        this.wasmOutput = readTypedArray(
+            this.wasmExports,
+            this.arrayType,
+            this.wasmExports.getOutput()
+        ) as Float32Array | Float64Array
+        this.wasmInput = readTypedArray(
+            this.wasmExports,
+            this.arrayType,
+            this.wasmExports.getInput()
+        ) as Float32Array | Float64Array
     }
 
     loop(
         input: Array<Float32Array | Float64Array>,
         output: Array<Float32Array | Float64Array>
     ) {
-        const wasmInput = readTypedArray(
-            this.wasmExports,
-            this.arrayType,
-            this.wasmInputPointer
-        )
         for (let channel = 0; channel < input.length; channel++) {
-            wasmInput.set(input[channel], channel * this.audioConfig.blockSize)
+            this.wasmInput.set(
+                input[channel],
+                channel * this.audioConfig.blockSize
+            )
         }
-
         this.wasmExports.loop()
-
-        const wasmOutput = readTypedArray(
-            this.wasmExports,
-            this.arrayType,
-            this.wasmOutputPointer
-        )
-
         for (let channel = 0; channel < output.length; channel++) {
             output[channel].set(
-                wasmOutput.subarray(
+                this.wasmOutput.subarray(
                     this.audioConfig.blockSize * channel,
                     this.audioConfig.blockSize * (channel + 1)
                 )
@@ -246,53 +252,4 @@ export const readMetadata = async (
     const stringPointer = wasmExports.metadata.valueOf()
     const metadataJSON = liftString(wasmExports, stringPointer)
     return JSON.parse(metadataJSON)
-}
-
-export const createEngine = async (
-    wasmBuffer: ArrayBuffer,
-    settings: EngineSettings
-) => {
-    const engine = new AssemblyScriptWasmEngine(wasmBuffer, settings)
-    await engine.initialize()
-    return engine
-}
-
-// REF : Assemblyscript ESM bindings
-export const instantiateWasmModule = async (
-    wasmBuffer: ArrayBuffer,
-    wasmImports: any = {}
-) => {
-    const instanceAndModule = await WebAssembly.instantiate(wasmBuffer, {
-        env: {
-            abort: (
-                messagePointer: StringPointer,
-                fileNamePointer: StringPointer,
-                lineNumber: number,
-                columnNumber: number
-            ) => {
-                const message = liftString(wasmExports, messagePointer >>> 0)
-                const fileName = liftString(wasmExports, fileNamePointer >>> 0)
-                lineNumber = lineNumber >>> 0
-                columnNumber = columnNumber >>> 0
-                ;(() => {
-                    // @external.js
-                    throw Error(
-                        `${message} in ${fileName}:${lineNumber}:${columnNumber}`
-                    )
-                })()
-            },
-            seed: () => {
-                return (() => {
-                    return Date.now() * Math.random()
-                })()
-            },
-            'console.log': (textPointer: StringPointer) => {
-                console.log(liftString(wasmExports, textPointer))
-            },
-        },
-        ...wasmImports,
-    })
-    const wasmExports = instanceAndModule.instance
-        .exports as unknown as AssemblyScriptWasmExports
-    return instanceAndModule.instance
 }

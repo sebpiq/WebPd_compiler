@@ -1,6 +1,6 @@
 import { InternalPointer, TypedArrayPointer } from '../types'
 
-type TypedArrayConstructor =
+export type TypedArrayConstructor =
     | typeof Int8Array
     | typeof Uint8Array
     | typeof Int16Array

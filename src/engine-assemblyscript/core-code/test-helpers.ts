@@ -2,10 +2,10 @@ import { readFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { AudioSettings, Code } from '../../types'
-import { instantiateWasmModule } from '../wasm-bindings'
 import { compileWasmModule } from '../test-helpers'
 import { replacePlaceholders } from '.'
 import { makeCompilation } from '../../test-helpers'
+import { instantiateWasmModule } from '../wasm-helpers'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -17,6 +17,13 @@ const DEFAULT_AUDIO_SETTINGS_LIST: Array<AudioSettings> = [
 
 export const getAscCode = (filename: string, audioSettings: AudioSettings) => {
     const code = readFileSync(resolve(__dirname, filename)).toString()
+    return replacePlaceholdersForTesting(code, audioSettings)
+}
+
+export const replacePlaceholdersForTesting = (
+    code: Code,
+    audioSettings: AudioSettings
+) => {
     const { engineVariableNames } = makeCompilation({
         target: 'assemblyscript',
         audioSettings,
