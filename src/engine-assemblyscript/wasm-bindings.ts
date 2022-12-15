@@ -145,12 +145,12 @@ export class AssemblyScriptWasmEngine implements Engine {
         data: Array<number> | Float32Array | Float64Array
     ) {
         const stringPointer = lowerString(this.wasmExports, arrayName)
-        const tarrayPointer = lowerTypedArray(
+        const { arrayPointer } = lowerTypedArray(
             this.wasmExports,
             this.metadata.compilation.audioSettings.bitDepth,
             data
         )
-        this.wasmExports.setArray(stringPointer, tarrayPointer)
+        this.wasmExports.setArray(stringPointer,  arrayPointer)
     }
 
     _bindAccessors(): EngineAccessors {

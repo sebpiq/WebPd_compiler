@@ -24,7 +24,7 @@ describe('tarray-bindings', () => {
                     }
                 `,
                 async (wasmExports, { bitDepth }) => {
-                    const arrayPointer = lowerTypedArray(
+                    const {arrayPointer, array} = lowerTypedArray(
                         wasmExports,
                         bitDepth,
                         new Float64Array([111, 222, 333])
@@ -44,6 +44,13 @@ describe('tarray-bindings', () => {
                     assert.strictEqual(
                         wasmExports.testReadArrayElem(arrayPointer, 2),
                         333
+                    )
+
+                    // Test that shares the same memory space
+                    array[1] = 666
+                    assert.strictEqual(
+                        wasmExports.testReadArrayElem(arrayPointer, 1),
+                        666
                     )
                 }
             )
