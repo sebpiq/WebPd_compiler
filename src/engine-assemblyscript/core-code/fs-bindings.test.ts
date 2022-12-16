@@ -11,13 +11,13 @@ import {
 } from './test-helpers'
 
 describe('fs-bindings', () => {
-    describe('fs_readSound', () => {
+    describe('fs_readSoundFile', () => {
         it('should create the operation and call the callback', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
                 (audioSettings) => getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
                     export function testCallReadSound (array: TypedArray): i32 {
-                        return fs_readSound('/some/url')
+                        return fs_readSoundFile('/some/url')
                     }
                     export function testCheckOperationStatusProcessing(id: FileOperationStatus): boolean {
                         return fs_checkOperationStatus(id) === FILE_OPERATION_PROCESSING
@@ -25,11 +25,15 @@ describe('fs-bindings', () => {
                 `,
                 async (wasmExports, _, called) => {
                     const operationId = wasmExports.testCallReadSound()
-                    const readCalled = called.get('fs_readSoundListener')
+                    const readCalled = called.get('fs_requestReadSoundFile')
                     assert.strictEqual(readCalled.length, 1)
-                    assert.strictEqual(readCalled[0].length, 2)
+                    assert.strictEqual(readCalled[0].length, 3)
                     assert.strictEqual(
-                        liftString(wasmExports, readCalled[0][0]),
+                        readCalled[0][0],
+                        operationId,
+                    )
+                    assert.strictEqual(
+                        liftString(wasmExports, readCalled[0][1]),
                         '/some/url'
                     )
                     assert.strictEqual(
@@ -43,13 +47,13 @@ describe('fs-bindings', () => {
         })
     })
 
-    describe('fs_readSoundDone', () => {
+    describe('fs_readSoundFileResponse', () => {
         it('should create the operation and call the callback', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
                 (audioSettings) => getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
                     export function testCallReadSound (array: TypedArray): i32 {
-                        return fs_readSound('/some/url')
+                        return fs_readSoundFile('/some/url')
                     }
                     export function testCheckOperationStatusSuccess(id: FileOperationStatus): boolean {
                         return fs_checkOperationStatus(id) === FILE_OPERATION_SUCCESS
@@ -62,14 +66,14 @@ describe('fs-bindings', () => {
                             && !FILE_OPERATIONS_SOUNDS.has(id)
                     }
                     export function testCheckoutSound(id: FileOperationStatus): TypedArray[] {
-                        return fs_checkoutSound(id)
+                        return fs_checkoutSoundFile(id)
                     }
                 `, audioSettings),
                 async (wasmExports, { bitDepth, floatArrayType }) => {
                     // 1. Create the operation
                     const operationId = wasmExports.testCallReadSound()
 
-                    // 2. Operation is done, call fs_readSoundDone
+                    // 2. Operation is done, call fs_readSoundFileResponse
                     const soundPointer = lowerListOfTypedArrays(
                         wasmExports,
                         bitDepth,
@@ -79,7 +83,7 @@ describe('fs-bindings', () => {
                             new floatArrayType([-0.7, -0.8, -0.9]),
                         ]
                     )
-                    wasmExports.fs_readSoundDone(operationId, soundPointer)
+                    wasmExports.fs_readSoundFileResponse(operationId, soundPointer)
                     assert.strictEqual(
                         wasmExports.testCheckOperationStatusSuccess(
                             operationId

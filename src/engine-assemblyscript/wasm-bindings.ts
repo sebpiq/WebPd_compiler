@@ -240,15 +240,17 @@ export class AssemblyScriptWasmEngine implements Engine {
     _makeFileListenersWasmImports(): fs_WasmImports {
         const { fsListenersCallbacks } = this.settings
         let wasmImports: fs_WasmImports = {
-            fs_readSoundListener: () => undefined,
-            fs_writeSoundListener: () => undefined,
+            fs_requestReadSoundFile: () => undefined,
+            fs_requestWriteSoundFile: () => undefined,
+            fs_requestReadSoundStream: () => undefined,
+            fs_requestCloseSoundStream: () => undefined,
         }
         if (this.settings.fsListenersCallbacks) {
-            wasmImports.fs_readSoundListener = (urlPointer, info) => {
+            wasmImports.fs_requestReadSoundFile = (urlPointer, info) => {
                 const url = liftString(this.wasmExports, urlPointer)
                 fsListenersCallbacks.readSound(url, info)
             }
-            wasmImports.fs_writeSoundListener = (
+            wasmImports.fs_requestWriteSoundFile = (
                 urlPointer,
                 listOfArraysPointer,
                 info

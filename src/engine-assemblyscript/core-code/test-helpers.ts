@@ -8,8 +8,6 @@ import { makeCompilation } from '../../test-helpers'
 import { instantiateWasmModule } from '../wasm-helpers'
 import {
     AssemblyScriptWasmImports,
-    InternalPointer,
-    StringPointer,
 } from '../types'
 import { FloatArrayTypeConstructor } from './tarray-bindings'
 
@@ -66,21 +64,17 @@ export const iterTestAudioSettings = async (
         const called = new Map()
         const floatArrayType =
             audioSettings.bitDepth === 64 ? Float64Array : Float32Array
-        called.set('fs_readSoundListener', [])
-        called.set('fs_writeSoundListener', [])
+        called.set('fs_requestReadSoundFile', [])
+        called.set('fs_requestWriteSoundFile', [])
         const wasmExports = await getWasmExports(code, {
-            fs_readSoundListener: (url: StringPointer, info: any) => {
-                called.get('fs_readSoundListener').push([url, info])
-            },
-            fs_writeSoundListener: (
-                url: StringPointer,
-                listOfArrays: InternalPointer,
-                info: any
-            ) => {
-                called
-                    .get('fs_writeSoundListener')
-                    .push([url, listOfArrays, info])
-            },
+            fs_requestReadSoundFile: (...args: any) =>
+                called.get('fs_requestReadSoundFile').push(args),
+            fs_requestWriteSoundFile: (...args: any) => 
+                called.get('fs_requestWriteSoundFile').push(args),
+            fs_requestReadSoundStream: (...args: any) =>
+                called.get('fs_requestReadSoundStream').push(args),
+            fs_requestCloseSoundStream: (...args: any) =>
+                called.get('fs_requestCloseSoundStream').push(args),
         })
         await testFunc(
             wasmExports,
