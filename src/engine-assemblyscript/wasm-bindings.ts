@@ -26,13 +26,18 @@ import {
     lowerString,
     readTypedArray,
 } from './core-code/core-bindings'
-import {
-    FsListenersCallbacks,
-    makeFileListenersWasmImports,
-} from './core-code/fs-bindings'
+import { fs_WasmImports } from './core-code/fs-bindings'
 import { liftMessage, lowerMessageArray } from './core-code/msg-bindings'
-import { lowerTypedArray } from './core-code/tarray-bindings'
-import { AssemblyScriptWasmExports, EngineMetadata } from './types'
+import {
+    FloatArrayType,
+    lowerTypedArray,
+    readListOfTypedArrays,
+} from './core-code/tarray-bindings'
+import {
+    AssemblyScriptWasmExports,
+    AssemblyScriptWasmImports,
+    EngineMetadata,
+} from './types'
 import { instantiateWasmModule } from './wasm-helpers'
 
 export interface EngineSettings {
@@ -41,7 +46,14 @@ export interface EngineSettings {
             [inletId: DspGraph.PortletId]: (messages: Array<Message>) => void
         }
     }
-    fsListenersCallbacks?: FsListenersCallbacks
+    fsListenersCallbacks?: {
+        readSound: (url: string, info: any) => void
+        writeSound: (
+            url: string,
+            data: Array<Float32Array | Float64Array>,
+            info: any
+        ) => void
+    }
 }
 
 interface AudioConfig {
@@ -88,13 +100,14 @@ export class AssemblyScriptWasmEngine implements Engine {
             this.metadata.compilation.audioSettings.bitDepth === 32
                 ? Float32Array
                 : Float64Array
+
+        const wasmImports: AssemblyScriptWasmImports = {
+            ...this._makeFileListenersWasmImports(),
+            ...this._makeInletListenersWasmImports(),
+        }
+
         const wasmInstance = await instantiateWasmModule(this.wasmBuffer, {
-            input: {
-                ...makeFileListenersWasmImports(
-                    this.settings.fsListenersCallbacks
-                ),
-                ...this._makeInletListenersWasmImports(),
-            },
+            input: wasmImports,
         })
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
@@ -150,7 +163,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             this.metadata.compilation.audioSettings.bitDepth,
             data
         )
-        this.wasmExports.setArray(stringPointer,  arrayPointer)
+        this.wasmExports.setArray(stringPointer, arrayPointer)
     }
 
     _bindAccessors(): EngineAccessors {
@@ -221,6 +234,34 @@ export class AssemblyScriptWasmEngine implements Engine {
                 })
             }
         )
+        return wasmImports
+    }
+
+    _makeFileListenersWasmImports(): fs_WasmImports {
+        const { fsListenersCallbacks } = this.settings
+        let wasmImports: fs_WasmImports = {
+            fs_readSoundListener: () => undefined,
+            fs_writeSoundListener: () => undefined,
+        }
+        if (this.settings.fsListenersCallbacks) {
+            wasmImports.fs_readSoundListener = (urlPointer, info) => {
+                const url = liftString(this.wasmExports, urlPointer)
+                fsListenersCallbacks.readSound(url, info)
+            }
+            wasmImports.fs_writeSoundListener = (
+                urlPointer,
+                listOfArraysPointer,
+                info
+            ) => {
+                const url = liftString(this.wasmExports, urlPointer)
+                const listOfArrays = readListOfTypedArrays(
+                    this.wasmExports,
+                    this.metadata.compilation.audioSettings.bitDepth,
+                    listOfArraysPointer
+                ) as Array<FloatArrayType>
+                fsListenersCallbacks.writeSound(url, listOfArrays, info)
+            }
+        }
         return wasmImports
     }
 }

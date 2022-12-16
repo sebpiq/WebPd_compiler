@@ -1,31 +1,13 @@
-export interface FsListenersCallbacks {
-    file_readSoundListener: (url: string, info: any) => void
-    file_writeSoundListener: (
-        url: string,
-        data: Array<Float32Array | Float64Array>,
+import { InternalPointer, StringPointer } from '../types'
+import { tarray_WasmExports } from './tarray-bindings'
+
+export interface fs_WasmExports extends tarray_WasmExports {}
+
+export interface fs_WasmImports {
+    fs_readSoundListener: (url: StringPointer, info: any) => void
+    fs_writeSoundListener: (
+        url: StringPointer,
+        listOfArrays: InternalPointer,
         info: any
     ) => void
-}
-
-export const makeFileListenersWasmImports = (
-    fsListenersCallbacks?: FsListenersCallbacks
-): FsListenersCallbacks => {
-    let file_readSoundListener: FsListenersCallbacks['file_readSoundListener'] =
-        () => undefined
-    if (fsListenersCallbacks) {
-        file_readSoundListener = (url, info) => {
-            fsListenersCallbacks.file_readSoundListener(url, info)
-        }
-    }
-    let file_writeSoundListener: FsListenersCallbacks['file_writeSoundListener'] =
-        () => undefined
-    if (fsListenersCallbacks) {
-        file_writeSoundListener = (url, data, info) => {
-            fsListenersCallbacks.file_writeSoundListener(url, data, info)
-        }
-    }
-    return {
-        file_readSoundListener,
-        file_writeSoundListener,
-    }
 }

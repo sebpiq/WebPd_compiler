@@ -95,7 +95,7 @@ describe('msg-bindings', () => {
                         return message.dataView.getInt32(index * sizeof<i32>())
                     }
                 `,
-                async (wasmExports, { bitDepth }) => {
+                async (wasmExports, { bitDepth, floatArrayType }) => {
                     const messagePointer = lowerMessage(wasmExports, [
                         'bla',
                         2.3,
@@ -133,8 +133,7 @@ describe('msg-bindings', () => {
                         wasmExports.testReadMessageData(messagePointer, 5),
                         6 * INT_ARRAY_BYTES_PER_ELEMENT +
                             3 * BYTES_IN_CHAR +
-                            (bitDepth === 64 ? Float64Array : Float32Array)
-                                .BYTES_PER_ELEMENT
+                            floatArrayType.BYTES_PER_ELEMENT
                     )
 
                     // TOKEN "bla"
@@ -210,7 +209,7 @@ describe('msg-bindings', () => {
                         return message.dataView.getInt32(index * sizeof<i32>())
                     }
                 `,
-                async (wasmExports, { bitDepth }) => {
+                async (wasmExports, { floatArrayType }) => {
                     const messagePointer1 = lowerMessage(wasmExports, [
                         '\x00\x00',
                     ])
@@ -259,8 +258,7 @@ describe('msg-bindings', () => {
                             wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf(),
                             INT_ARRAY_BYTES_PER_ELEMENT * 4,
                             INT_ARRAY_BYTES_PER_ELEMENT * 4 +
-                                (bitDepth === 64 ? Float64Array : Float32Array)
-                                    .BYTES_PER_ELEMENT,
+                                floatArrayType.BYTES_PER_ELEMENT,
                             0,
                         ]
                     )

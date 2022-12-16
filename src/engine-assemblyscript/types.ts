@@ -11,6 +11,7 @@
 
 import { Code, Compilation } from '../types'
 import { core_WasmExports } from './core-code/core-bindings'
+import { fs_WasmImports } from './core-code/fs-bindings'
 import { msg_WasmExports } from './core-code/msg-bindings'
 import { tarray_WasmExports } from './core-code/tarray-bindings'
 
@@ -72,3 +73,5 @@ export type AssemblyScriptWasmExports = tarray_WasmExports &
         // Pointer to a JSON string representation of `EngineMetadata`
         metadata: WebAssembly.Global
     }
+
+export type AssemblyScriptWasmImports = fs_WasmImports

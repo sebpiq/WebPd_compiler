@@ -24,7 +24,7 @@ describe('tarray-bindings', () => {
                     }
                 `,
                 async (wasmExports, { bitDepth }) => {
-                    const {arrayPointer, array} = lowerTypedArray(
+                    const { arrayPointer, array } = lowerTypedArray(
                         wasmExports,
                         bitDepth,
                         new Float64Array([111, 222, 333])
@@ -150,9 +150,7 @@ describe('tarray-bindings', () => {
                         return arrays
                     }
                 `, audioSettings),
-                async (wasmExports, { bitDepth }) => {
-                    const arrayType =
-                        bitDepth === 64 ? Float64Array : Float32Array
+                async (wasmExports, { bitDepth, floatArrayType }) => {
                     const arraysPointer = wasmExports.testGetListOfArrays()
                     const arrays = readListOfTypedArrays(
                         wasmExports,
@@ -160,8 +158,8 @@ describe('tarray-bindings', () => {
                         arraysPointer
                     )
                     assert.deepStrictEqual(arrays, [
-                        new arrayType([11, 22, 33]),
-                        new arrayType([44, 55, 66]),
+                        new floatArrayType([11, 22, 33]),
+                        new floatArrayType([44, 55, 66]),
                     ])
                 }
             )
