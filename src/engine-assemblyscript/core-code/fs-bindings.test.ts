@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { AudioSettings } from '../../types'
 import { TypedArrayPointer } from '../types'
 import { liftString, readTypedArray } from './core-bindings'
 import {
@@ -13,21 +14,42 @@ import {
 
 describe('fs-bindings', () => {
 
+    const getBaseTestCode = (audioSettings: AudioSettings) => replacePlaceholdersForTesting(`
+        let callbackOperationId: i32 = 0
+        function someCallback(id: FileOperationId): void {
+            callbackOperationId = id
+        }
+        export function testCallbackCalled(): FileOperationId {
+            return callbackOperationId
+        }
+
+        export function testCheckOperationStatusProcessing(id: FileOperationStatus): boolean {
+            return fs_checkOperationStatus(id) === _FS_OPERATION_PROCESSING
+        }
+        export function testCheckOperationStatusSuccess(id: FileOperationId): boolean {
+            return fs_checkOperationStatus(id) === _FS_OPERATION_SUCCESS
+        }
+        export function testOperationCleaned(id: FileOperationId): boolean {
+            return !_FS_OPERATIONS_STATUSES.has(id)
+                && !_FS_OPERATIONS_SOUNDS.has(id)
+                && !_FS_OPERATIONS_CALLBACKS.has(id)
+                && !_FS_SOUND_STREAM_BUFFERS.has(id)
+                && fs_checkOperationStatus(id) === _FS_OPERATION_UNKNOWN
+        }
+    `, audioSettings)
+
     describe('read sound files', () => {
         describe('fs_readSoundFile', () => {
             it('should create the operation and call the callback', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
-                        export function testCallReadSound (array: TypedArray): i32 {
-                            return fs_readSoundFile('/some/url')
-                        }
-                        export function testCheckOperationStatusProcessing(id: FileOperationStatus): boolean {
-                            return fs_checkOperationStatus(id) === _FS_OPERATION_PROCESSING
+                    (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                        export function testStartReadFile (array: TypedArray): i32 {
+                            return fs_readSoundFile('/some/url', someCallback)
                         }
                     `,
                     async (wasmExports, _, called) => {
-                        const operationId = wasmExports.testCallReadSound()
+                        const operationId = wasmExports.testStartReadFile()
                         const readCalled: Array<Array<any>> = called.get('fs_requestReadSoundFile')
                         assert.strictEqual(readCalled.length, 1)
                         assert.strictEqual(readCalled[0].length, 3)
@@ -54,27 +76,18 @@ describe('fs-bindings', () => {
             it('should register the operation reponse', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
-                        export function testCallReadSound (array: TypedArray): i32 {
-                            return fs_readSoundFile('/some/url')
+                    (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
+                        export function testStartReadFile (array: TypedArray): i32 {
+                            return fs_readSoundFile('/some/url', someCallback)
                         }
-                        export function testCheckOperationStatusSuccess(id: FileOperationStatus): boolean {
-                            return fs_checkOperationStatus(id) === _FS_OPERATION_SUCCESS
-                        }
-                        export function testCheckOperationStatusUnknown(id: FileOperationStatus): boolean {
-                            return fs_checkOperationStatus(id) === _FS_OPERATION_UNKNOWN 
-                        }
-                        export function testOperationCleaned(id: FileOperationStatus): boolean {
-                            return !_FS_OPERATIONS_STATUSES.has(id)
-                                && !_FS_OPERATIONS_SOUNDS.has(id)
-                        }
-                        export function testCheckoutSound(id: FileOperationStatus): TypedArray[] {
+                        export function testCheckoutSound(id: FileOperationId): TypedArray[] {
                             return fs_checkoutSoundFile(id)
                         }
                     `, audioSettings),
                     async (wasmExports, { bitDepth, floatArrayType }) => {
                         // 1. Create the operation
-                        const operationId = wasmExports.testCallReadSound()
+                        const operationId = wasmExports.testStartReadFile()
+                        assert.strictEqual(wasmExports.testCallbackCalled(), 0)
     
                         // 2. Operation is done, call fs_readSoundFileResponse
                         const soundPointer = lowerListOfTypedArrays(
@@ -93,6 +106,7 @@ describe('fs-bindings', () => {
                             ),
                             1
                         )
+                        assert.strictEqual(wasmExports.testCallbackCalled(), operationId)
     
                         // 3. Check-out sound, and verify that all is cleaned
                         const soundPointerBis =
@@ -101,12 +115,6 @@ describe('fs-bindings', () => {
                             wasmExports,
                             bitDepth,
                             soundPointerBis
-                        )
-                        assert.strictEqual(
-                            wasmExports.testCheckOperationStatusUnknown(
-                                operationId
-                            ),
-                            1
                         )
                         assert.strictEqual(
                             wasmExports.testOperationCleaned(operationId),
@@ -124,12 +132,12 @@ describe('fs-bindings', () => {
     })
 
     describe('read sound streams', () => {
-        describe('_fs_SoundBuffer', () => {
+        describe('fs_SoundBuffer', () => {
             it('should be able to push and pull from SoundBuffer', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
-                        const buffer: _fs_SoundBuffer = new _fs_SoundBuffer(5)
+                    (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
+                        const buffer: fs_SoundBuffer = new fs_SoundBuffer(5)
                         const channelCount: i32 = 3
                         let counter: i32 = 1
                         export function testCallPullFrame(): TypedArray {
@@ -217,16 +225,16 @@ describe('fs-bindings', () => {
             it('should create the operation and call the callback', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
-                        export function testCallReadSound (array: TypedArray): i32 {
-                            return fs_readSoundStream('/some/url')
+                    (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                        export function testStartStream (array: TypedArray): i32 {
+                            return fs_readSoundStream('/some/url', someCallback)
                         }
-                        export function testCheckOperationStatusProcessing(id: FileOperationStatus): boolean {
-                            return fs_checkOperationStatus(id) === _FS_OPERATION_PROCESSING
+                        export function testCheckSoundBufferExists(id: FileOperationId): boolean {
+                            return _FS_SOUND_STREAM_BUFFERS.has(id)
                         }
                     `,
                     async (wasmExports, _, called) => {
-                        const operationId = wasmExports.testCallReadSound()
+                        const operationId = wasmExports.testStartStream()
                         const readCalled: Array<Array<any>> = called.get('fs_requestReadSoundStream')
                         assert.strictEqual(readCalled.length, 1)
                         assert.strictEqual(readCalled[0].length, 3)
@@ -244,6 +252,90 @@ describe('fs-bindings', () => {
                             ),
                             1
                         )
+                        assert.strictEqual(
+                            wasmExports.testCheckSoundBufferExists(
+                                operationId
+                            ),
+                            1
+                        )
+                    }
+                )
+            })
+        })
+
+        describe('fs_soundStreamData', () => {
+            it('should create the operation and call the callback', async () => {
+                await iterTestAudioSettings(
+                    // prettier-ignore
+                    (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                        export function testStartStream (array: TypedArray): i32 {
+                            return fs_readSoundStream('/some/url', someCallback)
+                        }
+                        export function testBufferCurrentLength(id: FileOperationId): i32 {
+                            return _FS_SOUND_STREAM_BUFFERS.get(id).currentLength
+                        }
+                    `,
+                    async (wasmExports, {floatArrayType, bitDepth}) => {
+                        let spaceAvailable: number = 0
+
+                        // 1. Create the operation
+                        const operationId = wasmExports.testStartStream()
+                        assert.strictEqual(wasmExports.testBufferCurrentLength(operationId), 0)
+
+                        // 2. Send in some sound
+                        spaceAvailable = wasmExports.fs_soundStreamData(operationId, lowerListOfTypedArrays(wasmExports, bitDepth, [
+                            new floatArrayType([-0.1, -0.2, -0.3]),
+                            new floatArrayType([0.1, 0.2, 0.3]),
+                        ]))
+                        assert.strictEqual(wasmExports.testBufferCurrentLength(operationId), 3)
+                        assert.strictEqual(spaceAvailable, 44100 * 10 - 3)
+
+                        spaceAvailable = wasmExports.fs_soundStreamData(operationId, lowerListOfTypedArrays(wasmExports, bitDepth, [
+                            new floatArrayType([0.4, 0.5, 0.6]),
+                            new floatArrayType([-0.4, -0.5, -0.6]),
+                        ]))
+                        assert.strictEqual(wasmExports.testBufferCurrentLength(operationId), 6)
+                        assert.strictEqual(spaceAvailable, 44100 * 10 - 6)
+                    }
+                )
+            })
+        })
+
+        describe('fs_soundStreamClose', () => {
+            it('should create the operation and call the callback', async () => {
+                await iterTestAudioSettings(
+                    // prettier-ignore
+                    (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                        export function testStartStream (array: TypedArray): i32 {
+                            return fs_readSoundStream('/some/url', someCallback)
+                        }
+                        export function testBufferCurrentLength(id: FileOperationId): i32 {
+                            return _FS_SOUND_STREAM_BUFFERS.get(id).currentLength
+                        }
+                    `,
+                    async (wasmExports, {floatArrayType, bitDepth}, called) => {
+                        // 1. Create the operation
+                        const operationId = wasmExports.testStartStream()
+
+                        // 2. Send in some sound
+                        wasmExports.fs_soundStreamData(operationId, lowerListOfTypedArrays(wasmExports, bitDepth, [
+                            new floatArrayType([-0.1, -0.2, -0.3]),
+                            new floatArrayType([0.1, 0.2, 0.3]),
+                        ]))
+
+                        // 3. close stream
+                        assert.strictEqual(called.get('fs_requestCloseSoundStream').length, 0)
+                        assert.strictEqual(wasmExports.testCallbackCalled(), 0)
+
+                        wasmExports.fs_soundStreamClose(operationId)
+                        // Test callback in host space was called
+                        const closeCalled: Array<Array<any>> = called.get('fs_requestCloseSoundStream')
+                        assert.strictEqual(closeCalled.length, 1)
+                        assert.deepStrictEqual(closeCalled[0], [operationId])
+                        // Test callback in wasm was called
+                        assert.strictEqual(wasmExports.testCallbackCalled(), operationId)
+                        // Test operation was cleaned
+                        wasmExports.testOperationCleaned(operationId)
                     }
                 )
             })

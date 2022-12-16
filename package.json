@@ -31,7 +31,7 @@
         "@types/node": "^14.14.7",
         "@webpd/dev": "file:../WebPd_dev",
         "@webpd/pd-registry": "file:../WebPd_pd-registry",
-        "assemblyscript": "^0.20.12",
+        "assemblyscript": "^0.25.1",
         "jest": "^28.1.0",
         "rollup": "^3.7.0",
         "ts-jest": "^28.0.3",
