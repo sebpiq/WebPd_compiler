@@ -66,6 +66,8 @@ export const iterTestAudioSettings = async (
             audioSettings.bitDepth === 64 ? Float64Array : Float32Array
         called.set('fs_requestReadSoundFile', [])
         called.set('fs_requestWriteSoundFile', [])
+        called.set('fs_requestReadSoundStream', [])
+        called.set('fs_requestCloseSoundStream', [])
         const wasmExports = await getWasmExports(code, {
             fs_requestReadSoundFile: (...args: any) =>
                 called.get('fs_requestReadSoundFile').push(args),
