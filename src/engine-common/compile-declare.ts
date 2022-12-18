@@ -37,12 +37,12 @@ export default (
             return [
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'message'
-                        ? `let ${macros.typedVarMessageArray(ins[inlet.id])}`
+                        ? `let ${macros.typedVarMessageArray(ins[inlet.id])} = []`
                         : `let ${macros.typedVarFloat(ins[inlet.id])}`
                 ),
                 Object.values(node.outlets).map((outlet) =>
                     outlet.type === 'message'
-                        ? `let ${macros.typedVarMessageArray(outs[outlet.id])}`
+                        ? `let ${macros.typedVarMessageArray(outs[outlet.id])} = []`
                         : `let ${macros.typedVarFloat(outs[outlet.id])}`
                 ),
                 nodeDeclare ? nodeDeclare(

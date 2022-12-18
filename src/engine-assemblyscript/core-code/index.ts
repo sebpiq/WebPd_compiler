@@ -6,6 +6,7 @@ import { Code, EngineVariableNames } from '../../types'
 import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from '../constants'
 import MSG_ASC from './msg.asc'
 import TARRAY_ASC from './tarray.asc'
+import FS_ASC from './fs.asc'
 
 export const replacePlaceholders = (
     engineVariableNames: EngineVariableNames,
@@ -35,6 +36,7 @@ export const replacePlaceholders = (
 export const generate = (engineVariableNames: EngineVariableNames) => {
     return (
         replacePlaceholders(engineVariableNames, TARRAY_ASC) +
-        replacePlaceholders(engineVariableNames, MSG_ASC)
+        replacePlaceholders(engineVariableNames, MSG_ASC) +
+        replacePlaceholders(engineVariableNames, FS_ASC)
     )
 }

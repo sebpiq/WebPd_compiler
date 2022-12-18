@@ -11,7 +11,7 @@
 
 import { Code, Compilation } from '../types'
 import { core_WasmExports } from './core-code/core-bindings'
-import { fs_WasmImports } from './core-code/fs-bindings'
+import { fs_WasmExports, fs_WasmImports } from './core-code/fs-bindings'
 import { msg_WasmExports } from './core-code/msg-bindings'
 import { tarray_WasmExports } from './core-code/tarray-bindings'
 
@@ -57,8 +57,7 @@ export interface EngineMetadata {
  * WebPd assemblyscript code.
  */
 export type AssemblyScriptWasmExports = tarray_WasmExports &
-    core_WasmExports &
-    msg_WasmExports & {
+    core_WasmExports & msg_WasmExports & fs_WasmExports & {
         configure: (sampleRate: number, blockSize: number) => void
         loop: () => void
         setArray: (

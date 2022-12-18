@@ -393,6 +393,60 @@ describe('AssemblyScriptWasmEngine', () => {
             })
         })
 
+        describe('fs', () => {
+            describe('readSoundFileResponse', () => {
+                it('should register the operation reponse', async () => {
+                    const { engine, wasmExports } = await getEngine(
+                        // prettier-ignore
+                        compileToAssemblyscript(COMPILATION) + `
+                            export function testStartReadFile (array: TypedArray): i32 {
+                                return fs_readSoundFile('/some/url', function(): void {})
+                            }
+                            export function testCheckoutSound(id: FileOperationId): i32 {
+                                const sound: TypedArray[] = fs_checkoutSoundFile(id)
+                                return sound.length
+                            }
+                        `
+                    )
+                    const operationId = wasmExports.testStartReadFile()
+                    engine.fs.readSoundFileResponse(operationId, [
+                        new Float32Array([-0.1, -0.2, -0.3]),
+                        new Float32Array([0.4, 0.5, 0.6]),
+                        new Float32Array([-0.7, -0.8, -0.9]),
+                    ])
+                    assert.strictEqual(
+                        wasmExports.testCheckoutSound(operationId),
+                        3,
+                    )
+                })
+            })
+
+            describe('fsListenersCallbacks', () => {
+                it('should call the callback', async () => {
+                    const called: Array<Array<any>> = []
+                    const { wasmExports } = await getEngine(
+                        // prettier-ignore
+                        compileToAssemblyscript(COMPILATION) + `
+                            export function testStartReadFile (array: TypedArray): i32 {
+                                return fs_readSoundFile('/some/url', function(): void {})
+                            }
+                        `,
+                        {
+                            fsListenersCallbacks: {
+                                readSound: (...args) => called.push(args),
+                                writeSound: () => undefined
+                            }
+                        }
+                    )
+                    const operationId = wasmExports.testStartReadFile()
+                    // TODO : add infos
+                    assert.deepStrictEqual(called[0].slice(0, 2),
+                        [operationId, '/some/url']
+                    )
+                })
+            })
+        })
+
         describe('inlet listeners callbacks', () => {
             it('should call callback when new message sent to inlet', async () => {
                 const called: Array<Array<Message>> = []

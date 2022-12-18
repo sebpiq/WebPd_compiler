@@ -66,7 +66,7 @@ describe('compileToAssemblyscript', () => {
             // prettier-ignore
             `
                 let bla: f32 = 1
-                let blo: Message[]
+                let blo: Message[] = []
                 let bli: f32 = 2
                 let bluMessage1: Message = Message.fromTemplate([ MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING, 4 ])
                 let bluMessage2: Message = Message.fromTemplate([ MESSAGE_DATUM_TYPE_FLOAT ])
@@ -248,6 +248,14 @@ describe('compileToAssemblyscript', () => {
             msg_writeFloatDatum: () => undefined,
             msg_readStringDatum: () => 0,
             msg_readFloatDatum: () => 0,
+            fs_readSoundFileResponse: () => 0,
+            fs_writeSoundFileResponse: () => 0,
+            fs_soundStreamClose: () => 0,
+            fs_soundStreamData: () => 0,
+            fs_requestCloseSoundStream: () => 0,
+            fs_requestReadSoundFile: () => 0,
+            fs_requestReadSoundStream: () => 0,
+            fs_requestWriteSoundFile: () => 0,
             __new: () => 0,
             memory: new WebAssembly.Memory({ initial: 128 }),
         }

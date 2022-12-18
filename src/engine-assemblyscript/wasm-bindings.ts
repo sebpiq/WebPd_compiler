@@ -20,7 +20,7 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import { CodeVariableName, EngineAccessors, Engine, Message } from '../types'
+import { CodeVariableName, EngineAccessors, Engine, Message, EngineFs } from '../types'
 import {
     liftString,
     lowerString,
@@ -30,6 +30,7 @@ import { fs_WasmImports } from './core-code/fs-bindings'
 import { liftMessage, lowerMessageArray } from './core-code/msg-bindings'
 import {
     FloatArrayType,
+    lowerListOfTypedArrays,
     lowerTypedArray,
     readListOfTypedArrays,
 } from './core-code/tarray-bindings'
@@ -47,7 +48,7 @@ export interface EngineSettings {
         }
     }
     fsListenersCallbacks?: {
-        readSound: (url: string, info: any) => void
+        readSound: (operationId: number, url: string, info: any) => void
         writeSound: (
             url: string,
             data: Array<Float32Array | Float64Array>,
@@ -80,6 +81,7 @@ export const createEngine = async (
 export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
     public accessors: EngineAccessors
+    public fs: EngineFs
     public metadata: EngineMetadata
     private settings: EngineSettings
     private wasmBuffer: ArrayBuffer
@@ -112,6 +114,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
         this.accessors = this._bindAccessors()
+        this.fs = this._bindFs()
     }
 
     configure(sampleRate: number, blockSize: number): void {
@@ -120,16 +123,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             blockSize,
         }
         this.wasmExports.configure(sampleRate, blockSize)
-        this.wasmOutput = readTypedArray(
-            this.wasmExports,
-            this.arrayType,
-            this.wasmExports.getOutput()
-        ) as Float32Array | Float64Array
-        this.wasmInput = readTypedArray(
-            this.wasmExports,
-            this.arrayType,
-            this.wasmExports.getInput()
-        ) as Float32Array | Float64Array
+        this._updateWasmInOuts()
     }
 
     loop(
@@ -164,6 +158,24 @@ export class AssemblyScriptWasmEngine implements Engine {
             data
         )
         this.wasmExports.setArray(stringPointer, arrayPointer)
+        this._updateWasmInOuts()
+    }
+
+    // This must be called again when doing something on the wasm module
+    // which could cause memory grow (lowerString, lowerMessage, lowerMessageArray, 
+    //      lowerBuffer, lowerMessage, lowerMessageArray) :
+    // https://github.com/emscripten-core/emscripten/issues/6747
+    _updateWasmInOuts(): void {
+        this.wasmOutput = readTypedArray(
+            this.wasmExports,
+            this.arrayType,
+            this.wasmExports.getOutput()
+        ) as Float32Array | Float64Array
+        this.wasmInput = readTypedArray(
+            this.wasmExports,
+            this.arrayType,
+            this.wasmExports.getInput()
+        ) as Float32Array | Float64Array
     }
 
     _bindAccessors(): EngineAccessors {
@@ -214,6 +226,20 @@ export class AssemblyScriptWasmEngine implements Engine {
         return accessors
     }
 
+    _bindFs(): EngineFs {
+        return {
+            readSoundFileResponse: (operationId: number, sound: Array<FloatArrayType>) => {
+                const soundPointer = lowerListOfTypedArrays(
+                    this.wasmExports,
+                    this.metadata.compilation.audioSettings.bitDepth,
+                    sound,
+                )
+                this.wasmExports.fs_readSoundFileResponse(operationId, soundPointer)
+                this._updateWasmInOuts()
+            }
+        }
+    }
+
     _makeInletListenersWasmImports() {
         const wasmImports: {
             [listenerName: CodeVariableName]: () => void
@@ -246,9 +272,9 @@ export class AssemblyScriptWasmEngine implements Engine {
             fs_requestCloseSoundStream: () => undefined,
         }
         if (this.settings.fsListenersCallbacks) {
-            wasmImports.fs_requestReadSoundFile = (urlPointer, info) => {
+            wasmImports.fs_requestReadSoundFile = (operationId, urlPointer, info) => {
                 const url = liftString(this.wasmExports, urlPointer)
-                fsListenersCallbacks.readSound(url, info)
+                fsListenersCallbacks.readSound(operationId, url, info)
             }
             wasmImports.fs_requestWriteSoundFile = (
                 urlPointer,
