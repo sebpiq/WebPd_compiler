@@ -20,7 +20,13 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import { CodeVariableName, EngineAccessors, Engine, Message, EngineFs } from '../types'
+import {
+    CodeVariableName,
+    EngineAccessors,
+    Engine,
+    Message,
+    EngineFs,
+} from '../types'
 import {
     liftString,
     lowerString,
@@ -162,7 +168,7 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     // This must be called again when doing something on the wasm module
-    // which could cause memory grow (lowerString, lowerMessage, lowerMessageArray, 
+    // which could cause memory grow (lowerString, lowerMessage, lowerMessageArray,
     //      lowerBuffer, lowerMessage, lowerMessageArray) :
     // https://github.com/emscripten-core/emscripten/issues/6747
     _updateWasmInOuts(): void {
@@ -228,15 +234,21 @@ export class AssemblyScriptWasmEngine implements Engine {
 
     _bindFs(): EngineFs {
         return {
-            readSoundFileResponse: (operationId: number, sound: Array<FloatArrayType>) => {
+            readSoundFileResponse: (
+                operationId: number,
+                sound: Array<FloatArrayType>
+            ) => {
                 const soundPointer = lowerListOfTypedArrays(
                     this.wasmExports,
                     this.metadata.compilation.audioSettings.bitDepth,
-                    sound,
+                    sound
                 )
-                this.wasmExports.fs_readSoundFileResponse(operationId, soundPointer)
+                this.wasmExports.fs_readSoundFileResponse(
+                    operationId,
+                    soundPointer
+                )
                 this._updateWasmInOuts()
-            }
+            },
         }
     }
 
@@ -272,7 +284,11 @@ export class AssemblyScriptWasmEngine implements Engine {
             fs_requestCloseSoundStream: () => undefined,
         }
         if (this.settings.fsListenersCallbacks) {
-            wasmImports.fs_requestReadSoundFile = (operationId, urlPointer, info) => {
+            wasmImports.fs_requestReadSoundFile = (
+                operationId,
+                urlPointer,
+                info
+            ) => {
                 const url = liftString(this.wasmExports, urlPointer)
                 fsListenersCallbacks.readSound(operationId, url, info)
             }

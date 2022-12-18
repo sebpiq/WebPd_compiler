@@ -43,7 +43,7 @@ export type EngineAccessors = { [accessorName: string]: (...args: any) => any }
 // Filesystem public API
 export type EngineFs = {
     readSoundFileResponse: (
-        operationId: number, 
+        operationId: number,
         sound: Array<Float32Array | Float64Array>
     ) => void
 }

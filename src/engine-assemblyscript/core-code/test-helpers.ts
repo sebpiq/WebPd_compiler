@@ -6,9 +6,7 @@ import { compileWasmModule } from '../test-helpers'
 import { replacePlaceholders } from '.'
 import { makeCompilation } from '../../test-helpers'
 import { instantiateWasmModule } from '../wasm-helpers'
-import {
-    AssemblyScriptWasmImports,
-} from '../types'
+import { AssemblyScriptWasmImports } from '../types'
 import { FloatArrayTypeConstructor } from './tarray-bindings'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -71,7 +69,7 @@ export const iterTestAudioSettings = async (
         const wasmExports = await getWasmExports(code, {
             fs_requestReadSoundFile: (...args: any) =>
                 called.get('fs_requestReadSoundFile').push(args),
-            fs_requestWriteSoundFile: (...args: any) => 
+            fs_requestWriteSoundFile: (...args: any) =>
                 called.get('fs_requestWriteSoundFile').push(args),
             fs_requestReadSoundStream: (...args: any) =>
                 called.get('fs_requestReadSoundStream').push(args),

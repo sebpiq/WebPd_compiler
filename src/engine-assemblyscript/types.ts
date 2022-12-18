@@ -57,7 +57,9 @@ export interface EngineMetadata {
  * WebPd assemblyscript code.
  */
 export type AssemblyScriptWasmExports = tarray_WasmExports &
-    core_WasmExports & msg_WasmExports & fs_WasmExports & {
+    core_WasmExports &
+    msg_WasmExports &
+    fs_WasmExports & {
         configure: (sampleRate: number, blockSize: number) => void
         loop: () => void
         setArray: (

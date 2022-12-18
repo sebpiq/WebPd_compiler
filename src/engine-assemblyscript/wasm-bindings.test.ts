@@ -416,7 +416,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     ])
                     assert.strictEqual(
                         wasmExports.testCheckoutSound(operationId),
-                        3,
+                        3
                     )
                 })
             })
@@ -434,15 +434,16 @@ describe('AssemblyScriptWasmEngine', () => {
                         {
                             fsListenersCallbacks: {
                                 readSound: (...args) => called.push(args),
-                                writeSound: () => undefined
-                            }
+                                writeSound: () => undefined,
+                            },
                         }
                     )
                     const operationId = wasmExports.testStartReadFile()
                     // TODO : add infos
-                    assert.deepStrictEqual(called[0].slice(0, 2),
-                        [operationId, '/some/url']
-                    )
+                    assert.deepStrictEqual(called[0].slice(0, 2), [
+                        operationId,
+                        '/some/url',
+                    ])
                 })
             })
         })
