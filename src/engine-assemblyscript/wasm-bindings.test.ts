@@ -11,6 +11,8 @@
 
 import assert from 'assert'
 import {
+    FS_OPERATION_FAILURE,
+    FS_OPERATION_SUCCESS,
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../constants'
@@ -395,29 +397,77 @@ describe('AssemblyScriptWasmEngine', () => {
 
         describe('fs', () => {
             describe('readSoundFileResponse', () => {
-                it('should register the operation reponse', async () => {
+                const sharedTestingCode = `
+                    let receivedId: fs_OperationId = -1
+                    let receivedStatus: fs_OperationStatus = -1
+                    let receivedSound: TypedArray[] = []
+                    export function testStartReadFile (array: TypedArray): i32 {
+                        return fs_readSoundFile('/some/url', function(
+                            id: fs_OperationId,
+                            status: fs_OperationStatus,
+                            sound: TypedArray[],
+                        ): void {
+                            receivedId = id
+                            receivedStatus = status
+                            receivedSound = sound
+                        })
+                    }
+                    export function testOperationId(): i32 {
+                        return receivedId
+                    }
+                    export function testOperationStatus(): i32 {
+                        return receivedStatus
+                    }
+                    export function testSoundLength(): i32 {
+                        return receivedSound.length
+                    }
+                `
+
+                it('should register the operation success', async () => {
                     const { engine, wasmExports } = await getEngine(
                         // prettier-ignore
-                        compileToAssemblyscript(COMPILATION) + `
-                            export function testStartReadFile (array: TypedArray): i32 {
-                                return fs_readSoundFile('/some/url', function(): void {})
-                            }
-                            export function testCheckoutSound(id: FileOperationId): i32 {
-                                const sound: TypedArray[] = fs_checkoutSoundFile(id)
-                                return sound.length
-                            }
-                        `
+                        compileToAssemblyscript(COMPILATION) + sharedTestingCode
                     )
                     const operationId = wasmExports.testStartReadFile()
-                    engine.fs.readSoundFileResponse(operationId, [
-                        new Float32Array([-0.1, -0.2, -0.3]),
-                        new Float32Array([0.4, 0.5, 0.6]),
-                        new Float32Array([-0.7, -0.8, -0.9]),
-                    ])
-                    assert.strictEqual(
-                        wasmExports.testCheckoutSound(operationId),
-                        3
+                    engine.fs.readSoundFileResponse(
+                        operationId,
+                        FS_OPERATION_SUCCESS,
+                        [
+                            new Float32Array([-0.1, -0.2, -0.3]),
+                            new Float32Array([0.4, 0.5, 0.6]),
+                            new Float32Array([-0.7, -0.8, -0.9]),
+                        ]
                     )
+                    assert.strictEqual(
+                        wasmExports.testOperationId(),
+                        operationId
+                    )
+                    assert.strictEqual(
+                        wasmExports.testOperationStatus(),
+                        FS_OPERATION_SUCCESS
+                    )
+                    assert.strictEqual(wasmExports.testSoundLength(), 3)
+                })
+
+                it('should register the operation failure', async () => {
+                    const { engine, wasmExports } = await getEngine(
+                        // prettier-ignore
+                        compileToAssemblyscript(COMPILATION) + sharedTestingCode
+                    )
+                    const operationId = wasmExports.testStartReadFile()
+                    engine.fs.readSoundFileResponse(
+                        operationId,
+                        FS_OPERATION_FAILURE
+                    )
+                    assert.strictEqual(
+                        wasmExports.testOperationId(),
+                        operationId
+                    )
+                    assert.strictEqual(
+                        wasmExports.testOperationStatus(),
+                        FS_OPERATION_FAILURE
+                    )
+                    assert.strictEqual(wasmExports.testSoundLength(), 0)
                 })
             })
 

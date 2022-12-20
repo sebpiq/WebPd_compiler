@@ -1,4 +1,6 @@
 import {
+    FS_OPERATION_FAILURE,
+    FS_OPERATION_SUCCESS,
     MESSAGE_DATUM_TYPE_FLOAT,
     MESSAGE_DATUM_TYPE_STRING,
 } from '../../constants'
@@ -19,6 +21,8 @@ export const replacePlaceholders = (
         .replaceAll('${FloatArrayType}', FloatArrayType)
         .replaceAll('${getFloat}', getFloat)
         .replaceAll('${setFloat}', setFloat)
+        .replaceAll('${FS_OPERATION_SUCCESS}', FS_OPERATION_SUCCESS.toString())
+        .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
         .replaceAll(
             '${MESSAGE_DATUM_TYPE_FLOAT}',
             MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[

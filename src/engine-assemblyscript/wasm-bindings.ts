@@ -26,6 +26,7 @@ import {
     Engine,
     Message,
     EngineFs,
+    fs_OperationStatus,
 } from '../types'
 import {
     liftString,
@@ -234,17 +235,18 @@ export class AssemblyScriptWasmEngine implements Engine {
 
     _bindFs(): EngineFs {
         return {
-            readSoundFileResponse: (
-                operationId: number,
-                sound: Array<FloatArrayType>
-            ) => {
-                const soundPointer = lowerListOfTypedArrays(
-                    this.wasmExports,
-                    this.metadata.compilation.audioSettings.bitDepth,
-                    sound
-                )
+            readSoundFileResponse: (operationId, status, sound) => {
+                let soundPointer = 0
+                if (sound) {
+                    soundPointer = lowerListOfTypedArrays(
+                        this.wasmExports,
+                        this.metadata.compilation.audioSettings.bitDepth,
+                        sound
+                    )
+                }
                 this.wasmExports.fs_readSoundFileResponse(
                     operationId,
+                    status,
                     soundPointer
                 )
                 this._updateWasmInOuts()

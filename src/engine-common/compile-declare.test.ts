@@ -75,7 +75,7 @@ describe('compileDeclare', () => {
             let BLOCK_SIZE
             let SAMPLE_RATE
 
-            let osc_INS_0_message
+            let osc_INS_0_message = []
             let osc_INS_0_signal
             let osc_OUTS_0
             // [osc~] frequency 440

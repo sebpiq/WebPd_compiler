@@ -13,7 +13,13 @@ import { DspGraph } from '@webpd/dsp-graph'
 import {
     MESSAGE_DATUM_TYPE_STRING,
     MESSAGE_DATUM_TYPE_FLOAT,
+    FS_OPERATION_FAILURE,
+    FS_OPERATION_SUCCESS,
 } from './constants'
+
+export type fs_OperationStatus =
+    | typeof FS_OPERATION_SUCCESS
+    | typeof FS_OPERATION_FAILURE
 
 /**
  * Type for messages sent through the control flow.
@@ -44,7 +50,8 @@ export type EngineAccessors = { [accessorName: string]: (...args: any) => any }
 export type EngineFs = {
     readSoundFileResponse: (
         operationId: number,
-        sound: Array<Float32Array | Float64Array>
+        status: fs_OperationStatus,
+        sound?: Array<Float32Array | Float64Array>
     ) => void
 }
 
