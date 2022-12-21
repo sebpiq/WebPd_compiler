@@ -482,7 +482,7 @@ describe('AssemblyScriptWasmEngine', () => {
                             }
                         `,
                         {
-                            fsListenersCallbacks: {
+                            fsCallbacks: {
                                 readSound: (...args) => called.push(args),
                                 writeSound: () => undefined,
                             },

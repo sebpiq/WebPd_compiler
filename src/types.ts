@@ -55,6 +55,15 @@ export type EngineFs = {
     ) => void
 }
 
+export type EngineFsCallbacks = {
+    readSound: (operationId: number, url: string, info: any) => void
+    writeSound: (
+        url: string,
+        data: Array<Float32Array | Float64Array>,
+        info: any
+    ) => void
+}
+
 /**
  *  Base interface for DSP engine
  */

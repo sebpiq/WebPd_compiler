@@ -26,7 +26,7 @@ import {
     Engine,
     Message,
     EngineFs,
-    fs_OperationStatus,
+    EngineFsCallbacks,
 } from '../types'
 import {
     liftString,
@@ -54,14 +54,7 @@ export interface EngineSettings {
             [inletId: DspGraph.PortletId]: (messages: Array<Message>) => void
         }
     }
-    fsListenersCallbacks?: {
-        readSound: (operationId: number, url: string, info: any) => void
-        writeSound: (
-            url: string,
-            data: Array<Float32Array | Float64Array>,
-            info: any
-        ) => void
-    }
+    fsCallbacks?: EngineFsCallbacks
 }
 
 interface AudioConfig {
@@ -278,21 +271,21 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     _makeFileListenersWasmImports(): fs_WasmImports {
-        const { fsListenersCallbacks } = this.settings
+        const { fsCallbacks } = this.settings
         let wasmImports: fs_WasmImports = {
             fs_requestReadSoundFile: () => undefined,
             fs_requestWriteSoundFile: () => undefined,
             fs_requestReadSoundStream: () => undefined,
             fs_requestCloseSoundStream: () => undefined,
         }
-        if (this.settings.fsListenersCallbacks) {
+        if (this.settings.fsCallbacks) {
             wasmImports.fs_requestReadSoundFile = (
                 operationId,
                 urlPointer,
                 info
             ) => {
                 const url = liftString(this.wasmExports, urlPointer)
-                fsListenersCallbacks.readSound(operationId, url, info)
+                fsCallbacks.readSound(operationId, url, info)
             }
             wasmImports.fs_requestWriteSoundFile = (
                 urlPointer,
@@ -305,7 +298,7 @@ export class AssemblyScriptWasmEngine implements Engine {
                     this.metadata.compilation.audioSettings.bitDepth,
                     listOfArraysPointer
                 ) as Array<FloatArrayType>
-                fsListenersCallbacks.writeSound(url, listOfArrays, info)
+                fsCallbacks.writeSound(url, listOfArrays, info)
             }
         }
         return wasmImports
