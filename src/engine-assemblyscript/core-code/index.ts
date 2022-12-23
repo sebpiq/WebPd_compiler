@@ -1,11 +1,11 @@
 import {
     FS_OPERATION_FAILURE,
     FS_OPERATION_SUCCESS,
-    MESSAGE_DATUM_TYPE_FLOAT,
-    MESSAGE_DATUM_TYPE_STRING,
+    MSG_DATUM_TYPE_FLOAT,
+    MSG_DATUM_TYPE_STRING,
 } from '../../constants'
 import { Code, EngineVariableNames } from '../../types'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from '../constants'
+import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from '../constants'
 import MSG_ASC from './msg.asc'
 import TARRAY_ASC from './tarray.asc'
 import FS_ASC from './fs.asc'
@@ -24,15 +24,15 @@ export const replacePlaceholders = (
         .replaceAll('${FS_OPERATION_SUCCESS}', FS_OPERATION_SUCCESS.toString())
         .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
         .replaceAll(
-            '${MESSAGE_DATUM_TYPE_FLOAT}',
-            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MESSAGE_DATUM_TYPE_FLOAT
+            '${MSG_DATUM_TYPE_FLOAT}',
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MSG_DATUM_TYPE_FLOAT
             ].toString()
         )
         .replaceAll(
-            '${MESSAGE_DATUM_TYPE_STRING}',
-            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MESSAGE_DATUM_TYPE_STRING
+            '${MSG_DATUM_TYPE_STRING}',
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MSG_DATUM_TYPE_STRING
             ].toString()
         )
 }

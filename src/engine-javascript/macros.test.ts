@@ -11,8 +11,8 @@
 
 import assert from 'assert'
 import {
-    MESSAGE_DATUM_TYPE_FLOAT,
-    MESSAGE_DATUM_TYPE_STRING,
+    MSG_DATUM_TYPE_FLOAT,
+    MSG_DATUM_TYPE_STRING,
 } from '../constants'
 import { makeCompilation } from '../test-helpers'
 import macros from './macros'
@@ -26,8 +26,8 @@ describe('macros', () => {
     describe('isMessageMatching', () => {
         it('should generate condition for types', () => {
             const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
-                MESSAGE_DATUM_TYPE_STRING,
-                MESSAGE_DATUM_TYPE_FLOAT,
+                MSG_DATUM_TYPE_STRING,
+                MSG_DATUM_TYPE_FLOAT,
             ])
             assert.strictEqual(
                 code,
@@ -48,7 +48,7 @@ describe('macros', () => {
 
         it('should generate condition for types and values', () => {
             const code = macros.isMessageMatching(COMPILATION, 'myMessage', [
-                MESSAGE_DATUM_TYPE_FLOAT,
+                MSG_DATUM_TYPE_FLOAT,
                 'bla',
             ])
             assert.strictEqual(

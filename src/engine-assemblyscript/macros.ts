@@ -12,8 +12,8 @@
 import { DspGraph } from '@webpd/dsp-graph'
 import { buildMessageTransferOperations, renderCode } from '../compile-helpers'
 import {
-    MESSAGE_DATUM_TYPE_FLOAT,
-    MESSAGE_DATUM_TYPE_STRING,
+    MSG_DATUM_TYPE_FLOAT,
+    MSG_DATUM_TYPE_STRING,
 } from '../constants'
 import {
     Code,
@@ -23,7 +23,10 @@ import {
     Message,
     MessageDatumType,
 } from '../types'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+
+const ASC_MSG_FLOAT_TOKEN = MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]
+const ASC_MSG_STRING_TOKEN = MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]
 
 const typedVarInt = (_: Compilation, name: CodeVariableName) => `${name}: i32`
 
@@ -48,6 +51,9 @@ const typedVarFloatArray = (
 const typedVarMessageArray = (_: Compilation, name: CodeVariableName) =>
     `${name}: Message[]`
 
+const typedVarStringArray = (_: Compilation, name: CodeVariableName) =>
+    `${name}: string[]`
+
 const castToInt = (_: Compilation, name: CodeVariableName) => `i32(${name})`
 
 const castToFloat = (
@@ -71,16 +77,12 @@ const createMessage = (
             if (typeof value === 'number') {
                 return [
                     ...template,
-                    MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                        MESSAGE_DATUM_TYPE_FLOAT
-                    ],
+                    ASC_MSG_FLOAT_TOKEN,
                 ]
             } else if (typeof value === 'string') {
                 return [
                     ...template,
-                    MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                        MESSAGE_DATUM_TYPE_STRING
-                    ],
+                    ASC_MSG_STRING_TOKEN,
                     value.length,
                 ]
             } else {
@@ -112,7 +114,7 @@ const isMessageMatching = (
     const conditionOnDatumCount = `${name}.datumCount === ${tokens.length}`
     const conditionsOnValues: Array<Code> = []
     const conditionsOnTypes: Array<Code> = tokens.map((token, tokenIndex) => {
-        if (typeof token === 'number' || token === MESSAGE_DATUM_TYPE_FLOAT) {
+        if (typeof token === 'number' || token === MSG_DATUM_TYPE_FLOAT) {
             if (typeof token === 'number') {
                 conditionsOnValues.push(
                     `${macros.readMessageFloatDatum(
@@ -122,10 +124,10 @@ const isMessageMatching = (
                     )} === ${token}`
                 )
             }
-            return `${name}.datumTypes[${tokenIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}`
+            return `${name}.datumTypes[${tokenIndex}] === ${ASC_MSG_FLOAT_TOKEN}`
         } else if (
             typeof token === 'string' ||
-            token === MESSAGE_DATUM_TYPE_STRING
+            token === MSG_DATUM_TYPE_STRING
         ) {
             if (typeof token === 'string') {
                 conditionsOnValues.push(
@@ -136,7 +138,7 @@ const isMessageMatching = (
                     )} === "${token}"`
                 )
             }
-            return `${name}.datumTypes[${tokenIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}`
+            return `${name}.datumTypes[${tokenIndex}] === ${ASC_MSG_STRING_TOKEN}`
         } else {
             throw new Error(`unexpected token ${token}`)
         }
@@ -151,16 +153,34 @@ const isMessageMatching = (
     ].join(' && ')})`
 }
 
+const extractMessageStringTokens = (
+    compilation: Compilation,
+    messageVariableName: CodeVariableName,
+    destinationVariableName: CodeVariableName,
+) => {
+    const {macros} = compilation
+    return `
+        const ${destinationVariableName}: Array<Array<string>> = []
+        for (let i = 0; i < ${messageVariableName}.datumCount; i++) {
+            if (${messageVariableName}.datumTypes[i] === ${ASC_MSG_STRING_TOKEN}) {
+                ${destinationVariableName}.push([
+                    i.toString(), ${macros.readMessageStringDatum(compilation, messageVariableName, 'i')}
+                ])
+            }
+        }
+    `
+}
+
 const readMessageStringDatum = (
     _: Compilation,
     name: CodeVariableName,
-    tokenIndex: number
+    tokenIndex: number | CodeVariableName
 ) => `msg_readStringDatum(${name}, ${tokenIndex})`
 
 const readMessageFloatDatum = (
     _: Compilation,
     name: CodeVariableName,
-    tokenIndex: number
+    tokenIndex: number | CodeVariableName
 ) => `msg_readFloatDatum(${name}, ${tokenIndex})`
 
 const fillInLoopInput = (
@@ -197,7 +217,7 @@ const messageTransfer = (
             // prettier-ignore
             outMessageTemplateCode.push(`
                 outTemplate.push(${inVariableName}.datumTypes[${inIndex}])
-                if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
+                if (${inVariableName}.datumTypes[${inIndex}] === ${ASC_MSG_STRING_TOKEN}) {
                     const stringDatum: string = msg_readStringDatum(${inVariableName}, ${inIndex})
                     stringMem[${stringMemCount}] = stringDatum
                     outTemplate.push(stringDatum.length)
@@ -205,9 +225,9 @@ const messageTransfer = (
             `)
             // prettier-ignore
             outMessageSetCode.push(`
-                if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
+                if (${inVariableName}.datumTypes[${inIndex}] === ${ASC_MSG_FLOAT_TOKEN}) {
                     msg_writeFloatDatum(outMessage, ${outIndex}, msg_readFloatDatum(${inVariableName}, ${inIndex}))
-                } else if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
+                } else if (${inVariableName}.datumTypes[${inIndex}] === ${ASC_MSG_STRING_TOKEN}) {
                     msg_writeStringDatum(outMessage, ${outIndex}, stringMem[${stringMemCount}])
                 }
             `)
@@ -217,24 +237,18 @@ const messageTransfer = (
             outMessageTemplateCode.push(`
                 let stringDatum: string = "${operation.template}"
                 ${operation.variables.map(({placeholder, inIndex}) => `
-                    if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}) {
+                    if (${inVariableName}.datumTypes[${inIndex}] === ${ASC_MSG_FLOAT_TOKEN}) {
                         let value: string = msg_readFloatDatum(${inVariableName}, ${inIndex}).toString()
                         if (value.endsWith('.0')) {
                             value = value.slice(0, -2)
                         }
-                        stringDatum = stringDatum.replace(
-                            "${placeholder}",
-                            value
-                        )
-                    } else if (${inVariableName}.datumTypes[${inIndex}] === ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}) {
-                        stringDatum = stringDatum.replace(
-                            "${placeholder}",
-                            msg_readStringDatum(${inVariableName}, ${inIndex})
-                        )
+                        stringDatum = stringDatum.replace("${placeholder}", value)
+                    } else if (${inVariableName}.datumTypes[${inIndex}] === ${ASC_MSG_STRING_TOKEN}) {
+                        stringDatum = stringDatum.replace("${placeholder}", msg_readStringDatum(${inVariableName}, ${inIndex}))
                     }`
                 )}
                 stringMem[${stringMemCount}] = stringDatum
-                outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]})
+                outTemplate.push(${ASC_MSG_STRING_TOKEN})
                 outTemplate.push(stringDatum.length)
             `)
             outMessageSetCode.push(`
@@ -244,7 +258,7 @@ const messageTransfer = (
         } else if (operation.type === 'string-constant') {
             // prettier-ignore
             outMessageTemplateCode.push(`
-                outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]})
+                outTemplate.push(${ASC_MSG_STRING_TOKEN})
                 outTemplate.push(${operation.value.length})
             `)
 
@@ -253,7 +267,7 @@ const messageTransfer = (
             `)
         } else if (operation.type === 'float-constant') {
             outMessageTemplateCode.push(`
-                outTemplate.push(${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]})
+                outTemplate.push(${ASC_MSG_FLOAT_TOKEN})
             `)
 
             outMessageSetCode.push(`
@@ -284,11 +298,13 @@ const macros: CodeMacros = {
     typedVarMessage,
     typedVarFloatArray,
     typedVarMessageArray,
+    typedVarStringArray,
     castToInt,
     castToFloat,
     functionHeader,
     createMessage,
     isMessageMatching,
+    extractMessageStringTokens,
     readMessageStringDatum,
     readMessageFloatDatum,
     fillInLoopInput,

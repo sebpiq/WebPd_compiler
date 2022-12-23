@@ -178,8 +178,8 @@ describe('msg-bindings', () => {
                 (audioSettings) => getAscCode('msg.asc', audioSettings) + `
                     export function testCreateMessage(): Message {
                         const message: Message = Message.fromTemplate([
-                            MESSAGE_DATUM_TYPE_STRING, 5,
-                            MESSAGE_DATUM_TYPE_FLOAT,
+                            MSG_DATUM_TYPE_STRING, 5,
+                            MSG_DATUM_TYPE_FLOAT,
                         ])
                         msg_writeStringDatum(message, 0, "hello")
                         msg_writeFloatDatum(message, 1, 666)
@@ -239,7 +239,7 @@ describe('msg-bindings', () => {
                         ),
                         [
                             1,
-                            wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf(),
+                            wasmExports.MSG_DATUM_TYPE_STRING.valueOf(),
                             INT_ARRAY_BYTES_PER_ELEMENT * 4,
                             INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
                             0,
@@ -255,7 +255,7 @@ describe('msg-bindings', () => {
                         ),
                         [
                             1,
-                            wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf(),
+                            wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf(),
                             INT_ARRAY_BYTES_PER_ELEMENT * 4,
                             INT_ARRAY_BYTES_PER_ELEMENT * 4 +
                                 floatArrayType.BYTES_PER_ELEMENT,

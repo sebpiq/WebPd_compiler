@@ -35,8 +35,8 @@ import {
 } from '../types'
 
 export interface msg_WasmExports extends core_WasmExports {
-    MESSAGE_DATUM_TYPE_FLOAT: WebAssembly.Global
-    MESSAGE_DATUM_TYPE_STRING: WebAssembly.Global
+    MSG_DATUM_TYPE_FLOAT: WebAssembly.Global
+    MSG_DATUM_TYPE_STRING: WebAssembly.Global
 
     msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
@@ -82,12 +82,12 @@ export const liftMessage = (
     )
     const message: Message = []
     messageDatumTypes.forEach((datumType, datumIndex) => {
-        if (datumType === wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf()) {
+        if (datumType === wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf()) {
             message.push(
                 wasmExports.msg_readFloatDatum(messagePointer, datumIndex)
             )
         } else if (
-            datumType === wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf()
+            datumType === wasmExports.MSG_DATUM_TYPE_STRING.valueOf()
         ) {
             const stringPointer = wasmExports.msg_readStringDatum(
                 messagePointer,
@@ -105,9 +105,9 @@ export const lowerMessage = (
 ): InternalPointer => {
     const messageTemplate: Array<number> = message.reduce((template, value) => {
         if (typeof value === 'number') {
-            template.push(wasmExports.MESSAGE_DATUM_TYPE_FLOAT.valueOf())
+            template.push(wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf())
         } else if (typeof value === 'string') {
-            template.push(wasmExports.MESSAGE_DATUM_TYPE_STRING.valueOf())
+            template.push(wasmExports.MSG_DATUM_TYPE_STRING.valueOf())
             template.push(value.length)
         } else {
             throw new Error(`invalid message value ${value}`)

@@ -68,8 +68,8 @@ describe('compileToAssemblyscript', () => {
                 let bla: f32 = 1
                 let blo: Message[] = []
                 let bli: f32 = 2
-                let bluMessage1: Message = Message.fromTemplate([ MESSAGE_DATUM_TYPE_FLOAT, MESSAGE_DATUM_TYPE_STRING, 4 ])
-                let bluMessage2: Message = Message.fromTemplate([ MESSAGE_DATUM_TYPE_FLOAT ])
+                let bluMessage1: Message = Message.fromTemplate([ MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_STRING, 4 ])
+                let bluMessage2: Message = Message.fromTemplate([ MSG_DATUM_TYPE_FLOAT ])
                 let blu: Message[] = [bluMessage1, bluMessage2]
                 let blu2: Message[] = [bluMessage2]
 
@@ -238,8 +238,8 @@ describe('compileToAssemblyscript', () => {
             tarray_getListOfArraysLength: (_: number) => 0,
             tarray_getListOfArraysElem: (_: number, __: number) => 0,
             metadata: new WebAssembly.Global({ value: 'i32' }),
-            MESSAGE_DATUM_TYPE_FLOAT: new WebAssembly.Global({ value: 'i32' }),
-            MESSAGE_DATUM_TYPE_STRING: new WebAssembly.Global({ value: 'i32' }),
+            MSG_DATUM_TYPE_FLOAT: new WebAssembly.Global({ value: 'i32' }),
+            MSG_DATUM_TYPE_STRING: new WebAssembly.Global({ value: 'i32' }),
             msg_create: () => 0,
             msg_getDatumTypes: () => 0,
             msg_createArray: () => 0,

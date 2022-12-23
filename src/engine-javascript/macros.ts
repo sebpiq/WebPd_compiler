@@ -12,8 +12,8 @@
 import { DspGraph } from '@webpd/dsp-graph'
 import { buildMessageTransferOperations } from '../compile-helpers'
 import {
-    MESSAGE_DATUM_TYPE_FLOAT,
-    MESSAGE_DATUM_TYPE_STRING,
+    MSG_DATUM_TYPE_FLOAT,
+    MSG_DATUM_TYPE_STRING,
 } from '../constants'
 import {
     Code,
@@ -35,6 +35,9 @@ const typedVarMessage = (_: Compilation, name: CodeVariableName) => `${name}`
 const typedVarFloatArray = (_: Compilation, name: CodeVariableName) => `${name}`
 
 const typedVarMessageArray = (_: Compilation, name: CodeVariableName) =>
+    `${name}`
+
+const typedVarStringArray = (_: Compilation, name: CodeVariableName) =>
     `${name}`
 
 const castToInt = (_: Compilation, name: CodeVariableName) => `${name}`
@@ -61,9 +64,9 @@ const isMessageMatching = (
             return `${name}[${tokenIndex}] === ${token}`
         } else if (typeof token === 'string') {
             return `${name}[${tokenIndex}] === "${token}"`
-        } else if (token === MESSAGE_DATUM_TYPE_FLOAT) {
+        } else if (token === MSG_DATUM_TYPE_FLOAT) {
             return `typeof ${name}[${tokenIndex}] === "number"`
-        } else if (token === MESSAGE_DATUM_TYPE_STRING) {
+        } else if (token === MSG_DATUM_TYPE_STRING) {
             return `typeof ${name}[${tokenIndex}] === "string"`
         } else {
             throw new Error(`unexpected token ${token}`)
@@ -71,6 +74,21 @@ const isMessageMatching = (
     })
     return `(${[conditionOnLength, ...conditionsOnValues].join(' && ')})`
 }
+
+const extractMessageStringTokens = (
+    _: Compilation,
+    messageVariableName: CodeVariableName,
+    destinationVariableName: CodeVariableName,
+) => `
+        const ${destinationVariableName} = []
+        for (let i = 0; i < ${messageVariableName}.length; i++) {
+            if (typeof ${messageVariableName}[i] === "string") {
+                ${destinationVariableName}.push([
+                    i, ${messageVariableName}[i]
+                ])
+            }
+        }
+    `
 
 const readMessageStringDatum = (
     _: Compilation,
@@ -137,11 +155,13 @@ const macros: CodeMacros = {
     typedVarMessage,
     typedVarFloatArray,
     typedVarMessageArray,
+    typedVarStringArray,
     castToInt,
     castToFloat,
     functionHeader,
     createMessage,
     isMessageMatching,
+    extractMessageStringTokens,
     readMessageStringDatum,
     readMessageFloatDatum,
     fillInLoopInput,

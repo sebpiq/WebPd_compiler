@@ -14,11 +14,11 @@ import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import {
-    MESSAGE_DATUM_TYPE_FLOAT,
-    MESSAGE_DATUM_TYPE_STRING,
+    MSG_DATUM_TYPE_FLOAT,
+    MSG_DATUM_TYPE_STRING,
 } from '../constants'
 import { Code } from '../types'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -31,15 +31,15 @@ export const getAssemblyscriptCoreCode = () => {
         .replaceAll('${getFloat}', 'getFloat64')
         .replaceAll('${setFloat}', 'setFloat64')
         .replaceAll(
-            '${MESSAGE_DATUM_TYPE_FLOAT}',
-            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MESSAGE_DATUM_TYPE_FLOAT
+            '${MSG_DATUM_TYPE_FLOAT}',
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MSG_DATUM_TYPE_FLOAT
             ].toString()
         )
         .replaceAll(
-            '${MESSAGE_DATUM_TYPE_STRING}',
-            MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MESSAGE_DATUM_TYPE_STRING
+            '${MSG_DATUM_TYPE_STRING}',
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MSG_DATUM_TYPE_STRING
             ].toString()
         )
 }

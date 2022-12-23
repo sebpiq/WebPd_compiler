@@ -13,8 +13,8 @@ import assert from 'assert'
 import {
     FS_OPERATION_FAILURE,
     FS_OPERATION_SUCCESS,
-    MESSAGE_DATUM_TYPE_FLOAT,
-    MESSAGE_DATUM_TYPE_STRING,
+    MSG_DATUM_TYPE_FLOAT,
+    MSG_DATUM_TYPE_STRING,
 } from '../constants'
 import { compileWasmModule } from './test-helpers'
 import { createEngine, EngineSettings, readMetadata } from './wasm-bindings'
@@ -27,7 +27,7 @@ import {
 } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation, round } from '../test-helpers'
-import { MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import macros from './macros'
 import { EngineMetadata } from './types'
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
@@ -296,11 +296,11 @@ describe('AssemblyScriptWasmEngine', () => {
                     compileToAssemblyscript(compilation) + `
                         const someMessageArray: Message[] = []
                         const m1 = Message.fromTemplate([
-                            ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
+                            ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}
                         ])
                         const m2 = Message.fromTemplate([
-                            ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 3,
-                            ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
+                            ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 3,
+                            ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}
                         ])
                         msg_writeFloatDatum(m1, 0, 666.5)
                         msg_writeStringDatum(m2, 0, 'bla')
@@ -519,11 +519,11 @@ describe('AssemblyScriptWasmEngine', () => {
                     compileToAssemblyscript(compilation) + `
                         const bla_INS_blo: Message[] = [
                             Message.fromTemplate([
-                                ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]},
-                                ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_FLOAT]}
+                                ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]},
+                                ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}
                             ]),
                             Message.fromTemplate([
-                                ${MESSAGE_DATUM_TYPES_ASSEMBLYSCRIPT[MESSAGE_DATUM_TYPE_STRING]}, 2
+                                ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 2
                             ]),
                         ]
                         msg_writeFloatDatum(bla_INS_blo[0], 0, 123)

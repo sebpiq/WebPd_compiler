@@ -11,8 +11,8 @@
 
 import { DspGraph } from '@webpd/dsp-graph'
 import {
-    MESSAGE_DATUM_TYPE_STRING,
-    MESSAGE_DATUM_TYPE_FLOAT,
+    MSG_DATUM_TYPE_STRING,
+    MSG_DATUM_TYPE_FLOAT,
     FS_OPERATION_FAILURE,
     FS_OPERATION_SUCCESS,
 } from './constants'
@@ -32,8 +32,8 @@ export type Message = Array<string | number>
 export type Signal = number
 
 export type MessageDatumType =
-    | typeof MESSAGE_DATUM_TYPE_STRING
-    | typeof MESSAGE_DATUM_TYPE_FLOAT
+    | typeof MSG_DATUM_TYPE_STRING
+    | typeof MSG_DATUM_TYPE_FLOAT
 
 export type CompilerTarget = 'assemblyscript' | 'javascript'
 
@@ -104,6 +104,10 @@ export type CodeMacros = {
         compilation: Compilation,
         name: CodeVariableName
     ) => Code
+    typedVarStringArray: (
+        compilation: Compilation,
+        name: CodeVariableName
+    ) => Code
     castToInt: (compilation: Compilation, name: CodeVariableName) => Code
     castToFloat: (compilation: Compilation, name: CodeVariableName) => Code
     functionHeader: (
@@ -120,15 +124,20 @@ export type CodeMacros = {
         name: CodeVariableName,
         tokens: Array<number | string | MessageDatumType>
     ) => Code
+    extractMessageStringTokens: (
+        compilation: Compilation,
+        messageVariableName: CodeVariableName,
+        destinationVariableName: CodeVariableName,
+    ) => Code
     readMessageStringDatum: (
         compilation: Compilation,
         name: CodeVariableName,
-        tokenIndex: number
+        tokenIndex: number | CodeVariableName
     ) => Code
     readMessageFloatDatum: (
         compilation: Compilation,
         name: CodeVariableName,
-        tokenIndex: number
+        tokenIndex: number | CodeVariableName
     ) => Code
     fillInLoopInput: (
         compilation: Compilation,
