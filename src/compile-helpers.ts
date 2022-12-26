@@ -152,3 +152,19 @@ type MessageTransferOperation =
     | MessageTransferOperationFloatConstant
     | MessageTransferOperationStringConstant
     | MessageTransferOperationStringTemplate
+
+// TODO : test only one string? 
+export const renderTemplatedCode = (
+    strings: TemplateStringsArray | Array<string>,
+    ...variables: Array<string>
+): Code => {
+    let code: Code = ''
+    strings.forEach((strng, index) => {
+        code += strng
+        // `variables` length is 1 less than `strings` length.
+        if (index < variables.length) {
+            code += variables[index]
+        }
+    })
+    return code
+}

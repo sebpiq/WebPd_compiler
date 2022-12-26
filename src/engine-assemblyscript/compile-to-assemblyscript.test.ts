@@ -68,8 +68,8 @@ describe('compileToAssemblyscript', () => {
                 let bla: f32 = 1
                 let blo: Message[] = []
                 let bli: f32 = 2
-                let bluMessage1: Message = Message.fromTemplate([ MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_STRING, 4 ])
-                let bluMessage2: Message = Message.fromTemplate([ MSG_DATUM_TYPE_FLOAT ])
+                let bluMessage1: Message = msg_create([ MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_STRING, 4 ])
+                let bluMessage2: Message = msg_create([ MSG_DATUM_TYPE_FLOAT ])
                 let blu: Message[] = [bluMessage1, bluMessage2]
                 let blu2: Message[] = [bluMessage2]
 

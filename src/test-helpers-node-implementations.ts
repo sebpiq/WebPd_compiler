@@ -11,7 +11,7 @@
 
 import assert from 'assert'
 import { DspGraph } from '@webpd/dsp-graph'
-import { getMacros, executeCompilation } from './compile'
+import { getMacros, executeCompilation, getSnippetHandler } from './compile'
 import { renderCode } from './compile-helpers'
 import { createEngine } from './engine-assemblyscript/wasm-bindings'
 import { compileWasmModule } from './engine-assemblyscript/test-helpers'
@@ -21,11 +21,9 @@ import {
     Signal,
     Message,
     Engine,
-    CompilerSettings,
     NodeImplementations,
     AccessorSpecs,
     CompilerTarget,
-    Compilation,
     Code,
 } from './types'
 export { executeCompilation } from './compile'
@@ -74,7 +72,7 @@ export type Frame = {
 }
 
 export const generateFramesForNode = async (
-    target: CompilerSettings['target'],
+    target: CompilerTarget,
     nodeTestSettings: NodeTestSettings,
     inputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
@@ -231,6 +229,7 @@ export const generateFramesForNode = async (
             bitDepth: 64,
         },
         accessorSpecs,
+        snippet: getSnippetHandler(target),
     })
     const code = executeCompilation(compilation)
     const engine = await getEngine(compilation.target, code)

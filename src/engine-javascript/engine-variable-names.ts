@@ -9,7 +9,7 @@
  *
  */
 
-import { EngineVariableNames, AccessorSpecs, AudioSettings } from '../types'
+import { EngineVariableNames, AccessorSpecs } from '../types'
 
 export const attachAccessors = (
     engineVariableNames: EngineVariableNames,
@@ -28,12 +28,4 @@ export const attachAccessors = (
             ] = `write_${variableName}`
         }
     })
-}
-
-export const attachTypes = (
-    engineVariableNames: EngineVariableNames,
-    bitDepth: AudioSettings['bitDepth']
-) => {
-    engineVariableNames.types.FloatArrayType =
-        bitDepth === 32 ? 'Float32Array' : 'Float64Array'
 }

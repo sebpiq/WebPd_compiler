@@ -16,6 +16,7 @@ import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
+import CORE_CODE from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const { accessorSpecs } = compilation
@@ -24,6 +25,8 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
 
     // prettier-ignore
     return renderCode`
+        ${CORE_CODE}
+
         const ${globs.arrays} = new Map()
 
         ${compileDeclare(compilation, graphTraversal)}

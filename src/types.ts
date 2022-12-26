@@ -37,6 +37,12 @@ export type MessageDatumType =
 
 export type CompilerTarget = 'assemblyscript' | 'javascript'
 
+// Function to declare code snippets
+export type SnippetHandler = (
+    strings: TemplateStringsArray,
+    ...variables: Array<string | number>
+) => Code
+
 // Code stored in string variable for later evaluation.
 export type Code = string
 
@@ -89,6 +95,7 @@ export interface Compilation {
     readonly inletListenerSpecs: InletListenerSpecs
     readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
+    readonly snippet: SnippetHandler
 }
 
 export type CodeMacros = {
@@ -224,6 +231,7 @@ export interface EngineVariableNames {
 export type NodeCodeGenerator<NodeArgsType> = (
     node: DspGraph.Node<NodeArgsType>,
     variableNames: NodeVariableNames & {
+        types: EngineVariableNames['types']
         globs: EngineVariableNames['g']
         macros: WrappedCodeMacros
     },
@@ -235,6 +243,7 @@ export interface NodeImplementation<NodeArgsType> {
     initialize?: NodeCodeGenerator<NodeArgsType>
     loop: NodeCodeGenerator<NodeArgsType>
     stateVariables?: Array<string>
+    snippets?: { [snippetName: string]: NodeCodeGenerator<NodeArgsType> }
 }
 
 export type NodeImplementations = {

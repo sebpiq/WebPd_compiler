@@ -295,10 +295,10 @@ describe('AssemblyScriptWasmEngine', () => {
                     // prettier-ignore
                     compileToAssemblyscript(compilation) + `
                         const someMessageArray: Message[] = []
-                        const m1 = Message.fromTemplate([
+                        const m1 = msg_create([
                             ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}
                         ])
-                        const m2 = Message.fromTemplate([
+                        const m2 = msg_create([
                             ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 3,
                             ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}
                         ])
@@ -518,11 +518,11 @@ describe('AssemblyScriptWasmEngine', () => {
                     // prettier-ignore
                     compileToAssemblyscript(compilation) + `
                         const bla_INS_blo: Message[] = [
-                            Message.fromTemplate([
+                            msg_create([
                                 ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]},
                                 ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}
                             ]),
-                            Message.fromTemplate([
+                            msg_create([
                                 ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 2
                             ]),
                         ]

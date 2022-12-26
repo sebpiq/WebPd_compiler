@@ -72,7 +72,7 @@ const createMessage = (
     message: Message
 ) => {
     return renderCode`
-        const ${name}: Message = Message.fromTemplate([${message
+        const ${name}: Message = msg_create([${message
         .reduce((template, value) => {
             if (typeof value === 'number') {
                 return [
@@ -285,7 +285,7 @@ const messageTransfer = (
             const outTemplate: MessageTemplate = []
             ${outMessageTemplateCode}
             
-            ${outVariableName} = Message.fromTemplate(outTemplate)
+            ${outVariableName} = msg_create(outTemplate)
             ${outMessageSetCode}
         }
     `

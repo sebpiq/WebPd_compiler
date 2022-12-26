@@ -34,16 +34,3 @@ export const attachAccessors = (
         }
     })
 }
-
-export const attachTypes = (
-    engineVariableNames: EngineVariableNames,
-    bitDepth: AudioSettings['bitDepth']
-) => {
-    engineVariableNames.types.FloatType = bitDepth === 32 ? 'f32' : 'f64'
-    engineVariableNames.types.FloatArrayType =
-        bitDepth === 32 ? 'Float32Array' : 'Float64Array'
-    engineVariableNames.types.getFloat =
-        bitDepth === 32 ? 'getFloat32' : 'getFloat64'
-    engineVariableNames.types.setFloat =
-        bitDepth === 32 ? 'setFloat32' : 'setFloat64'
-}

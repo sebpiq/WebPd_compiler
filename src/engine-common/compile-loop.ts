@@ -25,6 +25,7 @@ export default (
     const { inletListenerSpecs: inletListenerSpecs, engineVariableNames } =
         compilation
     const globs = compilation.engineVariableNames.g
+    const types = compilation.engineVariableNames.types
     const macros = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`${[
@@ -50,6 +51,7 @@ export default (
                         ...nodeVariableNames,
                         globs,
                         macros,
+                        types,
                     },
                     compilation
                 ),

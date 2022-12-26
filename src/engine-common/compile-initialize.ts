@@ -22,6 +22,7 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const globs = compilation.engineVariableNames.g
+    const types = compilation.engineVariableNames.types
     const macros = wrapMacros(compilation.macros, compilation)
     // prettier-ignore
     return renderCode`
@@ -49,6 +50,7 @@ export default (
                         ...compilation.engineVariableNames.n[node.id],
                         globs,
                         macros,
+                        types,
                     },
                     compilation
                 ): '',

@@ -177,7 +177,7 @@ describe('msg-bindings', () => {
                 // prettier-ignore
                 (audioSettings) => getAscCode('msg.asc', audioSettings) + `
                     export function testCreateMessage(): Message {
-                        const message: Message = Message.fromTemplate([
+                        const message: Message = msg_create([
                             MSG_DATUM_TYPE_STRING, 5,
                             MSG_DATUM_TYPE_FLOAT,
                         ])

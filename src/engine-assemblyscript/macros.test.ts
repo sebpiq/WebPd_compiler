@@ -33,7 +33,7 @@ describe('macros', () => {
             assert.strictEqual(
                 normalizeCode(code),
                 normalizeCode(`
-                const myMessage: Message = Message.fromTemplate([${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 4, ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 3])
+                const myMessage: Message = msg_create([${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 4, ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING]}, 3])
                 msg_writeStringDatum(myMessage, 0, "bang")
                 msg_writeStringDatum(myMessage, 1, "lol")
             `)
@@ -49,7 +49,7 @@ describe('macros', () => {
             assert.strictEqual(
                 normalizeCode(code),
                 normalizeCode(`
-                const myMessage: Message = Message.fromTemplate([${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}, ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}])
+                const myMessage: Message = msg_create([${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}, ${MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]}])
                 msg_writeFloatDatum(myMessage, 0, 1.234)
                 msg_writeFloatDatum(myMessage, 1, 888)
             `)

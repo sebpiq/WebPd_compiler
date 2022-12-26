@@ -138,15 +138,16 @@ export const attachAccessors = (
  * Helper to attach types to variable names depending on compile target and bitDepth.
  */
 export const attachTypes = (
-    target: CompilerTarget,
     engineVariableNames: EngineVariableNames,
     bitDepth: AudioSettings['bitDepth']
 ) => {
-    if (target === 'javascript') {
-        jsVariableNames.attachTypes(engineVariableNames, bitDepth)
-    } else if (target === 'assemblyscript') {
-        ascVariableNames.attachTypes(engineVariableNames, bitDepth)
-    }
+    engineVariableNames.types.FloatType = bitDepth === 32 ? 'f32' : 'f64'
+    engineVariableNames.types.FloatArrayType =
+        bitDepth === 32 ? 'Float32Array' : 'Float64Array'
+    engineVariableNames.types.getFloat =
+        bitDepth === 32 ? 'getFloat32' : 'getFloat64'
+    engineVariableNames.types.setFloat =
+        bitDepth === 32 ? 'setFloat32' : 'setFloat64'
 }
 
 /**
