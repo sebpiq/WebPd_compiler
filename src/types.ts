@@ -238,12 +238,20 @@ export type NodeCodeGenerator<NodeArgsType> = (
     compilation: Compilation
 ) => Code
 
+export type NodeCodeSnippet<ExtraArgs extends {[variableName: string]: string} = {}> = (
+    snippet: SnippetHandler, 
+    variableNames: NodeVariableNames & {
+        types: EngineVariableNames['types']
+        globs: EngineVariableNames['g']
+    } & ExtraArgs,
+) => Code
+
 export interface NodeImplementation<NodeArgsType> {
     declare?: NodeCodeGenerator<NodeArgsType>
     initialize?: NodeCodeGenerator<NodeArgsType>
     loop: NodeCodeGenerator<NodeArgsType>
     stateVariables?: Array<string>
-    snippets?: { [snippetName: string]: NodeCodeGenerator<NodeArgsType> }
+    snippets?: { [snippetName: string]: NodeCodeSnippet }
 }
 
 export type NodeImplementations = {

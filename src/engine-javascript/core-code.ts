@@ -9,9 +9,11 @@ const msg_create = () => []
 
 const msg_getLength = (m) => m.length
 
-const msg_isStringToken = (m, i) => typeof m[i] === 'string'
+const msg_getDatumType = (m, i) => typeof m[i]
 
-const msg_isFloatToken = (m, i) => typeof m[i] === 'number'
+const msg_isStringToken = (m, i) => msg_getDatumType(m, i) === 'string'
+
+const msg_isFloatToken = (m, i) => msg_getDatumType(m, i) === 'number'
 
 const msg_writeStringDatum = msg_writeFloatDatum = ( m, i, v ) =>
     m[i] = v
