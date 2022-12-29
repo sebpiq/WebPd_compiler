@@ -17,8 +17,11 @@ import {
 
 const typedVar = (name: CodeVariableName, typeString: Code) => `${name}: ${typeString}`
 
+const typedFuncHeader = (args: Array<Code>, returnType: Code) => `(${args.join(', ')}): ${returnType}`
+
 const macros: CodeMacros = {
     typedVar,
+    typedFuncHeader,
 }
 
 export default macros

@@ -37,12 +37,6 @@ export type MessageDatumType =
 
 export type CompilerTarget = 'assemblyscript' | 'javascript'
 
-// Function to declare code snippets
-export type SnippetHandler = (
-    strings: TemplateStringsArray,
-    ...variables: Array<string | number>
-) => Code
-
 // Code stored in string variable for later evaluation.
 export type Code = string
 
@@ -95,11 +89,11 @@ export interface Compilation {
     readonly inletListenerSpecs: InletListenerSpecs
     readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
-    readonly snippet: SnippetHandler
 }
 
 export type CodeMacros = {
     typedVar: (name: CodeVariableName, typeString: Code) => Code
+    typedFuncHeader: (args: Array<Code>, returnType: Code) => Code
 }
 
 export interface NodeVariableNames {
@@ -160,20 +154,11 @@ export type NodeCodeGenerator<NodeArgsType> = (
     compilation: Compilation
 ) => Code
 
-export type NodeCodeSnippet<ExtraArgs extends {[variableName: string]: string} = {}> = (
-    snippet: SnippetHandler, 
-    variableNames: NodeVariableNames & {
-        types: EngineVariableNames['types']
-        globs: EngineVariableNames['g']
-    } & ExtraArgs,
-) => Code
-
 export interface NodeImplementation<NodeArgsType> {
     declare?: NodeCodeGenerator<NodeArgsType>
     initialize?: NodeCodeGenerator<NodeArgsType>
     loop: NodeCodeGenerator<NodeArgsType>
     stateVariables?: Array<string>
-    snippets?: { [snippetName: string]: NodeCodeSnippet }
 }
 
 export type NodeImplementations = {

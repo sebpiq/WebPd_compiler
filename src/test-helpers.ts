@@ -11,7 +11,7 @@
 
 import { Compilation, CompilerTarget } from './types'
 import * as variableNames from './engine-variable-names'
-import { getMacros, getSnippetHandler } from './compile'
+import { getMacros } from './compile'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -60,7 +60,6 @@ export const makeCompilation = (
         accessorSpecs,
         inletListenerSpecs,
         macros: getMacros(target),
-        snippet: getSnippetHandler(target),
         engineVariableNames,
     }
 }

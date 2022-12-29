@@ -19,7 +19,6 @@ import {
     InletListenerSpecs,
     NodeImplementations,
     AccessorSpecs,
-    SnippetHandler,
     CompilerTarget,
 } from './types'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
@@ -28,8 +27,6 @@ import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
 import * as variableNames from './engine-variable-names'
 import { DspGraph } from '@webpd/dsp-graph'
-import { renderTemplatedCode } from './compile-helpers'
-import { renderTemplatedJs } from './engine-javascript/snippet-handler'
 
 export default (
     graph: DspGraph.Graph,
@@ -39,7 +36,6 @@ export default (
     const { audioSettings, inletListenerSpecs, target } =
         validateSettings(compilerSettings)
     const macros = getMacros(target)
-    const snippet = getSnippetHandler(target)
     const engineVariableNames = variableNames.generate(
         nodeImplementations,
         graph
@@ -63,7 +59,6 @@ export default (
         accessorSpecs,
         engineVariableNames,
         macros,
-        snippet,
     })
 }
 
@@ -110,12 +105,6 @@ export const validateSettings = (
  */
 export const getMacros = (target: CompilerTarget): CodeMacros =>
     ({ javascript: jsMacros, assemblyscript: ascMacros }[target])
-
-/**
- * Helper to get snippet handler function.
- */
-export const getSnippetHandler = (target: CompilerTarget): SnippetHandler =>
-    ({ javascript: renderTemplatedJs, assemblyscript: renderTemplatedCode }[target])
 
 /**
  * Helper to execute compilation

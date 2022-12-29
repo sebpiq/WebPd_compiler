@@ -11,7 +11,7 @@
 
 import assert from 'assert'
 import { DspGraph } from '@webpd/dsp-graph'
-import { getMacros, executeCompilation, getSnippetHandler } from './compile'
+import { getMacros, executeCompilation } from './compile'
 import { renderCode } from './compile-helpers'
 import { createEngine } from './engine-assemblyscript/wasm-bindings'
 import { compileWasmModule } from './engine-assemblyscript/test-helpers'
@@ -229,7 +229,6 @@ export const generateFramesForNode = async (
             bitDepth: 64,
         },
         accessorSpecs,
-        snippet: getSnippetHandler(target),
     })
     const code = executeCompilation(compilation)
     const engine = await getEngine(compilation.target, code)
@@ -370,7 +369,14 @@ const roundFloatsInFrames = (frames: Array<Frame>) =>
 
 export const getEngine = async (target: CompilerTarget, code: Code) => {
     if (target === 'javascript') {
-        return new Function(code)() as JavaScriptEngine
+        try {
+            return new Function(code)() as JavaScriptEngine
+        } catch (err) {
+            if (err instanceof SyntaxError) {
+                console.error(`-------- CODE --------\n${code}\n----------------------`)
+            }
+            throw err
+        }
     } else {
         const wasmBuffer = await compileWasmModule(code)
         return await createEngine(wasmBuffer, {})
