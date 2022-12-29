@@ -17,10 +17,10 @@ import {
 } from './core-bindings'
 import { InternalPointer, TypedArrayPointer } from '../types'
 
-export type FloatArrayTypeConstructor =
+export type FloatArrayConstructor =
     | typeof Float32Array
     | typeof Float64Array
-export type FloatArrayType = InstanceType<FloatArrayTypeConstructor>
+export type FloatArray = InstanceType<FloatArrayConstructor>
 
 export interface tarray_WasmExports extends core_WasmExports {
     tarray_create: (length: number) => TypedArrayPointer
@@ -41,7 +41,7 @@ export interface tarray_WasmExports extends core_WasmExports {
 export const lowerTypedArray = (
     wasmExports: tarray_WasmExports,
     bitDepth: AudioSettings['bitDepth'],
-    data: Array<number> | FloatArrayType
+    data: Array<number> | FloatArray
 ) => {
     const arrayType = getArrayType(bitDepth)
     const arrayPointer = wasmExports.tarray_create(data.length)
@@ -49,7 +49,7 @@ export const lowerTypedArray = (
         wasmExports,
         arrayType,
         arrayPointer
-    ) as FloatArrayType
+    ) as FloatArray
     array.set(data)
     return { array, arrayPointer }
 }
@@ -57,7 +57,7 @@ export const lowerTypedArray = (
 export const lowerListOfTypedArrays = (
     wasmExports: tarray_WasmExports,
     bitDepth: AudioSettings['bitDepth'],
-    data: Array<Array<number> | FloatArrayType>
+    data: Array<Array<number> | FloatArray>
 ): InternalPointer => {
     const arraysPointer = wasmExports.tarray_createListOfArrays()
     data.forEach((array) => {

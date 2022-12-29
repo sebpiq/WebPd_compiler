@@ -26,8 +26,8 @@ const __dirname = dirname(__filename)
 export const getAssemblyscriptCoreCode = () => {
     return readFileSync(resolve(__dirname, 'core-code.asc'))
         .toString()
-        .replaceAll('${FloatArrayType}', 'Float64Array')
-        .replaceAll('${FloatType}', 'f64')
+        .replaceAll('${FloatArray}', 'Float64Array')
+        .replaceAll('${Float}', 'f64')
         .replaceAll('${getFloat}', 'getFloat64')
         .replaceAll('${setFloat}', 'setFloat64')
         .replaceAll(

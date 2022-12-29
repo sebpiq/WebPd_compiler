@@ -121,7 +121,7 @@ describe('AssemblyScriptWasmEngine', () => {
                             { globs },
                             { audioSettings: { channelCount } }
                         ) => `
-                            for (let channel: i32 = 0; channel < ${channelCount.out}; channel++) {
+                            for (let channel: Int = 0; channel < ${channelCount.out}; channel++) {
                                 ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] = 2.0
                             }
                         `,
@@ -197,7 +197,7 @@ describe('AssemblyScriptWasmEngine', () => {
                             { globs },
                             { audioSettings: { channelCount } }
                         ) => `
-                            for (let channel: i32 = 0; channel < ${channelCount.in}; channel++) {
+                            for (let channel: Int = 0; channel < ${channelCount.in}; channel++) {
                                 ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] 
                                     = ${globs.input}[${globs.iterFrame} + ${globs.blockSize} * channel]
                             }
@@ -250,7 +250,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 const { engine, wasmExports } = await getEngine(
                     // prettier-ignore
                     compileToAssemblyscript(COMPILATION) + `
-                        export function testReadArray (arrayName: string, index: i32): f64 {
+                        export function testReadArray (arrayName: string, index: Int): f64 {
                             return ARRAYS[arrayName][index]
                         }
                     `
@@ -401,7 +401,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     let receivedId: fs_OperationId = -1
                     let receivedStatus: fs_OperationStatus = -1
                     let receivedSound: FloatArray[] = []
-                    export function testStartReadFile (array: FloatArray): i32 {
+                    export function testStartReadFile (array: FloatArray): Int {
                         return fs_readSoundFile('/some/url', function(
                             id: fs_OperationId,
                             status: fs_OperationStatus,
@@ -412,13 +412,13 @@ describe('AssemblyScriptWasmEngine', () => {
                             receivedSound = sound
                         })
                     }
-                    export function testOperationId(): i32 {
+                    export function testOperationId(): Int {
                         return receivedId
                     }
-                    export function testOperationStatus(): i32 {
+                    export function testOperationStatus(): Int {
                         return receivedStatus
                     }
-                    export function testSoundLength(): i32 {
+                    export function testSoundLength(): Int {
                         return receivedSound.length
                     }
                 `
@@ -477,7 +477,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     const { wasmExports } = await getEngine(
                         // prettier-ignore
                         compileToAssemblyscript(COMPILATION) + `
-                            export function testStartReadFile (array: FloatArray): i32 {
+                            export function testStartReadFile (array: FloatArray): Int {
                                 return fs_readSoundFile('/some/url', function(): void {})
                             }
                         `,

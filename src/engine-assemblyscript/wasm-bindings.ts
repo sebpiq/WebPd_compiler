@@ -36,7 +36,7 @@ import {
 import { fs_WasmImports } from './core-code/fs-bindings'
 import { liftMessage, lowerMessageArray } from './core-code/msg-bindings'
 import {
-    FloatArrayType,
+    FloatArray,
     lowerListOfTypedArrays,
     lowerTypedArray,
     readListOfTypedArrays,
@@ -297,7 +297,7 @@ export class AssemblyScriptWasmEngine implements Engine {
                     this.wasmExports,
                     this.metadata.compilation.audioSettings.bitDepth,
                     listOfArraysPointer
-                ) as Array<FloatArrayType>
+                ) as Array<FloatArray>
                 fsCallbacks.writeSound(url, listOfArrays, info)
             }
         }

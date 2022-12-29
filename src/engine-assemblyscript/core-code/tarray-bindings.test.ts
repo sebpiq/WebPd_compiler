@@ -15,11 +15,11 @@ describe('tarray-bindings', () => {
         it('should lower typed array to wasm module', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('tarray.asc', audioSettings) + `
-                    export function testReadArrayElem (array: FloatArray, index: i32): f64 {
+                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + `
+                    export function testReadArrayElem (array: FloatArray, index: Int): f64 {
                         return array[index]
                     }
-                    export function testReadArrayLength (array: FloatArray): i32 {
+                    export function testReadArrayLength (array: FloatArray): Int {
                         return array.length
                     }
                 `,
@@ -61,14 +61,14 @@ describe('tarray-bindings', () => {
         it('should lower a list of typed arrays', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('tarray.asc', audioSettings) + `
-                    export function testReadArraysLength (arrays: FloatArray[], index: i32): f64 {
+                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + `
+                    export function testReadArraysLength (arrays: FloatArray[], index: Int): f64 {
                         return arrays.length
                     }
-                    export function testReadArrayElem (arrays: FloatArray[], arrIndex: i32, index: i32): f64 {
+                    export function testReadArrayElem (arrays: FloatArray[], arrIndex: Int, index: Int): f64 {
                         return arrays[arrIndex][index]
                     }
-                    export function testReadArrayLength (arrays: FloatArray[], arrIndex: i32): i32 {
+                    export function testReadArrayLength (arrays: FloatArray[], arrIndex: Int): Int {
                         return arrays[arrIndex].length
                     }
                 `,
@@ -135,10 +135,10 @@ describe('tarray-bindings', () => {
         it('should lower a list of typed arrays', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
+                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
                     const arrays: FloatArray[] = [
-                        new \${FloatArrayType}(3),
-                        new \${FloatArrayType}(3)
+                        new \${FloatArray}(3),
+                        new \${FloatArray}(3)
                     ]
                     arrays[0][0] = 11
                     arrays[0][1] = 22
@@ -168,10 +168,10 @@ describe('tarray-bindings', () => {
         it('should share the same memory space', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
+                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
                     const arrays: FloatArray[] = [
-                        new \${FloatArrayType}(3),
-                        new \${FloatArrayType}(3)
+                        new \${FloatArray}(3),
+                        new \${FloatArray}(3)
                     ]
                     arrays[0][0] = 11
                     arrays[0][1] = 22
@@ -183,7 +183,7 @@ describe('tarray-bindings', () => {
                     export function testGetListOfArrays(): FloatArray[] {
                         return arrays
                     }
-                    export function testReadSomeValue(): \${FloatType} {
+                    export function testReadSomeValue(): \${Float} {
                         return arrays[1][1]
                     }
                 `, audioSettings),

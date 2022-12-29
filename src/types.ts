@@ -120,8 +120,9 @@ export interface EngineVariableNames {
 
     // Names of types used by the engine (e.g. especially depending on the bitdepth)
     types: {
-        FloatType?: 'f32' | 'f64'
-        FloatArrayType?: 'Float32Array' | 'Float64Array'
+        Int?: 'i32',
+        Float?: 'f32' | 'f64'
+        FloatArray?: 'Float32Array' | 'Float64Array'
         getFloat?: 'getFloat32' | 'getFloat64'
         setFloat?: 'setFloat32' | 'setFloat64'
     }

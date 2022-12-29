@@ -2,6 +2,7 @@ const COMPAT = `
 const i32 = (v) => v
 const f32 = i32
 const f64 = i32
+const toFloat = (v) => v
 `
 
 const MSG = `

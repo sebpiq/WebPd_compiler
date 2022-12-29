@@ -7,7 +7,7 @@ import { replacePlaceholders } from '.'
 import { makeCompilation } from '../../test-helpers'
 import { instantiateWasmModule } from '../wasm-helpers'
 import { AssemblyScriptWasmImports } from '../types'
-import { FloatArrayTypeConstructor } from './tarray-bindings'
+import { FloatArrayConstructor } from './tarray-bindings'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -51,7 +51,7 @@ export const iterTestAudioSettings = async (
     testFunc: (
         wasmExports: any,
         audioSettings: AudioSettings & {
-            floatArrayType: FloatArrayTypeConstructor
+            floatArrayType: FloatArrayConstructor
         },
         called: CallbacksCalls
     ) => Promise<void>,

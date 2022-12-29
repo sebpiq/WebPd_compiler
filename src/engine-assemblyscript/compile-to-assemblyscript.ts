@@ -36,33 +36,33 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     }
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
-    const { FloatType, FloatArrayType } = engineVariableNames.types
+    const { Float, FloatArray } = engineVariableNames.types
     const coreCode = generateCoreCode(engineVariableNames)
 
     // prettier-ignore
     return renderCode`
         ${coreCode}
 
-        let ${globs.input}: FloatArray = new ${FloatArrayType}(0)
-        let ${globs.output}: FloatArray = new ${FloatArrayType}(0)
+        let ${globs.input}: FloatArray = new ${FloatArray}(0)
+        let ${globs.output}: FloatArray = new ${FloatArray}(0)
         export const metadata: string = '${JSON.stringify(metadata)}'
-        const ${globs.arrays} = new Map<string,${FloatArrayType}>()
+        const ${globs.arrays} = new Map<string,FloatArray>()
     
         ${compileDeclare(compilation, graphTraversal)}
         ${compileInletListeners(compilation)}
-        ${compileAccessors(compilation, { FloatType })}
+        ${compileAccessors(compilation, { Float })}
         
-        export function configure(sampleRate: ${FloatType}, blockSize: i32): void {
+        export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
-            ${globs.input} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.in.toString()})
-            ${globs.output} = new ${FloatArrayType}(${globs.blockSize} * ${channelCount.out.toString()})
+            ${globs.input} = new ${FloatArray}(${globs.blockSize} * ${channelCount.in.toString()})
+            ${globs.output} = new ${FloatArray}(${globs.blockSize} * ${channelCount.out.toString()})
             ${compileInitialize(compilation, graphTraversal)}
         }
 
-        export function getInput(): ${FloatArrayType} { return ${globs.input} }
+        export function getInput(): ${FloatArray} { return ${globs.input} }
 
-        export function getOutput(): ${FloatArrayType} { return ${globs.output} }
+        export function getOutput(): ${FloatArray} { return ${globs.output} }
 
         export function loop(): void {
             for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
@@ -79,7 +79,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
 export const compileAccessors = (
     { accessorSpecs, engineVariableNames }: Compilation,
-    { FloatType }: { FloatType: string }
+    { Float }: { Float: string }
 ) => {
     // prettier-ignore
     return renderCode`
@@ -88,20 +88,20 @@ export const compileAccessors = (
             const accessorsVariableNames = engineVariableNames.accessors[variableName]
             return `
                 ${spec.access.includes('r') && spec.type === 'signal' ? `
-                    export function ${accessorsVariableNames.r}(): ${FloatType} { 
+                    export function ${accessorsVariableNames.r}(): ${Float} { 
                         return ${variableName} 
                     }
                     `: ''}
                 ${spec.access.includes('r') && spec.type === 'message' ? `
-                    export function ${accessorsVariableNames.r_length}(): i32 { 
+                    export function ${accessorsVariableNames.r_length}(): Int { 
                         return ${variableName}.length
                     }
-                    export function ${accessorsVariableNames.r_elem}(index: i32): Message { 
+                    export function ${accessorsVariableNames.r_elem}(index: Int): Message { 
                         return ${variableName}[index]
                     }
                 `: ''}
                 ${spec.access.includes('w') && spec.type === 'signal' ? `
-                    export function ${accessorsVariableNames.w}(value: ${FloatType}): void { 
+                    export function ${accessorsVariableNames.w}(value: ${Float}): void { 
                         ${variableName} = value
                     }
                 `: ''}
