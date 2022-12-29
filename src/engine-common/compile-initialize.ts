@@ -13,7 +13,6 @@ import { DspGraph } from '@webpd/dsp-graph'
 import {
     getNodeImplementation,
     renderCode,
-    wrapMacros,
 } from '../compile-helpers'
 import { Code, Compilation } from '../types'
 
@@ -21,9 +20,9 @@ export default (
     compilation: Compilation,
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
-    const globs = compilation.engineVariableNames.g
-    const types = compilation.engineVariableNames.types
-    const macros = wrapMacros(compilation.macros, compilation)
+    const { macros } = compilation
+    const { g: globs, types } = compilation.engineVariableNames
+    
     // prettier-ignore
     return renderCode`
         ${globs.iterFrame} = 0

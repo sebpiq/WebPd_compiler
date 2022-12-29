@@ -16,10 +16,10 @@ describe('tarray-bindings', () => {
             await iterTestAudioSettings(
                 // prettier-ignore
                 (audioSettings) => getAscCode('tarray.asc', audioSettings) + `
-                    export function testReadArrayElem (array: TypedArray, index: i32): f64 {
+                    export function testReadArrayElem (array: FloatArray, index: i32): f64 {
                         return array[index]
                     }
-                    export function testReadArrayLength (array: TypedArray): i32 {
+                    export function testReadArrayLength (array: FloatArray): i32 {
                         return array.length
                     }
                 `,
@@ -62,13 +62,13 @@ describe('tarray-bindings', () => {
             await iterTestAudioSettings(
                 // prettier-ignore
                 (audioSettings) => getAscCode('tarray.asc', audioSettings) + `
-                    export function testReadArraysLength (arrays: TypedArray[], index: i32): f64 {
+                    export function testReadArraysLength (arrays: FloatArray[], index: i32): f64 {
                         return arrays.length
                     }
-                    export function testReadArrayElem (arrays: TypedArray[], arrIndex: i32, index: i32): f64 {
+                    export function testReadArrayElem (arrays: FloatArray[], arrIndex: i32, index: i32): f64 {
                         return arrays[arrIndex][index]
                     }
-                    export function testReadArrayLength (arrays: TypedArray[], arrIndex: i32): i32 {
+                    export function testReadArrayLength (arrays: FloatArray[], arrIndex: i32): i32 {
                         return arrays[arrIndex].length
                     }
                 `,
@@ -136,7 +136,7 @@ describe('tarray-bindings', () => {
             await iterTestAudioSettings(
                 // prettier-ignore
                 (audioSettings) => getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
-                    const arrays: TypedArray[] = [
+                    const arrays: FloatArray[] = [
                         new \${FloatArrayType}(3),
                         new \${FloatArrayType}(3)
                     ]
@@ -146,7 +146,7 @@ describe('tarray-bindings', () => {
                     arrays[1][0] = 44
                     arrays[1][1] = 55
                     arrays[1][2] = 66
-                    export function testGetListOfArrays(): TypedArray[] {
+                    export function testGetListOfArrays(): FloatArray[] {
                         return arrays
                     }
                 `, audioSettings),
@@ -169,7 +169,7 @@ describe('tarray-bindings', () => {
             await iterTestAudioSettings(
                 // prettier-ignore
                 (audioSettings) => getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
-                    const arrays: TypedArray[] = [
+                    const arrays: FloatArray[] = [
                         new \${FloatArrayType}(3),
                         new \${FloatArrayType}(3)
                     ]
@@ -180,7 +180,7 @@ describe('tarray-bindings', () => {
                     arrays[1][1] = 55
                     arrays[1][2] = 66
 
-                    export function testGetListOfArrays(): TypedArray[] {
+                    export function testGetListOfArrays(): FloatArray[] {
                         return arrays
                     }
                     export function testReadSomeValue(): \${FloatType} {

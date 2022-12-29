@@ -36,7 +36,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     }
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
-    const macros = compilation.macros
     const { FloatType, FloatArrayType } = engineVariableNames.types
     const coreCode = generateCoreCode(engineVariableNames)
 
@@ -44,8 +43,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     return renderCode`
         ${coreCode}
 
-        let ${macros.typedVarFloatArray(compilation, globs.input)} = new ${FloatArrayType}(0)
-        let ${macros.typedVarFloatArray(compilation, globs.output)} = new ${FloatArrayType}(0)
+        let ${globs.input}: FloatArray = new ${FloatArrayType}(0)
+        let ${globs.output}: FloatArray = new ${FloatArrayType}(0)
         export const metadata: string = '${JSON.stringify(metadata)}'
         const ${globs.arrays} = new Map<string,${FloatArrayType}>()
     
@@ -72,7 +71,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             }
         }
 
-        export function setArray(arrayName: string, array: TypedArray): void {
+        export function setArray(arrayName: string, array: FloatArray): void {
             ${globs.arrays}.set(arrayName, array)
         }
     `

@@ -167,11 +167,11 @@ export const generateFramesForNode = async (
             declare: (_, { state, macros }) =>
                 renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
                     inlet.type === 'signal'
-                        ? `let ${macros.typedVarFloat(
-                              state['mem' + inlet.id]
+                        ? `let ${macros.typedVar(
+                              state['mem' + inlet.id], 'Float'
                           )} = 0`
-                        : `let ${macros.typedVarMessageArray(
-                              state['mem' + inlet.id]
+                        : `let ${macros.typedVar(
+                              state['mem' + inlet.id], 'Array<Message>'
                           )} = []`
                 )}`,
             // For each outlet of test node, save the output value in corresponding memory.

@@ -42,7 +42,7 @@ describe('compileToJavascript', () => {
                 bli: { access: 'rw', type: 'signal' },
                 blu: { access: 'rw', type: 'message' },
             },
-            macros: macros,
+            macros,
         })
 
         const code = compileToJavascript(compilation)
@@ -97,7 +97,7 @@ describe('compileToJavascript', () => {
             target: 'javascript',
             graph,
             nodeImplementations: NODE_IMPLEMENTATIONS,
-            macros: macros,
+            macros,
         })
         const code = compileToJavascript(compilation)
         const modelEngine: JavaScriptEngine = {
@@ -149,7 +149,7 @@ describe('compileToJavascript', () => {
                 target: 'javascript',
                 graph,
                 nodeImplementations,
-                macros: macros,
+                macros,
                 inletListenerSpecs: inletListenerSpecs,
                 accessorSpecs: {
                     [inletVariableName]: {

@@ -10,14 +10,10 @@
  */
 
 import assert from 'assert'
-import jsMacros from './engine-javascript/macros'
-import ascMacros from './engine-assemblyscript/macros'
 import {
     getNodeImplementation,
     renderCode,
-    wrapMacros,
 } from './compile-helpers'
-import { makeCompilation } from './test-helpers'
 import { NodeImplementations } from './types'
 
 describe('compile-helpers', () => {
@@ -27,26 +23,6 @@ describe('compile-helpers', () => {
 ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
 
             assert.strictEqual(code, 'bla\nblo\nbli\nblu\nble\nbly')
-        })
-    })
-
-    describe('wrapMacros', () => {
-        it('should bind assemblyscript macros to pass compilation as first argument', () => {
-            const compilation = makeCompilation({
-                macros: ascMacros,
-                target: 'assemblyscript',
-            })
-            const wrappedMacros = wrapMacros(ascMacros, compilation)
-            assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla: f32')
-        })
-
-        it('should bind javascript macros to pass compilation as first argument', () => {
-            const compilation = makeCompilation({
-                macros: jsMacros,
-                target: 'javascript',
-            })
-            const wrappedMacros = wrapMacros(jsMacros, compilation)
-            assert.strictEqual(wrappedMacros.typedVarFloat('bla'), 'bla')
         })
     })
 

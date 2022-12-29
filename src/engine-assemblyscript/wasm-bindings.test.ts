@@ -400,12 +400,12 @@ describe('AssemblyScriptWasmEngine', () => {
                 const sharedTestingCode = `
                     let receivedId: fs_OperationId = -1
                     let receivedStatus: fs_OperationStatus = -1
-                    let receivedSound: TypedArray[] = []
-                    export function testStartReadFile (array: TypedArray): i32 {
+                    let receivedSound: FloatArray[] = []
+                    export function testStartReadFile (array: FloatArray): i32 {
                         return fs_readSoundFile('/some/url', function(
                             id: fs_OperationId,
                             status: fs_OperationStatus,
-                            sound: TypedArray[],
+                            sound: FloatArray[],
                         ): void {
                             receivedId = id
                             receivedStatus = status
@@ -477,7 +477,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     const { wasmExports } = await getEngine(
                         // prettier-ignore
                         compileToAssemblyscript(COMPILATION) + `
-                            export function testStartReadFile (array: TypedArray): i32 {
+                            export function testStartReadFile (array: FloatArray): i32 {
                                 return fs_readSoundFile('/some/url', function(): void {})
                             }
                         `,

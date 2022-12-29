@@ -19,8 +19,8 @@ describe('fs-bindings', () => {
             `
                 let callbackOperationId: i32 = 0
                 let callbackOperationStatus: fs_OperationStatus = -1
-                let callbackOperationSound: TypedArray[] = []
-                function someCallback(id: fs_OperationId, status: fs_OperationStatus, sound: TypedArray[]): void {
+                let callbackOperationSound: FloatArray[] = []
+                function someCallback(id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]): void {
                     callbackOperationId = id
                     callbackOperationStatus = status
                     callbackOperationSound = sound
@@ -34,7 +34,7 @@ describe('fs-bindings', () => {
                 export function testCallbackOperationFailed(): fs_OperationId {
                     return callbackOperationStatus === FS_OPERATION_FAILURE
                 }
-                export function testCallbackOperationSound(): TypedArray[] {
+                export function testCallbackOperationSound(): FloatArray[] {
                     return callbackOperationSound
                 }
                 export function testCheckOperationProcessing(id: fs_OperationStatus): boolean {
@@ -57,7 +57,7 @@ describe('fs-bindings', () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
                     (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
-                        export function testStartReadFile (array: TypedArray): i32 {
+                        export function testStartReadFile (array: FloatArray): i32 {
                             return fs_readSoundFile('/some/url', someCallback)
                         }
                     `,
@@ -90,7 +90,7 @@ describe('fs-bindings', () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
                     (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
-                        export function testStartReadFile (array: TypedArray): i32 {
+                        export function testStartReadFile (array: FloatArray): i32 {
                             return fs_readSoundFile('/some/url', someCallback)
                         }
                     `, audioSettings),
@@ -149,7 +149,7 @@ describe('fs-bindings', () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
                     (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
-                        export function testStartReadFile (array: TypedArray): i32 {
+                        export function testStartReadFile (array: FloatArray): i32 {
                             return fs_readSoundFile('/some/url', someCallback)
                         }
                     `,
@@ -183,7 +183,7 @@ describe('fs-bindings', () => {
                         const buffer: fs_SoundBuffer = new fs_SoundBuffer(5)
                         const channelCount: i32 = 3
                         let counter: i32 = 1
-                        export function testCallPullFrame(): TypedArray {
+                        export function testCallPullFrame(): FloatArray {
                             const frame = buffer.pullFrame()
                             const frameTypedArray = new \${FloatArrayType}(frame.length)
                             frameTypedArray.set(frame)
@@ -196,9 +196,9 @@ describe('fs-bindings', () => {
                             return buffer.blocks.length
                         }
                         export function testPushBlock(size: i32): i32 {
-                            const block: TypedArray[] = []
+                            const block: FloatArray[] = []
                             for (let channel = 0; channel < channelCount; channel++) {
-                                const channelData: TypedArray = new \${FloatArrayType}(size)
+                                const channelData: FloatArray = new \${FloatArrayType}(size)
                                 block.push(channelData)
                                 for (let i = 0; i < size; i++) {
                                     channelData[i] = \${FloatType}((counter + i) + 10 * (channel + 1))
@@ -312,7 +312,7 @@ describe('fs-bindings', () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
                     (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
-                        export function testStartStream (array: TypedArray): i32 {
+                        export function testStartStream (array: FloatArray): i32 {
                             return fs_readSoundStream('/some/url', someCallback)
                         }
                         export function testCheckSoundBufferExists(id: fs_OperationId): boolean {
@@ -351,7 +351,7 @@ describe('fs-bindings', () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
                     (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
-                        export function testStartStream (array: TypedArray): i32 {
+                        export function testStartStream (array: FloatArray): i32 {
                             return fs_readSoundStream('/some/url', someCallback)
                         }
                         export function testBufferCurrentLength(id: fs_OperationId): i32 {
@@ -404,7 +404,7 @@ describe('fs-bindings', () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
                     (audioSettings) => getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
-                        export function testStartStream (array: TypedArray): i32 {
+                        export function testStartStream (array: FloatArray): i32 {
                             return fs_readSoundStream('/some/url', someCallback)
                         }
                         export function testBufferCurrentLength(id: fs_OperationId): i32 {

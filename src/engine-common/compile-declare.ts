@@ -13,7 +13,6 @@ import { DspGraph } from '@webpd/dsp-graph'
 import {
     getNodeImplementation,
     renderCode,
-    wrapMacros,
 } from '../compile-helpers'
 import { Code, Compilation } from '../types'
 
@@ -21,16 +20,15 @@ export default (
     compilation: Compilation,
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
-    const globs = compilation.engineVariableNames.g
-    const types = compilation.engineVariableNames.types
-    const macros = wrapMacros(compilation.macros, compilation)
+    const { macros } = compilation
+    const { g: globs, types } = compilation.engineVariableNames
     // prettier-ignore
     return renderCode`
-        let ${macros.typedVarInt(globs.iterFrame)}
-        let ${macros.typedVarInt(globs.iterOutlet)}
-        let ${macros.typedVarInt(globs.frame)}
-        let ${macros.typedVarInt(globs.blockSize)}
-        let ${macros.typedVarFloat(globs.sampleRate)}
+        let ${macros.typedVar(globs.iterFrame, 'Int')}
+        let ${macros.typedVar(globs.iterOutlet, 'Int')}
+        let ${macros.typedVar(globs.frame, 'Int')}
+        let ${macros.typedVar(globs.blockSize, 'Int')}
+        let ${macros.typedVar(globs.sampleRate, 'Float')}
 
         ${graphTraversal.map((node) => {
             const { ins, outs } = compilation.engineVariableNames.n[node.id]
@@ -38,13 +36,13 @@ export default (
             return [
                 Object.values(node.inlets).map((inlet) =>
                     inlet.type === 'message'
-                        ? `let ${macros.typedVarMessageArray(ins[inlet.id])} = []`
-                        : `let ${macros.typedVarFloat(ins[inlet.id])}`
+                        ? `let ${macros.typedVar(ins[inlet.id], 'Array<Message>')} = []`
+                        : `let ${macros.typedVar(ins[inlet.id], 'Float')}`
                 ),
                 Object.values(node.outlets).map((outlet) =>
                     outlet.type === 'message'
-                        ? `let ${macros.typedVarMessageArray(outs[outlet.id])} = []`
-                        : `let ${macros.typedVarFloat(outs[outlet.id])}`
+                        ? `let ${macros.typedVar(outs[outlet.id], 'Array<Message>')} = []`
+                        : `let ${macros.typedVar(outs[outlet.id], 'Float')}`
                 ),
                 nodeDeclare ? nodeDeclare(
                     node,

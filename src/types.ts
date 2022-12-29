@@ -99,86 +99,8 @@ export interface Compilation {
 }
 
 export type CodeMacros = {
-    typedVarInt: (compilation: Compilation, name: CodeVariableName) => Code
-    typedVarFloat: (compilation: Compilation, name: CodeVariableName) => Code
-    typedVarString: (compilation: Compilation, name: CodeVariableName) => Code
-    typedVarMessage: (compilation: Compilation, name: CodeVariableName) => Code
-    typedVarFloatArray: (
-        compilation: Compilation,
-        name: CodeVariableName
-    ) => Code
-    typedVarMessageArray: (
-        compilation: Compilation,
-        name: CodeVariableName
-    ) => Code
-    typedVarStringArray: (
-        compilation: Compilation,
-        name: CodeVariableName
-    ) => Code
-    castToInt: (compilation: Compilation, name: CodeVariableName) => Code
-    castToFloat: (compilation: Compilation, name: CodeVariableName) => Code
-    functionHeader: (
-        compilation: Compilation,
-        ...functionArgs: Array<Code>
-    ) => Code
-    createMessage: (
-        compilation: Compilation,
-        name: CodeVariableName,
-        message: Message
-    ) => Code
-    isMessageMatching: (
-        compilation: Compilation,
-        name: CodeVariableName,
-        tokens: Array<number | string | MessageDatumType>
-    ) => Code
-    extractMessageStringTokens: (
-        compilation: Compilation,
-        messageVariableName: CodeVariableName,
-        destinationVariableName: CodeVariableName,
-    ) => Code
-    readMessageStringDatum: (
-        compilation: Compilation,
-        name: CodeVariableName,
-        tokenIndex: number | CodeVariableName
-    ) => Code
-    readMessageFloatDatum: (
-        compilation: Compilation,
-        name: CodeVariableName,
-        tokenIndex: number | CodeVariableName
-    ) => Code
-    fillInLoopInput: (
-        compilation: Compilation,
-        inputChannel: number,
-        destinationName: CodeVariableName
-    ) => Code
-    fillInLoopOutput: (
-        compilation: Compilation,
-        outputChannel: number,
-        sourceName: CodeVariableName
-    ) => Code
-    // Takes a message array as input, and constructs the output message using `template` argument.
-    // For example :
-    //
-    //     [56, '$1', 'bla', '$2-$1']
-    //     transfer([89, 'bli']); // [56, 89, 'bla', 'bli-89']
-    //
-    messageTransfer: (
-        compilation: Compilation,
-        template: Array<DspGraph.NodeArgument>,
-        inVariableName: CodeVariableName,
-        outVariableName: CodeVariableName
-    ) => Code
+    typedVar: (name: CodeVariableName, typeString: Code) => Code
 }
-
-type FunctionMap = { [key: string]: (...args: any) => any }
-type OmitFirstArg<F> = F extends (x: any, ...args: infer P) => infer R
-    ? (...args: P) => R
-    : never
-type OmitFirstArgFromFunctionMap<Type extends FunctionMap> = {
-    [Property in keyof Type]: OmitFirstArg<Type[Property]>
-}
-
-export type WrappedCodeMacros = OmitFirstArgFromFunctionMap<CodeMacros>
 
 export interface NodeVariableNames {
     ins: { [portletId: DspGraph.PortletId]: CodeVariableName }
@@ -233,7 +155,7 @@ export type NodeCodeGenerator<NodeArgsType> = (
     variableNames: NodeVariableNames & {
         types: EngineVariableNames['types']
         globs: EngineVariableNames['g']
-        macros: WrappedCodeMacros
+        macros: CodeMacros
     },
     compilation: Compilation
 ) => Code

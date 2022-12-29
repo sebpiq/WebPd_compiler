@@ -12,11 +12,8 @@
 import { DspGraph } from '@webpd/dsp-graph'
 import {
     Code,
-    CodeMacros,
-    Compilation,
     NodeImplementation,
     NodeImplementations,
-    WrappedCodeMacros,
 } from './types'
 
 type CodeLines = Array<CodeLines | Code>
@@ -47,20 +44,6 @@ const renderCodeLines = (codeLines: CodeLines | Code): Code => {
         return codeLines.map(renderCodeLines).join('\n')
     }
     return codeLines
-}
-
-export const wrapMacros = (
-    codeMacros: CodeMacros,
-    compilation: Compilation
-): WrappedCodeMacros => {
-    const wrappedCodeMacros = {} as Partial<WrappedCodeMacros>
-    Object.entries(codeMacros).forEach(([key, macro]) => {
-        wrappedCodeMacros[key as keyof CodeMacros] = macro.bind(
-            undefined,
-            compilation
-        )
-    })
-    return wrappedCodeMacros as WrappedCodeMacros
 }
 
 /**

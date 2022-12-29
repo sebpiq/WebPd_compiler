@@ -13,7 +13,6 @@ import { traversal, getters, DspGraph } from '@webpd/dsp-graph'
 import {
     getNodeImplementation,
     renderCode,
-    wrapMacros,
 } from '../compile-helpers'
 import { Code, Compilation } from '../types'
 
@@ -22,15 +21,13 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { inletListenerSpecs: inletListenerSpecs, engineVariableNames } =
+    const { inletListenerSpecs: inletListenerSpecs, engineVariableNames, macros, nodeImplementations } =
         compilation
-    const globs = compilation.engineVariableNames.g
-    const types = compilation.engineVariableNames.types
-    const macros = wrapMacros(compilation.macros, compilation)
+    const { g: globs, types } = engineVariableNames
     // prettier-ignore
     return renderCode`${[
         graphTraversal.map((node) => {
-            const nodeVariableNames = compilation.engineVariableNames.n[node.id]
+            const nodeVariableNames = engineVariableNames.n[node.id]
             return [
                 // 0. Call inlet listeners if some inlets have new messages
                 (inletListenerSpecs[node.id] || [])
@@ -45,7 +42,7 @@ export default (
                     }),
                 
                 // 1. Node loop implementation
-                getNodeImplementation(compilation.nodeImplementations, node.type).loop(
+                getNodeImplementation(nodeImplementations, node.type).loop(
                     node,
                     {
                         ...nodeVariableNames,
@@ -72,7 +69,7 @@ export default (
                             { nodeId: sinkNodeId, portletId: inletId },
                         ]) => {
                             const { outs: sourceOuts } = nodeVariableNames
-                            const { ins: sinkIns } = compilation.engineVariableNames.n[
+                            const { ins: sinkIns } = engineVariableNames.n[
                                 sinkNodeId
                             ]
                             return getters.getOutlet(node, outletId).type === 'message' ? `
@@ -85,7 +82,7 @@ export default (
         }),
         // 3. Message inlets / outlets cleanup
         graphTraversal.map((node) => {
-            const { ins, outs } = compilation.engineVariableNames.n[node.id]
+            const { ins, outs } = engineVariableNames.n[node.id]
             return [
                 Object.values(node.inlets)
                     .filter((inlet) => inlet.type === 'message')

@@ -19,6 +19,10 @@ import { createEngine, EngineSettings } from './wasm-bindings'
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import macros from './macros'
 import { liftString } from './core-code/core-bindings'
+import { MSG_DATUM_TYPE_FLOAT } from '../constants'
+import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+
+const ASC_MSG_FLOAT_TOKEN = MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT]
 
 describe('compileToAssemblyscript', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
@@ -131,7 +135,7 @@ describe('compileToAssemblyscript', () => {
             messageGeneratorType: {
                 loop: (_, { outs, globs, macros }) => `
                     if (${globs.frame} % 5 === 0) {
-                        ${macros.createMessage('m', [0])}
+                        const ${macros.typedVar('m', 'Message')} = msg_create([${ASC_MSG_FLOAT_TOKEN}])
                         msg_writeFloatDatum(m, 0, f32(${globs.frame}))
                         ${outs.someOutlet}.push(m)
                     }
