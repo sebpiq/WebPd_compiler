@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { AudioSettings } from '../../types'
 import {
     lowerTypedArray,
     lowerListOfTypedArrays,
@@ -11,12 +12,27 @@ import {
 } from './test-helpers'
 
 describe('tarray-bindings', () => {
+
+    const getBaseTestCode = (audioSettings: AudioSettings) =>
+        getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings)
+         + replacePlaceholdersForTesting(
+            `
+                export {
+                    x_tarray_createListOfArrays as tarray_createListOfArrays,
+                    x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
+                    x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
+                    x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
+                    x_tarray_create as tarray_create,
+                }
+            `,
+            audioSettings
+        )
+
     describe('lowerTypedArray', () => {
         it('should lower typed array to wasm module', async () => {
             await iterTestAudioSettings(
-                // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + `
-                    export function testReadArrayElem (array: FloatArray, index: Int): f64 {
+                (audioSettings) => getBaseTestCode(audioSettings) + `
+                    export function testReadArrayElem (array: FloatArray, index: Int): Float {
                         return array[index]
                     }
                     export function testReadArrayLength (array: FloatArray): Int {
@@ -60,8 +76,7 @@ describe('tarray-bindings', () => {
     describe('lowerListOfTypedArrays', () => {
         it('should lower a list of typed arrays', async () => {
             await iterTestAudioSettings(
-                // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + `
+                (audioSettings) => getBaseTestCode(audioSettings) + `
                     export function testReadArraysLength (arrays: FloatArray[], index: Int): f64 {
                         return arrays.length
                     }
@@ -135,7 +150,7 @@ describe('tarray-bindings', () => {
         it('should lower a list of typed arrays', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
+                (audioSettings) => getBaseTestCode(audioSettings) + replacePlaceholdersForTesting(`
                     const arrays: FloatArray[] = [
                         new \${FloatArray}(3),
                         new \${FloatArray}(3)
@@ -168,7 +183,7 @@ describe('tarray-bindings', () => {
         it('should share the same memory space', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + replacePlaceholdersForTesting(`
+                (audioSettings) => getBaseTestCode(audioSettings) + replacePlaceholdersForTesting(`
                     const arrays: FloatArray[] = [
                         new \${FloatArray}(3),
                         new \${FloatArray}(3)

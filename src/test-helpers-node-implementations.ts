@@ -370,7 +370,10 @@ const roundFloatsInFrames = (frames: Array<Frame>) =>
 export const getEngine = async (target: CompilerTarget, code: Code) => {
     if (target === 'javascript') {
         try {
-            return new Function(code)() as JavaScriptEngine
+            return new Function(`
+                ${code}
+                return exports
+            `)() as JavaScriptEngine
         } catch (err) {
             if (err instanceof SyntaxError) {
                 console.error(`-------- CODE --------\n${code}\n----------------------`)

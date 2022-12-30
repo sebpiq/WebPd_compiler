@@ -1,5 +1,10 @@
+declare module '*.generated.js' {
+    const content: string
+    export default content
+}
+
 declare module '*.asc' {
-    const content: any
+    const content: string
     export default content
 }
 

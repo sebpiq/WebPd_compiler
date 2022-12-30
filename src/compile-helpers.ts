@@ -10,8 +10,11 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
+import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE, MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_STRING } from './constants'
+import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/constants'
 import {
     Code,
+    EngineVariableNames,
     NodeImplementation,
     NodeImplementations,
 } from './types'
@@ -62,6 +65,34 @@ export const getNodeImplementation = (
         throw new Error(`node ${nodeType} is not implemented`)
     }
     return nodeImplementation
+}
+
+export const replaceCoreCodePlaceholders = (
+    engineVariableNames: EngineVariableNames,
+    code: Code
+) => {
+    const { Int, Float, FloatArray, getFloat, setFloat } =
+        engineVariableNames.types
+    return code
+        .replaceAll('${Int}', Int)
+        .replaceAll('${Float}', Float)
+        .replaceAll('${FloatArray}', FloatArray)
+        .replaceAll('${getFloat}', getFloat)
+        .replaceAll('${setFloat}', setFloat)
+        .replaceAll('${FS_OPERATION_SUCCESS}', FS_OPERATION_SUCCESS.toString())
+        .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
+        .replaceAll(
+            '${MSG_DATUM_TYPE_FLOAT}',
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MSG_DATUM_TYPE_FLOAT
+            ].toString()
+        )
+        .replaceAll(
+            '${MSG_DATUM_TYPE_STRING}',
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
+                MSG_DATUM_TYPE_STRING
+            ].toString()
+        )
 }
 
 export const buildMessageTransferOperations = (
@@ -135,19 +166,3 @@ type MessageTransferOperation =
     | MessageTransferOperationFloatConstant
     | MessageTransferOperationStringConstant
     | MessageTransferOperationStringTemplate
-
-// TODO : test only one string? 
-export const renderTemplatedCode = (
-    strings: TemplateStringsArray | Array<string>,
-    ...variables: Array<string>
-): Code => {
-    let code: Code = ''
-    strings.forEach((strng, index) => {
-        code += strng
-        // `variables` length is 1 less than `strings` length.
-        if (index < variables.length) {
-            code += variables[index]
-        }
-    })
-    return code
-}

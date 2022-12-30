@@ -10,13 +10,14 @@
  */
 
 import assert from 'assert'
+import { AudioSettings } from '../../types'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     liftMessage,
     lowerArrayBufferOfIntegers,
     lowerMessage,
 } from './msg-bindings'
-import { getAscCode, iterTestAudioSettings } from './test-helpers'
+import { getAscCode, iterTestAudioSettings, replacePlaceholdersForTesting } from './test-helpers'
 
 describe('msg-bindings', () => {
     const BYTES_IN_CHAR = 4
@@ -37,11 +38,35 @@ describe('msg-bindings', () => {
         return [dataView.getInt32(0)]
     }
 
+    const getBaseTestCode = (audioSettings: AudioSettings) =>
+        getAscCode('core.asc', audioSettings) + getAscCode('msg.asc', audioSettings)
+         + replacePlaceholdersForTesting(
+            `
+                export function testReadMessageData(message: Message, index: Int): Int {
+                    return message.dataView.getInt32(index * sizeof<Int>())
+                }
+
+                export {
+                    x_msg_create as msg_create,
+                    x_msg_createArray as msg_createArray,
+                    x_msg_pushToArray as msg_pushToArray,
+                    x_msg_getDatumTypes as msg_getDatumTypes,
+                    msg_writeStringDatum,
+                    msg_writeFloatDatum,
+                    msg_readStringDatum,
+                    msg_readFloatDatum,
+                    MSG_DATUM_TYPE_FLOAT,
+                    MSG_DATUM_TYPE_STRING,
+                }
+            `,
+            audioSettings
+        )
+
     describe('lowerArrayBufferOfIntegers', () => {
         it('should correctly lower the given array to an ArrayBuffer of integers', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('msg.asc', audioSettings) + `
+                (audioSettings) => getBaseTestCode(audioSettings) + `
                     export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: Int): Int {
                         const dataView = new DataView(buffer)
                         return dataView.getInt32(index * sizeof<Int>())
@@ -90,11 +115,7 @@ describe('msg-bindings', () => {
         it('should create the message with correct header and filled-in data', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('msg.asc', audioSettings) + `
-                    export function testReadMessageData(message: Message, index: Int): Int {
-                        return message.dataView.getInt32(index * sizeof<Int>())
-                    }
-                `,
+                (audioSettings) => getBaseTestCode(audioSettings),
                 async (wasmExports, { bitDepth, floatArrayType }) => {
                     const messagePointer = lowerMessage(wasmExports, [
                         'bla',
@@ -175,7 +196,7 @@ describe('msg-bindings', () => {
         it('should read message to a JavaScript array', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('msg.asc', audioSettings) + `
+                (audioSettings) => getBaseTestCode(audioSettings) + `
                     export function testCreateMessage(): Message {
                         const message: Message = msg_create([
                             MSG_DATUM_TYPE_STRING, 5,
@@ -201,12 +222,9 @@ describe('msg-bindings', () => {
         it('should create message array and push message to array', async () => {
             await iterTestAudioSettings(
                 // prettier-ignore
-                (audioSettings) => getAscCode('core.asc', audioSettings) + getAscCode('msg.asc', audioSettings) + `
+                (audioSettings) => getBaseTestCode(audioSettings) + `
                     export function testMessageArray(messageArray: Message[], index: Int): Message {
                         return messageArray[index]
-                    }
-                    export function testReadMessageData(message: Message, index: Int): Int {
-                        return message.dataView.getInt32(index * sizeof<Int>())
                     }
                 `,
                 async (wasmExports, { floatArrayType }) => {

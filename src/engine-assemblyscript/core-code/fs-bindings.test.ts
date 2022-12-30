@@ -15,7 +15,8 @@ import {
 
 describe('fs-bindings', () => {
     const getBaseTestCode = (audioSettings: AudioSettings) =>
-        replacePlaceholdersForTesting(
+        getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings)
+         + replacePlaceholdersForTesting(
             `
                 let callbackOperationId: Int = 0
                 let callbackOperationStatus: fs_OperationStatus = -1
@@ -42,10 +43,26 @@ describe('fs-bindings', () => {
                 }
                 export function testOperationCleaned(id: fs_OperationId): boolean {
                     return !_FS_OPERATIONS_IDS.has(id)
-                        && !_FS_OPERATIONS_SOUNDS.has(id)
                         && !_FS_OPERATIONS_CALLBACKS.has(id)
                         && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
                         && !_FS_SOUND_STREAM_BUFFERS.has(id)
+                }
+
+                export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: DecodingInfo): void
+                export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: DecodingInfo): void
+                export declare function fs_requestWriteSoundFile (id: fs_OperationId, url: Url, sound: FloatArray[], info: EncodingInfo): void
+                export declare function fs_requestCloseSoundStream (id: fs_OperationId): void
+                
+                export {
+                    x_fs_readSoundFileResponse as fs_readSoundFileResponse,
+                    x_fs_writeSoundFileResponse as fs_writeSoundFileResponse,
+                    x_fs_soundStreamData as fs_soundStreamData,
+                    x_fs_soundStreamClose as fs_soundStreamClose,
+                    x_tarray_createListOfArrays as tarray_createListOfArrays,
+                    x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
+                    x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
+                    x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
+                    x_tarray_create as tarray_create,
                 }
             `,
             audioSettings
@@ -56,7 +73,7 @@ describe('fs-bindings', () => {
             it('should create the operation and call the callback', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('core.asc', audioSettings) + getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                    (audioSettings) => getBaseTestCode(audioSettings) + `
                         export function testStartReadFile (array: FloatArray): Int {
                             return fs_readSoundFile('/some/url', someCallback)
                         }
@@ -89,11 +106,11 @@ describe('fs-bindings', () => {
             it('should register the operation success', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('core.asc', audioSettings) + getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
+                    (audioSettings) => getBaseTestCode(audioSettings) + `
                         export function testStartReadFile (array: FloatArray): Int {
                             return fs_readSoundFile('/some/url', someCallback)
                         }
-                    `, audioSettings),
+                    `,
                     async (wasmExports, { bitDepth, floatArrayType }) => {
                         // 1. Create the operation
                         const operationId = wasmExports.testStartReadFile()
@@ -148,7 +165,7 @@ describe('fs-bindings', () => {
             it('should register the operation failure', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('core.asc', audioSettings) + getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                    (audioSettings) => getBaseTestCode(audioSettings) + `
                         export function testStartReadFile (array: FloatArray): Int {
                             return fs_readSoundFile('/some/url', someCallback)
                         }
@@ -175,12 +192,12 @@ describe('fs-bindings', () => {
     })
 
     describe.skip('read sound streams', () => {
-        describe('fs_SoundBuffer', () => {
+        describe('_fs_SoundBuffer', () => {
             it('should be able to push and pull from SoundBuffer', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('core.asc', audioSettings) + getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + replacePlaceholdersForTesting(`
-                        const buffer: fs_SoundBuffer = new fs_SoundBuffer(5)
+                    (audioSettings) => getBaseTestCode(audioSettings) + replacePlaceholdersForTesting(`
+                        const buffer: _fs_SoundBuffer = new _fs_SoundBuffer(5)
                         const channelCount: Int = 3
                         let counter: Int = 1
                         export function testCallPullFrame(): FloatArray {
@@ -311,7 +328,7 @@ describe('fs-bindings', () => {
             it('should create the operation and call the callback', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('core.asc', audioSettings) + getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                    (audioSettings) => getBaseTestCode(audioSettings) + `
                         export function testStartStream (array: FloatArray): Int {
                             return fs_readSoundStream('/some/url', someCallback)
                         }
@@ -350,7 +367,7 @@ describe('fs-bindings', () => {
             it('should create the operation and call the callback', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('core.asc', audioSettings) + getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                    (audioSettings) => getBaseTestCode(audioSettings) + `
                         export function testStartStream (array: FloatArray): Int {
                             return fs_readSoundStream('/some/url', someCallback)
                         }
@@ -403,7 +420,7 @@ describe('fs-bindings', () => {
             it('should create the operation and call the callback', async () => {
                 await iterTestAudioSettings(
                     // prettier-ignore
-                    (audioSettings) => getAscCode('core.asc', audioSettings) + getBaseTestCode(audioSettings) + getAscCode('tarray.asc', audioSettings) + getAscCode('fs.asc', audioSettings) + `
+                    (audioSettings) => getBaseTestCode(audioSettings) + `
                         export function testStartStream (array: FloatArray): Int {
                             return fs_readSoundStream('/some/url', someCallback)
                         }

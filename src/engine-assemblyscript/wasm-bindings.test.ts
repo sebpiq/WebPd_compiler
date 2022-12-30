@@ -474,20 +474,16 @@ describe('AssemblyScriptWasmEngine', () => {
             describe('fsListenersCallbacks', () => {
                 it('should call the callback', async () => {
                     const called: Array<Array<any>> = []
-                    const { wasmExports } = await getEngine(
+                    const { wasmExports, engine } = await getEngine(
                         // prettier-ignore
                         compileToAssemblyscript(COMPILATION) + `
                             export function testStartReadFile (array: FloatArray): Int {
                                 return fs_readSoundFile('/some/url', function(): void {})
                             }
-                        `,
-                        {
-                            fsCallbacks: {
-                                readSound: (...args) => called.push(args),
-                                writeSound: () => undefined,
-                            },
-                        }
+                        `
                     )
+                    engine.fs.onRequestReadSoundFile = (...args) => called.push(args)
+                    
                     const operationId = wasmExports.testStartReadFile()
                     // TODO : add infos
                     assert.deepStrictEqual(called[0].slice(0, 2), [

@@ -43,27 +43,6 @@ export type Code = string
 // Name of a variable in generated code
 export type CodeVariableName = string
 
-// Map of public variable accessors for an engine
-export type EngineAccessors = { [accessorName: string]: (...args: any) => any }
-
-// Filesystem public API
-export type EngineFs = {
-    readSoundFileResponse: (
-        operationId: number,
-        status: fs_OperationStatus,
-        sound?: Array<Float32Array | Float64Array>
-    ) => void
-}
-
-export type EngineFsCallbacks = {
-    readSound: (operationId: number, url: string, info: any) => void
-    writeSound: (
-        url: string,
-        data: Array<Float32Array | Float64Array>,
-        info: any
-    ) => void
-}
-
 /**
  *  Base interface for DSP engine
  */
@@ -77,7 +56,28 @@ export interface Engine {
         arrayName: string,
         data: Float32Array | Float64Array | Array<number>
     ) => void
-    accessors: EngineAccessors
+
+    // Map of public variable accessors for an engine
+    accessors: { [accessorName: string]: (...args: any) => any }
+    
+    // Filesystem API for the engine
+    fs: {
+        readSoundFileResponse: (
+            operationId: number,
+            status: fs_OperationStatus,
+            sound?: Array<Float32Array | Float64Array>
+        ) => void
+
+        // Callbacks
+        onRequestReadSoundFile: (operationId: number, url: string, info: any) => void
+        // onRequestReadSoundStream
+        // onRequestWriteSoundFile: (
+        //     url: string,
+        //     data: Array<Float32Array | Float64Array>,
+        //     info: any
+        // ) => void
+        // onRequestCloseSoundStream
+    }
 }
 
 export interface Compilation {

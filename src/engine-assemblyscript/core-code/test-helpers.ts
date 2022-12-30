@@ -3,11 +3,11 @@ import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { AudioSettings, Code } from '../../types'
 import { compileWasmModule } from '../test-helpers'
-import { replacePlaceholders } from '.'
 import { makeCompilation } from '../../test-helpers'
 import { instantiateWasmModule } from '../wasm-helpers'
 import { AssemblyScriptWasmImports } from '../types'
 import { FloatArrayConstructor } from './tarray-bindings'
+import { replaceCoreCodePlaceholders } from '../../compile-helpers'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -32,7 +32,7 @@ export const replacePlaceholdersForTesting = (
         target: 'assemblyscript',
         audioSettings,
     })
-    return replacePlaceholders(engineVariableNames, code)
+    return replaceCoreCodePlaceholders(engineVariableNames, code)
 }
 
 export const getWasmExports = async (

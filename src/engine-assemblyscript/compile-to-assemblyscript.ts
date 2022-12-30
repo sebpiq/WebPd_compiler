@@ -15,7 +15,7 @@ import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
-import { generate as generateCoreCode } from './core-code'
+import generateCoreCode from './core-code'
 import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
@@ -74,6 +74,39 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export function setArray(arrayName: string, array: FloatArray): void {
             ${globs.arrays}.set(arrayName, array)
         }
+
+        // FS IMPORTS
+        export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: DecodingInfo): void
+        export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: DecodingInfo): void
+        export declare function fs_requestWriteSoundFile (id: fs_OperationId, url: Url, sound: FloatArray[], info: EncodingInfo): void
+        export declare function fs_requestCloseSoundStream (id: fs_OperationId): void
+
+        export {
+            // FS EXPORTS
+            x_fs_readSoundFileResponse as fs_readSoundFileResponse,
+            x_fs_writeSoundFileResponse as fs_writeSoundFileResponse,
+            x_fs_soundStreamData as fs_soundStreamData,
+            x_fs_soundStreamClose as fs_soundStreamClose,
+
+            // MSG EXPORTS
+            x_msg_create as msg_create,
+            x_msg_createArray as msg_createArray,
+            x_msg_pushToArray as msg_pushToArray,
+            x_msg_getDatumTypes as msg_getDatumTypes,
+            msg_writeStringDatum,
+            msg_writeFloatDatum,
+            msg_readStringDatum,
+            msg_readFloatDatum,
+            MSG_DATUM_TYPE_FLOAT,
+            MSG_DATUM_TYPE_STRING,
+
+            // TARRAY EXPORTS
+            x_tarray_createListOfArrays as tarray_createListOfArrays,
+            x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
+            x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
+            x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
+            x_tarray_create as tarray_create,
+        }
     `
 }
 
@@ -84,7 +117,6 @@ export const compileAccessors = (
     // prettier-ignore
     return renderCode`
         ${Object.entries(accessorSpecs).map(([variableName, spec]) => {
-            // TODO : uniformize names of types 'signal', 'message', etc ...
             const accessorsVariableNames = engineVariableNames.accessors[variableName]
             return `
                 ${spec.access.includes('r') && spec.type === 'signal' ? `

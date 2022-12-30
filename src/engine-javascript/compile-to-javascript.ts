@@ -16,22 +16,23 @@ import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
-import CORE_CODE from './core-code'
+import generateCoreCode from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { accessorSpecs } = compilation
+    const { accessorSpecs, engineVariableNames } = compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
+    const coreCode = generateCoreCode(engineVariableNames)
 
     // prettier-ignore
     return renderCode`
-        ${CORE_CODE}
+        ${coreCode}
 
         const ${globs.arrays} = new Map()
 
         ${compileDeclare(compilation, graphTraversal)}
 
-        return {
+        const exports = {
             configure: (sampleRate, blockSize) => {
                 ${globs.sampleRate} = sampleRate
                 ${globs.blockSize} = blockSize
@@ -56,6 +57,16 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                             `${accessorsVariableNames.w}: (value) => ${variableName} = value,`: ''}
                     `
                 })}
+            },
+            fs: {
+                onRequestReadSoundFile: () => undefined,
+                // onRequestReadSoundStream: () => undefined,
+                // onRequestWriteSoundFile: () => undefined,
+                // onRequestCloseSoundStream: () => undefined,
+                readSoundFileResponse: x_fs_readSoundFileResponse,
+                // writeSoundFileResponse: x_fs_writeSoundFileResponse,
+                // soundStreamData: x_fs_soundStreamData,
+                // soundStreamClose: x_fs_soundStreamClose,
             }
         }
     `
