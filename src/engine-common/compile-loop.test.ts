@@ -264,6 +264,36 @@ describe('compileLoop', () => {
     })
 
     it('should add inletListeners', () => {
-        throw new Error('DO !!!')
+        const graph = makeGraph({
+            someNode: {
+                isEndSink: true,
+                inlets: {
+                    someInlet: {type: 'message', id: 'someInlet'}
+                }
+            },
+        })
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            inletListenerSpecs: {
+                'someNode': ['someInlet']
+            },
+            macros: macros,
+        })
+
+        const loop = compileLoop(compilation, [graph.someNode])
+
+        assert.strictEqual(
+            normalizeCode(loop),
+            normalizeCode(`
+            if (someNode_INS_someInlet.length) {
+                inletListener_someNode_someInlet()
+            }
+            if (someNode_INS_someInlet.length) {
+                someNode_INS_someInlet = []
+            }
+        `)
+        )
     })
 })
