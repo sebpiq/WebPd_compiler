@@ -22,10 +22,9 @@ describe('Engine', () => {
         extraCompilation?: Partial<Compilation>
     }
 
-    const runEngineTest = async <ExportsKeys extends TestEngineExportsKeys>({
+    const initializeEngineTest = async <ExportsKeys extends TestEngineExportsKeys>({
         target, testCode = '', exports, extraCompilation = {}
-    }: EngineTestSettings<ExportsKeys>, 
-    testFunc: (engine: TestEngine<ExportsKeys>) => void) => {
+    }: EngineTestSettings<ExportsKeys>) => {
         const transpilationSettings = {}
         const compilation = makeCompilation({
             target,
@@ -66,7 +65,7 @@ describe('Engine', () => {
             })
         }
 
-        await testFunc(engine)
+        return engine
     }
 
     describe('configure/loop', () => {
@@ -112,21 +111,21 @@ describe('Engine', () => {
                 channelCount: { in: 2, out: outputChannels },
             }
 
-            await runEngineTest({ target, extraCompilation: {graph, nodeImplementations, audioSettings: audioSettings} }, (engine) => {
-                const output: Array<Float32Array> = []
-                for (let channel = 0; channel < outputChannels; channel++) {
-                    output.push(new Float32Array(blockSize))
-                }
+            const engine = await initializeEngineTest({ target, extraCompilation: {graph, nodeImplementations, audioSettings: audioSettings} })
 
-                const expected: Array<Float32Array> = []
-                for (let channel = 0; channel < outputChannels; channel++) {
-                    expected.push(new Float32Array(blockSize).fill(2))
-                }
+            const output: Array<Float32Array> = []
+            for (let channel = 0; channel < outputChannels; channel++) {
+                output.push(new Float32Array(blockSize))
+            }
 
-                engine.configure(44100, blockSize)
-                engine.loop(input, output)
-                assert.deepStrictEqual(output, expected)
-            })
+            const expected: Array<Float32Array> = []
+            for (let channel = 0; channel < outputChannels; channel++) {
+                expected.push(new Float32Array(blockSize).fill(2))
+            }
+
+            engine.configure(44100, blockSize)
+            engine.loop(input, output)
+            assert.deepStrictEqual(output, expected)
         })
 
         it.each([
@@ -177,15 +176,15 @@ describe('Engine', () => {
                 new Float32Array(blockSize),
             ]
 
-            await runEngineTest({ target, extraCompilation: {graph, nodeImplementations, audioSettings: audioSettings} }, (engine) => {
-                engine.configure(44100, blockSize)
-                engine.loop(input, output)
-                assert.deepStrictEqual(output, [
-                    new Float32Array([2, 4, 6, 8]),
-                    new Float32Array([1, 3, 5, 7]),
-                    new Float32Array([0, 0, 0, 0]),
-                ])
-            })
+            const engine = await initializeEngineTest({ target, extraCompilation: {graph, nodeImplementations, audioSettings: audioSettings} }, )
+
+            engine.configure(44100, blockSize)
+            engine.loop(input, output)
+            assert.deepStrictEqual(output, [
+                new Float32Array([2, 4, 6, 8]),
+                new Float32Array([1, 3, 5, 7]),
+                new Float32Array([0, 0, 0, 0]),
+            ])
         })
     })
 
@@ -213,19 +212,19 @@ describe('Engine', () => {
                 'testReadArray3': 1,
             }
 
-            await runEngineTest({ target, testCode, exports }, (engine) => {
-                engine.setArray('array1', new Float32Array([11.1, 22.2, 33.3]))
-                engine.setArray('array2', new Float64Array([44.4, 55.5]))
-                engine.setArray('array3', [66.6, 77.7])
-    
-                let actual: number
-                actual = engine.testReadArray1(1)
-                assert.strictEqual(round(actual), 22.2)
-                actual = engine.testReadArray2(0)
-                assert.strictEqual(round(actual), 44.4)
-                actual = engine.testReadArray3(1)
-                assert.strictEqual(round(actual), 77.7)
-            })
+            const engine = await initializeEngineTest({ target, testCode, exports }, )
+
+            engine.setArray('array1', new Float32Array([11.1, 22.2, 33.3]))
+            engine.setArray('array2', new Float64Array([44.4, 55.5]))
+            engine.setArray('array3', [66.6, 77.7])
+
+            let actual: number
+            actual = engine.testReadArray1(1)
+            assert.strictEqual(round(actual), 22.2)
+            actual = engine.testReadArray2(0)
+            assert.strictEqual(round(actual), 44.4)
+            actual = engine.testReadArray3(1)
+            assert.strictEqual(round(actual), 77.7)
         })
     })
 
@@ -250,21 +249,21 @@ describe('Engine', () => {
                 bli: { access: 'rw', type: 'signal' },
             }
 
-            await runEngineTest({ target, testCode, extraCompilation: {accessorSpecs} }, (engine) => {
-                assert.deepStrictEqual(
-                    filterPortFunctionKeys(engine.accessors).sort(),
-                    [
-                        'read_bla',
-                        'read_bli',
-                        'write_bli',
-                    ].sort()
-                )
-        
-                assert.strictEqual(engine.accessors.read_bla(), 1)
-                assert.strictEqual(engine.accessors.read_bli(), 2)
-                engine.accessors.write_bli(666.666)
-                assert.strictEqual(round(engine.accessors.read_bli()), 666.666)
-            })
+            const engine = await initializeEngineTest({ target, testCode, extraCompilation: {accessorSpecs} }, )
+
+            assert.deepStrictEqual(
+                filterPortFunctionKeys(engine.accessors).sort(),
+                [
+                    'read_bla',
+                    'read_bli',
+                    'write_bli',
+                ].sort()
+            )
+    
+            assert.strictEqual(engine.accessors.read_bla(), 1)
+            assert.strictEqual(engine.accessors.read_bli(), 2)
+            engine.accessors.write_bli(666.666)
+            assert.strictEqual(round(engine.accessors.read_bli()), 666.666)
     
         })
 
@@ -290,20 +289,20 @@ describe('Engine', () => {
                 blu: { access: 'rw', type: 'message' },
             }
 
-            await runEngineTest({ target, testCode, extraCompilation: {accessorSpecs} }, (engine) => {
-                assert.deepStrictEqual(
-                    filterPortFunctionKeys(engine.accessors).sort(),
-                    [
-                        'read_blo',
-                        'read_blu',
-                        'write_blu',
-                    ].sort()
-                )
-                assert.deepStrictEqual(engine.accessors.read_blo(), [[222]])
-                assert.deepStrictEqual(engine.accessors.read_blu(), [[111, 'heho'], [222]])
-                engine.accessors.write_blu([['blabla', 'bloblo'], [333]])
-                assert.deepStrictEqual(engine.accessors.read_blu(), [['blabla', 'bloblo'], [333]])
-            })
+            const engine = await initializeEngineTest({ target, testCode, extraCompilation: {accessorSpecs} }, )
+
+            assert.deepStrictEqual(
+                filterPortFunctionKeys(engine.accessors).sort(),
+                [
+                    'read_blo',
+                    'read_blu',
+                    'write_blu',
+                ].sort()
+            )
+            assert.deepStrictEqual(engine.accessors.read_blo(), [[222]])
+            assert.deepStrictEqual(engine.accessors.read_blu(), [[111, 'heho'], [222]])
+            engine.accessors.write_blu([['blabla', 'bloblo'], [333]])
+            assert.deepStrictEqual(engine.accessors.read_blu(), [['blabla', 'bloblo'], [333]])
     
         })
     })
@@ -369,45 +368,45 @@ describe('Engine', () => {
                     'testOperationCleaned': 1,
                 }
 
-                await runEngineTest({ target, testCode, exports }, (engine) => {
-                    // 1. Some function in the engine requests a read file operation.
-                    // Request is sent to host via callback
-                    const called: Array<Array<any>> = []
-                    engine.fs.onRequestReadSoundFile = (...args: any) => called.push(args)
+                const engine = await initializeEngineTest({ target, testCode, exports }, )
 
-                    const operationId = engine.testStartReadFile()
-                
-                    // TODO : add infos
-                    assert.deepStrictEqual(called[0].slice(0, 2), [
-                        operationId,
-                        '/some/url',
-                    ])
+                // 1. Some function in the engine requests a read file operation.
+                // Request is sent to host via callback
+                const called: Array<Array<any>> = []
+                engine.fs.onRequestReadSoundFile = (...args: any) => called.push(args)
+
+                const operationId = engine.testStartReadFile()
+            
+                // TODO : add infos
+                assert.deepStrictEqual(called[0].slice(0, 2), [
+                    operationId,
+                    '/some/url',
+                ])
 
 
-                    // 2. Hosts handles the operation. It then calls fs_readSoundFileResponse when done.
-                    engine.fs.readSoundFileResponse(
-                        operationId,
-                        FS_OPERATION_SUCCESS,
-                        [
-                            new Float32Array([-1, -2, -3]),
-                            new Float32Array([4, 5, 6]),
-                            new Float32Array([-7, -8, -9]),
-                        ]
-                    )
+                // 2. Hosts handles the operation. It then calls fs_readSoundFileResponse when done.
+                engine.fs.readSoundFileResponse(
+                    operationId,
+                    FS_OPERATION_SUCCESS,
+                    [
+                        new Float32Array([-1, -2, -3]),
+                        new Float32Array([4, 5, 6]),
+                        new Float32Array([-7, -8, -9]),
+                    ]
+                )
 
-                    // 3. Engine-side the request initiator gets notified via callback
-                    assert.strictEqual(
-                        engine.testOperationId(),
-                        operationId
-                    )
-                    assert.strictEqual(
-                        engine.testOperationStatus(),
-                        FS_OPERATION_SUCCESS
-                    )
-                    assert.strictEqual(engine.testSoundLength(), 3)
-                    assert.ok(engine.testReceivedSound())
-                    assert.ok(engine.testOperationCleaned(operationId))
-                })
+                // 3. Engine-side the request initiator gets notified via callback
+                assert.strictEqual(
+                    engine.testOperationId(),
+                    operationId
+                )
+                assert.strictEqual(
+                    engine.testOperationStatus(),
+                    FS_OPERATION_SUCCESS
+                )
+                assert.strictEqual(engine.testSoundLength(), 3)
+                assert.ok(engine.testReceivedSound())
+                assert.ok(engine.testOperationCleaned(operationId))
             })
 
             it.each([
@@ -423,23 +422,23 @@ describe('Engine', () => {
                     'testSoundLength': 1,
                 }
 
-                await runEngineTest({ target, testCode, exports }, (engine) => {
-                    const operationId = engine.testStartReadFile()
-                    engine.fs.readSoundFileResponse(
-                        operationId,
-                        FS_OPERATION_FAILURE,
-                        []
-                    )
-                    assert.strictEqual(
-                        engine.testOperationId(),
-                        operationId
-                    )
-                    assert.strictEqual(
-                        engine.testOperationStatus(),
-                        FS_OPERATION_FAILURE
-                    )
-                    assert.strictEqual(engine.testSoundLength(), 0)
-                })
+                const engine = await initializeEngineTest({ target, testCode, exports }, )
+
+                const operationId = engine.testStartReadFile()
+                engine.fs.readSoundFileResponse(
+                    operationId,
+                    FS_OPERATION_FAILURE,
+                    []
+                )
+                assert.strictEqual(
+                    engine.testOperationId(),
+                    operationId
+                )
+                assert.strictEqual(
+                    engine.testOperationStatus(),
+                    FS_OPERATION_FAILURE
+                )
+                assert.strictEqual(engine.testSoundLength(), 0)
             })
         })
     })
@@ -483,22 +482,22 @@ describe('Engine', () => {
 
             const exports = {'testCallInletListener': 1}
 
-            await runEngineTest({ 
+            const engine = await initializeEngineTest({ 
                 target, 
                 testCode, 
                 extraCompilation: {inletListenerSpecs, accessorSpecs, graph}, 
                 exports}, 
-                (engine) => {
-                    const called: Array<Array<Message>> = []
+                )
 
-                    assert.ok(engine.inletListeners.someNode.someInlet.onMessages instanceof Function)
+            const called: Array<Array<Message>> = []
 
-                    engine.inletListeners.someNode.someInlet.onMessages = (messages: Array<Message>) =>
-                        called.push(messages)
-                    
-                    engine.testCallInletListener()
-                    assert.deepStrictEqual(called, [[[11, 22], ['bla']]])
-                })
+            assert.ok(engine.inletListeners.someNode.someInlet.onMessages instanceof Function)
+
+            engine.inletListeners.someNode.someInlet.onMessages = (messages: Array<Message>) =>
+                called.push(messages)
+            
+            engine.testCallInletListener()
+            assert.deepStrictEqual(called, [[[11, 22], ['bla']]])
         })
 
     })
