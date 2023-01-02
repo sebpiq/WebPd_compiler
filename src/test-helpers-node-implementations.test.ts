@@ -12,11 +12,14 @@
 import { DspGraph } from '@webpd/dsp-graph'
 import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
-import { NodeImplementations } from './types'
+import { CompilerTarget, NodeImplementations } from './types'
 
 describe('test-helpers-node-implementations', () => {
     describe('assertNodeOutput', () => {
-        it('should work with simple node', async () => {
+        it.each<{ target: CompilerTarget }>([
+            { target: 'javascript' },
+            { target: 'assemblyscript' },
+        ])('should work with simple node %s', async ({ target }) => {
             const nodeImplementations: NodeImplementations = {
                 counter: {
                     loop: (_, { ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
@@ -31,6 +34,7 @@ describe('test-helpers-node-implementations', () => {
 
             await nodeImplementationsTestHelpers.assertNodeOutput(
                 {
+                    target,
                     node,
                     nodeImplementations,
                 },

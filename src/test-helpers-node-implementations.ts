@@ -26,6 +26,7 @@ export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
 interface NodeTestSettings {
+    target: CompilerTarget
     node: DspGraph.Node
     nodeImplementations: NodeImplementations
     connectedSources?: Array<DspGraph.PortletId>
@@ -68,7 +69,6 @@ export type Frame = {
 }
 
 export const generateFramesForNode = async (
-    target: CompilerTarget,
     nodeTestSettings: NodeTestSettings,
     inputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
@@ -81,6 +81,8 @@ export const generateFramesForNode = async (
         testNode.sources[inletId].filter(
             (source) => source.nodeId === fakeSourceNode.id
         ).length
+
+    const { target } = nodeTestSettings
 
     // --------------- Generating test graph
     //   [fakeSourceNode] -> [testNode] -> [recorderNode]
@@ -323,26 +325,13 @@ export const assertNodeOutput = async (
 ): Promise<void> => {
     let actualOutputFrames: Array<Frame>
     actualOutputFrames = await generateFramesForNode(
-        'javascript',
         nodeTestSettings,
         inputFrames,
         arrays
     )
     assert.deepStrictEqual(
         roundFloatsInFrames(actualOutputFrames),
-        roundFloatsInFrames(expectedOutputFrames),
-        'javascript frames not matching'
-    )
-    actualOutputFrames = await generateFramesForNode(
-        'assemblyscript',
-        nodeTestSettings,
-        inputFrames,
-        arrays
-    )
-    assert.deepStrictEqual(
-        roundFloatsInFrames(actualOutputFrames),
-        roundFloatsInFrames(expectedOutputFrames),
-        'assemblyscript frames not matching'
+        roundFloatsInFrames(expectedOutputFrames)
     )
 }
 
