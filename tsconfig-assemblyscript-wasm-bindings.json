@@ -13,5 +13,5 @@
         "moduleResolution": "node"
     },
     "typeRoots": ["./node_modules/@types"],
-    "files": ["./src/engine-assemblyscript/wasm-bindings.ts"]
+    "files": ["./src/engine-assemblyscript/AssemblyScriptWasmEngine.ts"]
 }

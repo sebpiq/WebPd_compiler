@@ -14,7 +14,7 @@ import * as variableNames from './engine-variable-names'
 import { getMacros } from './compile'
 import { JavaScriptEngine } from './engine-javascript/types'
 import { compileWasmModule } from './engine-assemblyscript/test-helpers'
-import { createEngine as createAscEngine } from './engine-assemblyscript/wasm-bindings'
+import { createEngine as createAscEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode

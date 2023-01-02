@@ -11,7 +11,7 @@
 
 import assert from 'assert'
 import { compileWasmModule } from './test-helpers'
-import { readMetadata } from './wasm-bindings'
+import { readMetadata } from './AssemblyScriptWasmEngine'
 import {
     AccessorSpecs,
 } from '../types'
