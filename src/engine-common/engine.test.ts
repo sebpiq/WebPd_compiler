@@ -346,12 +346,12 @@ describe('Engine', () => {
             async ({ target }) => {
                 // prettier-ignore
                 const testCode: Code = `
-                let bluMessage1: Message = msg_create([ MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_STRING, 4 ])
-                msg_writeFloatDatum(bluMessage1, 0, 111)
-                msg_writeStringDatum(bluMessage1, 1, 'heho')
+                let bluMessage1: Message = msg_create([ MSG_TOKEN_TYPE_FLOAT, MSG_TOKEN_TYPE_STRING, 4 ])
+                msg_writeFloatToken(bluMessage1, 0, 111)
+                msg_writeStringToken(bluMessage1, 1, 'heho')
 
-                let bluMessage2: Message = msg_create([ MSG_DATUM_TYPE_FLOAT ])
-                msg_writeFloatDatum(bluMessage2, 0, 222)
+                let bluMessage2: Message = msg_create([ MSG_TOKEN_TYPE_FLOAT ])
+                msg_writeFloatToken(bluMessage2, 0, 222)
                 
                 let blo: Message[] = [bluMessage2]
                 let blu: Message[] = [bluMessage1, bluMessage2]
@@ -558,11 +558,11 @@ describe('Engine', () => {
                 const testCode: Code = `
                 const someNode_INS_someInlet: Array<Message> = []
 
-                const m1: Message = msg_create([MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_FLOAT])
-                msg_writeFloatDatum(m1, 0, 11)
-                msg_writeFloatDatum(m1, 1, 22)
-                const m2: Message = msg_create([MSG_DATUM_TYPE_STRING, 3])
-                msg_writeStringDatum(m2, 0, 'bla')
+                const m1: Message = msg_create([MSG_TOKEN_TYPE_FLOAT, MSG_TOKEN_TYPE_FLOAT])
+                msg_writeFloatToken(m1, 0, 11)
+                msg_writeFloatToken(m1, 1, 22)
+                const m2: Message = msg_create([MSG_TOKEN_TYPE_STRING, 3])
+                msg_writeStringToken(m2, 0, 'bla')
 
                 someNode_INS_someInlet.push(m1)
                 someNode_INS_someInlet.push(m2)

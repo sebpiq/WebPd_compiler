@@ -59,13 +59,13 @@ describe('msg-bindings', () => {
                     x_msg_create as msg_create,
                     x_msg_createArray as msg_createArray,
                     x_msg_pushToArray as msg_pushToArray,
-                    x_msg_getDatumTypes as msg_getDatumTypes,
-                    msg_writeStringDatum,
-                    msg_writeFloatDatum,
-                    msg_readStringDatum,
-                    msg_readFloatDatum,
-                    MSG_DATUM_TYPE_FLOAT,
-                    MSG_DATUM_TYPE_STRING,
+                    x_msg_getTokenTypes as msg_getTokenTypes,
+                    msg_writeStringToken,
+                    msg_writeFloatToken,
+                    msg_readStringToken,
+                    msg_readFloatToken,
+                    MSG_TOKEN_TYPE_FLOAT,
+                    MSG_TOKEN_TYPE_STRING,
                 }
             `,
             audioSettings
@@ -218,11 +218,11 @@ describe('msg-bindings', () => {
                 const code = getBaseTestCode({bitDepth}) + `
                 export function testCreateMessage(): Message {
                     const message: Message = msg_create([
-                        MSG_DATUM_TYPE_STRING, 5,
-                        MSG_DATUM_TYPE_FLOAT,
+                        MSG_TOKEN_TYPE_STRING, 5,
+                        MSG_TOKEN_TYPE_FLOAT,
                     ])
-                    msg_writeStringDatum(message, 0, "hello")
-                    msg_writeFloatDatum(message, 1, 666)
+                    msg_writeStringToken(message, 0, "hello")
+                    msg_writeFloatToken(message, 1, 666)
                     return message
                 }
             `
@@ -297,7 +297,7 @@ describe('msg-bindings', () => {
                     ),
                     [
                         1,
-                        wasmExports.MSG_DATUM_TYPE_STRING.valueOf(),
+                        wasmExports.MSG_TOKEN_TYPE_STRING.valueOf(),
                         INT_ARRAY_BYTES_PER_ELEMENT * 4,
                         INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
                         0,
@@ -310,7 +310,7 @@ describe('msg-bindings', () => {
                     ),
                     [
                         1,
-                        wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf(),
+                        wasmExports.MSG_TOKEN_TYPE_FLOAT.valueOf(),
                         INT_ARRAY_BYTES_PER_ELEMENT * 4,
                         INT_ARRAY_BYTES_PER_ELEMENT * 4 +
                             floatArrayType.BYTES_PER_ELEMENT,

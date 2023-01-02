@@ -9,23 +9,23 @@ const f64 = i32
 `
 
 const MSG = `
-const MSG_DATUM_TYPE_FLOAT = \${MSG_DATUM_TYPE_FLOAT}
-const MSG_DATUM_TYPE_STRING = \${MSG_DATUM_TYPE_STRING}
+const MSG_TOKEN_TYPE_FLOAT = \${MSG_TOKEN_TYPE_FLOAT}
+const MSG_TOKEN_TYPE_STRING = \${MSG_TOKEN_TYPE_STRING}
 
 const msg_create = () => []
 
 const msg_getLength = (m) => m.length
 
-const msg_getDatumType = (m, i) => typeof m[i]
+const msg_getTokenType = (m, i) => typeof m[i]
 
-const msg_isStringToken = (m, i) => msg_getDatumType(m, i) === 'string'
+const msg_isStringToken = (m, i) => msg_getTokenType(m, i) === 'string'
 
-const msg_isFloatToken = (m, i) => msg_getDatumType(m, i) === 'number'
+const msg_isFloatToken = (m, i) => msg_getTokenType(m, i) === 'number'
 
-const msg_writeStringDatum = msg_writeFloatDatum = ( m, i, v ) =>
+const msg_writeStringToken = msg_writeFloatToken = ( m, i, v ) =>
     m[i] = v
 
-const msg_readStringDatum = msg_readFloatDatum = ( m, i ) =>
+const msg_readStringToken = msg_readFloatToken = ( m, i ) =>
     m[i]
 `
 

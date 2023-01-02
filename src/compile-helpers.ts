@@ -13,10 +13,10 @@ import { DspGraph } from '@webpd/dsp-graph'
 import {
     FS_OPERATION_SUCCESS,
     FS_OPERATION_FAILURE,
-    MSG_DATUM_TYPE_FLOAT,
-    MSG_DATUM_TYPE_STRING,
+    MSG_TOKEN_TYPE_FLOAT,
+    MSG_TOKEN_TYPE_STRING,
 } from './constants'
-import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/constants'
+import { MSG_TOKEN_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/constants'
 import {
     Code,
     EngineVariableNames,
@@ -87,12 +87,12 @@ export const replaceCoreCodePlaceholders = (
         .replaceAll('${FS_OPERATION_SUCCESS}', FS_OPERATION_SUCCESS.toString())
         .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
         .replaceAll(
-            '${MSG_DATUM_TYPE_FLOAT}',
-            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT].toString()
+            '${MSG_TOKEN_TYPE_FLOAT}',
+            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_TOKEN_TYPE_FLOAT].toString()
         )
         .replaceAll(
-            '${MSG_DATUM_TYPE_STRING}',
-            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING].toString()
+            '${MSG_TOKEN_TYPE_STRING}',
+            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_TOKEN_TYPE_STRING].toString()
         )
 }
 

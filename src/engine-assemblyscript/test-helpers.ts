@@ -13,9 +13,9 @@ import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import { MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_STRING } from '../constants'
+import { MSG_TOKEN_TYPE_FLOAT, MSG_TOKEN_TYPE_STRING } from '../constants'
 import { Code } from '../types'
-import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import { MSG_TOKEN_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { createEngine } from '../test-helpers'
 import { AssemblyScriptWasmEngine } from './AssemblyScriptWasmEngine'
 
@@ -30,12 +30,12 @@ export const getAssemblyscriptCoreCode = () => {
         .replaceAll('${getFloat}', 'getFloat64')
         .replaceAll('${setFloat}', 'setFloat64')
         .replaceAll(
-            '${MSG_DATUM_TYPE_FLOAT}',
-            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT].toString()
+            '${MSG_TOKEN_TYPE_FLOAT}',
+            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_TOKEN_TYPE_FLOAT].toString()
         )
         .replaceAll(
-            '${MSG_DATUM_TYPE_STRING}',
-            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING].toString()
+            '${MSG_TOKEN_TYPE_STRING}',
+            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_TOKEN_TYPE_STRING].toString()
         )
 }
 

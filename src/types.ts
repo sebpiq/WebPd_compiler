@@ -11,8 +11,6 @@
 
 import { DspGraph } from '@webpd/dsp-graph'
 import {
-    MSG_DATUM_TYPE_STRING,
-    MSG_DATUM_TYPE_FLOAT,
     FS_OPERATION_FAILURE,
     FS_OPERATION_SUCCESS,
 } from './constants'
@@ -30,10 +28,6 @@ export type Message = Array<string | number>
  * Type for values sent through the signal flow.
  */
 export type Signal = number
-
-export type MessageDatumType =
-    | typeof MSG_DATUM_TYPE_STRING
-    | typeof MSG_DATUM_TYPE_FLOAT
 
 export type CompilerTarget = 'assemblyscript' | 'javascript'
 

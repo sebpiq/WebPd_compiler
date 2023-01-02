@@ -35,35 +35,35 @@ import {
 } from '../types'
 
 export interface msg_WasmExports extends core_WasmExports {
-    MSG_DATUM_TYPE_FLOAT: WebAssembly.Global
-    MSG_DATUM_TYPE_STRING: WebAssembly.Global
+    MSG_TOKEN_TYPE_FLOAT: WebAssembly.Global
+    MSG_TOKEN_TYPE_STRING: WebAssembly.Global
 
     msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
     ) => InternalPointer
-    msg_getDatumTypes: (messagePointer: InternalPointer) => TypedArrayPointer
+    msg_getTokenTypes: (messagePointer: InternalPointer) => TypedArrayPointer
     msg_createArray: () => InternalPointer
     msg_pushToArray: (
         messageArrayPointer: InternalPointer,
         messagePointer: InternalPointer
     ) => void
-    msg_writeStringDatum: (
+    msg_writeStringToken: (
         messagePointer: InternalPointer,
-        datumIndex: number,
+        tokenIndex: number,
         stringPointer: StringPointer
     ) => void
-    msg_writeFloatDatum: (
+    msg_writeFloatToken: (
         messagePointer: InternalPointer,
-        datumIndex: number,
+        tokenIndex: number,
         value: number
     ) => void
-    msg_readStringDatum: (
+    msg_readStringToken: (
         messagePointer: InternalPointer,
-        datumIndex: number
+        tokenIndex: number
     ) => StringPointer
-    msg_readFloatDatum: (
+    msg_readFloatToken: (
         messagePointer: InternalPointer,
-        datumIndex: number
+        tokenIndex: number
     ) => number
 }
 
@@ -73,23 +73,23 @@ export const liftMessage = (
     wasmExports: msg_WasmExports,
     messagePointer: InternalPointer
 ): Message => {
-    const messageDatumTypesPointer =
-        wasmExports.msg_getDatumTypes(messagePointer)
-    const messageDatumTypes = readTypedArray(
+    const messageTokenTypesPointer =
+        wasmExports.msg_getTokenTypes(messagePointer)
+    const messageTokenTypes = readTypedArray(
         wasmExports,
         Int32Array,
-        messageDatumTypesPointer
+        messageTokenTypesPointer
     )
     const message: Message = []
-    messageDatumTypes.forEach((datumType, datumIndex) => {
-        if (datumType === wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf()) {
+    messageTokenTypes.forEach((tokenType, tokenIndex) => {
+        if (tokenType === wasmExports.MSG_TOKEN_TYPE_FLOAT.valueOf()) {
             message.push(
-                wasmExports.msg_readFloatDatum(messagePointer, datumIndex)
+                wasmExports.msg_readFloatToken(messagePointer, tokenIndex)
             )
-        } else if (datumType === wasmExports.MSG_DATUM_TYPE_STRING.valueOf()) {
-            const stringPointer = wasmExports.msg_readStringDatum(
+        } else if (tokenType === wasmExports.MSG_TOKEN_TYPE_STRING.valueOf()) {
+            const stringPointer = wasmExports.msg_readStringToken(
                 messagePointer,
-                datumIndex
+                tokenIndex
             )
             message.push(liftString(wasmExports, stringPointer))
         }
@@ -103,9 +103,9 @@ export const lowerMessage = (
 ): InternalPointer => {
     const messageTemplate: Array<number> = message.reduce((template, value) => {
         if (typeof value === 'number') {
-            template.push(wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf())
+            template.push(wasmExports.MSG_TOKEN_TYPE_FLOAT.valueOf())
         } else if (typeof value === 'string') {
-            template.push(wasmExports.MSG_DATUM_TYPE_STRING.valueOf())
+            template.push(wasmExports.MSG_TOKEN_TYPE_STRING.valueOf())
             template.push(value.length)
         } else {
             throw new Error(`invalid message value ${value}`)
@@ -119,10 +119,10 @@ export const lowerMessage = (
 
     message.forEach((value, index) => {
         if (typeof value === 'number') {
-            wasmExports.msg_writeFloatDatum(messagePointer, index, value)
+            wasmExports.msg_writeFloatToken(messagePointer, index, value)
         } else if (typeof value === 'string') {
             const stringPointer = lowerString(wasmExports, value)
-            wasmExports.msg_writeStringDatum(
+            wasmExports.msg_writeStringToken(
                 messagePointer,
                 index,
                 stringPointer
