@@ -19,7 +19,6 @@
  * @module
  */
 
-import { DspGraph } from '@webpd/dsp-graph'
 import {
     CodeVariableName,
     Engine,
@@ -33,10 +32,8 @@ import {
 import { fs_WasmImports } from './core-code/fs-bindings'
 import { liftMessage, lowerMessageArray } from './core-code/msg-bindings'
 import {
-    FloatArray,
     lowerListOfTypedArrays,
     lowerTypedArray,
-    readListOfTypedArrays,
 } from './core-code/tarray-bindings'
 import {
     AssemblyScriptWasmExports,
@@ -44,15 +41,6 @@ import {
     EngineMetadata,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
-
-export interface EngineSettings {
-    // TODO : REMOVE FROM HERE
-    inletListenersCallbacks?: {
-        [nodeId: DspGraph.NodeId]: {
-            [inletId: DspGraph.PortletId]: (messages: Array<Message>) => void
-        }
-    }
-}
 
 interface AudioConfig {
     sampleRate: number
@@ -64,9 +52,8 @@ interface AudioConfig {
  */
 export const createEngine = async (
     wasmBuffer: ArrayBuffer,
-    settings: EngineSettings
 ) => {
-    const engine = new AssemblyScriptWasmEngine(wasmBuffer, settings)
+    const engine = new AssemblyScriptWasmEngine(wasmBuffer)
     await engine.initialize()
     return engine
 }
@@ -78,18 +65,17 @@ export const createEngine = async (
 export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
     public accessors: Engine['accessors']
+    public inletListeners: Engine['inletListeners']
     public fs: Engine['fs']
     public metadata: EngineMetadata
-    private settings: EngineSettings
     private wasmBuffer: ArrayBuffer
     private wasmOutput: Float32Array | Float64Array
     private wasmInput: Float32Array | Float64Array
     private audioConfig: AudioConfig
     private arrayType: typeof Float32Array | typeof Float64Array
 
-    constructor(wasmBuffer: ArrayBuffer, settings: EngineSettings) {
+    constructor(wasmBuffer: ArrayBuffer) {
         this.wasmBuffer = wasmBuffer
-        this.settings = settings
     }
 
     async initialize() {
@@ -101,7 +87,7 @@ export class AssemblyScriptWasmEngine implements Engine {
                 : Float64Array
 
         const wasmImports: AssemblyScriptWasmImports = {
-            ...this._makeFileListenersWasmImports(),
+            ...this._makeFsWasmImports(),
             ...this._makeInletListenersWasmImports(),
         }
 
@@ -112,6 +98,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
         this.accessors = this._bindAccessors()
         this.fs = this._bindFs()
+        this.inletListeners = this._bindInletListeners()
     }
 
     configure(sampleRate: number, blockSize: number): void {
@@ -245,30 +232,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         }
     }
 
-    _makeInletListenersWasmImports() {
-        const wasmImports: {
-            [listenerName: CodeVariableName]: () => void
-        } = {}
-        const { engineVariableNames } = this.metadata.compilation
-        Object.entries(this.settings.inletListenersCallbacks || {}).forEach(
-            ([nodeId, callbacks]) => {
-                Object.entries(callbacks).forEach(([inletId, callback]) => {
-                    const listenerName =
-                        engineVariableNames.inletListeners[nodeId][inletId]
-                    const inletVariableName =
-                        engineVariableNames.n[nodeId].ins[inletId]
-                    const portVariableName =
-                        engineVariableNames.accessors[inletVariableName].r
-                    wasmImports[listenerName] = () => {
-                        callback(this.accessors[portVariableName]())
-                    }
-                })
-            }
-        )
-        return wasmImports
-    }
-
-    _makeFileListenersWasmImports(): fs_WasmImports {
+    _makeFsWasmImports(): fs_WasmImports {
         let wasmImports: fs_WasmImports = {
             fs_requestReadSoundFile: (
                 operationId,
@@ -296,6 +260,41 @@ export class AssemblyScriptWasmEngine implements Engine {
             fs_requestReadSoundStream: () => undefined,
             fs_requestCloseSoundStream: () => undefined,
         }
+        return wasmImports
+    }
+
+    _bindInletListeners(): Engine['inletListeners'] {
+        return Object.entries(this.metadata.compilation.inletListenerSpecs).reduce(
+            (inletListeners, [nodeId, inletIds]) => {
+                inletListeners[nodeId] = {}
+                inletIds.forEach(inletId => inletListeners[nodeId][inletId] = {
+                    onMessages: () => undefined
+                })
+                return inletListeners
+            },
+        {} as Engine['inletListeners'])
+    }
+
+    _makeInletListenersWasmImports() {
+        const wasmImports: {
+            [listenerName: CodeVariableName]: () => void
+        } = {}
+        const { engineVariableNames } = this.metadata.compilation
+        Object.entries(this.metadata.compilation.inletListenerSpecs).forEach(
+            ([nodeId, inletIds]) => {
+                inletIds.forEach(inletId => {
+                    const listenerName =
+                        engineVariableNames.inletListeners[nodeId][inletId]
+                    const inletVariableName =
+                        engineVariableNames.n[nodeId].ins[inletId]
+                    const portVariableName =
+                        engineVariableNames.accessors[inletVariableName].r
+                    wasmImports[listenerName] = () => {
+                        this.inletListeners[nodeId][inletId].onMessages(this.accessors[portVariableName]())
+                    }
+                })
+            }
+        )
         return wasmImports
     }
 }

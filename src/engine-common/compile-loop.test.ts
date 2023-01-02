@@ -262,4 +262,8 @@ describe('compileLoop', () => {
         `)
         )
     })
+
+    it('should add inletListeners', () => {
+        throw new Error('DO !!!')
+    })
 })

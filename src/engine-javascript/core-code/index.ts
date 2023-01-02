@@ -9,6 +9,9 @@ const f64 = i32
 `
 
 const MSG = `
+const MSG_DATUM_TYPE_FLOAT = \${MSG_DATUM_TYPE_FLOAT}
+const MSG_DATUM_TYPE_STRING = \${MSG_DATUM_TYPE_STRING}
+
 const msg_create = () => []
 
 const msg_getLength = (m) => m.length
@@ -34,8 +37,7 @@ const fs_requestReadSoundFile = (...args) => exports.fs.onRequestReadSoundFile(.
 `
 
 export default (engineVariableNames: EngineVariableNames) => {
-    return (
-        COMPAT + MSG + FS + 
-        replaceCoreCodePlaceholders(engineVariableNames, FS_JS)
+    return replaceCoreCodePlaceholders(engineVariableNames,
+        COMPAT + MSG + FS + FS_JS
     )
 }

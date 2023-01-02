@@ -13,10 +13,7 @@ import assert from 'assert'
 import { DspGraph } from '@webpd/dsp-graph'
 import { getMacros, executeCompilation } from './compile'
 import { renderCode } from './compile-helpers'
-import { createEngine } from './engine-assemblyscript/wasm-bindings'
-import { compileWasmModule } from './engine-assemblyscript/test-helpers'
-import { JavaScriptEngine } from './engine-javascript/types'
-import { makeCompilation, round } from './test-helpers'
+import { createEngine, makeCompilation, round } from './test-helpers'
 import {
     Signal,
     Message,
@@ -24,7 +21,6 @@ import {
     NodeImplementations,
     AccessorSpecs,
     CompilerTarget,
-    Code,
 } from './types'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
@@ -231,7 +227,7 @@ export const generateFramesForNode = async (
         accessorSpecs,
     })
     const code = executeCompilation(compilation)
-    const engine = await getEngine(compilation.target, code)
+    const engine = await createEngine(compilation.target, code)
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -366,25 +362,6 @@ const roundFloatsInFrames = (frames: Array<Frame>) =>
         })
         return roundedFrame
     })
-
-export const getEngine = async (target: CompilerTarget, code: Code) => {
-    if (target === 'javascript') {
-        try {
-            return new Function(`
-                ${code}
-                return exports
-            `)() as JavaScriptEngine
-        } catch (err) {
-            if (err instanceof SyntaxError) {
-                console.error(`-------- CODE --------\n${code}\n----------------------`)
-            }
-            throw err
-        }
-    } else {
-        const wasmBuffer = await compileWasmModule(code)
-        return await createEngine(wasmBuffer, {})
-    }
-}
 
 export const buildEngineBlock = (
     constructor: typeof Float32Array | typeof Float64Array,

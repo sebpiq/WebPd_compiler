@@ -19,6 +19,8 @@ import {
 } from '../constants'
 import { Code } from '../types'
 import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
+import { createEngine } from '../test-helpers'
+import { AssemblyScriptWasmEngine } from './wasm-bindings'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -58,4 +60,9 @@ export const compileWasmModule = async (
         throw new Error(stderr.toString())
     }
     return binary
+}
+
+export const createAscEngine = async (code: Code) => {
+    const engine = await createEngine('assemblyscript', code) as AssemblyScriptWasmEngine
+    return {engine, wasmExports: engine.wasmExports as any}
 }

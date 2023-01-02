@@ -9,9 +9,12 @@
  *
  */
 
-import { Compilation, CompilerTarget } from './types'
+import { Code, Compilation, CompilerTarget } from './types'
 import * as variableNames from './engine-variable-names'
 import { getMacros } from './compile'
+import { JavaScriptEngine } from './engine-javascript/types'
+import { compileWasmModule } from './engine-assemblyscript/test-helpers'
+import { createEngine as createAscEngine } from './engine-assemblyscript/wasm-bindings'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -31,7 +34,9 @@ export const makeCompilation = (
         throw new Error(`Compilation target must be provided`)
     }
     const target: CompilerTarget = compilation.target
-    const nodeImplementations = compilation.nodeImplementations || {}
+    const nodeImplementations = compilation.nodeImplementations || {
+        DUMMY: { loop: () => '' },
+    }
     const graph = compilation.graph || {}
     const accessorSpecs = compilation.accessorSpecs || {}
     const inletListenerSpecs = compilation.inletListenerSpecs || {}
@@ -61,5 +66,22 @@ export const makeCompilation = (
         inletListenerSpecs,
         macros: getMacros(target),
         engineVariableNames,
+    }
+}
+
+export const createEngine = async (target: CompilerTarget, code: Code) => {
+    if (target === 'javascript') {
+        try {
+            return new Function(`
+                ${code}
+                return exports
+            `)() as JavaScriptEngine
+        } catch (err) {
+            console.error(`-------- CODE --------\n${code}\n----------------------`)
+            throw err
+        }
+    } else {
+        const wasmBuffer = await compileWasmModule(code)
+        return await createAscEngine(wasmBuffer)
     }
 }

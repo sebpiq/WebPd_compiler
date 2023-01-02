@@ -55,7 +55,7 @@ export default (
         graph,
         nodeImplementations,
         audioSettings,
-        inletListenerSpecs: inletListenerSpecs,
+        inletListenerSpecs,
         accessorSpecs,
         engineVariableNames,
         macros,

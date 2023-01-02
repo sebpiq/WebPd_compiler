@@ -60,6 +60,15 @@ export interface Engine {
     // Map of public variable accessors for an engine
     accessors: { [accessorName: string]: (...args: any) => any }
     
+    // Inlet listener callbacks
+    inletListeners: { 
+        [nodeId: DspGraph.NodeId]: { 
+            [portletId: DspGraph.PortletId]: {
+                onMessages: (messages: Array<Message>) => void
+            }
+        } 
+    }
+
     // Filesystem API for the engine
     fs: {
         readSoundFileResponse: (

@@ -19,7 +19,7 @@ import { JavaScriptEngineCode } from './types'
 import generateCoreCode from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { accessorSpecs, engineVariableNames } = compilation
+    const { accessorSpecs, engineVariableNames, inletListenerSpecs } = compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const coreCode = generateCoreCode(engineVariableNames)
@@ -31,6 +31,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         const ${globs.arrays} = new Map()
 
         ${compileDeclare(compilation, graphTraversal)}
+        ${compileInletListeners(compilation)}
 
         const exports = {
             configure: (sampleRate, blockSize) => {
@@ -58,6 +59,15 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                     `
                 })}
             },
+            inletListeners: {
+                ${Object.entries(inletListenerSpecs).map(([nodeId, inletIds]) =>
+                    `${nodeId}: {
+                        ${inletIds.map(inletId => `
+                            ${inletId}: {onMessages: () => undefined,}
+                        `)}
+                    }`
+                )}
+            },
             fs: {
                 onRequestReadSoundFile: () => undefined,
                 // onRequestReadSoundStream: () => undefined,
@@ -70,4 +80,17 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             }
         }
     `
+}
+
+export const compileInletListeners = ({inletListenerSpecs, engineVariableNames}: Compilation) => {
+    return renderCode`${Object.entries(inletListenerSpecs).map(([nodeId, inletIds]) =>
+        inletIds.map(inletId => {
+            const listenerVariableName = engineVariableNames.inletListeners[nodeId][inletId]
+            const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
+            return `
+                const ${listenerVariableName} = () => {
+                    exports.inletListeners['${nodeId}']['${inletId}'].onMessages(${inletVariableName})
+                }
+            `})
+    )}`
 }
