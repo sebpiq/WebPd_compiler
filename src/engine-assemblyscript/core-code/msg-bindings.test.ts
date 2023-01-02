@@ -17,7 +17,11 @@ import {
     lowerArrayBufferOfIntegers,
     lowerMessage,
 } from './msg-bindings'
-import { getAscCode, initializeCoreCodeTest, replacePlaceholdersForTesting } from './test-helpers'
+import {
+    getAscCode,
+    initializeCoreCodeTest,
+    replacePlaceholdersForTesting,
+} from './test-helpers'
 
 describe('msg-bindings', () => {
     const BYTES_IN_CHAR = 4
@@ -39,12 +43,13 @@ describe('msg-bindings', () => {
     }
 
     const baseExports = {
-        testReadMessageData: 1
+        testReadMessageData: 1,
     }
 
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-        getAscCode('core.asc', audioSettings) + getAscCode('msg.asc', audioSettings)
-         + replacePlaceholdersForTesting(
+        getAscCode('core.asc', audioSettings) +
+        getAscCode('msg.asc', audioSettings) +
+        replacePlaceholdersForTesting(
             `
                 export function testReadMessageData(message: Message, index: Int): Int {
                     return message.dataView.getInt32(index * sizeof<Int>())
@@ -67,156 +72,150 @@ describe('msg-bindings', () => {
         )
 
     describe('lowerArrayBufferOfIntegers', () => {
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
-        ])('should correctly lower the given array to an ArrayBuffer of integers %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({ bitDepth }) + `
+        ])(
+            'should correctly lower the given array to an ArrayBuffer of integers %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({ bitDepth }) + `
                 export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: Int): Int {
                     const dataView = new DataView(buffer)
                     return dataView.getInt32(index * sizeof<Int>())
                 }
             `
 
-            const exports = {
-                ...baseExports,
-                testReadArrayBufferOfIntegers: 1,
-            }
+                const exports = {
+                    ...baseExports,
+                    testReadArrayBufferOfIntegers: 1,
+                }
 
-            const {wasmExports} = await initializeCoreCodeTest(
-                {code, bitDepth, exports},
-            )
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
 
-            const bufferPointer = lowerArrayBufferOfIntegers(
-                wasmExports,
-                [1, 22, 333, 4444]
-            )
+                const bufferPointer = lowerArrayBufferOfIntegers(
+                    wasmExports,
+                    [1, 22, 333, 4444]
+                )
 
-            assert.strictEqual(
-                wasmExports.testReadArrayBufferOfIntegers(
-                    bufferPointer,
-                    0
-                ),
-                1
-            )
-            assert.strictEqual(
-                wasmExports.testReadArrayBufferOfIntegers(
-                    bufferPointer,
+                assert.strictEqual(
+                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 0),
                     1
-                ),
-                22
-            )
-            assert.strictEqual(
-                wasmExports.testReadArrayBufferOfIntegers(
-                    bufferPointer,
-                    2
-                ),
-                333
-            )
-            assert.strictEqual(
-                wasmExports.testReadArrayBufferOfIntegers(
-                    bufferPointer,
-                    3
-                ),
-                4444
-            )
-        })
+                )
+                assert.strictEqual(
+                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 1),
+                    22
+                )
+                assert.strictEqual(
+                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 2),
+                    333
+                )
+                assert.strictEqual(
+                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 3),
+                    4444
+                )
+            }
+        )
     })
 
     describe('lowerMessage', () => {
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
-        ])('should create the message with correct header and filled-in data %s', async ({ bitDepth }) => {
-            const code = getBaseTestCode({bitDepth})
+        ])(
+            'should create the message with correct header and filled-in data %s',
+            async ({ bitDepth }) => {
+                const code = getBaseTestCode({ bitDepth })
 
-            const exports = baseExports
+                const exports = baseExports
 
-            const {wasmExports, floatArrayType} = await initializeCoreCodeTest(
-                {code, bitDepth, exports},
-            )
+                const { wasmExports, floatArrayType } =
+                    await initializeCoreCodeTest({ code, bitDepth, exports })
 
-            const messagePointer = lowerMessage(wasmExports, [
-                'bla',
-                2.3,
-            ])
+                const messagePointer = lowerMessage(wasmExports, ['bla', 2.3])
 
-            // Testing token count
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 0),
-                2
-            )
-
-            // Testing token types
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 1),
-                1
-            )
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 2),
-                0
-            )
-
-            // Testing token positions
-            // <Header byte size>
-            //      + <Size of f32>
-            //      + <Size of 3 chars strings> + <Size of f32>
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 3),
-                6 * INT_ARRAY_BYTES_PER_ELEMENT
-            )
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 4),
-                6 * INT_ARRAY_BYTES_PER_ELEMENT + 3 * BYTES_IN_CHAR
-            )
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 5),
-                6 * INT_ARRAY_BYTES_PER_ELEMENT +
-                    3 * BYTES_IN_CHAR +
-                    floatArrayType.BYTES_PER_ELEMENT
-            )
-
-            // TOKEN "bla"
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 6),
-                'bla'.charCodeAt(0)
-            )
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 7),
-                'bla'.charCodeAt(1)
-            )
-            assert.strictEqual(
-                wasmExports.testReadMessageData(messagePointer, 8),
-                'bla'.charCodeAt(2)
-            )
-
-            // TOKEN "2.3"
-            if (bitDepth === 64) {
+                // Testing token count
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 9),
-                    float64ToInt32Array(2.3)[0]
+                    wasmExports.testReadMessageData(messagePointer, 0),
+                    2
+                )
+
+                // Testing token types
+                assert.strictEqual(
+                    wasmExports.testReadMessageData(messagePointer, 1),
+                    1
                 )
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 10),
-                    float64ToInt32Array(2.3)[1]
+                    wasmExports.testReadMessageData(messagePointer, 2),
+                    0
                 )
-            } else {
+
+                // Testing token positions
+                // <Header byte size>
+                //      + <Size of f32>
+                //      + <Size of 3 chars strings> + <Size of f32>
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 9),
-                    float32ToInt32Array(2.3)[0]
+                    wasmExports.testReadMessageData(messagePointer, 3),
+                    6 * INT_ARRAY_BYTES_PER_ELEMENT
                 )
+                assert.strictEqual(
+                    wasmExports.testReadMessageData(messagePointer, 4),
+                    6 * INT_ARRAY_BYTES_PER_ELEMENT + 3 * BYTES_IN_CHAR
+                )
+                assert.strictEqual(
+                    wasmExports.testReadMessageData(messagePointer, 5),
+                    6 * INT_ARRAY_BYTES_PER_ELEMENT +
+                        3 * BYTES_IN_CHAR +
+                        floatArrayType.BYTES_PER_ELEMENT
+                )
+
+                // TOKEN "bla"
+                assert.strictEqual(
+                    wasmExports.testReadMessageData(messagePointer, 6),
+                    'bla'.charCodeAt(0)
+                )
+                assert.strictEqual(
+                    wasmExports.testReadMessageData(messagePointer, 7),
+                    'bla'.charCodeAt(1)
+                )
+                assert.strictEqual(
+                    wasmExports.testReadMessageData(messagePointer, 8),
+                    'bla'.charCodeAt(2)
+                )
+
+                // TOKEN "2.3"
+                if (bitDepth === 64) {
+                    assert.strictEqual(
+                        wasmExports.testReadMessageData(messagePointer, 9),
+                        float64ToInt32Array(2.3)[0]
+                    )
+                    assert.strictEqual(
+                        wasmExports.testReadMessageData(messagePointer, 10),
+                        float64ToInt32Array(2.3)[1]
+                    )
+                } else {
+                    assert.strictEqual(
+                        wasmExports.testReadMessageData(messagePointer, 9),
+                        float32ToInt32Array(2.3)[0]
+                    )
+                }
             }
-        })
+        )
     })
 
     describe('liftMessage', () => {
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
-        ])('should read message to a JavaScript array %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({bitDepth}) + `
+        ])(
+            'should read message to a JavaScript array %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
                 export function testCreateMessage(): Message {
                     const message: Message = msg_create([
                         MSG_DATUM_TYPE_STRING, 5,
@@ -228,96 +227,97 @@ describe('msg-bindings', () => {
                 }
             `
 
-            const exports = {
-                ...baseExports,
-                testCreateMessage: 1,
+                const exports = {
+                    ...baseExports,
+                    testCreateMessage: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                const messagePointer = wasmExports.testCreateMessage()
+                assert.deepStrictEqual(
+                    liftMessage(wasmExports, messagePointer),
+                    ['hello', 666]
+                )
             }
-
-            const {wasmExports} = await initializeCoreCodeTest(
-                {code, bitDepth, exports},
-            )
-
-            const messagePointer = wasmExports.testCreateMessage()
-            assert.deepStrictEqual(
-                liftMessage(wasmExports, messagePointer),
-                ['hello', 666]
-            )
-        })
+        )
     })
 
     describe('msg_createArray / msg_pushToArray', () => {
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
-        ])('should create message array and push message to array %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({ bitDepth }) +  `
+        ])(
+            'should create message array and push message to array %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({ bitDepth }) +  `
                 export function testMessageArray(messageArray: Message[], index: Int): Message {
                     return messageArray[index]
                 }
             `
-        
-            const exports = {
-                ...baseExports,
-                testMessageArray: 1,
+
+                const exports = {
+                    ...baseExports,
+                    testMessageArray: 1,
+                }
+
+                const { wasmExports, floatArrayType } =
+                    await initializeCoreCodeTest({ code, bitDepth, exports })
+
+                const messagePointer1 = lowerMessage(wasmExports, ['\x00\x00'])
+                const messagePointer2 = lowerMessage(wasmExports, [0])
+
+                const messageArrayPointer = wasmExports.msg_createArray()
+                wasmExports.msg_pushToArray(
+                    messageArrayPointer,
+                    messagePointer1
+                )
+                wasmExports.msg_pushToArray(
+                    messageArrayPointer,
+                    messagePointer2
+                )
+
+                const messagePointer1Bis: number = wasmExports.testMessageArray(
+                    messageArrayPointer,
+                    0
+                )
+                const messagePointer2Bis: number = wasmExports.testMessageArray(
+                    messageArrayPointer,
+                    1
+                )
+
+                assert.deepStrictEqual(
+                    [0, 1, 2, 3, 4, 5].map((i) =>
+                        wasmExports.testReadMessageData(messagePointer1Bis, i)
+                    ),
+                    [
+                        1,
+                        wasmExports.MSG_DATUM_TYPE_STRING.valueOf(),
+                        INT_ARRAY_BYTES_PER_ELEMENT * 4,
+                        INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
+                        0,
+                        0,
+                    ]
+                )
+                assert.deepStrictEqual(
+                    [0, 1, 2, 3, 4].map((i) =>
+                        wasmExports.testReadMessageData(messagePointer2Bis, i)
+                    ),
+                    [
+                        1,
+                        wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf(),
+                        INT_ARRAY_BYTES_PER_ELEMENT * 4,
+                        INT_ARRAY_BYTES_PER_ELEMENT * 4 +
+                            floatArrayType.BYTES_PER_ELEMENT,
+                        0,
+                    ]
+                )
             }
-
-            const {wasmExports, floatArrayType} = await initializeCoreCodeTest(
-                {code, bitDepth, exports}
-            )
-
-            const messagePointer1 = lowerMessage(wasmExports, [
-                '\x00\x00',
-            ])
-            const messagePointer2 = lowerMessage(wasmExports, [0])
-
-            const messageArrayPointer = wasmExports.msg_createArray()
-            wasmExports.msg_pushToArray(
-                messageArrayPointer,
-                messagePointer1
-            )
-            wasmExports.msg_pushToArray(
-                messageArrayPointer,
-                messagePointer2
-            )
-
-            const messagePointer1Bis: number =
-                wasmExports.testMessageArray(messageArrayPointer, 0)
-            const messagePointer2Bis: number =
-                wasmExports.testMessageArray(messageArrayPointer, 1)
-
-            assert.deepStrictEqual(
-                [0, 1, 2, 3, 4, 5].map((i) =>
-                    wasmExports.testReadMessageData(
-                        messagePointer1Bis,
-                        i
-                    )
-                ),
-                [
-                    1,
-                    wasmExports.MSG_DATUM_TYPE_STRING.valueOf(),
-                    INT_ARRAY_BYTES_PER_ELEMENT * 4,
-                    INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
-                    0,
-                    0,
-                ]
-            )
-            assert.deepStrictEqual(
-                [0, 1, 2, 3, 4].map((i) =>
-                    wasmExports.testReadMessageData(
-                        messagePointer2Bis,
-                        i
-                    )
-                ),
-                [
-                    1,
-                    wasmExports.MSG_DATUM_TYPE_FLOAT.valueOf(),
-                    INT_ARRAY_BYTES_PER_ELEMENT * 4,
-                    INT_ARRAY_BYTES_PER_ELEMENT * 4 +
-                        floatArrayType.BYTES_PER_ELEMENT,
-                    0,
-                ]
-            )
-        })
+        )
     })
 })

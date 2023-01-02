@@ -16,12 +16,13 @@ import { createAscEngine } from './test-helpers'
 import { AssemblyScriptWasmExports } from './types'
 
 describe('compileToAssemblyscript', () => {
-
     it('should have all expected wasm exports when compiled', async () => {
         const { wasmExports } = await createAscEngine(
-            compileToAssemblyscript(makeCompilation({
-                target: 'assemblyscript',
-            }))
+            compileToAssemblyscript(
+                makeCompilation({
+                    target: 'assemblyscript',
+                })
+            )
         )
 
         const expectedExports: AssemblyScriptWasmExports = {
@@ -76,29 +77,30 @@ describe('compileToAssemblyscript', () => {
             Object.keys(expectedExports).sort()
         )
     })
-    
+
     it('should export specific accessors for messages', async () => {
         const filterPortFunctionKeys = (wasmExports: any) =>
-        Object.keys(wasmExports).filter(
-            (key) => key.startsWith('read_') || key.startsWith('write_')
-        )
+            Object.keys(wasmExports).filter(
+                (key) => key.startsWith('read_') || key.startsWith('write_')
+            )
 
-        const {wasmExports} = await createAscEngine(`
+        const { wasmExports } = await createAscEngine(
+            `
             let blo: Message[] = []
-        ` + compileToAssemblyscript(makeCompilation({
-                target: 'assemblyscript',
-                accessorSpecs: {
-                    blo: { access: 'r', type: 'message' },
-                },
-            })),
+        ` +
+                compileToAssemblyscript(
+                    makeCompilation({
+                        target: 'assemblyscript',
+                        accessorSpecs: {
+                            blo: { access: 'r', type: 'message' },
+                        },
+                    })
+                )
         )
 
         assert.deepStrictEqual(
             filterPortFunctionKeys(wasmExports).sort(),
-            [
-                'read_blo_length',
-                'read_blo_elem',
-            ].sort()
+            ['read_blo_length', 'read_blo_elem'].sort()
         )
     })
 })

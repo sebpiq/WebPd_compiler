@@ -51,10 +51,7 @@ export const makeCompilation = (
 
     variableNames.attachInletListeners(engineVariableNames, inletListenerSpecs)
     variableNames.attachAccessors(target, engineVariableNames, accessorSpecs)
-    variableNames.attachTypes(
-        engineVariableNames,
-        audioSettings.bitDepth
-    )
+    variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
 
     return {
         ...compilation,
@@ -77,7 +74,9 @@ export const createEngine = async (target: CompilerTarget, code: Code) => {
                 return exports
             `)() as JavaScriptEngine
         } catch (err) {
-            console.error(`-------- CODE --------\n${code}\n----------------------`)
+            console.error(
+                `-------- CODE --------\n${code}\n----------------------`
+            )
             throw err
         }
     } else {

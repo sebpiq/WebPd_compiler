@@ -268,8 +268,8 @@ describe('compileLoop', () => {
             someNode: {
                 isEndSink: true,
                 inlets: {
-                    someInlet: {type: 'message', id: 'someInlet'}
-                }
+                    someInlet: { type: 'message', id: 'someInlet' },
+                },
             },
         })
 
@@ -277,7 +277,7 @@ describe('compileLoop', () => {
             target: 'javascript',
             graph,
             inletListenerSpecs: {
-                'someNode': ['someInlet']
+                someNode: ['someInlet'],
             },
             macros: macros,
         })

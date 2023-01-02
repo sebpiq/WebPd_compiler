@@ -15,12 +15,11 @@ import compileToJavascript from './compile-to-javascript'
 import { JavaScriptEngine } from './types'
 
 describe('compileToJavascript', () => {
-
     it('should be a JavaScript engine when evaled', () => {
         const compilation = makeCompilation({
             target: 'javascript',
         })
-        
+
         const code = compileToJavascript(compilation)
 
         const engine = new Function(`
@@ -39,10 +38,16 @@ describe('compileToJavascript', () => {
             setArray: () => undefined,
             accessors: {},
             fs: modelFs,
-            inletListeners: {}
+            inletListeners: {},
         }
 
-        assert.deepStrictEqual(Object.keys(engine).sort(), Object.keys(modelEngine).sort())
-        assert.deepStrictEqual(Object.keys(engine.fs).sort(), Object.keys(modelFs).sort())
+        assert.deepStrictEqual(
+            Object.keys(engine).sort(),
+            Object.keys(modelEngine).sort()
+        )
+        assert.deepStrictEqual(
+            Object.keys(engine.fs).sort(),
+            Object.keys(modelFs).sort()
+        )
     })
 })

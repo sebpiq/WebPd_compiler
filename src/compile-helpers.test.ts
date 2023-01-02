@@ -10,10 +10,7 @@
  */
 
 import assert from 'assert'
-import {
-    getNodeImplementation,
-    renderCode,
-} from './compile-helpers'
+import { getNodeImplementation, renderCode } from './compile-helpers'
 import { NodeImplementations } from './types'
 
 describe('compile-helpers', () => {

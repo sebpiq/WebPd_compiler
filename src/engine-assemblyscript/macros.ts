@@ -9,15 +9,13 @@
  *
  */
 
-import {
-    Code,
-    CodeMacros,
-    CodeVariableName,
-} from '../types'
+import { Code, CodeMacros, CodeVariableName } from '../types'
 
-const typedVar = (name: CodeVariableName, typeString: Code) => `${name}: ${typeString}`
+const typedVar = (name: CodeVariableName, typeString: Code) =>
+    `${name}: ${typeString}`
 
-const typedFuncHeader = (args: Array<Code>, returnType: Code) => `(${args.join(', ')}): ${returnType}`
+const typedFuncHeader = (args: Array<Code>, returnType: Code) =>
+    `(${args.join(', ')}): ${returnType}`
 
 const macros: CodeMacros = {
     typedVar,

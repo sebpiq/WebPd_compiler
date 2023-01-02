@@ -19,11 +19,7 @@
  * @module
  */
 
-import {
-    CodeVariableName,
-    Engine,
-    Message,
-} from '../types'
+import { CodeVariableName, Engine, Message } from '../types'
 import {
     liftString,
     lowerString,
@@ -50,9 +46,7 @@ interface AudioConfig {
 /**
  * Convenience function to create and initialize an engine.
  */
-export const createEngine = async (
-    wasmBuffer: ArrayBuffer,
-) => {
+export const createEngine = async (wasmBuffer: ArrayBuffer) => {
     const engine = new AssemblyScriptWasmEngine(wasmBuffer)
     await engine.initialize()
     return engine
@@ -234,11 +228,7 @@ export class AssemblyScriptWasmEngine implements Engine {
 
     _makeFsWasmImports(): fs_WasmImports {
         let wasmImports: fs_WasmImports = {
-            fs_requestReadSoundFile: (
-                operationId,
-                urlPointer,
-                info
-            ) => {
+            fs_requestReadSoundFile: (operationId, urlPointer, info) => {
                 const url = liftString(this.wasmExports, urlPointer)
                 this.fs.onRequestReadSoundFile(operationId, url, info)
             },
@@ -264,15 +254,18 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     _bindInletListeners(): Engine['inletListeners'] {
-        return Object.entries(this.metadata.compilation.inletListenerSpecs).reduce(
-            (inletListeners, [nodeId, inletIds]) => {
-                inletListeners[nodeId] = {}
-                inletIds.forEach(inletId => inletListeners[nodeId][inletId] = {
-                    onMessages: () => undefined
-                })
-                return inletListeners
-            },
-        {} as Engine['inletListeners'])
+        return Object.entries(
+            this.metadata.compilation.inletListenerSpecs
+        ).reduce((inletListeners, [nodeId, inletIds]) => {
+            inletListeners[nodeId] = {}
+            inletIds.forEach(
+                (inletId) =>
+                    (inletListeners[nodeId][inletId] = {
+                        onMessages: () => undefined,
+                    })
+            )
+            return inletListeners
+        }, {} as Engine['inletListeners'])
     }
 
     _makeInletListenersWasmImports() {
@@ -282,7 +275,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         const { engineVariableNames } = this.metadata.compilation
         Object.entries(this.metadata.compilation.inletListenerSpecs).forEach(
             ([nodeId, inletIds]) => {
-                inletIds.forEach(inletId => {
+                inletIds.forEach((inletId) => {
                     const listenerName =
                         engineVariableNames.inletListeners[nodeId][inletId]
                     const inletVariableName =
@@ -290,7 +283,9 @@ export class AssemblyScriptWasmEngine implements Engine {
                     const portVariableName =
                         engineVariableNames.accessors[inletVariableName].r
                     wasmImports[listenerName] = () => {
-                        this.inletListeners[nodeId][inletId].onMessages(this.accessors[portVariableName]())
+                        this.inletListeners[nodeId][inletId].onMessages(
+                            this.accessors[portVariableName]()
+                        )
                     }
                 })
             }

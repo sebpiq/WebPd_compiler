@@ -19,7 +19,8 @@ import { JavaScriptEngineCode } from './types'
 import generateCoreCode from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { accessorSpecs, engineVariableNames, inletListenerSpecs } = compilation
+    const { accessorSpecs, engineVariableNames, inletListenerSpecs } =
+        compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const coreCode = generateCoreCode(engineVariableNames)
@@ -82,15 +83,22 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     `
 }
 
-export const compileInletListeners = ({inletListenerSpecs, engineVariableNames}: Compilation) => {
-    return renderCode`${Object.entries(inletListenerSpecs).map(([nodeId, inletIds]) =>
-        inletIds.map(inletId => {
-            const listenerVariableName = engineVariableNames.inletListeners[nodeId][inletId]
-            const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
-            return `
+export const compileInletListeners = ({
+    inletListenerSpecs,
+    engineVariableNames,
+}: Compilation) => {
+    return renderCode`${Object.entries(inletListenerSpecs).map(
+        ([nodeId, inletIds]) =>
+            inletIds.map((inletId) => {
+                const listenerVariableName =
+                    engineVariableNames.inletListeners[nodeId][inletId]
+                const inletVariableName =
+                    engineVariableNames.n[nodeId].ins[inletId]
+                return `
                 const ${listenerVariableName} = () => {
                     exports.inletListeners['${nodeId}']['${inletId}'].onMessages(${inletVariableName})
                 }
-            `})
+            `
+            })
     )}`
 }

@@ -12,15 +12,12 @@
 import assert from 'assert'
 import { compileWasmModule } from './test-helpers'
 import { readMetadata } from './AssemblyScriptWasmEngine'
-import {
-    AccessorSpecs,
-} from '../types'
+import { AccessorSpecs } from '../types'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation } from '../test-helpers'
 import { EngineMetadata } from './types'
 
 describe('AssemblyScriptWasmEngine', () => {
-
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
             const accessorSpecs: AccessorSpecs = {
@@ -33,7 +30,8 @@ describe('AssemblyScriptWasmEngine', () => {
             })
 
             const wasmBuffer = await compileWasmModule(
-                compileToAssemblyscript(compilation) + `
+                compileToAssemblyscript(compilation) +
+                    `
                     let bla: f32 = 1
                 `
             )

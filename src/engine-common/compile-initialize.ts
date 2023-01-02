@@ -10,10 +10,7 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import {
-    getNodeImplementation,
-    renderCode,
-} from '../compile-helpers'
+import { getNodeImplementation, renderCode } from '../compile-helpers'
 import { Code, Compilation } from '../types'
 
 export default (
@@ -22,7 +19,7 @@ export default (
 ): Code => {
     const { macros } = compilation
     const { g: globs, types } = compilation.engineVariableNames
-    
+
     // prettier-ignore
     return renderCode`
         ${globs.iterFrame} = 0

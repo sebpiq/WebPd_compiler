@@ -10,10 +10,7 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import {
-    getNodeImplementation,
-    renderCode,
-} from '../compile-helpers'
+import { getNodeImplementation, renderCode } from '../compile-helpers'
 import { Code, Compilation } from '../types'
 
 export default (

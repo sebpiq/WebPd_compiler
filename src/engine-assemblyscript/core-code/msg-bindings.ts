@@ -86,9 +86,7 @@ export const liftMessage = (
             message.push(
                 wasmExports.msg_readFloatDatum(messagePointer, datumIndex)
             )
-        } else if (
-            datumType === wasmExports.MSG_DATUM_TYPE_STRING.valueOf()
-        ) {
+        } else if (datumType === wasmExports.MSG_DATUM_TYPE_STRING.valueOf()) {
             const stringPointer = wasmExports.msg_readStringDatum(
                 messagePointer,
                 datumIndex

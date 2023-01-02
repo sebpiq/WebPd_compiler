@@ -10,10 +10,7 @@
  */
 
 import { traversal, getters, DspGraph } from '@webpd/dsp-graph'
-import {
-    getNodeImplementation,
-    renderCode,
-} from '../compile-helpers'
+import { getNodeImplementation, renderCode } from '../compile-helpers'
 import { Code, Compilation } from '../types'
 
 export default (
@@ -21,8 +18,12 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { inletListenerSpecs: inletListenerSpecs, engineVariableNames, macros, nodeImplementations } =
-        compilation
+    const {
+        inletListenerSpecs: inletListenerSpecs,
+        engineVariableNames,
+        macros,
+        nodeImplementations,
+    } = compilation
     const { g: globs, types } = engineVariableNames
     // prettier-ignore
     return renderCode`${[

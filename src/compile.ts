@@ -46,10 +46,7 @@ export default (
     )
     variableNames.attachInletListeners(engineVariableNames, inletListenerSpecs)
     variableNames.attachAccessors(target, engineVariableNames, accessorSpecs)
-    variableNames.attachTypes(
-        engineVariableNames,
-        audioSettings.bitDepth
-    )
+    variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
     return executeCompilation({
         target,
         graph,

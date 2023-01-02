@@ -13,10 +13,7 @@ import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import {
-    MSG_DATUM_TYPE_FLOAT,
-    MSG_DATUM_TYPE_STRING,
-} from '../constants'
+import { MSG_DATUM_TYPE_FLOAT, MSG_DATUM_TYPE_STRING } from '../constants'
 import { Code } from '../types'
 import { MSG_DATUM_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { createEngine } from '../test-helpers'
@@ -34,15 +31,11 @@ export const getAssemblyscriptCoreCode = () => {
         .replaceAll('${setFloat}', 'setFloat64')
         .replaceAll(
             '${MSG_DATUM_TYPE_FLOAT}',
-            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MSG_DATUM_TYPE_FLOAT
-            ].toString()
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_FLOAT].toString()
         )
         .replaceAll(
             '${MSG_DATUM_TYPE_STRING}',
-            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[
-                MSG_DATUM_TYPE_STRING
-            ].toString()
+            MSG_DATUM_TYPES_ASSEMBLYSCRIPT[MSG_DATUM_TYPE_STRING].toString()
         )
 }
 
@@ -63,6 +56,9 @@ export const compileWasmModule = async (
 }
 
 export const createAscEngine = async (code: Code) => {
-    const engine = await createEngine('assemblyscript', code) as AssemblyScriptWasmEngine
-    return {engine, wasmExports: engine.wasmExports as any}
+    const engine = (await createEngine(
+        'assemblyscript',
+        code
+    )) as AssemblyScriptWasmEngine
+    return { engine, wasmExports: engine.wasmExports as any }
 }

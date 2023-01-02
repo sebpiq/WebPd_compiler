@@ -9,10 +9,7 @@
  *
  */
 
-import {
-    Code,
-    CodeMacros, CodeVariableName,
-} from '../types'
+import { Code, CodeMacros, CodeVariableName } from '../types'
 
 const typedVar = (name: CodeVariableName) => `${name}`
 

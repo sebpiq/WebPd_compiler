@@ -59,14 +59,14 @@ export interface Engine {
 
     // Map of public variable accessors for an engine
     accessors: { [accessorName: string]: (...args: any) => any }
-    
+
     // Inlet listener callbacks
-    inletListeners: { 
-        [nodeId: DspGraph.NodeId]: { 
+    inletListeners: {
+        [nodeId: DspGraph.NodeId]: {
             [portletId: DspGraph.PortletId]: {
                 onMessages: (messages: Array<Message>) => void
             }
-        } 
+        }
     }
 
     // Filesystem API for the engine
@@ -78,7 +78,11 @@ export interface Engine {
         ) => void
 
         // Callbacks
-        onRequestReadSoundFile: (operationId: number, url: string, info: any) => void
+        onRequestReadSoundFile: (
+            operationId: number,
+            url: string,
+            info: any
+        ) => void
         // onRequestReadSoundStream
         // onRequestWriteSoundFile: (
         //     url: string,
@@ -129,7 +133,7 @@ export interface EngineVariableNames {
 
     // Names of types used by the engine (e.g. especially depending on the bitdepth)
     types: {
-        Int?: 'i32',
+        Int?: 'i32'
         Float?: 'f32' | 'f64'
         FloatArray?: 'Float32Array' | 'Float64Array'
         getFloat?: 'getFloat32' | 'getFloat64'

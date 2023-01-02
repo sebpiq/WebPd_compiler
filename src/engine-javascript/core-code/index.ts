@@ -1,5 +1,5 @@
-import { replaceCoreCodePlaceholders } from "../../compile-helpers"
-import { EngineVariableNames } from "../../types"
+import { replaceCoreCodePlaceholders } from '../../compile-helpers'
+import { EngineVariableNames } from '../../types'
 import FS_JS from './fs.generated.js'
 
 const COMPAT = `
@@ -37,7 +37,8 @@ const fs_requestReadSoundFile = (...args) => exports.fs.onRequestReadSoundFile(.
 `
 
 export default (engineVariableNames: EngineVariableNames) => {
-    return replaceCoreCodePlaceholders(engineVariableNames,
+    return replaceCoreCodePlaceholders(
+        engineVariableNames,
         COMPAT + MSG + FS + FS_JS
     )
 }

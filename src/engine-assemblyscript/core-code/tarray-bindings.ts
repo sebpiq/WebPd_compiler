@@ -17,9 +17,7 @@ import {
 } from './core-bindings'
 import { InternalPointer, TypedArrayPointer } from '../types'
 
-export type FloatArrayConstructor =
-    | typeof Float32Array
-    | typeof Float64Array
+export type FloatArrayConstructor = typeof Float32Array | typeof Float64Array
 export type FloatArray = InstanceType<FloatArrayConstructor>
 
 export interface tarray_WasmExports extends core_WasmExports {

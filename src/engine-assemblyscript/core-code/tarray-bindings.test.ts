@@ -12,10 +12,10 @@ import {
 } from './test-helpers'
 
 describe('tarray-bindings', () => {
-
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-        getAscCode('core.asc', audioSettings) + getAscCode('tarray.asc', audioSettings)
-         + replacePlaceholdersForTesting(
+        getAscCode('core.asc', audioSettings) +
+        getAscCode('tarray.asc', audioSettings) +
+        replacePlaceholdersForTesting(
             `
                 export {
                     x_tarray_createListOfArrays as tarray_createListOfArrays,
@@ -29,12 +29,14 @@ describe('tarray-bindings', () => {
         )
 
     describe('lowerTypedArray', () => {
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
-        ])('should lower typed array to wasm module %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({bitDepth}) + `
+        ])(
+            'should lower typed array to wasm module %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
                 export function testReadArrayElem (array: FloatArray, index: Int): Float {
                     return array[index]
                 }
@@ -43,48 +45,51 @@ describe('tarray-bindings', () => {
                 }
             `
 
-            const exports = {
-                testReadArrayElem: 1,
-                testReadArrayLength: 1,
+                const exports = {
+                    testReadArrayElem: 1,
+                    testReadArrayLength: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                const { arrayPointer, array } = lowerTypedArray(
+                    wasmExports,
+                    bitDepth,
+                    new Float64Array([111, 222, 333])
+                )
+                assert.strictEqual(
+                    wasmExports.testReadArrayLength(arrayPointer),
+                    3
+                )
+                assert.strictEqual(
+                    wasmExports.testReadArrayElem(arrayPointer, 0),
+                    111
+                )
+                assert.strictEqual(
+                    wasmExports.testReadArrayElem(arrayPointer, 1),
+                    222
+                )
+                assert.strictEqual(
+                    wasmExports.testReadArrayElem(arrayPointer, 2),
+                    333
+                )
+
+                // Test that shares the same memory space
+                array[1] = 666
+                assert.strictEqual(
+                    wasmExports.testReadArrayElem(arrayPointer, 1),
+                    666
+                )
             }
-
-            const {wasmExports} = await initializeCoreCodeTest(
-                {code, bitDepth, exports},
-            )
-
-            const { arrayPointer, array } = lowerTypedArray(
-                wasmExports,
-                bitDepth,
-                new Float64Array([111, 222, 333])
-            )
-            assert.strictEqual(
-                wasmExports.testReadArrayLength(arrayPointer),
-                3
-            )
-            assert.strictEqual(
-                wasmExports.testReadArrayElem(arrayPointer, 0),
-                111
-            )
-            assert.strictEqual(
-                wasmExports.testReadArrayElem(arrayPointer, 1),
-                222
-            )
-            assert.strictEqual(
-                wasmExports.testReadArrayElem(arrayPointer, 2),
-                333
-            )
-
-            // Test that shares the same memory space
-            array[1] = 666
-            assert.strictEqual(
-                wasmExports.testReadArrayElem(arrayPointer, 1),
-                666
-            )
-        })
+        )
     })
 
     describe('lowerListOfTypedArrays', () => {
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
         ])('should lower a list of typed arrays %s', async ({ bitDepth }) => {
@@ -107,9 +112,11 @@ describe('tarray-bindings', () => {
                 testReadArrayLength: 1,
             }
 
-            const {wasmExports} = await initializeCoreCodeTest(
-                {code, bitDepth, exports},
-            )
+            const { wasmExports } = await initializeCoreCodeTest({
+                code,
+                bitDepth,
+                exports,
+            })
 
             const arraysPointer = lowerListOfTypedArrays(
                 wasmExports,
@@ -168,7 +175,7 @@ describe('tarray-bindings', () => {
     })
 
     describe('readListOfTypedArrays', () => {
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
         ])('should lower a list of typed arrays %s', async ({ bitDepth }) => {
@@ -193,9 +200,8 @@ describe('tarray-bindings', () => {
                 testGetListOfArrays: 1,
             }
 
-            const {wasmExports, floatArrayType} = await initializeCoreCodeTest(
-                {code, bitDepth, exports},
-            )
+            const { wasmExports, floatArrayType } =
+                await initializeCoreCodeTest({ code, bitDepth, exports })
 
             const arraysPointer = wasmExports.testGetListOfArrays()
             const arrays = readListOfTypedArrays(
@@ -209,7 +215,7 @@ describe('tarray-bindings', () => {
             ])
         })
 
-        it.each<{bitDepth: AudioSettings['bitDepth']}>([
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
         ])('should share the same memory space %s', async ({ bitDepth }) => {
@@ -239,9 +245,11 @@ describe('tarray-bindings', () => {
                 testReadSomeValue: 1,
             }
 
-            const {wasmExports} = await initializeCoreCodeTest(
-                {code, bitDepth, exports},
-            )
+            const { wasmExports } = await initializeCoreCodeTest({
+                code,
+                bitDepth,
+                exports,
+            })
 
             const arraysPointer = wasmExports.testGetListOfArrays()
             const arrays = readListOfTypedArrays(
