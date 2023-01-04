@@ -97,8 +97,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             msg_writeFloatToken,
             msg_readStringToken,
             msg_readFloatToken,
-            MSG_TOKEN_TYPE_FLOAT,
-            MSG_TOKEN_TYPE_STRING,
+            MSG_FLOAT_TOKEN,
+            MSG_STRING_TOKEN,
 
             // TARRAY EXPORTS
             x_tarray_createListOfArrays as tarray_createListOfArrays,

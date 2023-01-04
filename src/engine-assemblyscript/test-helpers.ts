@@ -13,7 +13,7 @@ import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import { MSG_TOKEN_TYPE_FLOAT, MSG_TOKEN_TYPE_STRING } from '../constants'
+import { MSG_FLOAT_TOKEN, MSG_STRING_TOKEN } from '../constants'
 import { Code } from '../types'
 import { MSG_TOKEN_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { createEngine } from '../test-helpers'
@@ -30,12 +30,12 @@ export const getAssemblyscriptCoreCode = () => {
         .replaceAll('${getFloat}', 'getFloat64')
         .replaceAll('${setFloat}', 'setFloat64')
         .replaceAll(
-            '${MSG_TOKEN_TYPE_FLOAT}',
-            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_TOKEN_TYPE_FLOAT].toString()
+            '${MSG_FLOAT_TOKEN}',
+            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_FLOAT_TOKEN].toString()
         )
         .replaceAll(
-            '${MSG_TOKEN_TYPE_STRING}',
-            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_TOKEN_TYPE_STRING].toString()
+            '${MSG_STRING_TOKEN}',
+            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_STRING_TOKEN].toString()
         )
 }
 

@@ -36,8 +36,8 @@ import {
 } from '../types'
 
 export interface msg_WasmExports extends core_WasmExports {
-    MSG_TOKEN_TYPE_FLOAT: WebAssembly.Global
-    MSG_TOKEN_TYPE_STRING: WebAssembly.Global
+    MSG_FLOAT_TOKEN: WebAssembly.Global
+    MSG_STRING_TOKEN: WebAssembly.Global
 
     msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
@@ -83,11 +83,11 @@ export const liftMessage = (
     )
     const message: Message = []
     messageTokenTypes.forEach((tokenType, tokenIndex) => {
-        if (tokenType === wasmExports.MSG_TOKEN_TYPE_FLOAT.valueOf()) {
+        if (tokenType === wasmExports.MSG_FLOAT_TOKEN.valueOf()) {
             message.push(
                 wasmExports.msg_readFloatToken(messagePointer, tokenIndex)
             )
-        } else if (tokenType === wasmExports.MSG_TOKEN_TYPE_STRING.valueOf()) {
+        } else if (tokenType === wasmExports.MSG_STRING_TOKEN.valueOf()) {
             const stringPointer = wasmExports.msg_readStringToken(
                 messagePointer,
                 tokenIndex
@@ -104,9 +104,9 @@ export const lowerMessage = (
 ): MessagePointer => {
     const messageTemplate: Array<number> = message.reduce((template, value) => {
         if (typeof value === 'number') {
-            template.push(wasmExports.MSG_TOKEN_TYPE_FLOAT.valueOf())
+            template.push(wasmExports.MSG_FLOAT_TOKEN.valueOf())
         } else if (typeof value === 'string') {
-            template.push(wasmExports.MSG_TOKEN_TYPE_STRING.valueOf())
+            template.push(wasmExports.MSG_STRING_TOKEN.valueOf())
             template.push(value.length)
         } else {
             throw new Error(`invalid message value ${value}`)

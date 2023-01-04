@@ -70,7 +70,7 @@ function fs_writeSoundFile(url, sound) {
 }
 // Structure : [channelCount]
 function fs_soundInfo(channelCount) {
-    var info = msg_create([MSG_TOKEN_TYPE_FLOAT]);
+    var info = msg_create([MSG_FLOAT_TOKEN]);
     msg_writeFloatToken(info, 0, ${Float}(channelCount));
     return info;
 }

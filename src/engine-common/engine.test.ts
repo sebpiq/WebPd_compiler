@@ -346,11 +346,11 @@ describe('Engine', () => {
             async ({ target }) => {
                 // prettier-ignore
                 const testCode: Code = `
-                let bluMessage1: Message = msg_create([ MSG_TOKEN_TYPE_FLOAT, MSG_TOKEN_TYPE_STRING, 4 ])
+                let bluMessage1: Message = msg_create([ MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 4 ])
                 msg_writeFloatToken(bluMessage1, 0, 111)
                 msg_writeStringToken(bluMessage1, 1, 'heho')
 
-                let bluMessage2: Message = msg_create([ MSG_TOKEN_TYPE_FLOAT ])
+                let bluMessage2: Message = msg_create([ MSG_FLOAT_TOKEN ])
                 msg_writeFloatToken(bluMessage2, 0, 222)
                 
                 let blo: Message[] = [bluMessage2]
@@ -668,10 +668,10 @@ describe('Engine', () => {
                 const testCode: Code = `
                 const someNode_INS_someInlet: Array<Message> = []
 
-                const m1: Message = msg_create([MSG_TOKEN_TYPE_FLOAT, MSG_TOKEN_TYPE_FLOAT])
+                const m1: Message = msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN])
                 msg_writeFloatToken(m1, 0, 11)
                 msg_writeFloatToken(m1, 1, 22)
-                const m2: Message = msg_create([MSG_TOKEN_TYPE_STRING, 3])
+                const m2: Message = msg_create([MSG_STRING_TOKEN, 3])
                 msg_writeStringToken(m2, 0, 'bla')
 
                 someNode_INS_someInlet.push(m1)

@@ -64,8 +64,8 @@ describe('msg-bindings', () => {
                     msg_writeFloatToken,
                     msg_readStringToken,
                     msg_readFloatToken,
-                    MSG_TOKEN_TYPE_FLOAT,
-                    MSG_TOKEN_TYPE_STRING,
+                    MSG_FLOAT_TOKEN,
+                    MSG_STRING_TOKEN,
                 }
             `,
             audioSettings
@@ -218,8 +218,8 @@ describe('msg-bindings', () => {
                 const code = getBaseTestCode({bitDepth}) + `
                 export function testCreateMessage(): Message {
                     const message: Message = msg_create([
-                        MSG_TOKEN_TYPE_STRING, 5,
-                        MSG_TOKEN_TYPE_FLOAT,
+                        MSG_STRING_TOKEN, 5,
+                        MSG_FLOAT_TOKEN,
                     ])
                     msg_writeStringToken(message, 0, "hello")
                     msg_writeFloatToken(message, 1, 666)
@@ -297,7 +297,7 @@ describe('msg-bindings', () => {
                     ),
                     [
                         1,
-                        wasmExports.MSG_TOKEN_TYPE_STRING.valueOf(),
+                        wasmExports.MSG_STRING_TOKEN.valueOf(),
                         INT_ARRAY_BYTES_PER_ELEMENT * 4,
                         INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
                         0,
@@ -310,7 +310,7 @@ describe('msg-bindings', () => {
                     ),
                     [
                         1,
-                        wasmExports.MSG_TOKEN_TYPE_FLOAT.valueOf(),
+                        wasmExports.MSG_FLOAT_TOKEN.valueOf(),
                         INT_ARRAY_BYTES_PER_ELEMENT * 4,
                         INT_ARRAY_BYTES_PER_ELEMENT * 4 +
                             floatArrayType.BYTES_PER_ELEMENT,

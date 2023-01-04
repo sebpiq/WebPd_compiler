@@ -9,8 +9,8 @@ const f64 = i32
 `
 
 const MSG = `
-const MSG_TOKEN_TYPE_FLOAT = \${MSG_TOKEN_TYPE_FLOAT}
-const MSG_TOKEN_TYPE_STRING = \${MSG_TOKEN_TYPE_STRING}
+const MSG_FLOAT_TOKEN = \${MSG_FLOAT_TOKEN}
+const MSG_STRING_TOKEN = \${MSG_STRING_TOKEN}
 
 const msg_create = () => []
 
@@ -27,6 +27,8 @@ const msg_writeStringToken = msg_writeFloatToken = ( m, i, v ) =>
 
 const msg_readStringToken = msg_readFloatToken = ( m, i ) =>
     m[i]
+
+const msg_bang = () => ['bang']
 `
 
 const FS = `
