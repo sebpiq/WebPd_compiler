@@ -10,10 +10,7 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import {
-    FS_OPERATION_FAILURE,
-    FS_OPERATION_SUCCESS,
-} from './constants'
+import { FS_OPERATION_FAILURE, FS_OPERATION_SUCCESS } from './constants'
 
 export type fs_OperationStatus =
     | typeof FS_OPERATION_SUCCESS
@@ -71,19 +68,36 @@ export interface Engine {
             sound?: Array<Float32Array | Float64Array>
         ) => void
 
+        soundStreamData: (
+            operationId: number,
+            sound: Array<Float32Array | Float64Array>
+        ) => number
+
+        soundStreamClose: (
+            operationId: number,
+            status: fs_OperationStatus
+        ) => void
+
         // Callbacks
         onRequestReadSoundFile: (
             operationId: number,
             url: string,
             info: any
         ) => void
-        // onRequestReadSoundStream
+
+        onRequestReadSoundStream: (
+            operationId: number,
+            url: string,
+            info: any
+        ) => void
+
+        onRequestCloseSoundStream: (operationId: number, status: number) => void
+
         // onRequestWriteSoundFile: (
         //     url: string,
         //     data: Array<Float32Array | Float64Array>,
         //     info: any
         // ) => void
-        // onRequestCloseSoundStream
     }
 }
 

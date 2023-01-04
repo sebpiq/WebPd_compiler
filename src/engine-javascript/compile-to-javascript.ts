@@ -71,13 +71,13 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
             fs: {
                 onRequestReadSoundFile: () => undefined,
-                // onRequestReadSoundStream: () => undefined,
+                onRequestReadSoundStream: () => undefined,
+                onRequestCloseSoundStream: () => undefined,
                 // onRequestWriteSoundFile: () => undefined,
-                // onRequestCloseSoundStream: () => undefined,
                 readSoundFileResponse: x_fs_readSoundFileResponse,
                 // writeSoundFileResponse: x_fs_writeSoundFileResponse,
-                // soundStreamData: x_fs_soundStreamData,
-                // soundStreamClose: x_fs_soundStreamClose,
+                soundStreamData: x_fs_soundStreamData,
+                soundStreamClose: fs_soundStreamClose,
             }
         }
     `

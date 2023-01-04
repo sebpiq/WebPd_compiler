@@ -530,6 +530,116 @@ describe('Engine', () => {
                 }
             )
         })
+
+        describe('stream sound file', () => {
+            const sharedTestingCode = `
+                let receivedId: fs_OperationId = -1
+                let receivedStatus: fs_OperationStatus = -1
+                const channelCount: Int = 3
+                function testStartReadStream (array: FloatArray): Int {
+                    return fs_readSoundStream('/some/url', fs_soundInfo(channelCount), function(
+                        id: fs_OperationId,
+                        status: fs_OperationStatus,
+                    ): void {
+                        receivedId = id
+                        receivedStatus = status
+                    })
+                }
+                function testOperationId(): Int {
+                    return receivedId
+                }
+                function testOperationStatus(): Int {
+                    return receivedStatus
+                }
+                function testOperationChannelCount(id: fs_OperationId): Float {
+                    return _FS_SOUND_STREAM_BUFFERS.get(id).channelCount
+                }
+                function testOperationCleaned (id: fs_OperationId): boolean {
+                    return !_FS_OPERATIONS_IDS.has(id)
+                        && !_FS_OPERATIONS_CALLBACKS.has(id)
+                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
+                }
+            `
+
+            it.each([
+                { target: 'javascript' as CompilerTarget },
+                { target: 'assemblyscript' as CompilerTarget },
+            ])('should stream data in %s', async ({ target }) => {
+                const testCode: Code =
+                    sharedTestingCode +
+                    `
+                        function testReceivedSound(id: fs_OperationId): boolean {
+                            const buffer = _FS_SOUND_STREAM_BUFFERS.get(id)
+                            return buffer.pullFrame()[0] === -1
+                                && buffer.pullFrame()[0] === -2
+                                && buffer.pullFrame()[0] === -3
+                        }
+                    `
+
+                const exports = {
+                    testStartReadStream: 1,
+                    testOperationId: 1,
+                    testOperationStatus: 1,
+                    testReceivedSound: 1,
+                    testOperationCleaned: 1,
+                    testOperationChannelCount: 1,
+                }
+
+                const engine = await initializeEngineTest({
+                    target,
+                    testCode,
+                    exports,
+                })
+
+                // 1. Some function in the engine requests a read stream operation.
+                // Request is sent to host via callback
+                const calledRead: Array<Array<any>> = []
+                const calledClose: Array<Array<any>> = []
+                engine.fs.onRequestReadSoundStream = (...args: any) =>
+                    calledRead.push(args)
+                engine.fs.onRequestCloseSoundStream = (...args: any) =>
+                    calledClose.push(args)
+
+                const operationId = engine.testStartReadStream()
+                assert.deepStrictEqual(calledRead[0], [
+                    operationId,
+                    '/some/url',
+                    [3],
+                ])
+                assert.strictEqual(
+                    engine.testOperationChannelCount(operationId),
+                    3
+                )
+
+                // 2. Hosts handles the operation. It then calls fs_soundStreamData to send in data.
+                const writtenFrameCount = engine.fs.soundStreamData(
+                    operationId,
+                    [
+                        new Float32Array([-1, -2, -3]),
+                        new Float32Array([4, 5, 6]),
+                        new Float32Array([-7, -8, -9]),
+                    ]
+                )
+                assert.strictEqual(writtenFrameCount, 3)
+                assert.ok(engine.testReceivedSound(operationId))
+
+                // 3. The stream is closed
+                engine.fs.soundStreamClose(operationId, FS_OPERATION_SUCCESS)
+                assert.ok(engine.testOperationCleaned(operationId))
+                // Test host callback was called
+                assert.deepStrictEqual(calledClose[0].slice(0, 2), [
+                    operationId,
+                    FS_OPERATION_SUCCESS,
+                ])
+                // Test engine callback was called
+                assert.strictEqual(engine.testOperationId(), operationId)
+                assert.strictEqual(
+                    engine.testOperationStatus(),
+                    FS_OPERATION_SUCCESS
+                )
+            })
+        })
     })
 
     describe('inletListeners', () => {

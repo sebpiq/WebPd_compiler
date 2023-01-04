@@ -22,6 +22,8 @@ export type AssemblyScriptWasmEngineCode = Code
 
 export type StringPointer = number
 
+export type MessagePointer = number
+
 /**
  * Pointer to a typed array.
  */

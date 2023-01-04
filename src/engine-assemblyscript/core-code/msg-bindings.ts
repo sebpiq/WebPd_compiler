@@ -30,6 +30,7 @@ import { readTypedArray } from './core-bindings'
 import {
     ArrayBufferOfIntegersPointer,
     InternalPointer,
+    MessagePointer,
     StringPointer,
     TypedArrayPointer,
 } from '../types'
@@ -40,29 +41,29 @@ export interface msg_WasmExports extends core_WasmExports {
 
     msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
-    ) => InternalPointer
-    msg_getTokenTypes: (messagePointer: InternalPointer) => TypedArrayPointer
+    ) => MessagePointer
+    msg_getTokenTypes: (messagePointer: MessagePointer) => TypedArrayPointer
     msg_createArray: () => InternalPointer
     msg_pushToArray: (
         messageArrayPointer: InternalPointer,
-        messagePointer: InternalPointer
+        messagePointer: MessagePointer
     ) => void
     msg_writeStringToken: (
-        messagePointer: InternalPointer,
+        messagePointer: MessagePointer,
         tokenIndex: number,
         stringPointer: StringPointer
     ) => void
     msg_writeFloatToken: (
-        messagePointer: InternalPointer,
+        messagePointer: MessagePointer,
         tokenIndex: number,
         value: number
     ) => void
     msg_readStringToken: (
-        messagePointer: InternalPointer,
+        messagePointer: MessagePointer,
         tokenIndex: number
     ) => StringPointer
     msg_readFloatToken: (
-        messagePointer: InternalPointer,
+        messagePointer: MessagePointer,
         tokenIndex: number
     ) => number
 }
@@ -71,7 +72,7 @@ export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
 export const liftMessage = (
     wasmExports: msg_WasmExports,
-    messagePointer: InternalPointer
+    messagePointer: MessagePointer
 ): Message => {
     const messageTokenTypesPointer =
         wasmExports.msg_getTokenTypes(messagePointer)
@@ -100,7 +101,7 @@ export const liftMessage = (
 export const lowerMessage = (
     wasmExports: msg_WasmExports,
     message: Message
-): InternalPointer => {
+): MessagePointer => {
     const messageTemplate: Array<number> = message.reduce((template, value) => {
         if (typeof value === 'number') {
             template.push(wasmExports.MSG_TOKEN_TYPE_FLOAT.valueOf())

@@ -76,17 +76,17 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         }
 
         // FS IMPORTS
-        export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: DecodingInfo): void
-        export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: DecodingInfo): void
-        export declare function fs_requestWriteSoundFile (id: fs_OperationId, url: Url, sound: FloatArray[], info: EncodingInfo): void
-        export declare function fs_requestCloseSoundStream (id: fs_OperationId): void
+        export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: Message): void
+        export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: Message): void
+        export declare function fs_requestCloseSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
+        export declare function fs_requestWriteSoundFile (id: fs_OperationId, url: Url, sound: FloatArray[], info: Message): void
 
         export {
             // FS EXPORTS
             x_fs_readSoundFileResponse as fs_readSoundFileResponse,
             x_fs_writeSoundFileResponse as fs_writeSoundFileResponse,
             x_fs_soundStreamData as fs_soundStreamData,
-            x_fs_soundStreamClose as fs_soundStreamClose,
+            fs_soundStreamClose,
 
             // MSG EXPORTS
             x_msg_create as msg_create,

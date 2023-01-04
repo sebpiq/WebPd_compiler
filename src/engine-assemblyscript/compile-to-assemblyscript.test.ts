@@ -51,21 +51,23 @@ describe('compileToAssemblyscript', () => {
             fs_writeSoundFileResponse: () => 0,
             fs_soundStreamClose: () => 0,
             fs_soundStreamData: () => 0,
-            fs_requestCloseSoundStream: () => 0,
-            fs_requestReadSoundFile: () => 0,
-            fs_requestReadSoundStream: () => 0,
-            fs_requestWriteSoundFile: () => 0,
             __new: () => 0,
             memory: new WebAssembly.Memory({ initial: 128 }),
         }
 
-        // Plenty of low-level exported function are added by asc compiler when using
-        // option 'export-runtime'
         const exportsIgnoredKeys = [
+            // Plenty of low-level exported function are added by asc compiler when using
+            // option 'export-runtime'
             '__collect',
             '__pin',
             '__rtti_base',
             '__unpin',
+
+            // Imported functions, meant to be called by the engine and not by the host
+            'fs_requestCloseSoundStream',
+            'fs_requestReadSoundFile',
+            'fs_requestReadSoundStream',
+            'fs_requestWriteSoundFile',
         ]
 
         const actualExportsKeys = Object.keys(wasmExports).filter(

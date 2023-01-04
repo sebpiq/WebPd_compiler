@@ -222,7 +222,23 @@ export class AssemblyScriptWasmEngine implements Engine {
                 )
                 this._updateWasmInOuts()
             },
+            soundStreamData: (operationId, sound) => {
+                const soundPointer = lowerListOfTypedArrays(
+                    this.wasmExports,
+                    this.metadata.compilation.audioSettings.bitDepth,
+                    sound
+                )
+                const writtenFrameCount = this.wasmExports.fs_soundStreamData(
+                    operationId,
+                    soundPointer
+                )
+                this._updateWasmInOuts()
+                return writtenFrameCount
+            },
+            soundStreamClose: this.wasmExports.fs_soundStreamClose,
             onRequestReadSoundFile: () => undefined,
+            onRequestReadSoundStream: () => undefined,
+            onRequestCloseSoundStream: () => undefined,
         }
     }
 
@@ -232,6 +248,19 @@ export class AssemblyScriptWasmEngine implements Engine {
                 const url = liftString(this.wasmExports, urlPointer)
                 this.fs.onRequestReadSoundFile(operationId, url, info)
             },
+
+            fs_requestReadSoundStream: (
+                operationId,
+                urlPointer,
+                infoPointer
+            ) => {
+                const url = liftString(this.wasmExports, urlPointer)
+                const info = liftMessage(this.wasmExports, infoPointer)
+                this.fs.onRequestReadSoundStream(operationId, url, info)
+            },
+
+            fs_requestCloseSoundStream: (...args) =>
+                this.fs.onRequestCloseSoundStream(...args),
 
             fs_requestWriteSoundFile: (
                 urlPointer,
@@ -246,9 +275,6 @@ export class AssemblyScriptWasmEngine implements Engine {
                 // ) as Array<FloatArray>
                 // this.fs.onRequestWriteSoundFile(url, listOfArrays, info)
             },
-
-            fs_requestReadSoundStream: () => undefined,
-            fs_requestCloseSoundStream: () => undefined,
         }
         return wasmImports
     }

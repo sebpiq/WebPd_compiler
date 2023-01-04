@@ -9,7 +9,7 @@
  *
  */
 
-import { DspGraph } from "@webpd/dsp-graph"
+import { DspGraph } from '@webpd/dsp-graph'
 
 export const buildMessageTransferOperations = (
     template: Array<DspGraph.NodeArgument>

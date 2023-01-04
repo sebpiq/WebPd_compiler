@@ -1,5 +1,6 @@
 import assert from 'assert'
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../../constants'
+import { round } from '../../test-helpers'
 import { AudioSettings } from '../../types'
 import { TypedArrayPointer } from '../types'
 import { liftString, readTypedArray } from './core-bindings'
@@ -26,18 +27,23 @@ describe('fs-bindings', () => {
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
         getAscCode('core.asc', audioSettings) +
         getAscCode('tarray.asc', audioSettings) +
+        getAscCode('msg.asc', audioSettings) +
         getAscCode('fs.asc', audioSettings) +
-        // prettier-ignore
         replacePlaceholdersForTesting(
             `
                 let callbackOperationId: Int = 0
                 let callbackOperationStatus: fs_OperationStatus = -1
                 let callbackOperationSound: FloatArray[] = []
-                function someCallback(id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]): void {
+                function someSoundCallback(id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]): void {
                     callbackOperationId = id
                     callbackOperationStatus = status
                     callbackOperationSound = sound
                 }
+                function someCallback(id: fs_OperationId, status: fs_OperationStatus): void {
+                    callbackOperationId = id
+                    callbackOperationStatus = status
+                }
+
                 export function testCallbackOperationId(): fs_OperationId {
                     return callbackOperationId
                 }
@@ -60,16 +66,16 @@ describe('fs-bindings', () => {
                         && !_FS_SOUND_STREAM_BUFFERS.has(id)
                 }
 
-                export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: DecodingInfo): void
-                export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: DecodingInfo): void
-                export declare function fs_requestWriteSoundFile (id: fs_OperationId, url: Url, sound: FloatArray[], info: EncodingInfo): void
-                export declare function fs_requestCloseSoundStream (id: fs_OperationId): void
+                export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: Message): void
+                export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: Message): void
+                export declare function fs_requestWriteSoundFile (id: fs_OperationId, url: Url, sound: FloatArray[], info: Message): void
+                export declare function fs_requestCloseSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
                 
                 export {
                     x_fs_readSoundFileResponse as fs_readSoundFileResponse,
                     x_fs_writeSoundFileResponse as fs_writeSoundFileResponse,
                     x_fs_soundStreamData as fs_soundStreamData,
-                    x_fs_soundStreamClose as fs_soundStreamClose,
+                    fs_soundStreamClose,
                     x_tarray_createListOfArrays as tarray_createListOfArrays,
                     x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
                     x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
@@ -85,45 +91,42 @@ describe('fs-bindings', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
-            ])(
-                'should create the operation and call the callback %s',
-                async ({ bitDepth }) => {
-                    // prettier-ignore
-                    const code = getBaseTestCode({ bitDepth }) + `
-                    export function testStartReadFile (array: FloatArray): Int {
-                        return fs_readSoundFile('/some/url', someCallback)
-                    }
-                `
+            ])('should create the operation %s', async ({ bitDepth }) => {
+                const code =
+                    getBaseTestCode({ bitDepth }) +
+                    `
+                        export function testStartReadFile (array: FloatArray): Int {
+                            return fs_readSoundFile('/some/url', someSoundCallback)
+                        }
+                    `
 
-                    const exports = {
-                        ...baseExports,
-                        testStartReadFile: 1,
-                    }
-
-                    const { wasmExports, called } =
-                        await initializeCoreCodeTest({
-                            code,
-                            bitDepth,
-                            exports,
-                        })
-
-                    const operationId: number = wasmExports.testStartReadFile()
-                    const readCalled: Array<Array<any>> = called.get(
-                        'fs_requestReadSoundFile'
-                    )
-                    assert.strictEqual(readCalled.length, 1)
-                    assert.strictEqual(readCalled[0].length, 3)
-                    assert.strictEqual(readCalled[0][0], operationId)
-                    assert.strictEqual(
-                        liftString(wasmExports, readCalled[0][1]),
-                        '/some/url'
-                    )
-                    assert.strictEqual(
-                        wasmExports.testCheckOperationProcessing(operationId),
-                        1
-                    )
+                const exports = {
+                    ...baseExports,
+                    testStartReadFile: 1,
                 }
-            )
+
+                const { wasmExports, called } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                const operationId: number = wasmExports.testStartReadFile()
+                const readCalled: Array<Array<any>> = called.get(
+                    'fs_requestReadSoundFile'
+                )
+                assert.strictEqual(readCalled.length, 1)
+                assert.strictEqual(readCalled[0].length, 3)
+                assert.strictEqual(readCalled[0][0], operationId)
+                assert.strictEqual(
+                    liftString(wasmExports, readCalled[0][1]),
+                    '/some/url'
+                )
+                assert.strictEqual(
+                    wasmExports.testCheckOperationProcessing(operationId),
+                    1
+                )
+            })
         })
 
         describe('fs_readSoundFileResponse', () => {
@@ -131,13 +134,13 @@ describe('fs-bindings', () => {
                 { bitDepth: 32 },
                 { bitDepth: 64 },
             ])(
-                'should register the operation success %s',
+                'should register the operation success and call the callback %s',
                 async ({ bitDepth }) => {
                     const code =
                         getBaseTestCode({ bitDepth }) +
                         `
                     export function testStartReadFile (array: FloatArray): Int {
-                        return fs_readSoundFile('/some/url', someCallback)
+                        return fs_readSoundFile('/some/url', someSoundCallback)
                     }
                 `
 
@@ -209,7 +212,7 @@ describe('fs-bindings', () => {
                         getBaseTestCode({ bitDepth }) +
                         `
                     export function testStartReadFile (array: FloatArray): Int {
-                        return fs_readSoundFile('/some/url', someCallback)
+                        return fs_readSoundFile('/some/url', someSoundCallback)
                     }
                 `
 
@@ -243,30 +246,25 @@ describe('fs-bindings', () => {
         })
     })
 
-    describe.skip('read sound streams', () => {
+    describe('read sound streams', () => {
         describe('_fs_SoundBuffer', () => {
-            it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-                { bitDepth: 32 },
-                { bitDepth: 64 },
-            ])(
-                'should be able to push and pull from SoundBuffer %s',
-                async ({ bitDepth }) => {
-                    // prettier-ignore
-                    const code = getBaseTestCode({ bitDepth }) + replacePlaceholdersForTesting(`
-                    const buffer: _fs_SoundBuffer = new _fs_SoundBuffer(5)
+            const getBaseTestCodeBuffers = ({
+                bitDepth,
+            }: Partial<AudioSettings>) =>
+                getBaseTestCode({ bitDepth }) +
+                replacePlaceholdersForTesting(
+                    `
                     const channelCount: Int = 3
+                    const buffer: _fs_SoundBuffer = new _fs_SoundBuffer(channelCount)
                     let counter: Int = 1
                     export function testCallPullFrame(): FloatArray {
-                        const frame = buffer.pullFrame()
-                        const frameTypedArray = new \${FloatArray}(frame.length)
-                        frameTypedArray.set(frame)
-                        return frameTypedArray
+                        return buffer.pullFrame()
                     }
                     export function testAvailableFrameCount(): Int {
                         return buffer.availableFrameCount()
                     }
                     export function testCurrentBlocksLength(): Int {
-                        return buffer.blocks.length
+                        return buffer.blocks.length + i32(buffer.currentBlock[0].length !== 0)
                     }
                     export function testPushBlock(size: Int): Int {
                         const block: FloatArray[] = []
@@ -280,15 +278,27 @@ describe('fs-bindings', () => {
                         counter += size
                         return buffer.pushBlock(block)
                     }
-                `, { bitDepth })
+                `,
+                    { bitDepth }
+                )
 
-                    const exports = {
-                        ...baseExports,
-                        testCallPullFrame: 1,
-                        testAvailableFrameCount: 1,
-                        testCurrentBlocksLength: 1,
-                        testPushBlock: 1,
-                    }
+            const baseBufferExports = {
+                ...baseExports,
+                testCallPullFrame: 1,
+                testAvailableFrameCount: 1,
+                testCurrentBlocksLength: 1,
+                testPushBlock: 1,
+            }
+
+            it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+                { bitDepth: 32 },
+                { bitDepth: 64 },
+            ])(
+                'should be able to push and pull from SoundBuffer %s',
+                async ({ bitDepth }) => {
+                    const code = getBaseTestCodeBuffers({ bitDepth })
+
+                    const exports = baseBufferExports
 
                     const { wasmExports, floatArrayType } =
                         await initializeCoreCodeTest({
@@ -298,7 +308,6 @@ describe('fs-bindings', () => {
                         })
 
                     let framePointer: TypedArrayPointer
-                    let spaceAvailable: number
 
                     // Initially, nothing in buffer
                     assert.deepStrictEqual(
@@ -307,13 +316,10 @@ describe('fs-bindings', () => {
                     )
 
                     // Push a block [frames : 0 + 3 = 3]
-                    spaceAvailable = wasmExports.testPushBlock(3)
-                    assert.deepStrictEqual(
-                        wasmExports.testAvailableFrameCount(),
-                        3
-                    )
-                    assert.strictEqual(spaceAvailable, 2)
-                    assert.strictEqual(wasmExports.testCurrentBlocksLength(), 2)
+                    let availableFrameCount: number =
+                        wasmExports.testPushBlock(3)
+                    assert.deepStrictEqual(availableFrameCount, 3)
+                    assert.strictEqual(wasmExports.testCurrentBlocksLength(), 1)
 
                     // Read a couple of frames [frames : 3 - 2 = 1]
                     framePointer = wasmExports.testCallPullFrame()
@@ -336,12 +342,8 @@ describe('fs-bindings', () => {
                     )
 
                     // Push another block [frames : 1 + 1 = 2]
-                    spaceAvailable = wasmExports.testPushBlock(1)
-                    assert.deepStrictEqual(
-                        wasmExports.testAvailableFrameCount(),
-                        2
-                    )
-                    assert.strictEqual(spaceAvailable, 1)
+                    availableFrameCount = wasmExports.testPushBlock(1)
+                    assert.deepStrictEqual(availableFrameCount, 2)
                     assert.strictEqual(wasmExports.testCurrentBlocksLength(), 2)
 
                     // Read a couple more frames, should provoke first block to be discarded
@@ -372,10 +374,88 @@ describe('fs-bindings', () => {
                         wasmExports.testAvailableFrameCount(),
                         0
                     )
+                }
+            )
 
-                    // Try to push a block to big
-                    assert.throws(
-                        () => (spaceAvailable = wasmExports.testPushBlock(10))
+            it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+                { bitDepth: 32 },
+                { bitDepth: 64 },
+            ])(
+                "shouldn't crash if pullFrame while no data ever pushed to buffer %s",
+                async ({ bitDepth }) => {
+                    const code = getBaseTestCodeBuffers({ bitDepth })
+
+                    const exports = baseBufferExports
+
+                    const { wasmExports, floatArrayType } =
+                        await initializeCoreCodeTest({
+                            code,
+                            exports,
+                            bitDepth,
+                        })
+
+                    assert.deepStrictEqual(
+                        readTypedArray(
+                            wasmExports,
+                            floatArrayType,
+                            wasmExports.testCallPullFrame()
+                        ),
+                        new floatArrayType(3)
+                    )
+                }
+            )
+
+            it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+                { bitDepth: 32 },
+                { bitDepth: 64 },
+            ])(
+                "shouldn't crash if pullFrame after all data consumed %s",
+                async ({ bitDepth }) => {
+                    const code = getBaseTestCodeBuffers({ bitDepth })
+
+                    const exports = baseBufferExports
+
+                    const { wasmExports, floatArrayType } =
+                        await initializeCoreCodeTest({
+                            code,
+                            exports,
+                            bitDepth,
+                        })
+
+                    wasmExports.testPushBlock(2),
+                        wasmExports.testCallPullFrame()
+                    wasmExports.testCallPullFrame()
+
+                    assert.strictEqual(wasmExports.testAvailableFrameCount(), 0)
+
+                    assert.deepStrictEqual(
+                        readTypedArray(
+                            wasmExports,
+                            floatArrayType,
+                            wasmExports.testCallPullFrame()
+                        ),
+                        new floatArrayType(3)
+                    )
+
+                    assert.deepStrictEqual(
+                        readTypedArray(
+                            wasmExports,
+                            floatArrayType,
+                            wasmExports.testCallPullFrame()
+                        ),
+                        new floatArrayType(3)
+                    )
+
+                    // Works again when pushing new block
+                    assert.strictEqual(wasmExports.testPushBlock(1), 1)
+
+                    assert.deepStrictEqual(
+                        readTypedArray(
+                            wasmExports,
+                            floatArrayType,
+                            wasmExports.testCallPullFrame()
+                        ),
+                        new floatArrayType([13, 23, 33])
                     )
                 }
             )
@@ -385,122 +465,126 @@ describe('fs-bindings', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
-            ])(
-                'should create the operation and call the callback %s',
-                async ({ bitDepth }) => {
-                    // prettier-ignore
-                    const code = getBaseTestCode({ bitDepth }) + `
-                    export function testStartStream (array: FloatArray): Int {
-                        return fs_readSoundStream('/some/url', someCallback)
-                    }
-                    export function testCheckSoundBufferExists(id: fs_OperationId): boolean {
-                        return _FS_SOUND_STREAM_BUFFERS.has(id)
-                    }
-                `
+            ])('should create the operation %s', async ({ bitDepth }) => {
+                const code =
+                    getBaseTestCode({ bitDepth }) +
+                    `
+                        const channelCount: Int = 22
+                        export function testStartStream (array: FloatArray): Int {
+                            return fs_readSoundStream('/some/url', fs_soundInfo(channelCount), someCallback)
+                        }
+                        export function testCheckSoundBufferExists(id: fs_OperationId): boolean {
+                            return _FS_SOUND_STREAM_BUFFERS.has(id) 
+                                && _FS_SOUND_STREAM_BUFFERS.get(id).channelCount === channelCount
+                        }
+                    `
 
-                    const exports = {
-                        ...baseExports,
-                        testStartStream: 1,
-                        testCheckSoundBufferExists: 1,
-                    }
-
-                    const { wasmExports, called } =
-                        await initializeCoreCodeTest({
-                            code,
-                            exports,
-                            bitDepth,
-                        })
-
-                    const operationId: number = wasmExports.testStartStream()
-                    const readCalled: Array<Array<any>> = called.get(
-                        'fs_requestReadSoundStream'
-                    )
-                    assert.strictEqual(readCalled.length, 1)
-                    assert.strictEqual(readCalled[0].length, 3)
-                    assert.strictEqual(readCalled[0][0], operationId)
-                    assert.strictEqual(
-                        liftString(wasmExports, readCalled[0][1]),
-                        '/some/url'
-                    )
-                    assert.strictEqual(
-                        wasmExports.testCheckOperationProcessing(operationId),
-                        1
-                    )
-                    assert.strictEqual(
-                        wasmExports.testCheckSoundBufferExists(operationId),
-                        1
-                    )
+                const exports = {
+                    ...baseExports,
+                    testStartStream: 1,
+                    testCheckSoundBufferExists: 1,
                 }
-            )
+
+                const { wasmExports, called } = await initializeCoreCodeTest({
+                    code,
+                    exports,
+                    bitDepth,
+                })
+
+                const operationId: number = wasmExports.testStartStream()
+                const readCalled: Array<Array<any>> = called.get(
+                    'fs_requestReadSoundStream'
+                )
+                assert.strictEqual(readCalled.length, 1)
+                assert.strictEqual(readCalled[0].length, 3)
+                assert.strictEqual(readCalled[0][0], operationId)
+                assert.strictEqual(
+                    liftString(wasmExports, readCalled[0][1]),
+                    '/some/url'
+                )
+                assert.strictEqual(
+                    wasmExports.testCheckOperationProcessing(operationId),
+                    1
+                )
+                assert.strictEqual(
+                    wasmExports.testCheckSoundBufferExists(operationId),
+                    1
+                )
+            })
         })
 
         describe('fs_soundStreamData', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
-            ])(
-                'should create the operation and call the callback %s',
-                async ({ bitDepth }) => {
-                    // prettier-ignore
-                    const code = getBaseTestCode({ bitDepth }) + `
-                    export function testStartStream (array: FloatArray): Int {
-                        return fs_readSoundStream('/some/url', someCallback)
-                    }
-                    export function testBufferCurrentLength(id: fs_OperationId): Int {
-                        return _FS_SOUND_STREAM_BUFFERS.get(id).currentLength
-                    }
-                `
+            ])('should push data to the buffer %s', async ({ bitDepth }) => {
+                const code =
+                    getBaseTestCode({ bitDepth }) +
+                    `
+                        export function testStartStream (array: FloatArray): Int {
+                            return fs_readSoundStream('/some/url', fs_soundInfo(2), someCallback)
+                        }
+                        export function testBufferPullFrame(id: fs_OperationId): Float {
+                            return _FS_SOUND_STREAM_BUFFERS.get(id).pullFrame()[0]
+                        }
+                    `
 
-                    const exports = {
-                        ...baseExports,
-                        testStartStream: 1,
-                        testBufferCurrentLength: 1,
-                    }
-
-                    const { wasmExports, floatArrayType } =
-                        await initializeCoreCodeTest({
-                            code,
-                            exports,
-                            bitDepth,
-                        })
-
-                    let spaceAvailable: number = 0
-
-                    // 1. Create the operation
-                    const operationId = wasmExports.testStartStream()
-                    assert.strictEqual(
-                        wasmExports.testBufferCurrentLength(operationId),
-                        0
-                    )
-
-                    // 2. Send in some sound
-                    spaceAvailable = wasmExports.fs_soundStreamData(
-                        operationId,
-                        lowerListOfTypedArrays(wasmExports, bitDepth, [
-                            new floatArrayType([-0.1, -0.2, -0.3]),
-                            new floatArrayType([0.1, 0.2, 0.3]),
-                        ])
-                    )
-                    assert.strictEqual(
-                        wasmExports.testBufferCurrentLength(operationId),
-                        3
-                    )
-                    assert.strictEqual(spaceAvailable, 44100 * 10 - 3)
-
-                    spaceAvailable = wasmExports.fs_soundStreamData(
-                        operationId,
-                        lowerListOfTypedArrays(wasmExports, bitDepth, [
-                            new floatArrayType([0.4, 0.5, 0.6]),
-                            new floatArrayType([-0.4, -0.5, -0.6]),
-                        ])
-                    )
-                    assert.strictEqual(
-                        wasmExports.testBufferCurrentLength(operationId),
-                        6
-                    )
-                    assert.strictEqual(spaceAvailable, 44100 * 10 - 6)
+                const exports = {
+                    ...baseExports,
+                    testStartStream: 1,
+                    testBufferPullFrame: 1,
                 }
-            )
+
+                const { wasmExports, floatArrayType } =
+                    await initializeCoreCodeTest({
+                        code,
+                        exports,
+                        bitDepth,
+                    })
+
+                let availableFrameCount: number = 0
+
+                // 1. Create the operation
+                const operationId = wasmExports.testStartStream()
+
+                // 2. Send in some sound
+                availableFrameCount = wasmExports.fs_soundStreamData(
+                    operationId,
+                    lowerListOfTypedArrays(wasmExports, bitDepth, [
+                        new floatArrayType([-0.1, -0.2, -0.3]),
+                        new floatArrayType([0.1, 0.2, 0.3]),
+                    ])
+                )
+                assert.strictEqual(availableFrameCount, 3)
+
+                // 3. Send in more sound
+                availableFrameCount = wasmExports.fs_soundStreamData(
+                    operationId,
+                    lowerListOfTypedArrays(wasmExports, bitDepth, [
+                        new floatArrayType([0.4, 0.5, 0.6]),
+                        new floatArrayType([-0.4, -0.5, -0.6]),
+                    ])
+                )
+                assert.strictEqual(availableFrameCount, 6)
+
+                // 4. Send in more sound than the buffer can hold
+                availableFrameCount = wasmExports.fs_soundStreamData(
+                    operationId,
+                    lowerListOfTypedArrays(wasmExports, bitDepth, [
+                        new floatArrayType([0.7, 0.8, 0.9]),
+                        new floatArrayType([-0.7, -0.8, -0.9]),
+                    ])
+                )
+                assert.strictEqual(availableFrameCount, 9)
+
+                // 5. Testing buffer contents
+                assert.deepStrictEqual(
+                    [1, 2, 3, 4, 5, 6, 7].map((_) =>
+                        round(wasmExports.testBufferPullFrame())
+                    ),
+                    [-0.1, -0.2, -0.3, 0.4, 0.5, 0.6, 0.7]
+                )
+            })
         })
 
         describe('fs_soundStreamClose', () => {
@@ -510,15 +594,13 @@ describe('fs-bindings', () => {
             ])(
                 'should create the operation and call the callback %s',
                 async ({ bitDepth }) => {
-                    // prettier-ignore
-                    const code = getBaseTestCode({ bitDepth }) + `
-                    export function testStartStream (array: FloatArray): Int {
-                        return fs_readSoundStream('/some/url', someCallback)
-                    }
-                    export function testBufferCurrentLength(id: fs_OperationId): Int {
-                        return _FS_SOUND_STREAM_BUFFERS.get(id).currentLength
-                    }
-                `
+                    const code =
+                        getBaseTestCode({ bitDepth }) +
+                        `
+                        export function testStartStream (array: FloatArray): Int {
+                            return fs_readSoundStream('/some/url', fs_soundInfo(2), someCallback)
+                        }
+                    `
 
                     const exports = {
                         ...baseExports,
@@ -552,18 +634,25 @@ describe('fs-bindings', () => {
                     )
                     assert.strictEqual(wasmExports.testCallbackOperationId(), 0)
 
-                    wasmExports.fs_soundStreamClose(operationId)
+                    wasmExports.fs_soundStreamClose(
+                        operationId,
+                        FS_OPERATION_SUCCESS
+                    )
                     // Test callback in host space was called
                     const closeCalled: Array<Array<any>> = called.get(
                         'fs_requestCloseSoundStream'
                     )
                     assert.strictEqual(closeCalled.length, 1)
-                    assert.deepStrictEqual(closeCalled[0], [operationId])
+                    assert.deepStrictEqual(closeCalled[0], [
+                        operationId,
+                        FS_OPERATION_SUCCESS,
+                    ])
                     // Test callback in wasm was called
                     assert.strictEqual(
                         wasmExports.testCallbackOperationId(),
                         operationId
                     )
+                    assert.ok(wasmExports.testCallbackOperationSuccess())
                     // Test operation was cleaned
                     wasmExports.testOperationCleaned(operationId)
                 }
