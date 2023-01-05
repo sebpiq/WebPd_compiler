@@ -17,6 +17,10 @@ import {
     NodeImplementations,
 } from '../types'
 
+const BIT_DEPTH = 64
+const FloatArray = 'Float64Array'
+const FloatArrayType = Float64Array
+
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
 
@@ -44,7 +48,7 @@ describe('Engine', () => {
             target,
             audioSettings: {
                 channelCount: { in: 2, out: 2 },
-                bitDepth: 64,
+                bitDepth: BIT_DEPTH,
             },
             ...extraCompilation,
         })
@@ -392,8 +396,8 @@ describe('Engine', () => {
                 let receivedId: fs_OperationId = -1
                 let receivedStatus: fs_OperationStatus = -1
                 let receivedSound: FloatArray[] = []
-                function testStartReadFile (array: FloatArray): Int {
-                    return fs_readSoundFile('/some/url', function(
+                function testStartReadFile (): Int {
+                    return fs_readSoundFile('/some/url', fs_soundInfo(3), function(
                         id: fs_OperationId,
                         status: fs_OperationStatus,
                         sound: FloatArray[],
@@ -465,10 +469,10 @@ describe('Engine', () => {
 
                     const operationId = engine.testStartReadFile()
 
-                    // TODO : add infos
-                    assert.deepStrictEqual(called[0].slice(0, 2), [
+                    assert.deepStrictEqual(called[0], [
                         operationId,
                         '/some/url',
+                        [3],
                     ])
 
                     // 2. Hosts handles the operation. It then calls fs_readSoundFileResponse when done.
@@ -493,45 +497,9 @@ describe('Engine', () => {
                     assert.ok(engine.testOperationCleaned(operationId))
                 }
             )
-
-            it.each([
-                { target: 'javascript' as CompilerTarget },
-                { target: 'assemblyscript' as CompilerTarget },
-            ])(
-                'should register the operation failure %s',
-                async ({ target }) => {
-                    const testCode: Code = sharedTestingCode
-
-                    const exports = {
-                        testStartReadFile: 1,
-                        testOperationId: 1,
-                        testOperationStatus: 1,
-                        testSoundLength: 1,
-                    }
-
-                    const engine = await initializeEngineTest({
-                        target,
-                        testCode,
-                        exports,
-                    })
-
-                    const operationId = engine.testStartReadFile()
-                    engine.fs.readSoundFileResponse(
-                        operationId,
-                        FS_OPERATION_FAILURE,
-                        []
-                    )
-                    assert.strictEqual(engine.testOperationId(), operationId)
-                    assert.strictEqual(
-                        engine.testOperationStatus(),
-                        FS_OPERATION_FAILURE
-                    )
-                    assert.strictEqual(engine.testSoundLength(), 0)
-                }
-            )
         })
 
-        describe('stream sound file', () => {
+        describe('read sound stream', () => {
             const sharedTestingCode = `
                 let receivedId: fs_OperationId = -1
                 let receivedStatus: fs_OperationStatus = -1
@@ -639,6 +607,110 @@ describe('Engine', () => {
                     FS_OPERATION_SUCCESS
                 )
             })
+        })
+
+        describe('write sound file', () => {
+            const sharedTestingCode = `
+                let receivedId: fs_OperationId = -1
+                let receivedStatus: fs_OperationStatus = -1
+                const sound: FloatArray[] = [
+                    new ${FloatArray}(2),
+                    new ${FloatArray}(2),
+                    new ${FloatArray}(2),
+                    new ${FloatArray}(2),
+                ]
+                sound[0][0] = 11
+                sound[0][1] = 12
+                sound[1][0] = 21
+                sound[1][1] = 22
+                sound[2][0] = 31
+                sound[2][1] = 32
+                sound[3][0] = 41
+                sound[3][1] = 42
+
+                function testStartWriteFile (): Int {
+                    return fs_writeSoundFile(
+                        sound, 
+                        '/some/url', 
+                        fs_soundInfo(sound.length
+                    ), function(
+                        id: fs_OperationId,
+                        status: fs_OperationStatus,
+                    ): void {
+                        receivedId = id
+                        receivedStatus = status
+                    })
+                }
+                function testOperationId(): Int {
+                    return receivedId
+                }
+                function testOperationStatus(): Int {
+                    return receivedStatus
+                }
+                function testOperationCleaned (id: fs_OperationId): boolean {
+                    return !_FS_OPERATIONS_IDS.has(id)
+                        && !_FS_OPERATIONS_CALLBACKS.has(id)
+                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
+                }
+            `
+
+            it.each([
+                { target: 'javascript' as CompilerTarget },
+                { target: 'assemblyscript' as CompilerTarget },
+            ])(
+                'should register the operation success %s',
+                async ({ target }) => {
+                    const testCode: Code = sharedTestingCode
+
+                    const exports = {
+                        testStartWriteFile: 1,
+                        testOperationId: 1,
+                        testOperationStatus: 1,
+                        testOperationCleaned: 1,
+                    }
+
+                    const engine = await initializeEngineTest({
+                        target,
+                        testCode,
+                        exports,
+                    })
+
+                    // 1. Some function in the engine requests a write file operation.
+                    // Request is sent to host via callback
+                    const called: Array<Array<any>> = []
+                    engine.fs.onRequestWriteSoundFile = (...args: any) =>
+                        called.push(args)
+
+                    const operationId = engine.testStartWriteFile()
+
+                    assert.deepStrictEqual(called[0], [
+                        operationId,
+                        [
+                            new FloatArrayType([11, 12]),
+                            new FloatArrayType([21, 22]),
+                            new FloatArrayType([31, 32]),
+                            new FloatArrayType([41, 42]),
+                        ],
+                        '/some/url',
+                        [4],
+                    ])
+
+                    // 2. Hosts handles the operation. It then calls fs_writeSoundFileResponse when done.
+                    engine.fs.writeSoundFileResponse(
+                        operationId,
+                        FS_OPERATION_SUCCESS
+                    )
+
+                    // 3. Engine-side the request initiator gets notified via callback
+                    assert.strictEqual(engine.testOperationId(), operationId)
+                    assert.strictEqual(
+                        engine.testOperationStatus(),
+                        FS_OPERATION_SUCCESS
+                    )
+                    assert.ok(engine.testOperationCleaned(operationId))
+                }
+            )
         })
     })
 

@@ -43,9 +43,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     return renderCode`
         ${coreCode}
 
+        const metadata: string = '${JSON.stringify(metadata)}'
         let ${globs.input}: FloatArray = new ${FloatArray}(0)
         let ${globs.output}: FloatArray = new ${FloatArray}(0)
-        export const metadata: string = '${JSON.stringify(metadata)}'
         const ${globs.arrays} = new Map<string,FloatArray>()
     
         ${compileDeclare(compilation, graphTraversal)}
@@ -65,10 +65,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export function getOutput(): ${FloatArray} { return ${globs.output} }
 
         export function loop(): void {
-            for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
-                ${globs.frame}++
-                ${compileLoop(compilation, graphTraversal)}
-            }
+            ${compileLoop(compilation, graphTraversal)}
         }
 
         export function setArray(arrayName: string, array: FloatArray): void {
@@ -79,9 +76,11 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: Message): void
         export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: Message): void
         export declare function fs_requestCloseSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
-        export declare function fs_requestWriteSoundFile (id: fs_OperationId, url: Url, sound: FloatArray[], info: Message): void
+        export declare function fs_requestWriteSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
 
         export {
+            metadata,
+
             // FS EXPORTS
             x_fs_readSoundFileResponse as fs_readSoundFileResponse,
             x_fs_writeSoundFileResponse as fs_writeSoundFileResponse,

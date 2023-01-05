@@ -100,32 +100,35 @@ describe('compileLoop', () => {
         assert.strictEqual(
             normalizeCode(loop),
             normalizeCode(`
-            // [msg] : value 2
-            for (O = 0; O < msg_OUTS_0.length; O++) {
-                plus_INS_0.push(msg_OUTS_0[O])
-            }
-            for (O = 0; O < msg_OUTS_0.length; O++) {
-                print_INS_0.push(msg_OUTS_0[O])
-            }
+            for (F = 0; F < BLOCK_SIZE; F++) {
+                FRAME++        
+                // [msg] : value 2
+                for (O = 0; O < msg_OUTS_0.length; O++) {
+                    plus_INS_0.push(msg_OUTS_0[O])
+                }
+                for (O = 0; O < msg_OUTS_0.length; O++) {
+                    print_INS_0.push(msg_OUTS_0[O])
+                }
 
-            // [+] : value 1
-            for (O = 0; O < plus_OUTS_0.length; O++) {
-                print_INS_0.push(plus_OUTS_0[O])
-            }
+                // [+] : value 1
+                for (O = 0; O < plus_OUTS_0.length; O++) {
+                    print_INS_0.push(plus_OUTS_0[O])
+                }
 
-            // [print] : value "bla"
+                // [print] : value "bla"
 
-            if (msg_OUTS_0.length) {
-                msg_OUTS_0 = []
-            }
-            if (plus_INS_0.length) {
-                plus_INS_0 = []
-            }
-            if (plus_OUTS_0.length) {
-                plus_OUTS_0 = []
-            }
-            if (print_INS_0.length) {
-                print_INS_0 = []
+                if (msg_OUTS_0.length) {
+                    msg_OUTS_0 = []
+                }
+                if (plus_INS_0.length) {
+                    plus_INS_0 = []
+                }
+                if (plus_OUTS_0.length) {
+                    plus_OUTS_0 = []
+                }
+                if (print_INS_0.length) {
+                    print_INS_0 = []
+                }
             }
         `)
         )
@@ -189,14 +192,17 @@ describe('compileLoop', () => {
         assert.strictEqual(
             normalizeCode(loop),
             normalizeCode(`
-            // [osc~] : frequency 440
-            plus_INS_0 = osc_OUTS_0
-            dac_INS_0 = osc_OUTS_0
-        
-            // [+~] : value 110
-            dac_INS_1 = plus_OUTS_0
+            for (F = 0; F < BLOCK_SIZE; F++) {
+                FRAME++
+                // [osc~] : frequency 440
+                plus_INS_0 = osc_OUTS_0
+                dac_INS_0 = osc_OUTS_0
+            
+                // [+~] : value 110
+                dac_INS_1 = plus_OUTS_0
 
-            // [dac~] : channelCount 2
+                // [dac~] : channelCount 2
+            }
         `)
         )
     })
@@ -256,9 +262,12 @@ describe('compileLoop', () => {
         assert.strictEqual(
             normalizeCode(loop),
             normalizeCode(`
-            // [osc~] : frequency 440
-            dac_INS_0 = osc_OUTS_0
-            // [dac~] : channelCount 2
+            for (F = 0; F < BLOCK_SIZE; F++) {
+                FRAME++
+                // [osc~] : frequency 440
+                dac_INS_0 = osc_OUTS_0
+                // [dac~] : channelCount 2
+            }
         `)
         )
     })
@@ -287,11 +296,14 @@ describe('compileLoop', () => {
         assert.strictEqual(
             normalizeCode(loop),
             normalizeCode(`
-            if (someNode_INS_someInlet.length) {
-                inletListener_someNode_someInlet()
-            }
-            if (someNode_INS_someInlet.length) {
-                someNode_INS_someInlet = []
+            for (F = 0; F < BLOCK_SIZE; F++) {
+                FRAME++
+                if (someNode_INS_someInlet.length) {
+                    inletListener_someNode_someInlet()
+                }
+                if (someNode_INS_someInlet.length) {
+                    someNode_INS_someInlet = []
+                }
             }
         `)
         )

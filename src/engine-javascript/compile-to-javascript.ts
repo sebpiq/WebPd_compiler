@@ -41,10 +41,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${compileInitialize(compilation, graphTraversal)}
             },
             loop: (${globs.input}, ${globs.output}) => {
-                for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
-                    ${globs.frame}++
-                    ${compileLoop(compilation, graphTraversal)}
-                }
+                ${compileLoop(compilation, graphTraversal)}
             },
             setArray: (arrayName, array) => { 
                 ${globs.arrays}.set(arrayName, array)
@@ -73,9 +70,9 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 onRequestReadSoundFile: () => undefined,
                 onRequestReadSoundStream: () => undefined,
                 onRequestCloseSoundStream: () => undefined,
-                // onRequestWriteSoundFile: () => undefined,
+                onRequestWriteSoundFile: () => undefined,
                 readSoundFileResponse: x_fs_readSoundFileResponse,
-                // writeSoundFileResponse: x_fs_writeSoundFileResponse,
+                writeSoundFileResponse: x_fs_writeSoundFileResponse,
                 soundStreamData: x_fs_soundStreamData,
                 soundStreamClose: fs_soundStreamClose,
             }

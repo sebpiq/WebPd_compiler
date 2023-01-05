@@ -34,7 +34,7 @@ const msg_bang = () => ['bang']
 const FS = `
 const fs_requestReadSoundFile = (...args) => exports.fs.onRequestReadSoundFile(...args)
 const fs_requestReadSoundStream = (...args) => exports.fs.onRequestReadSoundStream(...args)
-// const fs_requestWriteSoundFile = (...args) => exports.fs.onRequestWriteSoundFile(...args)
+const fs_requestWriteSoundFile = (...args) => exports.fs.onRequestWriteSoundFile(...args)
 const fs_requestCloseSoundStream = (...args) => exports.fs.onRequestCloseSoundStream(...args)
 `
 

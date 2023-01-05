@@ -29,7 +29,9 @@ describe('compileToJavascript', () => {
 
         const modelFs: JavaScriptEngine['fs'] = {
             readSoundFileResponse: () => undefined,
+            writeSoundFileResponse: () => undefined,
             onRequestReadSoundFile: () => undefined,
+            onRequestWriteSoundFile: () => undefined,
             soundStreamData: () => undefined,
             soundStreamClose: () => undefined,
             onRequestReadSoundStream: () => undefined,

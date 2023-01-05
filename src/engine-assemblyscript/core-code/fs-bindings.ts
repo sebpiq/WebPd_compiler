@@ -7,7 +7,7 @@ export interface fs_WasmExports extends tarray_WasmExports {
         status: number,
         sound: InternalPointer
     ) => void
-    fs_writeSoundFileResponse: (id: number) => void
+    fs_writeSoundFileResponse: (id: number, status: number) => void
     fs_soundStreamData: (id: number, block: InternalPointer) => number
     fs_soundStreamClose: (id: number, status: number) => void
 }
@@ -20,8 +20,8 @@ export interface fs_WasmImports {
     ) => void
     fs_requestWriteSoundFile: (
         operationId: number,
+        sound: InternalPointer,
         url: StringPointer,
-        listOfArrays: InternalPointer,
         info: any
     ) => void
     fs_requestReadSoundStream: (

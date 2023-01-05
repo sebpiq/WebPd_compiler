@@ -15,6 +15,19 @@ import { Code, Compilation } from '../types'
 
 export default (
     compilation: Compilation,
+    graphTraversal: DspGraph.GraphTraversal,
+) => {
+    const { g: globs } = compilation.engineVariableNames
+    return `
+        for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
+            ${globs.frame}++
+            ${loopIteration(compilation, graphTraversal)}
+        }
+    `
+}
+
+const loopIteration = (
+    compilation: Compilation,
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)

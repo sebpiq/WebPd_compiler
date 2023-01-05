@@ -22,6 +22,11 @@ export type fs_OperationStatus =
 export type Message = Array<string | number>
 
 /**
+ * [channelCount]
+ */
+export type SoundFileInfo = [number]
+
+/**
  * Type for values sent through the signal flow.
  */
 export type Signal = number
@@ -62,10 +67,22 @@ export interface Engine {
 
     // Filesystem API for the engine
     fs: {
+        /**
+         *
+         * @param operationId
+         * @param status
+         * @param sound will be an empty array if operation has failed
+         * @returns
+         */
         readSoundFileResponse: (
             operationId: number,
             status: fs_OperationStatus,
-            sound?: Array<Float32Array | Float64Array>
+            sound: Array<Float32Array | Float64Array>
+        ) => void
+
+        writeSoundFileResponse: (
+            operationId: number,
+            status: fs_OperationStatus
         ) => void
 
         soundStreamData: (
@@ -82,22 +99,23 @@ export interface Engine {
         onRequestReadSoundFile: (
             operationId: number,
             url: string,
-            info: any
+            info: SoundFileInfo,
+        ) => void
+
+        onRequestWriteSoundFile: (
+            operationId: number,
+            sound: Array<Float32Array | Float64Array>,
+            url: string,
+            info: SoundFileInfo,
         ) => void
 
         onRequestReadSoundStream: (
             operationId: number,
             url: string,
-            info: any
+            info: SoundFileInfo,
         ) => void
 
         onRequestCloseSoundStream: (operationId: number, status: number) => void
-
-        // onRequestWriteSoundFile: (
-        //     url: string,
-        //     data: Array<Float32Array | Float64Array>,
-        //     info: any
-        // ) => void
     }
 }
 

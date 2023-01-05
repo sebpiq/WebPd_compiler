@@ -21,11 +21,20 @@ function x_fs_readSoundFileResponse(id, status, sound) {
         throw new Error("fs_readSoundFileResponse operation unknown : \"${id}\"");
     }
     _FS_OPERATIONS_IDS.delete(id);
-    _FS_OPERATIONS_SOUND_CALLBACKS.get(id)(id, status, sound);
+    // Finish cleaning before calling the callback in case it would throw an error.
+    var callback = _FS_OPERATIONS_SOUND_CALLBACKS.get(id);
+    callback(id, status, sound);
     _FS_OPERATIONS_SOUND_CALLBACKS.delete(id);
 }
-function x_fs_writeSoundFileResponse(id) {
+function x_fs_writeSoundFileResponse(id, status) {
+    if (!_FS_OPERATIONS_IDS.has(id)) {
+        throw new Error("fs_writeSoundFileResponse operation unknown : \"${id}\"");
+    }
     _FS_OPERATIONS_IDS.delete(id);
+    // Finish cleaning before calling the callback in case it would throw an error.
+    var callback = _FS_OPERATIONS_CALLBACKS.get(id);
+    callback(id, status);
+    _FS_OPERATIONS_CALLBACKS.delete(id);
 }
 function x_fs_soundStreamData(id, block) {
     if (!_FS_OPERATIONS_IDS.has(id)) {
@@ -34,11 +43,18 @@ function x_fs_soundStreamData(id, block) {
     return _FS_SOUND_STREAM_BUFFERS.get(id).pushBlock(block);
 }
 // =========================== FS API
-function fs_readSoundFile(url, callback) {
+function fs_readSoundFile(url, info, callback) {
     var id = FILE_OPERATION_COUNTER++;
     _FS_OPERATIONS_IDS.add(id);
     _FS_OPERATIONS_SOUND_CALLBACKS.set(id, callback);
-    fs_requestReadSoundFile(id, url, msg_create([]));
+    fs_requestReadSoundFile(id, url, info);
+    return id;
+}
+function fs_writeSoundFile(sound, url, info, callback) {
+    var id = FILE_OPERATION_COUNTER++;
+    _FS_OPERATIONS_IDS.add(id);
+    _FS_OPERATIONS_CALLBACKS.set(id, callback);
+    fs_requestWriteSoundFile(id, sound, url, info);
     return id;
 }
 function fs_readSoundStream(url, info, callback) {
@@ -61,12 +77,6 @@ function fs_soundStreamClose(id, status) {
     // Delete this last, to give the callback a chance to save a reference to the buffer
     _FS_SOUND_STREAM_BUFFERS.delete(id);
     fs_requestCloseSoundStream(id, status);
-}
-function fs_writeSoundFile(url, sound) {
-    var id = FILE_OPERATION_COUNTER++;
-    _FS_OPERATIONS_IDS.add(id);
-    fs_requestWriteSoundFile(url, sound, msg_create([]));
-    return id;
 }
 // Structure : [channelCount]
 function fs_soundInfo(channelCount) {
