@@ -16,6 +16,8 @@ export type fs_OperationStatus =
     | typeof FS_OPERATION_SUCCESS
     | typeof FS_OPERATION_FAILURE
 
+export type FloatArray = Float32Array | Float64Array
+
 /**
  * Type for messages sent through the control flow.
  */
@@ -45,12 +47,12 @@ export type CodeVariableName = string
 export interface Engine {
     configure: (sampleRate: number, blockSize: number) => void
     loop: (
-        input: Array<Float32Array | Float64Array>,
-        output: Array<Float32Array | Float64Array>
+        input: Array<FloatArray>,
+        output: Array<FloatArray>
     ) => void
     setArray: (
         arrayName: string,
-        data: Float32Array | Float64Array | Array<number>
+        data: FloatArray | Array<number>
     ) => void
 
     // Map of public variable accessors for an engine
@@ -74,48 +76,59 @@ export interface Engine {
          * @param sound will be an empty array if operation has failed
          * @returns
          */
-        readSoundFileResponse: (
+        sendReadSoundFileResponse: (
             operationId: number,
             status: fs_OperationStatus,
-            sound: Array<Float32Array | Float64Array>
+            sound: Array<FloatArray>
         ) => void
 
-        writeSoundFileResponse: (
+        sendWriteSoundFileResponse: (
             operationId: number,
             status: fs_OperationStatus
         ) => void
 
-        soundStreamData: (
+        sendSoundStreamData: (
             operationId: number,
-            sound: Array<Float32Array | Float64Array>
+            sound: Array<FloatArray>
         ) => number
 
-        soundStreamClose: (
+        closeSoundStream: (
             operationId: number,
             status: fs_OperationStatus
         ) => void
 
         // Callbacks
-        onRequestReadSoundFile: (
+        onReadSoundFile: (
             operationId: number,
             url: string,
             info: SoundFileInfo,
         ) => void
 
-        onRequestWriteSoundFile: (
+        onWriteSoundFile: (
             operationId: number,
-            sound: Array<Float32Array | Float64Array>,
+            sound: Array<FloatArray>,
             url: string,
             info: SoundFileInfo,
         ) => void
 
-        onRequestReadSoundStream: (
+        onOpenSoundReadStream: (
             operationId: number,
             url: string,
             info: SoundFileInfo,
         ) => void
 
-        onRequestCloseSoundStream: (operationId: number, status: number) => void
+        onOpenSoundWriteStream: (
+            operationId: number,
+            url: string,
+            info: SoundFileInfo,
+        ) => void
+
+        onSoundStreamData: (
+            operationId: number,
+            sound: Array<FloatArray>
+        ) => void
+
+        onCloseSoundStream: (operationId: number, status: number) => void
     }
 }
 

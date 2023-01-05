@@ -70,19 +70,23 @@ export const initializeCoreCodeTest = async <
 }: CoreCodeTestSettings<ExportsKeys>) => {
     const called = new Map<keyof AssemblyScriptWasmImports, Array<any>>()
     const floatArrayType = bitDepth === 64 ? Float64Array : Float32Array
-    called.set('fs_requestReadSoundFile', [])
-    called.set('fs_requestWriteSoundFile', [])
-    called.set('fs_requestReadSoundStream', [])
-    called.set('fs_requestCloseSoundStream', [])
+    called.set('i_fs_readSoundFile', [])
+    called.set('i_fs_writeSoundFile', [])
+    called.set('i_fs_openSoundReadStream', [])
+    called.set('i_fs_closeSoundStream', [])
     const wasmExports = (await getWasmExports(code, {
-        fs_requestReadSoundFile: (...args: any) =>
-            called.get('fs_requestReadSoundFile').push(args),
-        fs_requestWriteSoundFile: (...args: any) =>
-            called.get('fs_requestWriteSoundFile').push(args),
-        fs_requestReadSoundStream: (...args: any) =>
-            called.get('fs_requestReadSoundStream').push(args),
-        fs_requestCloseSoundStream: (...args: any) =>
-            called.get('fs_requestCloseSoundStream').push(args),
+        i_fs_readSoundFile: (...args: any) =>
+            called.get('i_fs_readSoundFile').push(args),
+        i_fs_writeSoundFile: (...args: any) =>
+            called.get('i_fs_writeSoundFile').push(args),
+        i_fs_openSoundReadStream: (...args: any) =>
+            called.get('i_fs_openSoundReadStream').push(args),
+        i_fs_openSoundWriteStream: (...args: any) =>
+            called.get('i_fs_openSoundWriteStream').push(args),
+        i_fs_sendSoundStreamData: (...args: any) =>
+            called.get('i_fs_sendSoundStreamData').push(args),
+        i_fs_closeSoundStream: (...args: any) =>
+            called.get('i_fs_closeSoundStream').push(args),
     })) as TestAssemblyScriptWasmExports<ExportsKeys>
     return {
         wasmExports,

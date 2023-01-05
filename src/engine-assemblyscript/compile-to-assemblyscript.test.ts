@@ -13,10 +13,17 @@ import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { createAscEngine } from './test-helpers'
-import { AssemblyScriptWasmExports } from './types'
+import { AssemblyScriptWasmExports, AssemblyScriptWasmImports } from './types'
 
 describe('compileToAssemblyscript', () => {
     it('should have all expected wasm exports when compiled', async () => {
+        interface AscRuntimeExports {
+            __collect: () => void
+            __pin: () => void
+            __rtti_base: () => void
+            __unpin: () => void
+        }
+
         const { wasmExports } = await createAscEngine(
             compileToAssemblyscript(
                 makeCompilation({
@@ -25,7 +32,7 @@ describe('compileToAssemblyscript', () => {
             )
         )
 
-        const expectedExports: AssemblyScriptWasmExports = {
+        const expectedExports: AssemblyScriptWasmExports & AssemblyScriptWasmImports & AscRuntimeExports = {
             configure: (_: number) => undefined,
             getOutput: () => 0,
             getInput: () => 0,
@@ -47,35 +54,26 @@ describe('compileToAssemblyscript', () => {
             msg_writeFloatToken: () => undefined,
             msg_readStringToken: () => 0,
             msg_readFloatToken: () => 0,
-            fs_readSoundFileResponse: () => 0,
-            fs_writeSoundFileResponse: () => 0,
-            fs_soundStreamClose: () => 0,
-            fs_soundStreamData: () => 0,
+            fs_onReadSoundFileResponse: () => 0,
+            fs_onWriteSoundFileResponse: () => 0,
+            fs_onCloseSoundStream: () => 0,
+            fs_onSoundStreamData: () => 0,
+            i_fs_readSoundFile: () => undefined,
+            i_fs_writeSoundFile: () => undefined,
+            i_fs_openSoundReadStream: () => undefined,
+            i_fs_openSoundWriteStream: () => undefined,
+            i_fs_sendSoundStreamData: () => undefined,
+            i_fs_closeSoundStream: () => undefined,
             __new: () => 0,
             memory: new WebAssembly.Memory({ initial: 128 }),
+            __collect: () => undefined,
+            __pin: () => undefined,
+            __rtti_base: () => undefined,
+            __unpin: () => undefined,
         }
 
-        const exportsIgnoredKeys = [
-            // Plenty of low-level exported function are added by asc compiler when using
-            // option 'export-runtime'
-            '__collect',
-            '__pin',
-            '__rtti_base',
-            '__unpin',
-
-            // Imported functions, meant to be called by the engine and not by the host
-            'fs_requestCloseSoundStream',
-            'fs_requestReadSoundFile',
-            'fs_requestReadSoundStream',
-            'fs_requestWriteSoundFile',
-        ]
-
-        const actualExportsKeys = Object.keys(wasmExports).filter(
-            (key) => !exportsIgnoredKeys.includes(key)
-        )
-
         assert.deepStrictEqual(
-            actualExportsKeys.sort(),
+            Object.keys(wasmExports).sort(),
             Object.keys(expectedExports).sort()
         )
     })

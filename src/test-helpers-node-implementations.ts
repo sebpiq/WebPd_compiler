@@ -21,6 +21,7 @@ import {
     NodeImplementations,
     AccessorSpecs,
     CompilerTarget,
+    FloatArray,
 } from './types'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
@@ -359,7 +360,7 @@ export const buildEngineBlock = (
     channelCount: number,
     blockSize: number
 ) => {
-    const engineOutput: Array<Float32Array | Float64Array> = []
+    const engineOutput: Array<FloatArray> = []
     for (let channel = 0; channel < channelCount; channel++) {
         engineOutput.push(new constructor(blockSize))
     }

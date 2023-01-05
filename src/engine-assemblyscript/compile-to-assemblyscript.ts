@@ -73,19 +73,21 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         }
 
         // FS IMPORTS
-        export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: Message): void
-        export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: Message): void
-        export declare function fs_requestCloseSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
-        export declare function fs_requestWriteSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
+        export declare function i_fs_readSoundFile (id: fs_OperationId, url: Url, info: Message): void
+        export declare function i_fs_writeSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
+        export declare function i_fs_openSoundReadStream (id: fs_OperationId, url: Url, info: Message): void
+        export declare function i_fs_openSoundWriteStream (id: fs_OperationId, url: Url, info: Message): void
+        export declare function i_fs_sendSoundStreamData (id: fs_OperationId, url: Url, info: Message): void
+        export declare function i_fs_closeSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
 
         export {
             metadata,
 
             // FS EXPORTS
-            x_fs_readSoundFileResponse as fs_readSoundFileResponse,
-            x_fs_writeSoundFileResponse as fs_writeSoundFileResponse,
-            x_fs_soundStreamData as fs_soundStreamData,
-            fs_soundStreamClose,
+            x_fs_onReadSoundFileResponse as fs_onReadSoundFileResponse,
+            x_fs_onWriteSoundFileResponse as fs_onWriteSoundFileResponse,
+            x_fs_onSoundStreamData as fs_onSoundStreamData,
+            x_fs_onCloseSoundStream as fs_onCloseSoundStream,
 
             // MSG EXPORTS
             x_msg_create as msg_create,

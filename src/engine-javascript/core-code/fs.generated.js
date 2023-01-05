@@ -14,11 +14,11 @@ var _FS_OPERATIONS_IDS = new Set();
 var _FS_OPERATIONS_CALLBACKS = new Map();
 var _FS_OPERATIONS_SOUND_CALLBACKS = new Map();
 var _FS_SOUND_STREAM_BUFFERS = new Map();
-var FILE_OPERATION_COUNTER = 0;
+var _FS_OPERATION_COUNTER = 0;
 // =========================== EXPORTED API
-function x_fs_readSoundFileResponse(id, status, sound) {
+function x_fs_onReadSoundFileResponse(id, status, sound) {
     if (!_FS_OPERATIONS_IDS.has(id)) {
-        throw new Error("fs_readSoundFileResponse operation unknown : \"${id}\"");
+        throw new Error("fs_sendReadSoundFileResponse operation unknown : \"${id}\"");
     }
     _FS_OPERATIONS_IDS.delete(id);
     // Finish cleaning before calling the callback in case it would throw an error.
@@ -26,9 +26,9 @@ function x_fs_readSoundFileResponse(id, status, sound) {
     callback(id, status, sound);
     _FS_OPERATIONS_SOUND_CALLBACKS.delete(id);
 }
-function x_fs_writeSoundFileResponse(id, status) {
+function x_fs_onWriteSoundFileResponse(id, status) {
     if (!_FS_OPERATIONS_IDS.has(id)) {
-        throw new Error("fs_writeSoundFileResponse operation unknown : \"${id}\"");
+        throw new Error("fs_sendWriteSoundFileResponse operation unknown : \"${id}\"");
     }
     _FS_OPERATIONS_IDS.delete(id);
     // Finish cleaning before calling the callback in case it would throw an error.
@@ -36,38 +36,47 @@ function x_fs_writeSoundFileResponse(id, status) {
     callback(id, status);
     _FS_OPERATIONS_CALLBACKS.delete(id);
 }
-function x_fs_soundStreamData(id, block) {
+function x_fs_onSoundStreamData(id, block) {
     if (!_FS_OPERATIONS_IDS.has(id)) {
-        throw new Error("fs_soundStreamData operation unknown : \"${id}\"");
+        throw new Error("fs_sendSoundStreamData operation unknown : \"${id}\"");
     }
     return _FS_SOUND_STREAM_BUFFERS.get(id).pushBlock(block);
 }
+function x_fs_onCloseSoundStream(id, status) {
+    fs_closeSoundStream(id, status);
+}
 // =========================== FS API
 function fs_readSoundFile(url, info, callback) {
-    var id = FILE_OPERATION_COUNTER++;
-    _FS_OPERATIONS_IDS.add(id);
+    var id = _fs_createOperationId();
     _FS_OPERATIONS_SOUND_CALLBACKS.set(id, callback);
-    fs_requestReadSoundFile(id, url, info);
+    i_fs_readSoundFile(id, url, info);
     return id;
 }
 function fs_writeSoundFile(sound, url, info, callback) {
-    var id = FILE_OPERATION_COUNTER++;
-    _FS_OPERATIONS_IDS.add(id);
+    var id = _fs_createOperationId();
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
-    fs_requestWriteSoundFile(id, sound, url, info);
+    i_fs_writeSoundFile(id, sound, url, info);
     return id;
 }
-function fs_readSoundStream(url, info, callback) {
-    var id = FILE_OPERATION_COUNTER++;
+function fs_openSoundReadStream(url, info, callback) {
+    var id = _fs_createOperationId();
     var channelCount = ${Int}(msg_readFloatToken(info, 0));
     var buffer = new _fs_SoundBuffer(channelCount);
-    _FS_OPERATIONS_IDS.add(id);
     _FS_SOUND_STREAM_BUFFERS.set(id, buffer);
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
-    fs_requestReadSoundStream(id, url, info);
+    i_fs_openSoundReadStream(id, url, info);
     return id;
 }
-function fs_soundStreamClose(id, status) {
+function fs_openSoundWriteStream(url, info, callback) {
+    var id = _fs_createOperationId();
+    var channelCount = ${Int}(msg_readFloatToken(info, 0));
+    var buffer = new _fs_SoundBuffer(channelCount);
+    _FS_SOUND_STREAM_BUFFERS.set(id, buffer);
+    _FS_OPERATIONS_CALLBACKS.set(id, callback);
+    i_fs_openSoundWriteStream(id, url, info);
+    return id;
+}
+function fs_closeSoundStream(id, status) {
     if (!_FS_OPERATIONS_IDS.has(id)) {
         return;
     }
@@ -76,7 +85,7 @@ function fs_soundStreamClose(id, status) {
     _FS_OPERATIONS_CALLBACKS.delete(id);
     // Delete this last, to give the callback a chance to save a reference to the buffer
     _FS_SOUND_STREAM_BUFFERS.delete(id);
-    fs_requestCloseSoundStream(id, status);
+    i_fs_closeSoundStream(id, status);
 }
 // Structure : [channelCount]
 function fs_soundInfo(channelCount) {
@@ -151,3 +160,8 @@ var _fs_SoundBuffer = /** @class */ (function () {
     };
     return _fs_SoundBuffer;
 }());
+function _fs_createOperationId() {
+    var id = _FS_OPERATION_COUNTER++;
+    _FS_OPERATIONS_IDS.add(id);
+    return id;
+}

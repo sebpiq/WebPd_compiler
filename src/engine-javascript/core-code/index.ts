@@ -31,16 +31,9 @@ const msg_readStringToken = msg_readFloatToken = ( m, i ) =>
 const msg_bang = () => ['bang']
 `
 
-const FS = `
-const fs_requestReadSoundFile = (...args) => exports.fs.onRequestReadSoundFile(...args)
-const fs_requestReadSoundStream = (...args) => exports.fs.onRequestReadSoundStream(...args)
-const fs_requestWriteSoundFile = (...args) => exports.fs.onRequestWriteSoundFile(...args)
-const fs_requestCloseSoundStream = (...args) => exports.fs.onRequestCloseSoundStream(...args)
-`
-
 export default (engineVariableNames: EngineVariableNames) => {
     return replaceCoreCodePlaceholders(
         engineVariableNames,
-        COMPAT + MSG + FS + FS_JS
+        COMPAT + MSG + FS_JS
     )
 }

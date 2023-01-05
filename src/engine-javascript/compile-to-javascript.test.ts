@@ -28,14 +28,16 @@ describe('compileToJavascript', () => {
         `)()
 
         const modelFs: JavaScriptEngine['fs'] = {
-            readSoundFileResponse: () => undefined,
-            writeSoundFileResponse: () => undefined,
-            onRequestReadSoundFile: () => undefined,
-            onRequestWriteSoundFile: () => undefined,
-            soundStreamData: () => undefined,
-            soundStreamClose: () => undefined,
-            onRequestReadSoundStream: () => undefined,
-            onRequestCloseSoundStream: () => undefined,
+            sendReadSoundFileResponse: () => undefined,
+            sendWriteSoundFileResponse: () => undefined,
+            sendSoundStreamData: () => undefined,
+            closeSoundStream: () => undefined,
+            onReadSoundFile: () => undefined,
+            onWriteSoundFile: () => undefined,
+            onOpenSoundReadStream: () => undefined,
+            onOpenSoundWriteStream: () => undefined,
+            onSoundStreamData: () => undefined,
+            onCloseSoundStream: () => undefined,
         }
 
         const modelEngine: JavaScriptEngine = {

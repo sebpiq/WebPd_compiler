@@ -67,16 +67,26 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 )}
             },
             fs: {
-                onRequestReadSoundFile: () => undefined,
-                onRequestReadSoundStream: () => undefined,
-                onRequestCloseSoundStream: () => undefined,
-                onRequestWriteSoundFile: () => undefined,
-                readSoundFileResponse: x_fs_readSoundFileResponse,
-                writeSoundFileResponse: x_fs_writeSoundFileResponse,
-                soundStreamData: x_fs_soundStreamData,
-                soundStreamClose: fs_soundStreamClose,
+                onReadSoundFile: () => undefined,
+                onWriteSoundFile: () => undefined,
+                onOpenSoundReadStream: () => undefined,
+                onOpenSoundWriteStream: () => undefined,
+                onSoundStreamData: () => undefined,
+                onCloseSoundStream: () => undefined,
+                sendReadSoundFileResponse: x_fs_onReadSoundFileResponse,
+                sendWriteSoundFileResponse: x_fs_onWriteSoundFileResponse,
+                sendSoundStreamData: x_fs_onSoundStreamData,
+                closeSoundStream: x_fs_onCloseSoundStream,
             }
         }
+
+        // FS IMPORTS
+        const i_fs_readSoundFile = (...args) => exports.fs.onReadSoundFile(...args)
+        const i_fs_writeSoundFile = (...args) => exports.fs.onWriteSoundFile(...args)
+        const i_fs_openSoundReadStream = (...args) => exports.fs.onOpenSoundReadStream(...args)
+        const i_fs_openSoundWriteStream = (...args) => exports.fs.onOpenSoundWriteStream(...args)
+        const i_fs_sendSoundStreamData = (...args) => exports.fs.onSoundStreamData(...args)
+        const i_fs_closeSoundStream = (...args) => exports.fs.onCloseSoundStream(...args)
     `
 }
 

@@ -464,7 +464,7 @@ describe('Engine', () => {
                     // 1. Some function in the engine requests a read file operation.
                     // Request is sent to host via callback
                     const called: Array<Array<any>> = []
-                    engine.fs.onRequestReadSoundFile = (...args: any) =>
+                    engine.fs.onReadSoundFile = (...args: any) =>
                         called.push(args)
 
                     const operationId = engine.testStartReadFile()
@@ -475,8 +475,8 @@ describe('Engine', () => {
                         [3],
                     ])
 
-                    // 2. Hosts handles the operation. It then calls fs_readSoundFileResponse when done.
-                    engine.fs.readSoundFileResponse(
+                    // 2. Hosts handles the operation. It then calls fs_sendReadSoundFileResponse when done.
+                    engine.fs.sendReadSoundFileResponse(
                         operationId,
                         FS_OPERATION_SUCCESS,
                         [
@@ -505,7 +505,7 @@ describe('Engine', () => {
                 let receivedStatus: fs_OperationStatus = -1
                 const channelCount: Int = 3
                 function testStartReadStream (array: FloatArray): Int {
-                    return fs_readSoundStream('/some/url', fs_soundInfo(channelCount), function(
+                    return fs_openSoundReadStream('/some/url', fs_soundInfo(channelCount), function(
                         id: fs_OperationId,
                         status: fs_OperationStatus,
                     ): void {
@@ -564,9 +564,9 @@ describe('Engine', () => {
                 // Request is sent to host via callback
                 const calledRead: Array<Array<any>> = []
                 const calledClose: Array<Array<any>> = []
-                engine.fs.onRequestReadSoundStream = (...args: any) =>
+                engine.fs.onOpenSoundReadStream = (...args: any) =>
                     calledRead.push(args)
-                engine.fs.onRequestCloseSoundStream = (...args: any) =>
+                engine.fs.onCloseSoundStream = (...args: any) =>
                     calledClose.push(args)
 
                 const operationId = engine.testStartReadStream()
@@ -580,8 +580,8 @@ describe('Engine', () => {
                     3
                 )
 
-                // 2. Hosts handles the operation. It then calls fs_soundStreamData to send in data.
-                const writtenFrameCount = engine.fs.soundStreamData(
+                // 2. Hosts handles the operation. It then calls fs_sendSoundStreamData to send in data.
+                const writtenFrameCount = engine.fs.sendSoundStreamData(
                     operationId,
                     [
                         new Float32Array([-1, -2, -3]),
@@ -593,7 +593,7 @@ describe('Engine', () => {
                 assert.ok(engine.testReceivedSound(operationId))
 
                 // 3. The stream is closed
-                engine.fs.soundStreamClose(operationId, FS_OPERATION_SUCCESS)
+                engine.fs.closeSoundStream(operationId, FS_OPERATION_SUCCESS)
                 assert.ok(engine.testOperationCleaned(operationId))
                 // Test host callback was called
                 assert.deepStrictEqual(calledClose[0].slice(0, 2), [
@@ -679,7 +679,7 @@ describe('Engine', () => {
                     // 1. Some function in the engine requests a write file operation.
                     // Request is sent to host via callback
                     const called: Array<Array<any>> = []
-                    engine.fs.onRequestWriteSoundFile = (...args: any) =>
+                    engine.fs.onWriteSoundFile = (...args: any) =>
                         called.push(args)
 
                     const operationId = engine.testStartWriteFile()
@@ -696,8 +696,8 @@ describe('Engine', () => {
                         [4],
                     ])
 
-                    // 2. Hosts handles the operation. It then calls fs_writeSoundFileResponse when done.
-                    engine.fs.writeSoundFileResponse(
+                    // 2. Hosts handles the operation. It then calls fs_sendWriteSoundFileResponse when done.
+                    engine.fs.sendWriteSoundFileResponse(
                         operationId,
                         FS_OPERATION_SUCCESS
                     )

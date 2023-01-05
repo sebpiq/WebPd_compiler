@@ -67,21 +67,21 @@ describe('fs-bindings', () => {
                         && !_FS_SOUND_STREAM_BUFFERS.has(id)
                 }
 
-                export declare function fs_requestReadSoundFile (id: fs_OperationId, url: Url, info: Message): void
-                export declare function fs_requestReadSoundStream (id: fs_OperationId, url: Url, info: Message): void
-                export declare function fs_requestWriteSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
-                export declare function fs_requestCloseSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
-                
+                export declare function i_fs_readSoundFile (id: fs_OperationId, url: Url, info: Message): void
+                export declare function i_fs_writeSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
+                export declare function i_fs_openSoundReadStream (id: fs_OperationId, url: Url, info: Message): void
+                export declare function i_fs_openSoundWriteStream (id: fs_OperationId, url: Url, info: Message): void
+                export declare function i_fs_sendSoundStreamData (id: fs_OperationId, url: Url, info: Message): void
+                export declare function i_fs_closeSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
+
                 export {
-                    x_fs_readSoundFileResponse as fs_readSoundFileResponse,
-                    x_fs_writeSoundFileResponse as fs_writeSoundFileResponse,
-                    x_fs_soundStreamData as fs_soundStreamData,
-                    fs_soundStreamClose,
-                    x_tarray_createListOfArrays as tarray_createListOfArrays,
-                    x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
-                    x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
-                    x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
-                    x_tarray_create as tarray_create,
+                    // FS EXPORTS
+                    x_fs_onReadSoundFileResponse as fs_onReadSoundFileResponse,
+                    x_fs_onWriteSoundFileResponse as fs_onWriteSoundFileResponse,
+                    x_fs_onSoundStreamData as fs_onSoundStreamData,
+                    x_fs_onCloseSoundStream as fs_onCloseSoundStream,
+        
+                    // MSG EXPORTS
                     x_msg_create as msg_create,
                     x_msg_createArray as msg_createArray,
                     x_msg_pushToArray as msg_pushToArray,
@@ -92,6 +92,13 @@ describe('fs-bindings', () => {
                     msg_readFloatToken,
                     MSG_FLOAT_TOKEN,
                     MSG_STRING_TOKEN,
+        
+                    // TARRAY EXPORTS
+                    x_tarray_createListOfArrays as tarray_createListOfArrays,
+                    x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
+                    x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
+                    x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
+                    x_tarray_create as tarray_create,
                 }
             `,
             audioSettings
@@ -124,7 +131,7 @@ describe('fs-bindings', () => {
 
                 const operationId: number = wasmExports.testStartReadFile()
                 const readCalled: Array<Array<any>> = called.get(
-                    'fs_requestReadSoundFile'
+                    'i_fs_readSoundFile'
                 )
                 assert.strictEqual(readCalled.length, 1)
                 assert.strictEqual(readCalled[0].length, 3)
@@ -140,7 +147,7 @@ describe('fs-bindings', () => {
             })
         })
 
-        describe('fs_readSoundFileResponse', () => {
+        describe('fs_sendReadSoundFileResponse', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
@@ -171,7 +178,7 @@ describe('fs-bindings', () => {
                     const operationId = wasmExports.testStartReadFile()
                     assert.strictEqual(wasmExports.testCallbackOperationId(), 0)
 
-                    // 2. Operation is done, call fs_readSoundFileResponse
+                    // 2. Operation is done, call fs_sendReadSoundFileResponse
                     const soundPointer = lowerListOfTypedArrays(
                         wasmExports,
                         bitDepth,
@@ -181,7 +188,7 @@ describe('fs-bindings', () => {
                             new floatArrayType([-0.7, -0.8, -0.9]),
                         ]
                     )
-                    wasmExports.fs_readSoundFileResponse(
+                    wasmExports.fs_onReadSoundFileResponse(
                         operationId,
                         FS_OPERATION_SUCCESS,
                         soundPointer
@@ -233,7 +240,7 @@ describe('fs-bindings', () => {
                     })
 
                     const operationId = wasmExports.testStartReadFile()
-                    wasmExports.fs_readSoundFileResponse(
+                    wasmExports.fs_onReadSoundFileResponse(
                         operationId,
                         FS_OPERATION_FAILURE,
                         0
@@ -463,7 +470,7 @@ describe('fs-bindings', () => {
             )
         })
 
-        describe('fs_readSoundStream', () => {
+        describe('fs_openSoundReadStream', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
@@ -473,7 +480,7 @@ describe('fs-bindings', () => {
                     `
                         const channelCount: Int = 22
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_readSoundStream('/some/url', fs_soundInfo(channelCount), someCallback)
+                            return fs_openSoundReadStream('/some/url', fs_soundInfo(channelCount), someCallback)
                         }
                         export function testCheckSoundBufferExists(id: fs_OperationId): boolean {
                             return _FS_SOUND_STREAM_BUFFERS.has(id) 
@@ -495,7 +502,7 @@ describe('fs-bindings', () => {
 
                 const operationId: number = wasmExports.testStartStream()
                 const readCalled: Array<Array<any>> = called.get(
-                    'fs_requestReadSoundStream'
+                    'i_fs_openSoundReadStream'
                 )
                 assert.strictEqual(readCalled.length, 1)
                 assert.strictEqual(readCalled[0].length, 3)
@@ -509,7 +516,7 @@ describe('fs-bindings', () => {
             })
         })
 
-        describe('fs_soundStreamData', () => {
+        describe('fs_onSoundStreamData', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
@@ -518,7 +525,7 @@ describe('fs-bindings', () => {
                     getBaseTestCode({ bitDepth }) +
                     `
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_readSoundStream('/some/url', fs_soundInfo(2), someCallback)
+                            return fs_openSoundReadStream('/some/url', fs_soundInfo(2), someCallback)
                         }
                         export function testBufferPullFrame(id: fs_OperationId): Float {
                             return _FS_SOUND_STREAM_BUFFERS.get(id).pullFrame()[0]
@@ -544,7 +551,7 @@ describe('fs-bindings', () => {
                 const operationId = wasmExports.testStartStream()
 
                 // 2. Send in some sound
-                availableFrameCount = wasmExports.fs_soundStreamData(
+                availableFrameCount = wasmExports.fs_onSoundStreamData(
                     operationId,
                     lowerListOfTypedArrays(wasmExports, bitDepth, [
                         new floatArrayType([-0.1, -0.2, -0.3]),
@@ -554,7 +561,7 @@ describe('fs-bindings', () => {
                 assert.strictEqual(availableFrameCount, 3)
 
                 // 3. Send in more sound
-                availableFrameCount = wasmExports.fs_soundStreamData(
+                availableFrameCount = wasmExports.fs_onSoundStreamData(
                     operationId,
                     lowerListOfTypedArrays(wasmExports, bitDepth, [
                         new floatArrayType([0.4, 0.5, 0.6]),
@@ -564,7 +571,7 @@ describe('fs-bindings', () => {
                 assert.strictEqual(availableFrameCount, 6)
 
                 // 4. Send in more sound than the buffer can hold
-                availableFrameCount = wasmExports.fs_soundStreamData(
+                availableFrameCount = wasmExports.fs_onSoundStreamData(
                     operationId,
                     lowerListOfTypedArrays(wasmExports, bitDepth, [
                         new floatArrayType([0.7, 0.8, 0.9]),
@@ -583,7 +590,7 @@ describe('fs-bindings', () => {
             })
         })
 
-        describe('fs_soundStreamClose', () => {
+        describe('fs_closeSoundStream', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
@@ -594,7 +601,7 @@ describe('fs-bindings', () => {
                         getBaseTestCode({ bitDepth }) +
                         `
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_readSoundStream('/some/url', fs_soundInfo(2), someCallback)
+                            return fs_openSoundReadStream('/some/url', fs_soundInfo(2), someCallback)
                         }
                     `
 
@@ -615,7 +622,7 @@ describe('fs-bindings', () => {
                     const operationId = wasmExports.testStartStream()
 
                     // 2. Send in some sound
-                    wasmExports.fs_soundStreamData(
+                    wasmExports.fs_onSoundStreamData(
                         operationId,
                         lowerListOfTypedArrays(wasmExports, bitDepth, [
                             new floatArrayType([-0.1, -0.2, -0.3]),
@@ -625,18 +632,18 @@ describe('fs-bindings', () => {
 
                     // 3. close stream
                     assert.strictEqual(
-                        called.get('fs_requestCloseSoundStream').length,
+                        called.get('i_fs_closeSoundStream').length,
                         0
                     )
                     assert.strictEqual(wasmExports.testCallbackOperationId(), 0)
 
-                    wasmExports.fs_soundStreamClose(
+                    wasmExports.fs_onCloseSoundStream(
                         operationId,
                         FS_OPERATION_SUCCESS
                     )
                     // Test callback in host space was called
                     const closeCalled: Array<Array<any>> = called.get(
-                        'fs_requestCloseSoundStream'
+                        'i_fs_closeSoundStream'
                     )
                     assert.strictEqual(closeCalled.length, 1)
                     assert.deepStrictEqual(closeCalled[0], [
@@ -706,7 +713,7 @@ describe('fs-bindings', () => {
 
                 const operationId: number = wasmExports.testStartWriteFile()
                 const writeCalled: Array<Array<any>> = called.get(
-                    'fs_requestWriteSoundFile'
+                    'i_fs_writeSoundFile'
                 )
                 assert.strictEqual(writeCalled.length, 1)
                 assert.strictEqual(writeCalled[0].length, 4)
@@ -736,7 +743,7 @@ describe('fs-bindings', () => {
             })
         })
 
-        describe('fs_writeSoundFileResponse', () => {
+        describe('fs_sendWriteSoundFileResponse', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
                 { bitDepth: 64 },
@@ -774,8 +781,8 @@ describe('fs-bindings', () => {
                     const operationId = wasmExports.testStartWriteFile()
                     assert.strictEqual(wasmExports.testCallbackOperationId(), 0)
 
-                    // 2. Operation is done, call fs_writeSoundFileResponse
-                    wasmExports.fs_writeSoundFileResponse(
+                    // 2. Operation is done, call fs_sendWriteSoundFileResponse
+                    wasmExports.fs_onWriteSoundFileResponse(
                         operationId,
                         FS_OPERATION_SUCCESS
                     )
@@ -824,7 +831,7 @@ describe('fs-bindings', () => {
                     })
 
                     const operationId = wasmExports.testStartWriteFile()
-                    wasmExports.fs_writeSoundFileResponse(
+                    wasmExports.fs_onWriteSoundFileResponse(
                         operationId,
                         FS_OPERATION_FAILURE
                     )
