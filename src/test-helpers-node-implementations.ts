@@ -19,7 +19,6 @@ import {
     Message,
     Engine,
     NodeImplementations,
-    AccessorSpecs,
     CompilerTarget,
     FloatArray,
 } from './types'

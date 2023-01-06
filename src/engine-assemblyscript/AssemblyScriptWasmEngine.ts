@@ -26,7 +26,7 @@ import {
     readTypedArray,
 } from './core-code/core-bindings'
 import { fs_WasmImports } from './core-code/fs-bindings'
-import { liftMessage, lowerMessageArray } from './core-code/msg-bindings'
+import { liftMessage } from './core-code/msg-bindings'
 import {
     FloatArray,
     lowerListOfTypedArrays,
@@ -37,6 +37,7 @@ import {
     AssemblyScriptWasmExports,
     AssemblyScriptWasmImports,
     EngineMetadata,
+    MessagePointer,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
 
@@ -60,7 +61,6 @@ export const createEngine = async (wasmBuffer: ArrayBuffer) => {
  */
 export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
-    public accessors: Engine['accessors']
     public inletListeners: Engine['inletListeners']
     public fs: Engine['fs']
     public metadata: EngineMetadata
@@ -94,7 +94,6 @@ export class AssemblyScriptWasmEngine implements Engine {
         })
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
-        this.accessors = this._bindAccessors()
         this.fs = this._bindFs()
         this.inletListeners = this._bindInletListeners()
     }
@@ -144,8 +143,8 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     // This must be called again when doing something on the wasm module
-    // which could cause memory grow (lowerString, lowerMessage, lowerMessageArray,
-    //      lowerBuffer, lowerMessage, lowerMessageArray) :
+    // which could cause memory grow (lowerString, lowerMessage,
+    //      lowerBuffer, lowerMessage) :
     // https://github.com/emscripten-core/emscripten/issues/6747
     _updateWasmInOuts(): void {
         this.wasmOutput = readTypedArray(
@@ -158,54 +157,6 @@ export class AssemblyScriptWasmEngine implements Engine {
             this.arrayType,
             this.wasmExports.getInput()
         ) as FloatArray
-    }
-
-    _bindAccessors(): Engine['accessors'] {
-        const accessors: Engine['accessors'] = {}
-        const wasmExports = this.wasmExports as any
-        const { accessorSpecs, engineVariableNames } = this.metadata.compilation
-        Object.entries(accessorSpecs || {}).forEach(([variableName, spec]) => {
-            if (spec.access.includes('w')) {
-                const portVariableName =
-                    engineVariableNames.accessors[variableName].w
-                if (spec.type === 'message') {
-                    accessors[portVariableName] = (messages) => {
-                        const messageArrayPointer = lowerMessageArray(
-                            this.wasmExports,
-                            messages
-                        )
-                        wasmExports[portVariableName](messageArrayPointer)
-                    }
-                } else {
-                    accessors[portVariableName] = wasmExports[portVariableName]
-                }
-            }
-
-            if (spec.access.includes('r')) {
-                const portVariableNames =
-                    engineVariableNames.accessors[variableName]
-                if (spec.type === 'message') {
-                    accessors[portVariableNames.r] = () => {
-                        const messagesCount =
-                            wasmExports[portVariableNames.r_length]()
-                        const messages: Array<Message> = []
-                        for (let i = 0; i < messagesCount; i++) {
-                            const messagePointer =
-                                wasmExports[portVariableNames.r_elem](i)
-                            messages.push(
-                                liftMessage(this.wasmExports, messagePointer)
-                            )
-                        }
-                        return messages
-                    }
-                } else {
-                    accessors[portVariableNames.r] =
-                        wasmExports[portVariableNames.r]
-                }
-            }
-        })
-
-        return accessors
     }
 
     // API for data flowing HOST -> ENGINE
@@ -320,7 +271,7 @@ export class AssemblyScriptWasmEngine implements Engine {
             inletIds.forEach(
                 (inletId) =>
                     (inletListeners[nodeId][inletId] = {
-                        onMessages: () => undefined,
+                        onMessage: () => undefined,
                     })
             )
             return inletListeners
@@ -330,7 +281,7 @@ export class AssemblyScriptWasmEngine implements Engine {
     // API for data flowing ENGINE -> HOST
     _inletListenersImports() {
         const wasmImports: {
-            [listenerName: CodeVariableName]: () => void
+            [listenerName: CodeVariableName]: (messagePointer: MessagePointer) => void
         } = {}
         const { engineVariableNames } = this.metadata.compilation
         Object.entries(this.metadata.compilation.inletListenerSpecs).forEach(
@@ -338,14 +289,9 @@ export class AssemblyScriptWasmEngine implements Engine {
                 inletIds.forEach((inletId) => {
                     const listenerName =
                         engineVariableNames.inletListeners[nodeId][inletId]
-                    const inletVariableName =
-                        engineVariableNames.n[nodeId].ins[inletId]
-                    const portVariableName =
-                        engineVariableNames.accessors[inletVariableName].r
-                    wasmImports[listenerName] = () => {
-                        this.inletListeners[nodeId][inletId].onMessages(
-                            this.accessors[portVariableName]()
-                        )
+                    wasmImports[listenerName] = (messagePointer) => {
+                        const message = liftMessage(this.wasmExports, messagePointer)
+                        this.inletListeners[nodeId][inletId].onMessage(message)
                     }
                 })
             }

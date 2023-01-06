@@ -15,10 +15,7 @@ import {
     CodeMacros,
     Compilation,
     CompilerSettings,
-    EngineVariableNames,
-    InletListenerSpecs,
     NodeImplementations,
-    AccessorSpecs,
     CompilerTarget,
 } from './types'
 import compileToJavascript from './engine-javascript/compile-to-javascript'
@@ -41,12 +38,7 @@ export default (
         graph,
         debug
     )
-    const accessorSpecs = generateAccessorSpecs(
-        engineVariableNames,
-        inletListenerSpecs
-    )
     variableNames.attachInletListeners(engineVariableNames, inletListenerSpecs)
-    variableNames.attachAccessors(target, engineVariableNames, accessorSpecs)
     variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
     return executeCompilation({
         target,
@@ -54,33 +46,10 @@ export default (
         nodeImplementations,
         audioSettings,
         inletListenerSpecs,
-        accessorSpecs,
         engineVariableNames,
         macros,
         debug
     })
-}
-
-/**
- * Helper to generate `accessorSpecs` from various settings.
- */
-export const generateAccessorSpecs = (
-    engineVariableNames: EngineVariableNames,
-    inletListenerSpecs: InletListenerSpecs
-): AccessorSpecs => {
-    const accessorSpecs: AccessorSpecs = {}
-
-    // An inlet listener needs to have read access to the variable representing the inlets it's listening to.
-    Object.entries(inletListenerSpecs).map(([nodeId, inletIds]) => {
-        inletIds.forEach((inletId) => {
-            const inletVariableName = engineVariableNames.n[nodeId].ins[inletId]
-            accessorSpecs[inletVariableName] = {
-                access: 'r',
-                type: 'message',
-            }
-        })
-    })
-    return accessorSpecs
 }
 
 /**

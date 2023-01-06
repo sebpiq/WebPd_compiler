@@ -44,7 +44,6 @@ describe('compileToJavascript', () => {
             configure: (_: number) => {},
             loop: () => new Float32Array(),
             setArray: () => undefined,
-            accessors: {},
             fs: modelFs,
             inletListeners: {},
         }

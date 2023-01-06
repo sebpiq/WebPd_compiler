@@ -27,19 +27,8 @@ export default (
         ${globs.frame} = -1
 
         ${graphTraversal.map((node) => {
-            const { ins, outs } = compilation.engineVariableNames.n[node.id]
             const nodeInitialize = getNodeImplementation(compilation.nodeImplementations, node.type).initialize
             return [
-                Object.values(node.inlets).map((inlet) =>
-                    inlet.type === 'message'
-                        ? `${ins[inlet.id]} = []`
-                        : `${ins[inlet.id]} = 0`
-                ),
-                Object.values(node.outlets).map((outlet) =>
-                    outlet.type === 'message'
-                        ? `${outs[outlet.id]} = []`
-                        : `${outs[outlet.id]} = 0`
-                ),
                 nodeInitialize ? nodeInitialize(
                     node,
                     {

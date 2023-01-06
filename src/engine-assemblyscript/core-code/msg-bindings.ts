@@ -134,20 +134,6 @@ export const lowerMessage = (
     return messagePointer
 }
 
-export const lowerMessageArray = (
-    wasmExports: msg_WasmExports,
-    messages: Array<Message>
-): InternalPointer => {
-    const messageArrayPointer = wasmExports.msg_createArray()
-    messages.forEach((message) => {
-        wasmExports.msg_pushToArray(
-            messageArrayPointer,
-            lowerMessage(wasmExports, message)
-        )
-    })
-    return messageArrayPointer
-}
-
 export const lowerArrayBufferOfIntegers = (
     wasmExports: msg_WasmExports,
     integers: Array<number>

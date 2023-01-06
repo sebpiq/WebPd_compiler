@@ -8,15 +8,11 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
-import compile, { generateAccessorSpecs, validateSettings } from './compile'
-import { generate } from './engine-common/engine-variable-names'
+import compile, { validateSettings } from './compile'
 import {
     CompilerSettings,
-    InletListenerSpecs,
     NodeImplementations,
-    AccessorSpecs,
 } from './types'
 
 describe('compile', () => {
@@ -73,41 +69,6 @@ describe('compile', () => {
                     bitDepth: 666,
                 } as any)
             )
-        })
-    })
-
-    describe('generateAccessorSpecs', () => {
-        it('should generate accessorSpecs according to inletListenerSpecs', () => {
-            const engineVariableNames = generate(
-                NODE_IMPLEMENTATIONS,
-                makeGraph({
-                    node1: {
-                        inlets: {
-                            inlet1: { type: 'message', id: 'inlet1' },
-                            inlet2: { type: 'message', id: 'inlet2' },
-                        },
-                    },
-                    node2: {
-                        inlets: {
-                            inlet1: { type: 'message', id: 'inlet1' },
-                        },
-                    },
-                }),
-                false
-            )
-            const inletListenerSpecs: InletListenerSpecs = {
-                node1: ['inlet1', 'inlet2'],
-                node2: ['inlet1'],
-            }
-            const accessorSpecs: AccessorSpecs = generateAccessorSpecs(
-                engineVariableNames,
-                inletListenerSpecs
-            )
-            assert.deepStrictEqual(accessorSpecs, {
-                node1_INS_inlet1: { type: 'message', access: 'r' },
-                node1_INS_inlet2: { type: 'message', access: 'r' },
-                node2_INS_inlet1: { type: 'message', access: 'r' },
-            })
         })
     })
 })

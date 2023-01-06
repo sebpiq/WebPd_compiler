@@ -48,7 +48,6 @@ export type ArrayBufferOfIntegersPointer = number
 export interface EngineMetadata {
     compilation: {
         readonly audioSettings: Compilation['audioSettings']
-        readonly accessorSpecs: Compilation['accessorSpecs']
         readonly inletListenerSpecs: Compilation['inletListenerSpecs']
         readonly engineVariableNames: Compilation['engineVariableNames']
     }

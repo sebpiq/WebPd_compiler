@@ -11,15 +11,11 @@
 
 import { DspGraph } from '@webpd/dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
-import * as jsVariableNames from '../engine-javascript/engine-variable-names'
-import * as ascVariableNames from '../engine-assemblyscript/engine-variable-names'
 import {
     NodeImplementations,
     EngineVariableNames,
     NodeVariableNames,
     InletListenerSpecs,
-    AccessorSpecs,
-    CompilerTarget,
     AudioSettings,
 } from '../types'
 
@@ -45,37 +41,27 @@ export const generate = (
                 const nodeStateVariables =
                     nodeImplementation.stateVariables || []
                 const prefix = debug ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`) : _v(node.id)
-                
+
                 nodeMap[node.id] = {
-                    ins: createNamespace(
-                        Object.values(node.inlets).reduce<
-                            NodeVariableNames['ins']
-                        >((nameMap, inlet) => {
-                            nameMap[inlet.id] = `${prefix}_INS_${_v(
-                                inlet.id
-                            )}`
+                    ins: createNamespaceFromPortlets(node.inlets, 'signal', 
+                        inlet => `${prefix}_INS_${_v(inlet.id)}`
+                    ),
+                    rcvs: createNamespaceFromPortlets(node.inlets, 'message', 
+                        inlet => `${prefix}_RCVS_${_v(inlet.id)}`
+                    ),
+                    outs: createNamespaceFromPortlets(node.outlets, 'signal',
+                        outlet => `${prefix}_OUTS_${_v(outlet.id)}`
+                    ),
+                    snds: createNamespaceFromPortlets(node.outlets, 'message', 
+                        outlet => `${prefix}_SNDS_${_v(outlet.id)}`
+                    ),
+                    state: createNamespace(nodeStateVariables.reduce(
+                        (nameMap, stateVariable) => {
+                            nameMap[stateVariable] = `${prefix}_STATE_${_v(stateVariable)}`
                             return nameMap
-                        }, {})
-                    ),
-                    outs: createNamespace(
-                        Object.values(node.outlets).reduce<
-                            NodeVariableNames['outs']
-                        >((nameMap, outlet) => {
-                            nameMap[outlet.id] = `${prefix}_OUTS_${_v(
-                                outlet.id
-                            )}`
-                            return nameMap
-                        }, {})
-                    ),
-                    state: createNamespace(
-                        nodeStateVariables.reduce<NodeVariableNames['state']>(
-                            (nameMap, stateVariable) => {
-                                nameMap[stateVariable] = `${prefix}_STATE_${_v(stateVariable)}`
-                                return nameMap
-                            },
-                            {}
-                        )
-                    ),
+                        },
+                        {} as NodeVariableNames['state']
+                    )),
                 }
                 return nodeMap
             },
@@ -94,8 +80,8 @@ export const generate = (
         sampleRate: 'SAMPLE_RATE',
         output: 'OUTPUT',
         input: 'INPUT',
+        inMessage: 'm',
     }),
-    accessors: createNamespace({}),
     inletListeners: createNamespace({}),
     types: createNamespace({}),
 })
@@ -118,21 +104,6 @@ export const attachInletListeners = (
             ] = `inletListener_${nodeId}_${inletId}`
         })
     })
-}
-
-/**
- * Helper to attach accessors to variable names depending on compile target.
- */
-export const attachAccessors = (
-    target: CompilerTarget,
-    engineVariableNames: EngineVariableNames,
-    accessorSpecs: AccessorSpecs
-) => {
-    if (target === 'javascript') {
-        jsVariableNames.attachAccessors(engineVariableNames, accessorSpecs)
-    } else if (target === 'assemblyscript') {
-        ascVariableNames.attachAccessors(engineVariableNames, accessorSpecs)
-    }
 }
 
 /**
@@ -201,3 +172,15 @@ export const assertValidNamePart = (namePart: string) => {
 const _v = assertValidNamePart
 
 const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/
+
+export const createNamespaceFromPortlets = <T>(
+    portletMap: DspGraph.PortletMap, 
+    portletType: DspGraph.PortletType, 
+    mapFunction: (portlet: DspGraph.Portlet) => T
+) =>
+    createNamespace(Object.values(portletMap)
+        .filter(inlet => inlet.type === portletType)
+        .reduce((nameMap, inlet) => {
+            nameMap[inlet.id] = mapFunction(inlet)
+            return nameMap
+        }, {} as {[portletId: DspGraph.PortletId]: T}))

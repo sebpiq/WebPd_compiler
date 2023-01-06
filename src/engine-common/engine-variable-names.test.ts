@@ -51,6 +51,8 @@ describe('engine-variable-names', () => {
                     outlets: {
                         '0': { type: 'signal', id: '0' },
                         '1': { type: 'message', id: '1' },
+                        '2': { type: 'signal', id: '2' },
+                        '3': { type: 'message', id: '3' },
                     },
                 },
                 myDac: {
@@ -66,11 +68,17 @@ describe('engine-variable-names', () => {
                     myOsc: {
                         ins: {
                             '0': 'myOsc_INS_0',
-                            '1': 'myOsc_INS_1',
                         },
                         outs: {
                             '0': 'myOsc_OUTS_0',
-                            '1': 'myOsc_OUTS_1',
+                            '2': 'myOsc_OUTS_2',
+                        },
+                        snds: {
+                            '1': 'myOsc_SNDS_1',
+                            '3': 'myOsc_SNDS_3',
+                        },
+                        rcvs: {
+                            '1': 'myOsc_RCVS_1',
                         },
                         state: {
                             phase: 'myOsc_STATE_phase',
@@ -81,6 +89,8 @@ describe('engine-variable-names', () => {
                     myDac: {
                         ins: {},
                         outs: {},
+                        rcvs: {},
+                        snds: {},
                         state: {},
                     },
                 }
@@ -102,6 +112,7 @@ describe('engine-variable-names', () => {
                     },
                     outlets: {
                         '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
                     },
                     type: 'dac~bla*wow!',
                 },
@@ -119,6 +130,10 @@ describe('engine-variable-names', () => {
                         outs: {
                             '0': 'dacblawow_someObj_OUTS_0',
                         },
+                        snds: {
+                            '1': 'dacblawow_someObj_SNDS_1',
+                        },
+                        rcvs: {},
                         state: {
                             bli: 'dacblawow_someObj_STATE_bli',
                         },
@@ -151,7 +166,9 @@ describe('engine-variable-names', () => {
 
             assert.throws(() => variableNames.n.unknownNode)
             assert.throws(() => variableNames.n.myOsc.ins['unknown portlet'])
+            assert.throws(() => variableNames.n.myOsc.rcvs['unknown receiver'])
             assert.throws(() => variableNames.n.myOsc.outs['unknown portlet'])
+            assert.throws(() => variableNames.n.myOsc.snds['unknown sender'])
             assert.throws(() => variableNames.n.myOsc.state['unknown var'])
         })
     })

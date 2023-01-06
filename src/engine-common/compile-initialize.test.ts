@@ -75,14 +75,7 @@ describe('compileInitialize', () => {
             F = 0
             O = 0
             FRAME = -1
-
-            osc_INS_0_message = []
-            osc_INS_0_signal = 0
-            osc_OUTS_0 = 0
             // [osc~] frequency 440
-            
-            dac_INS_0 = 0
-            dac_INS_1 = 0
             // [dac~] channelCount 2                
         `)
         )

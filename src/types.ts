@@ -55,14 +55,11 @@ export interface Engine {
         data: FloatArray | Array<number>
     ) => void
 
-    // Map of public variable accessors for an engine
-    accessors: { [accessorName: string]: (...args: any) => any }
-
     // Inlet listener callbacks
     inletListeners: {
         [nodeId: DspGraph.NodeId]: {
             [portletId: DspGraph.PortletId]: {
-                onMessages: (messages: Array<Message>) => void
+                onMessage: (message: Message) => void
             }
         }
     }
@@ -137,7 +134,6 @@ export interface Compilation {
     readonly graph: DspGraph.Graph
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
-    readonly accessorSpecs: AccessorSpecs
     readonly inletListenerSpecs: InletListenerSpecs
     readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
@@ -152,6 +148,8 @@ export type CodeMacros = {
 export interface NodeVariableNames {
     ins: { [portletId: DspGraph.PortletId]: CodeVariableName }
     outs: { [portletId: DspGraph.PortletId]: CodeVariableName }
+    snds: { [portletId: DspGraph.PortletId]: CodeVariableName }
+    rcvs: { [portletId: DspGraph.PortletId]: CodeVariableName }
     state: { [key: string]: CodeVariableName }
 }
 
@@ -169,6 +167,7 @@ export interface EngineVariableNames {
         sampleRate: string
         output: string
         input: string
+        inMessage: string
     }
 
     // Names of types used by the engine (e.g. especially depending on the bitdepth)
@@ -178,16 +177,6 @@ export interface EngineVariableNames {
         FloatArray?: 'Float32Array' | 'Float64Array'
         getFloat?: 'getFloat32' | 'getFloat64'
         setFloat?: 'setFloat32' | 'setFloat64'
-    }
-
-    // Namespace for port functions
-    accessors: {
-        [variableName: CodeVariableName]: {
-            r?: CodeVariableName
-            r_length?: CodeVariableName
-            r_elem?: CodeVariableName
-            w?: CodeVariableName
-        }
     }
 
     // Namespace for inlet listener callbacks
@@ -211,19 +200,13 @@ export type NodeCodeGenerator<NodeArgsType> = (
 export interface NodeImplementation<NodeArgsType> {
     declare?: NodeCodeGenerator<NodeArgsType>
     initialize?: NodeCodeGenerator<NodeArgsType>
-    loop: NodeCodeGenerator<NodeArgsType>
+    loop?: NodeCodeGenerator<NodeArgsType>
+    messageReceivers?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {[inletId: DspGraph.PortletId]: Code},
     stateVariables?: Array<string>
 }
 
 export type NodeImplementations = {
     [nodeType: string]: NodeImplementation<any>
-}
-
-export type AccessorSpecs = {
-    [variableName: CodeVariableName]: {
-        access: 'r' | 'w' | 'rw'
-        type: DspGraph.PortletType
-    }
 }
 
 export type InletListenerSpecs = {

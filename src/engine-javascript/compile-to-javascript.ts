@@ -19,7 +19,7 @@ import { JavaScriptEngineCode } from './types'
 import generateCoreCode from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { accessorSpecs, engineVariableNames, inletListenerSpecs } =
+    const { engineVariableNames, inletListenerSpecs } =
         compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
@@ -28,9 +28,6 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     // prettier-ignore
     return renderCode`
         ${coreCode}
-
-        const ${globs.arrays} = new Map()
-
         ${compileDeclare(compilation, graphTraversal)}
         ${compileInletListeners(compilation)}
 
@@ -46,22 +43,11 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             setArray: (arrayName, array) => { 
                 ${globs.arrays}.set(arrayName, array)
             },
-            accessors: {
-                ${Object.entries(accessorSpecs).map(([variableName, spec]) => {
-                    const accessorsVariableNames = compilation.engineVariableNames.accessors[variableName]
-                    return `
-                        ${spec.access.includes('r') ? 
-                            `${accessorsVariableNames.r}: () => ${variableName},`: ''}
-                        ${spec.access.includes('w') ? 
-                            `${accessorsVariableNames.w}: (value) => ${variableName} = value,`: ''}
-                    `
-                })}
-            },
             inletListeners: {
                 ${Object.entries(inletListenerSpecs).map(([nodeId, inletIds]) =>
                     `${nodeId}: {
                         ${inletIds.map(inletId => `
-                            ${inletId}: {onMessages: () => undefined,}
+                            ${inletId}: {onMessage: () => undefined,}
                         `)}
                     }`
                 )}
@@ -99,13 +85,11 @@ export const compileInletListeners = ({
             inletIds.map((inletId) => {
                 const listenerVariableName =
                     engineVariableNames.inletListeners[nodeId][inletId]
-                const inletVariableName =
-                    engineVariableNames.n[nodeId].ins[inletId]
                 return `
-                const ${listenerVariableName} = () => {
-                    exports.inletListeners['${nodeId}']['${inletId}'].onMessages(${inletVariableName})
-                }
-            `
+                    const ${listenerVariableName} = (m) => {
+                        exports.inletListeners['${nodeId}']['${inletId}'].onMessage(m)
+                    }
+                `
             })
     )}`
 }

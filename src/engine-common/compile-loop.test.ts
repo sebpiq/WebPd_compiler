@@ -14,21 +14,11 @@ import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileLoop from './compile-loop'
-import macros from '../engine-assemblyscript/macros'
 
 describe('compileLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
-        msg: {
-            initialize: () => ``,
-            loop: (node) => `// [msg] : value ${node.args.value}`,
-        },
-        '+': {
-            initialize: () => ``,
-            loop: (node) => `// [+] : value ${node.args.value}`,
-        },
         print: {
             initialize: () => ``,
-            loop: (node, _, __) => `// [print] : value "${node.args.value}"`,
         },
         'osc~': {
             initialize: () => ``,
@@ -44,95 +34,6 @@ describe('compileLoop', () => {
                 `// [dac~] : channelCount ${audioSettings.channelCount.out}`,
         },
     }
-
-    it('should compile the loop function, pass around control messages, and cleanup message inlets and outlets', () => {
-        const graph = makeGraph({
-            msg: {
-                type: 'msg',
-                sinks: {
-                    '0': [
-                        ['plus', '0'],
-                        ['print', '0'],
-                    ],
-                },
-                args: {
-                    value: 2,
-                },
-                outlets: { '0': { id: '0', type: 'message' } },
-            },
-            plus: {
-                type: '+',
-                sinks: {
-                    '0': [['print', '0']],
-                },
-                args: {
-                    value: 1,
-                },
-                inlets: { '0': { id: '0', type: 'message' } },
-                outlets: { '0': { id: '0', type: 'message' } },
-            },
-            print: {
-                type: 'print',
-                args: {
-                    value: 'bla',
-                },
-                inlets: { '0': { id: '0', type: 'message' } },
-            },
-        })
-
-        const compilation = makeCompilation({
-            target: 'assemblyscript',
-            graph,
-            nodeImplementations: NODE_IMPLEMENTATIONS,
-            audioSettings: {
-                channelCount: { in: 2, out: 2 },
-                bitDepth: 32,
-            },
-            macros: macros,
-        })
-
-        const loop = compileLoop(compilation, [
-            graph.msg,
-            graph.plus,
-            graph.print,
-        ])
-
-        assert.strictEqual(
-            normalizeCode(loop),
-            normalizeCode(`
-            for (F = 0; F < BLOCK_SIZE; F++) {
-                FRAME++        
-                // [msg] : value 2
-                for (O = 0; O < msg_OUTS_0.length; O++) {
-                    plus_INS_0.push(msg_OUTS_0[O])
-                }
-                for (O = 0; O < msg_OUTS_0.length; O++) {
-                    print_INS_0.push(msg_OUTS_0[O])
-                }
-
-                // [+] : value 1
-                for (O = 0; O < plus_OUTS_0.length; O++) {
-                    print_INS_0.push(plus_OUTS_0[O])
-                }
-
-                // [print] : value "bla"
-
-                if (msg_OUTS_0.length) {
-                    msg_OUTS_0 = []
-                }
-                if (plus_INS_0.length) {
-                    plus_INS_0 = []
-                }
-                if (plus_OUTS_0.length) {
-                    plus_OUTS_0 = []
-                }
-                if (print_INS_0.length) {
-                    print_INS_0 = []
-                }
-            }
-        `)
-        )
-    })
 
     it('should compile the loop function and pass around signal', () => {
         const graph = makeGraph({
@@ -180,7 +81,6 @@ describe('compileLoop', () => {
                 channelCount: { in: 2, out: 2 },
                 bitDepth: 32,
             },
-            macros: macros,
         })
 
         const loop = compileLoop(compilation, [
@@ -254,7 +154,6 @@ describe('compileLoop', () => {
                 channelCount: { in: 2, out: 2 },
                 bitDepth: 32,
             },
-            macros: macros,
         })
 
         const loop = compileLoop(compilation, [graph.osc, graph.dac])
@@ -272,12 +171,23 @@ describe('compileLoop', () => {
         )
     })
 
-    it('should add inletListeners', () => {
+    it('should ignore nodes that implement no loop function', () => {
         const graph = makeGraph({
-            someNode: {
-                isEndSink: true,
+            print: {
+                type: 'print',
+                args: {
+                    messages: ['bla', 'hello'],
+                },
+                inlets: { '0': { id: '0', type: 'message' } },
+            },
+            dac: {
+                type: 'dac~',
+                args: {
+                    value: 'bla',
+                },
                 inlets: {
-                    someInlet: { type: 'message', id: 'someInlet' },
+                    '0': { id: '0', type: 'signal' },
+                    '1': { id: '1', type: 'signal' },
                 },
             },
         })
@@ -285,25 +195,20 @@ describe('compileLoop', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            inletListenerSpecs: {
-                someNode: ['someInlet'],
-            },
-            macros: macros,
+            nodeImplementations: NODE_IMPLEMENTATIONS,
         })
 
-        const loop = compileLoop(compilation, [graph.someNode])
+        const loop = compileLoop(compilation, [
+            graph.print,
+            graph.dac,
+        ])
 
         assert.strictEqual(
             normalizeCode(loop),
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
                 FRAME++
-                if (someNode_INS_someInlet.length) {
-                    inletListener_someNode_someInlet()
-                }
-                if (someNode_INS_someInlet.length) {
-                    someNode_INS_someInlet = []
-                }
+                // [dac~] : channelCount 2
             }
         `)
         )

@@ -2,11 +2,10 @@ import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import ts from 'typescript'
 const { transpileModule } = ts
-import { executeCompilation } from '../compile'
-import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../constants'
-import { createEngine, makeCompilation, round } from '../test-helpers'
+import { executeCompilation } from './compile'
+import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
+import { createEngine, makeCompilation, round } from './test-helpers'
 import {
-    AccessorSpecs,
     AudioSettings,
     Code,
     Compilation,
@@ -15,7 +14,7 @@ import {
     InletListenerSpecs,
     Message,
     NodeImplementations,
-} from '../types'
+} from './types'
 
 const BIT_DEPTH = 64
 const FloatArray = 'Float64Array'
@@ -300,94 +299,6 @@ describe('Engine', () => {
             actual = engine.testReadArray3(1)
             assert.strictEqual(round(actual), 77.7)
         })
-    })
-
-    describe('accessors', () => {
-        const filterPortFunctionKeys = (wasmExports: any) =>
-            Object.keys(wasmExports).filter(
-                (key) => key.startsWith('read_') || key.startsWith('write_')
-            )
-
-        it.each([
-            { target: 'javascript' as CompilerTarget },
-            { target: 'assemblyscript' as CompilerTarget },
-        ])(
-            'should create the specified accessors for signal values %s',
-            async ({ target }) => {
-                const testCode: Code = `
-                let bla: Float = 1
-                let bli: Float = 2
-            `
-
-                const accessorSpecs: AccessorSpecs = {
-                    bla: { access: 'r', type: 'signal' },
-                    bli: { access: 'rw', type: 'signal' },
-                }
-
-                const engine = await initializeEngineTest({
-                    target,
-                    testCode,
-                    extraCompilation: { accessorSpecs },
-                })
-
-                assert.deepStrictEqual(
-                    filterPortFunctionKeys(engine.accessors).sort(),
-                    ['read_bla', 'read_bli', 'write_bli'].sort()
-                )
-
-                assert.strictEqual(engine.accessors.read_bla(), 1)
-                assert.strictEqual(engine.accessors.read_bli(), 2)
-                engine.accessors.write_bli(666.666)
-                assert.strictEqual(round(engine.accessors.read_bli()), 666.666)
-            }
-        )
-
-        it.each([
-            { target: 'javascript' as CompilerTarget },
-            { target: 'assemblyscript' as CompilerTarget },
-        ])(
-            'should create the specified accessors for message values %s',
-            async ({ target }) => {
-                // prettier-ignore
-                const testCode: Code = `
-                let bluMessage1: Message = msg_create([ MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 4 ])
-                msg_writeFloatToken(bluMessage1, 0, 111)
-                msg_writeStringToken(bluMessage1, 1, 'heho')
-
-                let bluMessage2: Message = msg_create([ MSG_FLOAT_TOKEN ])
-                msg_writeFloatToken(bluMessage2, 0, 222)
-                
-                let blo: Message[] = [bluMessage2]
-                let blu: Message[] = [bluMessage1, bluMessage2]
-            `
-
-                const accessorSpecs: AccessorSpecs = {
-                    blo: { access: 'r', type: 'message' },
-                    blu: { access: 'rw', type: 'message' },
-                }
-
-                const engine = await initializeEngineTest({
-                    target,
-                    testCode,
-                    extraCompilation: { accessorSpecs },
-                })
-
-                assert.deepStrictEqual(
-                    filterPortFunctionKeys(engine.accessors).sort(),
-                    ['read_blo', 'read_blu', 'write_blu'].sort()
-                )
-                assert.deepStrictEqual(engine.accessors.read_blo(), [[222]])
-                assert.deepStrictEqual(engine.accessors.read_blu(), [
-                    [111, 'heho'],
-                    [222],
-                ])
-                engine.accessors.write_blu([['blabla', 'bloblo'], [333]])
-                assert.deepStrictEqual(engine.accessors.read_blu(), [
-                    ['blabla', 'bloblo'],
-                    [333],
-                ])
-            }
-        )
     })
 
     describe('fs', () => {
@@ -854,26 +765,18 @@ describe('Engine', () => {
                     ['someNode']: ['someInlet'],
                 }
 
-                const accessorSpecs: AccessorSpecs = {
-                    someNode_INS_someInlet: { type: 'message', access: 'r' },
-                }
-
                 const testCode: Code = `
-                const someNode_INS_someInlet: Array<Message> = []
+                    const m1: Message = msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN])
+                    msg_writeFloatToken(m1, 0, 11)
+                    msg_writeFloatToken(m1, 1, 22)
+                    const m2: Message = msg_create([MSG_STRING_TOKEN, 3])
+                    msg_writeStringToken(m2, 0, 'bla')
 
-                const m1: Message = msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN])
-                msg_writeFloatToken(m1, 0, 11)
-                msg_writeFloatToken(m1, 1, 22)
-                const m2: Message = msg_create([MSG_STRING_TOKEN, 3])
-                msg_writeStringToken(m2, 0, 'bla')
-
-                someNode_INS_someInlet.push(m1)
-                someNode_INS_someInlet.push(m2)
-
-                function testCallInletListener(): void {
-                    inletListener_someNode_someInlet()
-                }
-            `
+                    function testCallInletListener(): void {
+                        inletListener_someNode_someInlet(m1)
+                        inletListener_someNode_someInlet(m2)
+                    }
+                `
 
                 const exports = { testCallInletListener: 1 }
 
@@ -882,25 +785,24 @@ describe('Engine', () => {
                     testCode,
                     extraCompilation: {
                         inletListenerSpecs,
-                        accessorSpecs,
                         graph,
                     },
                     exports,
                 })
 
-                const called: Array<Array<Message>> = []
+                const called: Array<Message> = []
 
                 assert.ok(
                     engine.inletListeners.someNode.someInlet
-                        .onMessages instanceof Function
+                        .onMessage instanceof Function
                 )
 
-                engine.inletListeners.someNode.someInlet.onMessages = (
-                    messages: Array<Message>
-                ) => called.push(messages)
+                engine.inletListeners.someNode.someInlet.onMessage = (
+                    message: Message
+                ) => called.push(message)
 
                 engine.testCallInletListener()
-                assert.deepStrictEqual(called, [[[11, 22], ['bla']]])
+                assert.deepStrictEqual(called, [[11, 22], ['bla']])
             }
         )
     })

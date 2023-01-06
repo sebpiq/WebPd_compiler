@@ -77,30 +77,4 @@ describe('compileToAssemblyscript', () => {
             Object.keys(expectedExports).sort()
         )
     })
-
-    it('should export specific accessors for messages', async () => {
-        const filterPortFunctionKeys = (wasmExports: any) =>
-            Object.keys(wasmExports).filter(
-                (key) => key.startsWith('read_') || key.startsWith('write_')
-            )
-
-        const { wasmExports } = await createAscEngine(
-            `
-            let blo: Message[] = []
-        ` +
-                compileToAssemblyscript(
-                    makeCompilation({
-                        target: 'assemblyscript',
-                        accessorSpecs: {
-                            blo: { access: 'r', type: 'message' },
-                        },
-                    })
-                )
-        )
-
-        assert.deepStrictEqual(
-            filterPortFunctionKeys(wasmExports).sort(),
-            ['read_blo_length', 'read_blo_elem'].sort()
-        )
-    })
 })
