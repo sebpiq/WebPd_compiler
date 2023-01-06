@@ -11,7 +11,7 @@
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import compile, { generateAccessorSpecs, validateSettings } from './compile'
-import { generate } from './engine-variable-names'
+import { generate } from './engine-common/engine-variable-names'
 import {
     CompilerSettings,
     InletListenerSpecs,

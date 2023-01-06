@@ -25,7 +25,7 @@ import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
-import * as variableNames from './engine-variable-names'
+import * as variableNames from './engine-common/engine-variable-names'
 import { DspGraph } from '@webpd/dsp-graph'
 
 export default (

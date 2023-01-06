@@ -10,9 +10,9 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import { getNodeImplementation } from './compile-helpers'
-import * as jsVariableNames from './engine-javascript/engine-variable-names'
-import * as ascVariableNames from './engine-assemblyscript/engine-variable-names'
+import { getNodeImplementation } from '../compile-helpers'
+import * as jsVariableNames from '../engine-javascript/engine-variable-names'
+import * as ascVariableNames from '../engine-assemblyscript/engine-variable-names'
 import {
     NodeImplementations,
     EngineVariableNames,
@@ -21,7 +21,7 @@ import {
     AccessorSpecs,
     CompilerTarget,
     AudioSettings,
-} from './types'
+} from '../types'
 
 /**
  * Generates the whole set of variable names for a compilation for a given graph.

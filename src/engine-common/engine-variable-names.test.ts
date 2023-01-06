@@ -20,7 +20,7 @@ import {
     EngineVariableNames,
     InletListenerSpecs,
     NodeImplementations,
-} from './types'
+} from '../types'
 
 describe('engine-variable-names', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {

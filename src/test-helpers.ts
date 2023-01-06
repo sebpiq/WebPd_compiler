@@ -10,7 +10,7 @@
  */
 
 import { Code, Compilation, CompilerTarget } from './types'
-import * as variableNames from './engine-variable-names'
+import * as variableNames from './engine-common/engine-variable-names'
 import { getMacros } from './compile'
 import { JavaScriptEngine } from './engine-javascript/types'
 import { compileWasmModule } from './engine-assemblyscript/test-helpers'
