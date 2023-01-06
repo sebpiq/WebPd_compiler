@@ -33,6 +33,7 @@ export const makeCompilation = (
     if (!compilation.target) {
         throw new Error(`Compilation target must be provided`)
     }
+    const debug = compilation.debug || false
     const target: CompilerTarget = compilation.target
     const nodeImplementations = compilation.nodeImplementations || {
         DUMMY: { loop: () => '' },
@@ -42,7 +43,8 @@ export const makeCompilation = (
     const inletListenerSpecs = compilation.inletListenerSpecs || {}
     const engineVariableNames = variableNames.generate(
         nodeImplementations,
-        graph
+        graph,
+        debug
     )
     const audioSettings = compilation.audioSettings || {
         bitDepth: 32,
@@ -63,6 +65,7 @@ export const makeCompilation = (
         inletListenerSpecs,
         macros: getMacros(target),
         engineVariableNames,
+        debug
     }
 }
 

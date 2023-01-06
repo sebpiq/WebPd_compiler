@@ -32,7 +32,8 @@ import {
  */
 export const generate = (
     nodeImplementations: NodeImplementations,
-    graph: DspGraph.Graph
+    graph: DspGraph.Graph,
+    debug: boolean,
 ): EngineVariableNames => ({
     n: createNamespace(
         Object.values(graph).reduce<EngineVariableNames['n']>(
@@ -43,12 +44,14 @@ export const generate = (
                 )
                 const nodeStateVariables =
                     nodeImplementation.stateVariables || []
+                const prefix = debug ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`) : _v(node.id)
+                
                 nodeMap[node.id] = {
                     ins: createNamespace(
                         Object.values(node.inlets).reduce<
                             NodeVariableNames['ins']
                         >((nameMap, inlet) => {
-                            nameMap[inlet.id] = `${_v(node.id)}_INS_${_v(
+                            nameMap[inlet.id] = `${prefix}_INS_${_v(
                                 inlet.id
                             )}`
                             return nameMap
@@ -58,7 +61,7 @@ export const generate = (
                         Object.values(node.outlets).reduce<
                             NodeVariableNames['outs']
                         >((nameMap, outlet) => {
-                            nameMap[outlet.id] = `${_v(node.id)}_OUTS_${_v(
+                            nameMap[outlet.id] = `${prefix}_OUTS_${_v(
                                 outlet.id
                             )}`
                             return nameMap
@@ -67,9 +70,7 @@ export const generate = (
                     state: createNamespace(
                         nodeStateVariables.reduce<NodeVariableNames['state']>(
                             (nameMap, stateVariable) => {
-                                nameMap[stateVariable] = `${_v(
-                                    node.id
-                                )}_STATE_${_v(stateVariable)}`
+                                nameMap[stateVariable] = `${prefix}_STATE_${_v(stateVariable)}`
                                 return nameMap
                             },
                             {}

@@ -92,7 +92,8 @@ describe('compile', () => {
                             inlet1: { type: 'message', id: 'inlet1' },
                         },
                     },
-                })
+                }),
+                false
             )
             const inletListenerSpecs: InletListenerSpecs = {
                 node1: ['inlet1', 'inlet2'],

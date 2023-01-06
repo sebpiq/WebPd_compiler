@@ -141,6 +141,7 @@ export interface Compilation {
     readonly inletListenerSpecs: InletListenerSpecs
     readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
+    readonly debug: boolean
 }
 
 export type CodeMacros = {
@@ -241,4 +242,5 @@ export interface CompilerSettings {
     audioSettings: AudioSettings
     target: CompilerTarget
     inletListenerSpecs?: InletListenerSpecs
+    debug?: boolean
 }

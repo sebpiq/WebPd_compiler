@@ -583,7 +583,7 @@ describe('fs-bindings', () => {
                 // 5. Testing buffer contents
                 assert.deepStrictEqual(
                     [1, 2, 3, 4, 5, 6, 7].map((_) =>
-                        round(wasmExports.testBufferPullFrame())
+                        round(wasmExports.testBufferPullFrame(operationId))
                     ),
                     [-0.1, -0.2, -0.3, 0.4, 0.5, 0.6, 0.7]
                 )
@@ -752,8 +752,8 @@ describe('fs-bindings', () => {
                 const operationId = wasmExports.testStartStream()
 
                 // 2. Receive some sound
-                wasmExports.testSendSoundStreamData()
-                wasmExports.testSendSoundStreamData()
+                wasmExports.testSendSoundStreamData(operationId)
+                wasmExports.testSendSoundStreamData(operationId)
                 const receivedCalls = called.get('i_fs_sendSoundStreamData')
                 assert.strictEqual(
                     receivedCalls.length,
@@ -835,7 +835,7 @@ describe('fs-bindings', () => {
                     const operationId = wasmExports.testStartStream()
 
                     // 2. Receive some sound
-                    wasmExports.testSendSoundStreamData()
+                    wasmExports.testSendSoundStreamData(operationId)
 
                     // 3. close stream
                     assert.strictEqual(

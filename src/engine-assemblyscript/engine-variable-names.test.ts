@@ -45,7 +45,8 @@ describe('engine-assemblyscript', () => {
                             inlet2: { type: 'message', id: 'inlet2' },
                         },
                     },
-                })
+                }),
+                false
             )
             const accessorSpecs: AccessorSpecs = {
                 node1_INS_inlet1: { access: 'r', type: 'signal' },

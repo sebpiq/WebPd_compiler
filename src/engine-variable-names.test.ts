@@ -58,7 +58,7 @@ describe('engine-variable-names', () => {
                 },
             })
 
-            const variableNames = generate(nodeImplementations, graph)
+            const variableNames = generate(nodeImplementations, graph, false)
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNames.n })),
@@ -87,6 +87,46 @@ describe('engine-variable-names', () => {
             )
         })
 
+        it('should create more verbose variable names if debug is true', () => {
+            const nodeImplementations: NodeImplementations = {
+                'dac~bla*wow!': {
+                    loop: () => `// [dac~] loop`,
+                    stateVariables: ['bli'],
+                },
+            }
+
+            const graph = makeGraph({
+                someObj: {
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    type: 'dac~bla*wow!',
+                },
+            })
+
+            const variableNames = generate(nodeImplementations, graph, true)
+
+            assert.deepStrictEqual(
+                JSON.parse(JSON.stringify({ ...variableNames.n })),
+                {
+                    someObj: {
+                        ins: {
+                            '0': 'dacblawow_someObj_INS_0',
+                        },
+                        outs: {
+                            '0': 'dacblawow_someObj_OUTS_0',
+                        },
+                        state: {
+                            bli: 'dacblawow_someObj_STATE_bli',
+                        },
+                    },
+                }
+            )
+        })
+
         it('should throw error for unknown namespaces', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
@@ -107,7 +147,7 @@ describe('engine-variable-names', () => {
                 },
             })
 
-            const variableNames = generate(nodeImplementations, graph)
+            const variableNames = generate(nodeImplementations, graph, false)
 
             assert.throws(() => variableNames.n.unknownNode)
             assert.throws(() => variableNames.n.myOsc.ins['unknown portlet'])
@@ -138,7 +178,8 @@ describe('engine-variable-names', () => {
                             inlet2: { type: 'message', id: 'inlet2' },
                         },
                     },
-                })
+                }),
+                false
             )
             const inletListenerSpecs: InletListenerSpecs = {
                 node1: ['inlet1'],
