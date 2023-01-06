@@ -562,15 +562,15 @@ describe('Engine', () => {
 
                 // 1. Some function in the engine requests a read stream operation.
                 // Request is sent to host via callback
-                const calledRead: Array<Array<any>> = []
+                const calledOpen: Array<Array<any>> = []
                 const calledClose: Array<Array<any>> = []
                 engine.fs.onOpenSoundReadStream = (...args: any) =>
-                    calledRead.push(args)
+                    calledOpen.push(args)
                 engine.fs.onCloseSoundStream = (...args: any) =>
                     calledClose.push(args)
 
                 const operationId = engine.testStartReadStream()
-                assert.deepStrictEqual(calledRead[0], [
+                assert.deepStrictEqual(calledOpen[0], [
                     operationId,
                     '/some/url',
                     [3],
@@ -591,6 +591,127 @@ describe('Engine', () => {
                 )
                 assert.strictEqual(writtenFrameCount, 3)
                 assert.ok(engine.testReceivedSound(operationId))
+
+                // 3. The stream is closed
+                engine.fs.closeSoundStream(operationId, FS_OPERATION_SUCCESS)
+                assert.ok(engine.testOperationCleaned(operationId))
+                // Test host callback was called
+                assert.deepStrictEqual(calledClose[0].slice(0, 2), [
+                    operationId,
+                    FS_OPERATION_SUCCESS,
+                ])
+                // Test engine callback was called
+                assert.strictEqual(engine.testOperationId(), operationId)
+                assert.strictEqual(
+                    engine.testOperationStatus(),
+                    FS_OPERATION_SUCCESS
+                )
+            })
+        })
+
+        describe('write sound stream', () => {
+            const sharedTestingCode = `
+                let receivedId: fs_OperationId = -1
+                let receivedStatus: fs_OperationStatus = -1
+                const channelCount: Int = 3
+                const blockSize: Int = 2
+                let counter: Float = 0
+                function testStartWriteStream (): Int {
+                    return fs_openSoundWriteStream('/some/url', fs_soundInfo(channelCount), function(
+                        id: fs_OperationId,
+                        status: fs_OperationStatus,
+                    ): void {
+                        receivedId = id
+                        receivedStatus = status
+                    })
+                }
+                function testSendSoundStreamData(id: fs_OperationId): void {
+                    const block: FloatArray[] = [
+                        new ${FloatArray}(blockSize),
+                        new ${FloatArray}(blockSize),
+                        new ${FloatArray}(blockSize),
+                    ]
+                    block[0][0] = 10 + blockSize * counter
+                    block[0][1] = 11 + blockSize * counter
+
+                    block[1][0] = 20 + blockSize * counter
+                    block[1][1] = 21 + blockSize * counter
+
+                    block[2][0] = 30 + blockSize * counter
+                    block[2][1] = 31 + blockSize * counter
+
+                    counter++
+                    fs_sendSoundStreamData(id, block)
+                }
+                function testOperationId(): Int {
+                    return receivedId
+                }
+                function testOperationStatus(): Int {
+                    return receivedStatus
+                }
+                function testOperationCleaned (id: fs_OperationId): boolean {
+                    return !_FS_OPERATIONS_IDS.has(id)
+                        && !_FS_OPERATIONS_CALLBACKS.has(id)
+                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
+                }
+            `
+
+            it.each([
+                { target: 'javascript' as CompilerTarget },
+                { target: 'assemblyscript' as CompilerTarget },
+            ])('should stream data in %s', async ({ target }) => {
+                const testCode: Code = sharedTestingCode
+
+                const exports = {
+                    testStartWriteStream: 1,
+                    testOperationId: 1,
+                    testOperationStatus: 1,
+                    testSendSoundStreamData: 1,
+                    testOperationCleaned: 1,
+                }
+
+                const engine = await initializeEngineTest({
+                    target,
+                    testCode,
+                    exports,
+                })
+
+                // 1. Some function in the engine requests a write stream operation.
+                // Request is sent to host via callback
+                const calledOpen: Array<Array<any>> = []
+                const calledClose: Array<Array<any>> = []
+                const calledSoundStreamData: Array<Array<any>> = []
+                engine.fs.onOpenSoundWriteStream = (...args: any) =>
+                    calledOpen.push(args)
+                engine.fs.onSoundStreamData = (...args: any) =>
+                    calledSoundStreamData.push(args)
+                engine.fs.onCloseSoundStream = (...args: any) =>
+                    calledClose.push(args)
+
+                const operationId = engine.testStartWriteStream()
+                assert.deepStrictEqual(calledOpen[0], [
+                    operationId,
+                    '/some/url',
+                    [3],
+                ])
+
+                // 2. Engine starts to send data blocks
+                engine.testSendSoundStreamData(operationId)
+                engine.testSendSoundStreamData(operationId)
+                assert.strictEqual(calledSoundStreamData.length, 2)
+                assert.deepStrictEqual(calledSoundStreamData, [
+                    [operationId, [
+                        new FloatArrayType([10, 11]),
+                        new FloatArrayType([20, 21]),
+                        new FloatArrayType([30, 31]),
+                    ]],
+                    [operationId, [
+                        new FloatArrayType([12, 13]),
+                        new FloatArrayType([22, 23]),
+                        new FloatArrayType([32, 33]),
+                    ]]
+                ])
 
                 // 3. The stream is closed
                 engine.fs.closeSoundStream(operationId, FS_OPERATION_SUCCESS)

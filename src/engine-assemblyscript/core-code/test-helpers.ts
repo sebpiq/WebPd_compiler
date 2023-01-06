@@ -74,6 +74,8 @@ export const initializeCoreCodeTest = async <
     called.set('i_fs_writeSoundFile', [])
     called.set('i_fs_openSoundReadStream', [])
     called.set('i_fs_closeSoundStream', [])
+    called.set('i_fs_openSoundWriteStream', [])
+    called.set('i_fs_sendSoundStreamData', [])
     const wasmExports = (await getWasmExports(code, {
         i_fs_readSoundFile: (...args: any) =>
             called.get('i_fs_readSoundFile').push(args),

@@ -296,12 +296,12 @@ export class AssemblyScriptWasmEngine implements Engine {
                 this.fs.onOpenSoundWriteStream(operationId, url, info)
             },
 
-            i_fs_sendSoundStreamData(operationId, blockPointer) {
+            i_fs_sendSoundStreamData: (operationId, blockPointer) => {
                 const block = readListOfTypedArrays(
                     this.wasmExports, 
                     this.bitDepth,
                     blockPointer
-                )
+                ) as Array<FloatArray>
                 this.fs.onSoundStreamData(operationId, block)
             },
 

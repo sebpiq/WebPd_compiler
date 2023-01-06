@@ -127,7 +127,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ).toString('utf8')
 
     for (let [filepath, ascCode] of [
-        ['./src/engine-javascript/core-code/fs.generated.js', FS_ASC],
+        ['./src/engine-javascript/core-code/fs.generated.js.txt', FS_ASC],
     ]) {
         const [ascStrings, ascVariables] = splitAscCode(ascCode)
         const [jsStrings, jsVariablesIndexes] = transpileAscStrings(

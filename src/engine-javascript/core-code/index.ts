@@ -1,6 +1,6 @@
 import { replaceCoreCodePlaceholders } from '../../compile-helpers'
 import { EngineVariableNames } from '../../types'
-import FS_JS from './fs.generated.js'
+import FS_JS from './fs.generated.js.txt'
 
 const COMPAT = `
 const i32 = (v) => v
@@ -31,9 +31,13 @@ const msg_readStringToken = msg_readFloatToken = ( m, i ) =>
 const msg_bang = () => ['bang']
 `
 
+const TARRAY = `
+const tarray_create = (size) => new \${FloatArray}(size)
+`
+
 export default (engineVariableNames: EngineVariableNames) => {
     return replaceCoreCodePlaceholders(
         engineVariableNames,
-        COMPAT + MSG + FS_JS
+        COMPAT + TARRAY + MSG + FS_JS
     )
 }

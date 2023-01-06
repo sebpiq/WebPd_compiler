@@ -77,7 +77,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export declare function i_fs_writeSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
         export declare function i_fs_openSoundReadStream (id: fs_OperationId, url: Url, info: Message): void
         export declare function i_fs_openSoundWriteStream (id: fs_OperationId, url: Url, info: Message): void
-        export declare function i_fs_sendSoundStreamData (id: fs_OperationId, url: Url, info: Message): void
+        export declare function i_fs_sendSoundStreamData (id: fs_OperationId, block: FloatArray[]): void
         export declare function i_fs_closeSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
 
         export {
@@ -106,7 +106,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
             x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
             x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
-            x_tarray_create as tarray_create,
+            tarray_create,
         }
     `
 }

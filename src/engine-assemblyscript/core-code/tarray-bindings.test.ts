@@ -22,7 +22,7 @@ describe('tarray-bindings', () => {
                     x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
                     x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
                     x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
-                    x_tarray_create as tarray_create,
+                    tarray_create,
                 }
             `,
             audioSettings
