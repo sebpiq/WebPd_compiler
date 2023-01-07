@@ -148,48 +148,6 @@ describe('compileDeclare', () => {
         )
     })
 
-    it('should inject inlet listener in node message receivers', () => {
-        const graph = makeGraph({
-            add: {
-                type: '+',
-                inlets: {
-                    '0': { id: '0', type: 'message' },
-                    '1': { id: '1', type: 'signal' },
-                },
-            },
-        })
-
-        const nodeImplementations: NodeImplementations = {
-            '+': {
-                messageReceivers: () => ({
-                    '0': '// [+] message receiver'
-                })
-            },
-        }
-
-        const compilation = makeCompilation({
-            target: 'javascript',
-            graph,
-            nodeImplementations,
-            inletListenerSpecs: {'add': ['0']}
-        })
-
-        const declareCode = compileDeclare(compilation, [graph.add])
-
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-                
-                let add_INS_1 = 0
-                const add_RCVS_0 = (m) => {
-                    inletListener_add_0(m)
-                    // [+] message receiver
-                }
-            `)
-        )
-    })
-
     it('should throw an error if no implementation for message receiver', () => {
         const graph = makeGraph({
             add: {
@@ -222,6 +180,8 @@ describe('compileDeclare', () => {
                 type: 'twenty',
                 outlets: {
                     '0': { id: '0', type: 'message' },
+                    // Outlet without connection
+                    '1': { id: '1', type: 'message' },
                 },
                 sinks: {
                     '0': [
@@ -284,7 +244,67 @@ describe('compileDeclare', () => {
                     anotherFloat_RCVS_0(m)
                 }
 
+                const twenty_SNDS_1 = (m) => {
+                }
+
                 const aFloat_SNDS_0 = anotherFloat_RCVS_0
+            `)
+        )
+    })
+
+    it('should inject outlet listener in node message senders', () => {
+        const graph = makeGraph({
+            add: {
+                type: '+',
+                outlets: {
+                    '0': { id: '0', type: 'message' },
+                    '1': { id: '1', type: 'signal' },
+                    '2': { id: '2', type: 'message' },
+                },
+                sinks: {'2': [['aFloat', '0']]}
+            },
+            aFloat: {
+                type: 'float',
+                inlets: {
+                    '0': { id: '0', type: 'message' },
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            '+': {},
+            'float': {
+                messageReceivers: () => ({
+                    '0': '// [float] message receiver'
+                }),
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            nodeImplementations,
+            outletListenerSpecs: {'add': ['0', '2']}
+        })
+
+        const declareCode = compileDeclare(compilation, [graph.add, graph.aFloat])
+
+        assert.strictEqual(
+            normalizeCode(declareCode),
+            normalizeCode(`
+                ${GLOBAL_VARIABLES_CODE}
+                let add_OUTS_1 = 0
+                const aFloat_RCVS_0 = (m) => {
+                    // [float] message receiver
+                }
+
+                const add_SNDS_0 = (m) => {
+                    outletListener_add_0(m)
+                }
+                const add_SNDS_2 = (m) => {
+                    outletListener_add_2(m)
+                    aFloat_RCVS_0(m)
+                }
             `)
         )
     })

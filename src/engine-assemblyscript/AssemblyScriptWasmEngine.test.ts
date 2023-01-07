@@ -36,7 +36,7 @@ describe('AssemblyScriptWasmEngine', () => {
             assert.deepStrictEqual(metadata, {
                 compilation: {
                     audioSettings: compilation.audioSettings,
-                    inletListenerSpecs: compilation.inletListenerSpecs,
+                    outletListenerSpecs: compilation.outletListenerSpecs,
                     engineVariableNames: compilation.engineVariableNames,
                 },
             } as EngineMetadata)

@@ -61,7 +61,7 @@ export const createEngine = async (wasmBuffer: ArrayBuffer) => {
  */
 export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
-    public inletListeners: Engine['inletListeners']
+    public outletListeners: Engine['outletListeners']
     public fs: Engine['fs']
     public metadata: EngineMetadata
     private wasmBuffer: ArrayBuffer
@@ -86,7 +86,7 @@ export class AssemblyScriptWasmEngine implements Engine {
 
         const wasmImports: AssemblyScriptWasmImports = {
             ...this._fsImports(),
-            ...this._inletListenersImports(),
+            ...this._outletListenersImports(),
         }
 
         const wasmInstance = await instantiateWasmModule(this.wasmBuffer, {
@@ -95,7 +95,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
         this.fs = this._bindFs()
-        this.inletListeners = this._bindInletListeners()
+        this.outletListeners = this._bindOutletListeners()
     }
 
     configure(sampleRate: number, blockSize: number): void {
@@ -263,35 +263,35 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     // API for data flowing HOST -> ENGINE
-    _bindInletListeners(): Engine['inletListeners'] {
+    _bindOutletListeners(): Engine['outletListeners'] {
         return Object.entries(
-            this.metadata.compilation.inletListenerSpecs
-        ).reduce((inletListeners, [nodeId, inletIds]) => {
-            inletListeners[nodeId] = {}
-            inletIds.forEach(
-                (inletId) =>
-                    (inletListeners[nodeId][inletId] = {
+            this.metadata.compilation.outletListenerSpecs
+        ).reduce((outletListeners, [nodeId, outletIds]) => {
+            outletListeners[nodeId] = {}
+            outletIds.forEach(
+                (outletId) =>
+                    (outletListeners[nodeId][outletId] = {
                         onMessage: () => undefined,
                     })
             )
-            return inletListeners
-        }, {} as Engine['inletListeners'])
+            return outletListeners
+        }, {} as Engine['outletListeners'])
     }
 
     // API for data flowing ENGINE -> HOST
-    _inletListenersImports() {
+    _outletListenersImports() {
         const wasmImports: {
             [listenerName: CodeVariableName]: (messagePointer: MessagePointer) => void
         } = {}
         const { engineVariableNames } = this.metadata.compilation
-        Object.entries(this.metadata.compilation.inletListenerSpecs).forEach(
-            ([nodeId, inletIds]) => {
-                inletIds.forEach((inletId) => {
+        Object.entries(this.metadata.compilation.outletListenerSpecs).forEach(
+            ([nodeId, outletIds]) => {
+                outletIds.forEach((outletId) => {
                     const listenerName =
-                        engineVariableNames.inletListeners[nodeId][inletId]
+                        engineVariableNames.outletListeners[nodeId][outletId]
                     wasmImports[listenerName] = (messagePointer) => {
                         const message = liftMessage(this.wasmExports, messagePointer)
-                        this.inletListeners[nodeId][inletId].onMessage(message)
+                        this.outletListeners[nodeId][outletId].onMessage(message)
                     }
                 })
             }

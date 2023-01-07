@@ -11,7 +11,7 @@ import {
     Compilation,
     CompilerTarget,
     Engine,
-    InletListenerSpecs,
+    OutletListenerSpecs,
     Message,
     NodeImplementations,
 } from './types'
@@ -746,23 +746,23 @@ describe('Engine', () => {
         })
     })
 
-    describe('inletListeners', () => {
+    describe('outletListeners', () => {
         it.each([
             { target: 'javascript' as CompilerTarget },
             { target: 'assemblyscript' as CompilerTarget },
         ])(
-            'should create the specified inlet listeners %s',
+            'should create the specified outlet listeners %s',
             async ({ target }) => {
                 const graph = makeGraph({
                     someNode: {
-                        inlets: {
-                            someInlet: { type: 'message', id: 'someInlet' },
+                        outlets: {
+                            someOutlet: { type: 'message', id: 'someOutlet' },
                         },
                     },
                 })
 
-                const inletListenerSpecs: InletListenerSpecs = {
-                    ['someNode']: ['someInlet'],
+                const outletListenerSpecs: OutletListenerSpecs = {
+                    ['someNode']: ['someOutlet'],
                 }
 
                 const testCode: Code = `
@@ -772,19 +772,19 @@ describe('Engine', () => {
                     const m2: Message = msg_create([MSG_STRING_TOKEN, 3])
                     msg_writeStringToken(m2, 0, 'bla')
 
-                    function testCallInletListener(): void {
-                        inletListener_someNode_someInlet(m1)
-                        inletListener_someNode_someInlet(m2)
+                    function testCallOutletListener(): void {
+                        outletListener_someNode_someOutlet(m1)
+                        outletListener_someNode_someOutlet(m2)
                     }
                 `
 
-                const exports = { testCallInletListener: 1 }
+                const exports = { testCallOutletListener: 1 }
 
                 const engine = await initializeEngineTest({
                     target,
                     testCode,
                     extraCompilation: {
-                        inletListenerSpecs,
+                        outletListenerSpecs,
                         graph,
                     },
                     exports,
@@ -793,15 +793,15 @@ describe('Engine', () => {
                 const called: Array<Message> = []
 
                 assert.ok(
-                    engine.inletListeners.someNode.someInlet
+                    engine.outletListeners.someNode.someOutlet
                         .onMessage instanceof Function
                 )
 
-                engine.inletListeners.someNode.someInlet.onMessage = (
+                engine.outletListeners.someNode.someOutlet.onMessage = (
                     message: Message
                 ) => called.push(message)
 
-                engine.testCallInletListener()
+                engine.testCallOutletListener()
                 assert.deepStrictEqual(called, [[11, 22], ['bla']])
             }
         )

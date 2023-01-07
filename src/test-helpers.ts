@@ -39,7 +39,7 @@ export const makeCompilation = (
         DUMMY: { loop: () => '' },
     }
     const graph = compilation.graph || {}
-    const inletListenerSpecs = compilation.inletListenerSpecs || {}
+    const outletListenerSpecs = compilation.outletListenerSpecs || {}
     const engineVariableNames = variableNames.generate(
         nodeImplementations,
         graph,
@@ -50,7 +50,7 @@ export const makeCompilation = (
         channelCount: { in: 2, out: 2 },
     }
 
-    variableNames.attachInletListeners(engineVariableNames, inletListenerSpecs)
+    variableNames.attachOutletListeners(engineVariableNames, outletListenerSpecs)
     variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
 
     return {
@@ -59,7 +59,7 @@ export const makeCompilation = (
         graph,
         nodeImplementations,
         audioSettings,
-        inletListenerSpecs,
+        outletListenerSpecs,
         macros: getMacros(target),
         engineVariableNames,
         debug

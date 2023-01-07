@@ -18,7 +18,7 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { macros, engineVariableNames, nodeImplementations, inletListenerSpecs } = compilation
+    const { macros, engineVariableNames, nodeImplementations, outletListenerSpecs } = compilation
     const { g: globs, types } = engineVariableNames
     // prettier-ignore
     return renderCode`
@@ -30,7 +30,6 @@ export default (
         const ${macros.typedVar(globs.arrays, 'Map<string,FloatArray>')} = new Map()
 
         ${graphTraversal.map(node => {
-            const nodeInletListeners = inletListenerSpecs[node.id] || undefined
             const nodeVariableNames = engineVariableNames.n[node.id]
             const { ins, outs, rcvs } = nodeVariableNames
             const nodeCodeGeneratorArgs: Parameters<NodeCodeGenerator<any>> = [
@@ -58,8 +57,7 @@ export default (
                     .filter(outlet => outlet.type === 'signal')
                     .map(outlet => `let ${macros.typedVar(outs[outlet.id], 'Float')} = 0`),
 
-                // 2. Declares message receivers for all message inlets
-                // If there are inlets listeners declared we also inject the code here.
+                // 2. Declares message receivers for all message inlets.
                 Object.values(node.inlets)
                     .filter(inlet => {
                         if (inlet.type !== 'message') {
@@ -70,21 +68,13 @@ export default (
                         }
                         return true
                     })
-                    .map(inlet => {
-                        let inletListenerCode: Code = ''
-                        if (nodeInletListeners && nodeInletListeners.includes(inlet.id)) {
-                            const listenerVariableName = engineVariableNames.inletListeners[node.id][inlet.id]
-                            inletListenerCode = `${listenerVariableName}(${globs.inMessage})`
+                    .map(inlet => `
+                        const ${rcvs[inlet.id]} = ${macros.typedFuncHeader([
+                            macros.typedVar(globs.inMessage, 'Message')
+                        ], 'void')} => {
+                            ${nodeMessageReceivers[inlet.id]}
                         }
-                        return `
-                            const ${rcvs[inlet.id]} = ${macros.typedFuncHeader([
-                                macros.typedVar(globs.inMessage, 'Message')
-                            ], 'void')} => {
-                                ${inletListenerCode}
-                                ${nodeMessageReceivers[inlet.id]}
-                            }
-                        `
-                    }),
+                    `),
                 
                 nodeDeclare ? nodeDeclare(...nodeCodeGeneratorArgs): '',
             ]
@@ -92,31 +82,38 @@ export default (
 
         ${  // 3. Declares message senders for all message outlets.
             // This needs to come after all message receivers are declared since we reference them here.
+            // If there are outlets listeners declared we also inject the code here.
             graphTraversal.map(node => {
-            const { snds } = engineVariableNames.n[node.id]
-            return Object.entries(traversal.removeDeadSinks(node.sinks, traversalNodeIds))
-                .filter(([outletId]) => getters.getOutlet(node, outletId).type === 'message')
-                .map(([outletId, outletSinks]) => {
+                const { snds } = engineVariableNames.n[node.id]
+                const nodeOutletListeners = outletListenerSpecs[node.id] || []
+                const nodeSinks = traversal.removeDeadSinks(node.sinks, traversalNodeIds)
+                return Object.values(node.outlets)
+                    .filter(outlet => outlet.type === 'message')
+                    .map(outlet => {
+                        const hasOutletListener = nodeOutletListeners.includes(outlet.id)
+                        const outletSinks = nodeSinks[outlet.id] || []
 
-                    // If we send to only a single sink, we directly assign the sink's message receiver.
-                    if (outletSinks.length === 1) {
-                        const {nodeId: sinkNodeId, portletId: inletId} = outletSinks[0]
-                        return `const ${snds[outletId]} = ${engineVariableNames.n[sinkNodeId].rcvs[inletId]}`
-                    
-                    // If we send to several sinks, we need to declare a proxy function that sends to all
-                    // all the sinks when called.
-                    } else {    
-                        return renderCode`
-                            const ${snds[outletId]} = ${macros.typedFuncHeader([
-                                macros.typedVar('m', 'Message')
-                            ], 'void')} => {
-                                ${outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
-                                    `${engineVariableNames.n[sinkNodeId].rcvs[inletId]}(m)`
-                                )}
-                            }
-                        `
-                    }
-                })
-        })}
+                        // If we send to only a single sink, we directly assign the sink's message receiver.
+                        if (outletSinks.length === 1 && !hasOutletListener) {
+                            const {nodeId: sinkNodeId, portletId: inletId} = outletSinks[0]
+                            return `const ${snds[outlet.id]} = ${engineVariableNames.n[sinkNodeId].rcvs[inletId]}`
+                        
+                        // If we send to several sinks, we need to declare a proxy function that sends to all
+                        // all the sinks when called.
+                        } else {
+                            return renderCode`
+                                const ${snds[outlet.id]} = ${macros.typedFuncHeader([
+                                    macros.typedVar('m', 'Message')
+                                ], 'void')} => {
+                                    ${hasOutletListener ? 
+                                        `${engineVariableNames.outletListeners[node.id][outlet.id]}(${globs.inMessage})` : ''}
+                                    ${outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
+                                        `${engineVariableNames.n[sinkNodeId].rcvs[inletId]}(${globs.inMessage})`
+                                    )}
+                                }
+                            `
+                        }
+                    })
+            })}
     `
 }

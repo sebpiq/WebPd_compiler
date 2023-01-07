@@ -57,7 +57,7 @@ describe('compile', () => {
                     bitDepth: 32,
                 },
             })
-            assert.deepStrictEqual(settings.inletListenerSpecs, {})
+            assert.deepStrictEqual(settings.outletListenerSpecs, {})
         })
 
         it('should throw error if bitDepth invalid', () => {

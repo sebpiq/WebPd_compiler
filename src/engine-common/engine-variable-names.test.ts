@@ -12,13 +12,13 @@ import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import {
     assertValidNamePart,
-    attachInletListeners,
+    attachOutletListeners,
     createNamespace,
     generate,
 } from './engine-variable-names'
 import {
     EngineVariableNames,
-    InletListenerSpecs,
+    OutletListenerSpecs,
     NodeImplementations,
 } from '../types'
 
@@ -184,26 +184,26 @@ describe('engine-variable-names', () => {
         })
     })
 
-    describe('attachInletListeners', () => {
-        it('should attach inlet listeners variable names', () => {
+    describe('attachOutletListeners', () => {
+        it('should attach outlet listeners variable names', () => {
             const engineVariableNames: EngineVariableNames = generate(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
                     node1: {
-                        inlets: {
-                            inlet1: { type: 'message', id: 'inlet1' },
-                            inlet2: { type: 'message', id: 'inlet2' },
+                        outlets: {
+                            outlet1: { type: 'message', id: 'outlet1' },
+                            outlet2: { type: 'message', id: 'outlet2' },
                         },
                     },
                 }),
                 false
             )
-            const inletListenerSpecs: InletListenerSpecs = {
-                node1: ['inlet1'],
+            const outletListenerSpecs: OutletListenerSpecs = {
+                node1: ['outlet1'],
             }
-            attachInletListeners(engineVariableNames, inletListenerSpecs)
-            assert.deepStrictEqual(engineVariableNames.inletListeners, {
-                node1: { inlet1: 'inletListener_node1_inlet1' },
+            attachOutletListeners(engineVariableNames, outletListenerSpecs)
+            assert.deepStrictEqual(engineVariableNames.outletListeners, {
+                node1: { outlet1: 'outletListener_node1_outlet1' },
             })
         })
     })

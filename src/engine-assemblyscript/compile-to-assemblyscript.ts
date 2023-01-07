@@ -21,14 +21,14 @@ import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
         audioSettings,
-        inletListenerSpecs: inletListenerSpecs,
+        outletListenerSpecs,
         engineVariableNames,
     } = compilation
     const { channelCount } = audioSettings
     const metadata: EngineMetadata = {
         compilation: {
             audioSettings,
-            inletListenerSpecs,
+            outletListenerSpecs,
             engineVariableNames,
         },
     }
@@ -46,7 +46,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         let ${globs.output}: FloatArray = new ${FloatArray}(0)
     
         ${compileDeclare(compilation, graphTraversal)}
-        ${compileInletListeners(compilation)}
+        ${compileOutletListeners(compilation)}
         
         export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.sampleRate} = sampleRate
@@ -107,21 +107,20 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     `
 }
 
-export const compileInletListeners = ({
-    inletListenerSpecs,
+export const compileOutletListeners = ({
+    outletListenerSpecs,
     engineVariableNames,
 }: Compilation) => {
     return renderCode`
-        ${Object.entries(inletListenerSpecs).map(
-            ([nodeId, inletIds]) =>
-                inletIds.map((inletId) => {
-                    const inletListenerVariableName =
-                        engineVariableNames.inletListeners[nodeId][
-                            inletId
+        ${Object.entries(outletListenerSpecs).map(
+            ([nodeId, outletIds]) =>
+                outletIds.map((outletId) => {
+                    const outletListenerVariableName =
+                        engineVariableNames.outletListeners[nodeId][
+                            outletId
                         ]
-                    // prettier-ignore
                     return `
-                    export declare function ${inletListenerVariableName}(m: Message): void
+                    export declare function ${outletListenerVariableName}(m: Message): void
                 `
                 })
         )}

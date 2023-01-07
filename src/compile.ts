@@ -30,7 +30,7 @@ export default (
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletListenerSpecs, target, debug } =
+    const { audioSettings, outletListenerSpecs, target, debug } =
         validateSettings(compilerSettings)
     const macros = getMacros(target)
     const engineVariableNames = variableNames.generate(
@@ -38,14 +38,14 @@ export default (
         graph,
         debug
     )
-    variableNames.attachInletListeners(engineVariableNames, inletListenerSpecs)
+    variableNames.attachOutletListeners(engineVariableNames, outletListenerSpecs)
     variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
     return executeCompilation({
         target,
         graph,
         nodeImplementations,
         audioSettings,
-        inletListenerSpecs,
+        outletListenerSpecs,
         engineVariableNames,
         macros,
         debug
@@ -58,14 +58,14 @@ export default (
 export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettings => {
-    const inletListenerSpecs = settings.inletListenerSpecs || {}
+    const outletListenerSpecs = settings.outletListenerSpecs || {}
     const debug = settings.debug || false
     if (![32, 64].includes(settings.audioSettings.bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }
     return {
         ...settings,
-        inletListenerSpecs,
+        outletListenerSpecs,
         debug,
     }
 }

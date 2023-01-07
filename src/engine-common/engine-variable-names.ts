@@ -15,7 +15,7 @@ import {
     NodeImplementations,
     EngineVariableNames,
     NodeVariableNames,
-    InletListenerSpecs,
+    OutletListenerSpecs,
     AudioSettings,
 } from '../types'
 
@@ -82,26 +82,26 @@ export const generate = (
         input: 'INPUT',
         inMessage: 'm',
     }),
-    inletListeners: createNamespace({}),
+    outletListeners: createNamespace({}),
     types: createNamespace({}),
 })
 
 /**
- * Helper that attaches to the generated `engineVariableNames` the names of specified inlet listeners.
+ * Helper that attaches to the generated `engineVariableNames` the names of specified outlet listeners.
  *
  * @param engineVariableNames
- * @param inletListenerSpecs
+ * @param outletListenerSpecs
  */
-export const attachInletListeners = (
+export const attachOutletListeners = (
     engineVariableNames: EngineVariableNames,
-    inletListenerSpecs: InletListenerSpecs
+    outletListenerSpecs: OutletListenerSpecs
 ): void => {
-    Object.entries(inletListenerSpecs).forEach(([nodeId, inletIds]) => {
-        engineVariableNames.inletListeners[nodeId] = {}
-        inletIds.forEach((inletId) => {
-            engineVariableNames.inletListeners[nodeId][
-                inletId
-            ] = `inletListener_${nodeId}_${inletId}`
+    Object.entries(outletListenerSpecs).forEach(([nodeId, outletIds]) => {
+        engineVariableNames.outletListeners[nodeId] = {}
+        outletIds.forEach((outletId) => {
+            engineVariableNames.outletListeners[nodeId][
+                outletId
+            ] = `outletListener_${nodeId}_${outletId}`
         })
     })
 }
@@ -179,8 +179,8 @@ export const createNamespaceFromPortlets = <T>(
     mapFunction: (portlet: DspGraph.Portlet) => T
 ) =>
     createNamespace(Object.values(portletMap)
-        .filter(inlet => inlet.type === portletType)
-        .reduce((nameMap, inlet) => {
-            nameMap[inlet.id] = mapFunction(inlet)
+        .filter(portlet => portlet.type === portletType)
+        .reduce((nameMap, portlet) => {
+            nameMap[portlet.id] = mapFunction(portlet)
             return nameMap
         }, {} as {[portletId: DspGraph.PortletId]: T}))

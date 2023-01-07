@@ -19,7 +19,7 @@ import { JavaScriptEngineCode } from './types'
 import generateCoreCode from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { engineVariableNames, inletListenerSpecs } =
+    const { engineVariableNames, outletListenerSpecs } =
         compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
@@ -29,7 +29,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     return renderCode`
         ${coreCode}
         ${compileDeclare(compilation, graphTraversal)}
-        ${compileInletListeners(compilation)}
+        ${compileOutletListeners(compilation)}
 
         const exports = {
             configure: (sampleRate, blockSize) => {
@@ -43,11 +43,11 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             setArray: (arrayName, array) => { 
                 ${globs.arrays}.set(arrayName, array)
             },
-            inletListeners: {
-                ${Object.entries(inletListenerSpecs).map(([nodeId, inletIds]) =>
+            outletListeners: {
+                ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
                     `${nodeId}: {
-                        ${inletIds.map(inletId => `
-                            ${inletId}: {onMessage: () => undefined,}
+                        ${outletIds.map(outletId => `
+                            ${outletId}: {onMessage: () => undefined,}
                         `)}
                     }`
                 )}
@@ -76,18 +76,18 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     `
 }
 
-export const compileInletListeners = ({
-    inletListenerSpecs,
+export const compileOutletListeners = ({
+    outletListenerSpecs,
     engineVariableNames,
 }: Compilation) => {
-    return renderCode`${Object.entries(inletListenerSpecs).map(
-        ([nodeId, inletIds]) =>
-            inletIds.map((inletId) => {
+    return renderCode`${Object.entries(outletListenerSpecs).map(
+        ([nodeId, outletIds]) =>
+            outletIds.map((outletId) => {
                 const listenerVariableName =
-                    engineVariableNames.inletListeners[nodeId][inletId]
+                    engineVariableNames.outletListeners[nodeId][outletId]
                 return `
                     const ${listenerVariableName} = (m) => {
-                        exports.inletListeners['${nodeId}']['${inletId}'].onMessage(m)
+                        exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)
                     }
                 `
             })
