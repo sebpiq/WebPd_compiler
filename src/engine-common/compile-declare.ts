@@ -70,16 +70,21 @@ export default (
                         return true
                     })
                     .map(inlet => `
-                        const ${rcvs[inlet.id]} = ${macros.typedFuncHeader([
+                        function ${rcvs[inlet.id]} ${macros.typedFuncHeader([
                             macros.typedVar(globs.inMessage, 'Message')
-                        ], 'void')} => {
+                        ], 'void')} {
                             ${nodeMessageReceivers[inlet.id]}
                         }
                     `),
                 
                 // 3. Declares inlet callers
+                // Here not possible to assign directly the receiver because otherwise assemblyscript
+                // doesn't export a function but a global instead.
                 nodeInletCallers.map(inletId => 
-                    `const ${engineVariableNames.inletCallers[node.id][inletId]} = ${rcvs[inletId]}`),
+                    `function ${engineVariableNames.inletCallers[node.id][inletId]} ${macros.typedFuncHeader([
+                        macros.typedVar('m', 'Message')
+                    ], 'void')} {${rcvs[inletId]}(m)}`
+                ),
 
                 // 4. Custom declarations for the node
                 nodeDeclare ? nodeDeclare(...nodeCodeGeneratorArgs): '',
@@ -108,9 +113,9 @@ export default (
                         // all the sinks when called.
                         } else {
                             return renderCode`
-                                const ${snds[outlet.id]} = ${macros.typedFuncHeader([
+                                function ${snds[outlet.id]} ${macros.typedFuncHeader([
                                     macros.typedVar('m', 'Message')
-                                ], 'void')} => {
+                                ], 'void')} {
                                     ${hasOutletListener ? 
                                         `${engineVariableNames.outletListeners[node.id][outlet.id]}(${globs.inMessage})` : ''}
                                     ${outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 

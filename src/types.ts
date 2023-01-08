@@ -217,7 +217,7 @@ export interface NodeImplementation<NodeArgsType> {
     initialize?: NodeCodeGenerator<NodeArgsType>
     loop?: NodeCodeGenerator<NodeArgsType>
     messages?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {[inletId: DspGraph.PortletId]: Code},
-    stateVariables?: Array<string>
+    stateVariables?: (node: DspGraph.Node<NodeArgsType>) => Array<string>,
 }
 
 export type NodeImplementations = {

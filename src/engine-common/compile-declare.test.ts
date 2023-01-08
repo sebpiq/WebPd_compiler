@@ -141,7 +141,7 @@ describe('compileDeclare', () => {
                 ${GLOBAL_VARIABLES_CODE}
                 
                 let add_INS_1 = 0
-                const add_RCVS_0 = (m) => {
+                function add_RCVS_0 (m) {
                     // [+] message receiver
                 }
             `)
@@ -179,10 +179,10 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
-                const add_RCVS_0 = (m) => {
+                function add_RCVS_0 (m) {
                     // [+] message receiver
                 }
-                const inletCaller_add_0 = add_RCVS_0
+                function inletCaller_add_0 (m) {add_RCVS_0(m)}
             `)
         )
     })
@@ -270,20 +270,20 @@ describe('compileDeclare', () => {
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
 
-                const aFloat_RCVS_0 = (m) => {
+                function aFloat_RCVS_0 (m) {
                     // [float] message receiver
                 }
 
-                const anotherFloat_RCVS_0 = (m) => {
+                function anotherFloat_RCVS_0 (m) {
                     // [float] message receiver
                 }
 
-                const twenty_SNDS_0 = (m) => {
+                function twenty_SNDS_0 (m) {
                     aFloat_RCVS_0(m)
                     anotherFloat_RCVS_0(m)
                 }
 
-                const twenty_SNDS_1 = (m) => {
+                function twenty_SNDS_1 (m) {
                 }
 
                 const aFloat_SNDS_0 = anotherFloat_RCVS_0
@@ -333,14 +333,14 @@ describe('compileDeclare', () => {
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
                 let add_OUTS_1 = 0
-                const aFloat_RCVS_0 = (m) => {
+                function aFloat_RCVS_0 (m) {
                     // [float] message receiver
                 }
 
-                const add_SNDS_0 = (m) => {
+                function add_SNDS_0 (m) {
                     outletListener_add_0(m)
                 }
-                const add_SNDS_2 = (m) => {
+                function add_SNDS_2 (m) {
                     outletListener_add_2(m)
                     aFloat_RCVS_0(m)
                 }

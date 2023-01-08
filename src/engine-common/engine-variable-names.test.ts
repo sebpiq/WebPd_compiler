@@ -36,7 +36,7 @@ describe('engine-variable-names', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     loop: () => `// [osc~] loop`,
-                    stateVariables: ['phase', 'currentThing', 'k'],
+                    stateVariables: () => ['phase', 'currentThing', 'k'],
                 },
                 'dac~': {
                     loop: () => `// [dac~] loop`,
@@ -103,7 +103,7 @@ describe('engine-variable-names', () => {
             const nodeImplementations: NodeImplementations = {
                 'dac~bla*wow!': {
                     loop: () => `// [dac~] loop`,
-                    stateVariables: ['bli'],
+                    stateVariables: () => ['bli'],
                 },
             }
 
@@ -148,7 +148,7 @@ describe('engine-variable-names', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     loop: () => `// [osc~] loop`,
-                    stateVariables: ['phase'],
+                    stateVariables: () => ['phase'],
                 },
             }
 

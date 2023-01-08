@@ -11,16 +11,15 @@
 
 import assert from 'assert'
 import { DspGraph } from '@webpd/dsp-graph'
-import { getMacros, executeCompilation } from './compile'
-import { renderCode } from './compile-helpers'
+import { executeCompilation } from './compile'
 import { createEngine, makeCompilation, round } from './test-helpers'
 import {
     Signal,
     Message,
-    Engine,
     NodeImplementations,
     CompilerTarget,
     FloatArray,
+    Code,
 } from './types'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
@@ -29,39 +28,7 @@ interface NodeTestSettings {
     target: CompilerTarget
     node: DspGraph.Node
     nodeImplementations: NodeImplementations
-    connectedSources?: Array<DspGraph.PortletId>
     engineDspParams?: typeof ENGINE_DSP_PARAMS
-}
-
-type GenericInletValue = Signal | Array<Message>
-
-const setNodeInlet = (
-    engine: Engine,
-    nodeId: DspGraph.NodeId,
-    inletId: DspGraph.PortletId,
-    value: GenericInletValue
-) => {
-    const inletVariableName = `${nodeId}_INS_${inletId}`
-    engine.accessors[`write_${inletVariableName}`](value)
-}
-
-const setNodeOutlet = (
-    engine: Engine,
-    nodeId: DspGraph.NodeId,
-    outletId: DspGraph.PortletId,
-    value: GenericInletValue
-) => {
-    const outletVariableName = `${nodeId}_OUTS_${outletId}`
-    engine.accessors[`write_${outletVariableName}`](value)
-}
-
-const getNodeState = (
-    engine: Engine,
-    nodeId: DspGraph.NodeId,
-    name: string
-) => {
-    const variableName = `${nodeId}_STATE_${name}`
-    return engine.accessors[`read_${variableName}`]()
 }
 
 export type Frame = {
@@ -76,52 +43,25 @@ export const generateFramesForNode = async (
     nodeTestSettings.engineDspParams =
         nodeTestSettings.engineDspParams || ENGINE_DSP_PARAMS
 
-    const _isConnectedToFakeNode = (inletId: DspGraph.PortletId) =>
-        testNode.sources[inletId] &&
-        testNode.sources[inletId].filter(
-            (source) => source.nodeId === fakeSourceNode.id
-        ).length
-
     const { target } = nodeTestSettings
+    const connectedInlets = new Set<DspGraph.PortletId>([])
+    inputFrames.forEach(frame => 
+        Object.keys(frame).forEach(
+            inletId => connectedInlets.add(inletId)))
 
     // --------------- Generating test graph
-    //   [fakeSourceNode] -> [testNode] -> [recorderNode]
+    //   [fakeSourceNode] -> [testNode] -> [fakeSinkNode]
     const { inlets: testNodeInlets, outlets: testNodeOutlets } =
         nodeTestSettings.node
 
-    const fakeSourceNodeSinks: DspGraph.ConnectionEndpointMap = {}
-    const testNodeSources: DspGraph.ConnectionEndpointMap = {}
-    const testNodeSinks: DspGraph.ConnectionEndpointMap = {}
-    const recorderNodeSources: DspGraph.ConnectionEndpointMap = {}
-
-    Object.values(testNodeOutlets).forEach((outlet) => {
-        testNodeSinks[outlet.id] = [
-            { nodeId: 'recorderNode', portletId: outlet.id },
-        ]
-        recorderNodeSources[outlet.id] = [
-            { nodeId: 'testNode', portletId: outlet.id },
-        ]
-    })
-
-    if (nodeTestSettings.connectedSources) {
-        nodeTestSettings.connectedSources.forEach((portletId) => {
-            testNodeSources[portletId] = [
-                { nodeId: 'fakeSourceNode', portletId },
-            ]
-            fakeSourceNodeSinks[portletId] = [{ nodeId: 'testNode', portletId }]
-        })
-    }
-
-    // Fake source, only useful for simultating connections
-    // to the node we want to test.
-    // Ignored if no fake connections are declared
+    // Node to send inputs to testNode
     const fakeSourceNode: DspGraph.Node = {
         id: 'fakeSourceNode',
-        type: 'fake-source-node',
+        type: 'fake_source_node',
         args: {},
         sources: {},
-        sinks: fakeSourceNodeSinks,
-        inlets: {},
+        sinks: makeConnectionEndpointMap('testNode', Array.from(connectedInlets)),
+        inlets: makeMessagePortlets(Object.keys(testNodeInlets)),
         outlets: testNodeInlets,
     }
 
@@ -129,106 +69,106 @@ export const generateFramesForNode = async (
     const testNode: DspGraph.Node = {
         ...nodeTestSettings.node,
         id: 'testNode',
-        sources: testNodeSources,
-        sinks: testNodeSinks,
+        sources: makeConnectionEndpointMap('fakeSourceNode', Array.from(connectedInlets)),
+        sinks: makeConnectionEndpointMap('fakeSinkNode', Object.keys(testNodeOutlets)),
         inlets: testNodeInlets,
         outlets: testNodeOutlets,
     }
 
     // Node to record output of testNode
-    const recorderNode: DspGraph.Node = {
-        id: 'recorderNode',
-        type: 'recorder-node',
+    const fakeSinkNode: DspGraph.Node = {
+        id: 'fakeSinkNode',
+        type: 'fake_sink_node',
         args: {},
-        sources: recorderNodeSources,
+        sources: makeConnectionEndpointMap('testNode', Object.keys(testNodeOutlets)),
         sinks: {},
-        inlets: testNode.outlets,
-        outlets: {},
+        inlets: testNodeOutlets,
+        outlets: makeMessagePortlets(Object.keys(testNodeOutlets)),
         isEndSink: true,
     }
 
     const graph: DspGraph.Graph = {
         testNode,
-        recorderNode,
+        fakeSinkNode,
         fakeSourceNode,
     }
 
     // --------------- Generating implementation for testing recorder & engine
     const nodeImplementations: NodeImplementations = {
         ...nodeTestSettings.nodeImplementations,
-        // This is a dummy node, it's only useful to fake connections
-        'fake-source-node': {
-            loop: () => ``,
+
+        'fake_source_node': {
+            declare: (_, {state, macros}) => Object.keys(fakeSourceNode.outlets)
+                .filter(outletId => fakeSourceNode.outlets[outletId].type === 'signal')
+                .map(outletId => `let ${macros.typedVar(state[`VALUE_${outletId}`], 'Float')}`)
+                .join('\n'),
+
+            messages: (_, {globs, snds, state}) => Object.keys(fakeSourceNode.outlets)
+                .reduce((messageMap, inletId) => {
+                    const outletId = inletId
+                    let code = ''
+
+                    // Messages received for message outlets are directly proxied
+                    if (fakeSourceNode.outlets[outletId].type === 'message') {
+                        code = `${snds[outletId]}(${globs.inMessage})`
+                    
+                    // Messages received for signal outlets are written to the loop
+                    } else {
+                        code = `${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.inMessage}, 0)`
+                    }
+
+                    return {
+                        ...messageMap,
+                        [inletId]: code,
+                    }
+                }, {} as {[inletId: DspGraph.PortletId]: Code}),
+            
+            loop: (_, {outs, state}) => Object.keys(fakeSourceNode.outlets)
+                .filter(outletId => fakeSourceNode.outlets[outletId].type === 'signal')
+                .map(outletId => `${outs[outletId]} = ${state[`VALUE_${outletId}`]}`)
+                .join('\n'),
+
+            stateVariables: () => Object.keys(fakeSourceNode.outlets)
+                .filter(outletId => fakeSourceNode.outlets[outletId].type === 'signal')
+                .map(outletId => `VALUE_${outletId}`)
         },
-        'recorder-node': {
-            // Generate one memory variable per outlet of test node
-            declare: (_, { state, macros }) =>
-                renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
-                    inlet.type === 'signal'
-                        ? `let ${macros.typedVar(
-                              state['mem' + inlet.id],
-                              'Float'
-                          )} = 0`
-                        : `let ${macros.typedVar(
-                              state['mem' + inlet.id],
-                              'Array<Message>'
-                          )} = []`
-                )}`,
-            // For each outlet of test node, save the output value in corresponding memory.
-            // This is necessary cause engine clears outlets at each run of loop.
-            loop: (_, { state, ins }) =>
-                renderCode`${Object.values(recorderNode.inlets).map((inlet) =>
-                    inlet.type === 'signal'
-                        ? `${state['mem' + inlet.id]} = ${ins[inlet.id]}`
-                        : `${state['mem' + inlet.id]} = ${
-                              ins[inlet.id]
-                          }.slice(0)`
-                )}`,
-            stateVariables: Object.keys(recorderNode.inlets).map(
-                (inletId) => 'mem' + inletId
-            ),
+
+        'fake_sink_node': {
+            // Take incoming signal values and proxy them via message
+            loop: (_, { ins, snds }) => Object.keys(testNode.sinks)
+                .filter(outletId => testNode.outlets[outletId].type === 'signal')
+                .map(outletId =>
+                    // prettier-ignore
+                    `
+                    ${snds[outletId]}(msg_floats([${ins[outletId]}]))
+                    `
+                ).join('\n'),
+
+            // Take incoming messages and directly proxy them
+            messages: (_, {globs, snds}) => Object.keys(fakeSinkNode.inlets)
+                .filter(inletId => fakeSinkNode.inlets[inletId].type === 'message')
+                .reduce((messageMap, inletId) => ({
+                    ...messageMap,
+                    [inletId]: `${snds[inletId]}(${globs.inMessage})`,
+                }), {} as {[inletId: DspGraph.PortletId]: Code}),
         },
     }
 
     // --------------- Compile code & engine
-    const accessorSpecs: AccessorSpecs = {}
-    inputFrames.forEach((inputFrame) => {
-        // Ports to write input values
-        Object.keys(inputFrame).forEach((inletId) => {
-            const inlet = testNode.inlets[inletId]
-            const inletVariableName = `${testNode.id}_INS_${inletId}`
-            accessorSpecs[inletVariableName] = { access: 'w', type: inlet.type }
-
-            // We need a port to write to the output of the fakeSourceNode only if it is connected
-            if (_isConnectedToFakeNode(inletId)) {
-                const outletVariableName = `${fakeSourceNode.id}_OUTS_${inletId}`
-                accessorSpecs[outletVariableName] = {
-                    access: 'w',
-                    type: inlet.type,
-                }
-            }
-        })
-
-        // Ports to read output values
-        Object.entries(recorderNode.inlets).forEach(([inletId, inlet]) => {
-            const variableName = `${recorderNode.id}_STATE_${'mem' + inletId}`
-            accessorSpecs[variableName] = {
-                access: 'r',
-                type: inlet.type,
-            }
-        })
-    })
-
     const compilation = makeCompilation({
         target,
         graph,
         nodeImplementations,
-        macros: getMacros(target),
+        inletCallerSpecs: {
+            'fakeSourceNode': Object.keys(fakeSourceNode.inlets)
+        },
+        outletListenerSpecs: {
+            'fakeSinkNode': Object.keys(fakeSinkNode.outlets)
+        },
         audioSettings: {
             channelCount: nodeTestSettings.engineDspParams.channelCount,
             bitDepth: 64,
         },
-        accessorSpecs,
     })
     const code = executeCompilation(compilation)
     const engine = await createEngine(compilation.target, code)
@@ -240,7 +180,6 @@ export const generateFramesForNode = async (
     }
 
     // --------------- Generate frames
-
     // Cleaning global scope polluted by assemblyscript compiler.
     // Some functions such as f32 and i32 are defined globally by assemblyscript compiler
     // That could cause some interference with our JS code that is executed through eval,
@@ -271,40 +210,35 @@ export const generateFramesForNode = async (
     )
 
     inputFrames.forEach((inputFrame) => {
-        Object.entries(inputFrame).forEach(([inletId, value]) => {
-            // TODO : if working set only inlet
-            // We set the inlets with our simulation values.
-            setNodeInlet(
-                engine,
-                testNode.id,
-                inletId,
-                Array.isArray(value) ? value.slice(0) : value
-            )
-
-            if (_isConnectedToFakeNode(inletId)) {
-                // We set the outlets of fake source node, because if inlets are connected,
-                // the loop will copy over simulation values set just above.
-                // !!! setting value is done by reference, so we need to copy the array
-                // to not assign the same the inlet
-                setNodeOutlet(
-                    engine,
-                    fakeSourceNode.id,
-                    inletId,
-                    Array.isArray(value) ? value.slice(0) : value
-                )
+        const outputFrame: Frame = {}
+        Object.keys(engine.outletListeners['fakeSinkNode']).forEach(outletId => {
+            engine.outletListeners['fakeSinkNode'][outletId] = {
+                onMessage: (m) => {
+                    if (testNode.outlets[outletId].type === 'message') {
+                        outputFrame[outletId] = outputFrame[outletId] || []
+                        const output = outputFrame[outletId] as Array<Message>
+                        output.push(m)
+                    } else {
+                        outputFrame[outletId] = m[0] as number
+                    }
+                }
             }
         })
-
-        const outputFrame: Frame = {}
-        engine.loop(engineInput, engineOutput)
-
-        Object.keys(recorderNode.inlets).forEach((inletId) => {
-            outputFrame[inletId] = getNodeState(
-                engine,
-                recorderNode.id,
-                'mem' + inletId
-            )
+        Object.entries(inputFrame).forEach(([inletId, value]) => {
+            if (testNode.inlets[inletId].type === 'message') {
+                if (!Array.isArray(value)) {
+                    throw new Error(`unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`)
+                }
+                value.forEach(
+                    message => engine.inletCallers['fakeSourceNode'][inletId](message))
+            } else {
+                if (typeof value !== 'number') {
+                    throw new Error(`unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`)
+                }
+                engine.inletCallers['fakeSourceNode'][inletId]([value])
+            }
         })
+        engine.loop(engineInput, engineOutput)
         outputFrames.push(outputFrame)
     })
 
@@ -370,3 +304,17 @@ export const ENGINE_DSP_PARAMS = {
     sampleRate: 44100,
     channelCount: { in: 2, out: 2 },
 }
+
+const makeConnectionEndpointMap = (nodeId: DspGraph.NodeId, portletList: Array<DspGraph.PortletId>) =>
+    portletList.reduce<DspGraph.ConnectionEndpointMap>((endpointMap, portletId) => ({
+        ...endpointMap,
+        [portletId]: [
+            { nodeId, portletId },
+        ]
+    }), {})
+
+const makeMessagePortlets = (portletList: Array<DspGraph.PortletId>) =>
+    portletList.reduce<DspGraph.PortletMap>((portletMap, portletId) => ({
+        ...portletMap,
+        [portletId]: {id: portletId, type: 'message'}
+    }), {})

@@ -54,12 +54,17 @@ describe('compileLoop', () => {
                 type: '+~',
                 sinks: {
                     '0': [['dac', '1']],
+                    // Test that adding a message connection doesn't cause an error
+                    '1': [['dac', '2']],
                 },
                 args: {
                     value: 110,
                 },
-                inlets: { '0': { id: '0', type: 'signal' } },
-                outlets: { '0': { id: '0', type: 'signal' } },
+                inlets: {'0': { id: '0', type: 'signal' }},
+                outlets: {
+                    '0': { id: '0', type: 'signal' },
+                    '1': { id: '1', type: 'message' },
+                },
             },
             dac: {
                 type: 'dac~',
@@ -69,6 +74,7 @@ describe('compileLoop', () => {
                 inlets: {
                     '0': { id: '0', type: 'signal' },
                     '1': { id: '1', type: 'signal' },
+                    '2': { id: '2', type: 'message' },
                 },
             },
         })

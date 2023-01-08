@@ -40,7 +40,7 @@ export const generate = (
                     node.type
                 )
                 const nodeStateVariables =
-                    nodeImplementation.stateVariables || []
+                    nodeImplementation.stateVariables ? nodeImplementation.stateVariables(node) : []
                 const prefix = debug ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`) : _v(node.id)
 
                 nodeMap[node.id] = {

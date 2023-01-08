@@ -62,6 +62,7 @@ const loopIteration = (
                 traversal.listConnectionsOut(
                     traversal
                         .removeDeadSinks(node.sinks, traversalNodeIds), node.id)
+                    .filter(([{ portletId }]) => node.outlets[portletId].type === 'signal')
                     .map(
                         ([
                             { portletId: outletId },

@@ -29,6 +29,9 @@ const msg_readStringToken = msg_readFloatToken = ( m, i ) =>
     m[i]
 
 const msg_bang = () => ['bang']
+
+const msg_floats = (v) => v
+
 `
 
 const TARRAY = `
