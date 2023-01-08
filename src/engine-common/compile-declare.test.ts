@@ -148,6 +148,45 @@ describe('compileDeclare', () => {
         )
     })
 
+    it('should compile inlet senders for message inlets', () => {
+        const graph = makeGraph({
+            add: {
+                type: '+',
+                inlets: {
+                    '0': { id: '0', type: 'message' }
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            '+': {
+                messageReceivers: () => ({
+                    '0': '// [+] message receiver'
+                })
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            inletCallerSpecs: {'add': ['0']},
+            nodeImplementations,
+        })
+
+        const declareCode = compileDeclare(compilation, [graph.add])
+
+        assert.strictEqual(
+            normalizeCode(declareCode),
+            normalizeCode(`
+                ${GLOBAL_VARIABLES_CODE}
+                const add_RCVS_0 = (m) => {
+                    // [+] message receiver
+                }
+                const inletCaller_add_0 = add_RCVS_0
+            `)
+        )
+    })
+
     it('should throw an error if no implementation for message receiver', () => {
         const graph = makeGraph({
             add: {

@@ -22,6 +22,8 @@ describe('AssemblyScriptWasmEngine', () => {
 
             const compilation = makeCompilation({
                 target: 'assemblyscript',
+                inletCallerSpecs: {},
+                outletListenerSpecs: {},
             })
 
             const wasmBuffer = await compileWasmModule(
@@ -36,8 +38,9 @@ describe('AssemblyScriptWasmEngine', () => {
             assert.deepStrictEqual(metadata, {
                 compilation: {
                     audioSettings: compilation.audioSettings,
-                    outletListenerSpecs: compilation.outletListenerSpecs,
                     engineVariableNames: compilation.engineVariableNames,
+                    inletCallerSpecs: {},
+                    outletListenerSpecs: {},
                 },
             } as EngineMetadata)
         })

@@ -19,7 +19,7 @@ import { JavaScriptEngineCode } from './types'
 import generateCoreCode from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { engineVariableNames, outletListenerSpecs } =
+    const { engineVariableNames, outletListenerSpecs, inletCallerSpecs } =
         compilation
     const graphTraversal = traversal.breadthFirst(compilation.graph)
     const globs = compilation.engineVariableNames.g
@@ -48,6 +48,15 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                     `${nodeId}: {
                         ${outletIds.map(outletId => `
                             ${outletId}: {onMessage: () => undefined,}
+                        `)}
+                    }`
+                )}
+            },
+            inletCallers: {
+                ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
+                    `${nodeId}: {
+                        ${inletIds.map(inletId => `
+                            ${inletId}: ${engineVariableNames.inletCallers[nodeId][inletId]}
                         `)}
                     }`
                 )}

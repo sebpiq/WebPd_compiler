@@ -14,6 +14,7 @@ import {
     OutletListenerSpecs,
     Message,
     NodeImplementations,
+    InletCallerSpecs,
 } from './types'
 
 const BIT_DEPTH = 64
@@ -753,6 +754,8 @@ describe('Engine', () => {
         ])(
             'should create the specified outlet listeners %s',
             async ({ target }) => {
+                // We only test that the outlet listeners are created and that calling them works. 
+                // We don't need to actually compile any node
                 const graph = makeGraph({
                     someNode: {
                         outlets: {
@@ -803,6 +806,71 @@ describe('Engine', () => {
 
                 engine.testCallOutletListener()
                 assert.deepStrictEqual(called, [[11, 22], ['bla']])
+            }
+        )
+    })
+
+    describe('inletCallers', () => {
+        it.each([
+            { target: 'javascript' as CompilerTarget },
+            // { target: 'assemblyscript' as CompilerTarget },
+        ])(
+            'should create the specified inlet callers %s',
+            async ({ target }) => {
+                const graph = makeGraph({
+                    someNode: {
+                        type: 'someNodeType',
+                        inlets: {
+                            someInlet: { type: 'message', id: 'someInlet' },
+                        },
+                        isEndSink: true,
+                    },
+                })
+
+                const inletCallerSpecs: InletCallerSpecs = {
+                    ['someNode']: ['someInlet'],
+                }
+
+                const nodeImplementations: NodeImplementations = {
+                    'someNodeType': {
+                        messageReceivers: (_, {globs}) => ({
+                            'someInlet': `messageReceived = ${globs.inMessage}`
+                        })
+                    }
+                }
+
+                const testCode: Code = `
+                    const messageReceived: Message = msg_create([])
+
+                    function testMessageReceived(): boolean {
+                        return msg_getLength(messageReceived) === 2
+                            && msg_isFloatToken(messageReceived, 0)
+                            && msg_isStringToken(messageReceived, 1)
+                            && msg_readFloatToken(messageReceived, 0) === 666
+                            && msg_readStringToken(messageReceived, 1) === '🔥👿🔥'
+                    }
+                `
+
+                const exports = { testMessageReceived: 1 }
+
+                const engine = await initializeEngineTest({
+                    target,
+                    testCode,
+                    extraCompilation: {
+                        inletCallerSpecs,
+                        graph,
+                        nodeImplementations,
+                    },
+                    exports,
+                })
+
+                assert.ok(
+                    engine.inletCallers.someNode.someInlet instanceof Function
+                )
+
+                assert.ok(!engine.testMessageReceived())
+                engine.inletCallers.someNode.someInlet([666, '🔥👿🔥'])
+                assert.ok(engine.testMessageReceived())
             }
         )
     })

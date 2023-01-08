@@ -40,6 +40,7 @@ export const makeCompilation = (
     }
     const graph = compilation.graph || {}
     const outletListenerSpecs = compilation.outletListenerSpecs || {}
+    const inletCallerSpecs = compilation.inletCallerSpecs || {}
     const engineVariableNames = variableNames.generate(
         nodeImplementations,
         graph,
@@ -49,10 +50,9 @@ export const makeCompilation = (
         bitDepth: 32,
         channelCount: { in: 2, out: 2 },
     }
-
     variableNames.attachOutletListeners(engineVariableNames, outletListenerSpecs)
+    variableNames.attachInletCallers(engineVariableNames, inletCallerSpecs)
     variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
-
     return {
         ...compilation,
         target,
@@ -60,6 +60,7 @@ export const makeCompilation = (
         nodeImplementations,
         audioSettings,
         outletListenerSpecs,
+        inletCallerSpecs,
         macros: getMacros(target),
         engineVariableNames,
         debug

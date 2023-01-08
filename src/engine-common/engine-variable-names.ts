@@ -17,6 +17,7 @@ import {
     NodeVariableNames,
     OutletListenerSpecs,
     AudioSettings,
+    InletCallerSpecs,
 } from '../types'
 
 /**
@@ -83,6 +84,7 @@ export const generate = (
         inMessage: 'm',
     }),
     outletListeners: createNamespace({}),
+    inletCallers: createNamespace({}),
     types: createNamespace({}),
 })
 
@@ -102,6 +104,26 @@ export const attachOutletListeners = (
             engineVariableNames.outletListeners[nodeId][
                 outletId
             ] = `outletListener_${nodeId}_${outletId}`
+        })
+    })
+}
+
+/**
+ * Helper that attaches to the generated `engineVariableNames` the names of specified inlet callers.
+ *
+ * @param engineVariableNames
+ * @param inletCallerSpecs
+ */
+export const attachInletCallers = (
+    engineVariableNames: EngineVariableNames,
+    inletCallerSpecs: InletCallerSpecs
+): void => {
+    Object.entries(inletCallerSpecs).forEach(([nodeId, inletIds]) => {
+        engineVariableNames.inletCallers[nodeId] = {}
+        inletIds.forEach((inletId) => {
+            engineVariableNames.inletCallers[nodeId][
+                inletId
+            ] = `inletCaller_${nodeId}_${inletId}`
         })
     })
 }

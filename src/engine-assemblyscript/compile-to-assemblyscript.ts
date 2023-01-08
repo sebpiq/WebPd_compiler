@@ -21,6 +21,7 @@ import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
         audioSettings,
+        inletCallerSpecs,
         outletListenerSpecs,
         engineVariableNames,
     } = compilation
@@ -28,6 +29,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const metadata: EngineMetadata = {
         compilation: {
             audioSettings,
+            inletCallerSpecs,
             outletListenerSpecs,
             engineVariableNames,
         },
@@ -103,6 +105,13 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
             x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
             tarray_create,
+
+            // INLET CALLERS
+            ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 
+                inletIds.map(inletId => 
+                    engineVariableNames.inletCallers[nodeId][inletId] + ','
+                )
+            )}
         }
     `
 }

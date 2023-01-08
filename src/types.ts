@@ -55,10 +55,15 @@ export interface Engine {
         data: FloatArray | Array<number>
     ) => void
 
-    // Outlet listener callbacks
+    inletCallers: {
+        [nodeId: DspGraph.NodeId]: {
+            [inletId: DspGraph.PortletId]: (m: Message) => void
+        }
+    }
+
     outletListeners: {
         [nodeId: DspGraph.NodeId]: {
-            [portletId: DspGraph.PortletId]: {
+            [outletId: DspGraph.PortletId]: {
                 onMessage: (message: Message) => void
             }
         }
@@ -135,6 +140,7 @@ export interface Compilation {
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
     readonly outletListenerSpecs: OutletListenerSpecs
+    readonly inletCallerSpecs: InletCallerSpecs
     readonly engineVariableNames: EngineVariableNames
     readonly macros: CodeMacros
     readonly debug: boolean
@@ -179,6 +185,13 @@ export interface EngineVariableNames {
         setFloat?: 'setFloat32' | 'setFloat64'
     }
 
+    // Namespace for inlet callers
+    inletCallers: {
+        [nodeId: DspGraph.NodeId]: {
+            [outletId: DspGraph.PortletId]: CodeVariableName
+        }
+    }
+
     // Namespace for outlet listeners callbacks
     outletListeners: {
         [nodeId: DspGraph.NodeId]: {
@@ -213,6 +226,10 @@ export type OutletListenerSpecs = {
     [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
 }
 
+export type InletCallerSpecs = {
+    [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
+}
+
 export interface AudioSettings {
     channelCount: {
         in: number
@@ -224,6 +241,7 @@ export interface AudioSettings {
 export interface CompilerSettings {
     audioSettings: AudioSettings
     target: CompilerTarget
+    inletCallerSpecs?: InletCallerSpecs
     outletListenerSpecs?: OutletListenerSpecs
     debug?: boolean
 }

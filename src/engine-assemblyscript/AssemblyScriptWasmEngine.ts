@@ -26,7 +26,7 @@ import {
     readTypedArray,
 } from './core-code/core-bindings'
 import { fs_WasmImports } from './core-code/fs-bindings'
-import { liftMessage } from './core-code/msg-bindings'
+import { liftMessage, lowerMessage } from './core-code/msg-bindings'
 import {
     FloatArray,
     lowerListOfTypedArrays,
@@ -61,6 +61,7 @@ export const createEngine = async (wasmBuffer: ArrayBuffer) => {
  */
 export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
+    public inletCallers: Engine['inletCallers']
     public outletListeners: Engine['outletListeners']
     public fs: Engine['fs']
     public metadata: EngineMetadata
@@ -95,6 +96,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
         this.fs = this._bindFs()
+        this.inletCallers = this._bindInletCallers()
         this.outletListeners = this._bindOutletListeners()
     }
 
@@ -260,6 +262,23 @@ export class AssemblyScriptWasmEngine implements Engine {
                 this.fs.onCloseSoundStream(...args),
         }
         return wasmImports
+    }
+
+    // API for data flowing HOST -> ENGINE
+    _bindInletCallers(): Engine['inletCallers'] {
+        return Object.entries(
+            this.metadata.compilation.inletCallerSpecs
+        ).reduce((inletCallers, [nodeId, inletIds]) => {
+            inletCallers[nodeId] = {}
+            inletIds.forEach((inletId) => {
+                const inletCallerVariableName = this.metadata.compilation.engineVariableNames.inletCallers[nodeId][inletId]
+                inletCallers[nodeId][inletId] = (message: Message) => {
+                    const messagePointer = lowerMessage(this.wasmExports, message)
+                    ;(this.wasmExports as any)[inletCallerVariableName](messagePointer)
+                }
+            })
+            return inletCallers
+        }, {} as Engine['inletCallers'])
     }
 
     // API for data flowing HOST -> ENGINE

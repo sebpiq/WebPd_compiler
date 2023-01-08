@@ -9,7 +9,7 @@
  *
  */
 
-import { DspGraph, getters, traversal } from '@webpd/dsp-graph'
+import { DspGraph, traversal } from '@webpd/dsp-graph'
 import { getNodeImplementation, renderCode } from '../compile-helpers'
 import { Code, Compilation, NodeCodeGenerator } from '../types'
 
@@ -18,8 +18,8 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { macros, engineVariableNames, nodeImplementations, outletListenerSpecs } = compilation
-    const { g: globs, types } = engineVariableNames
+    const { macros, engineVariableNames, nodeImplementations, outletListenerSpecs, inletCallerSpecs } = compilation
+    const { g: globs, types  } = engineVariableNames
     // prettier-ignore
     return renderCode`
         let ${macros.typedVar(globs.iterFrame, 'Int')}
@@ -46,6 +46,7 @@ export default (
             const nodeDeclare = nodeImplementation.declare
             const nodeMessageReceivers = nodeImplementation.messageReceivers ? 
                 nodeImplementation.messageReceivers(...nodeCodeGeneratorArgs): {}
+            const nodeInletCallers = inletCallerSpecs[node.id] || []
 
             return [
                 // 1. Declares signal inlets and outlets
@@ -76,11 +77,16 @@ export default (
                         }
                     `),
                 
+                // 3. Declares inlet callers
+                nodeInletCallers.map(inletId => 
+                    `const ${engineVariableNames.inletCallers[node.id][inletId]} = ${rcvs[inletId]}`),
+
+                // 4. Custom declarations for the node
                 nodeDeclare ? nodeDeclare(...nodeCodeGeneratorArgs): '',
             ]
         })}
 
-        ${  // 3. Declares message senders for all message outlets.
+        ${  // 5. Declares message senders for all message outlets.
             // This needs to come after all message receivers are declared since we reference them here.
             // If there are outlets listeners declared we also inject the code here.
             graphTraversal.map(node => {

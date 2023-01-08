@@ -12,6 +12,7 @@ import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import {
     assertValidNamePart,
+    attachInletCallers,
     attachOutletListeners,
     createNamespace,
     generate,
@@ -20,6 +21,7 @@ import {
     EngineVariableNames,
     OutletListenerSpecs,
     NodeImplementations,
+    InletCallerSpecs,
 } from '../types'
 
 describe('engine-variable-names', () => {
@@ -184,12 +186,15 @@ describe('engine-variable-names', () => {
         })
     })
 
-    describe('attachOutletListeners', () => {
+    describe('attachOutletListeners / attachInletCallers', () => {
         it('should attach outlet listeners variable names', () => {
             const engineVariableNames: EngineVariableNames = generate(
                 NODE_IMPLEMENTATIONS,
                 makeGraph({
                     node1: {
+                        inlets: {
+                            inlet1: { type: 'message', id: 'inlet1' },
+                        },
                         outlets: {
                             outlet1: { type: 'message', id: 'outlet1' },
                             outlet2: { type: 'message', id: 'outlet2' },
@@ -201,9 +206,18 @@ describe('engine-variable-names', () => {
             const outletListenerSpecs: OutletListenerSpecs = {
                 node1: ['outlet1'],
             }
+            const inletCallerSpecs: InletCallerSpecs = {
+                node1: ['inlet1'],
+            }
+
             attachOutletListeners(engineVariableNames, outletListenerSpecs)
             assert.deepStrictEqual(engineVariableNames.outletListeners, {
                 node1: { outlet1: 'outletListener_node1_outlet1' },
+            })
+
+            attachInletCallers(engineVariableNames, inletCallerSpecs)
+            assert.deepStrictEqual(engineVariableNames.inletCallers, {
+                node1: { inlet1: 'inletCaller_node1_inlet1' },
             })
         })
     })
