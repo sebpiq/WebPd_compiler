@@ -32,7 +32,7 @@ describe('Engine', () => {
         target: CompilerTarget
         testCode?: Code
         exports?: ExportsKeys
-        extraCompilation?: Partial<Compilation>
+        compilation?: Partial<Compilation>
     }
 
     const initializeEngineTest = async <
@@ -41,7 +41,7 @@ describe('Engine', () => {
         target,
         testCode = '',
         exports,
-        extraCompilation = {},
+        compilation: extraCompilation = {},
     }: EngineTestSettings<ExportsKeys>) => {
         const transpilationSettings = {}
         const compilation = makeCompilation({
@@ -163,7 +163,7 @@ describe('Engine', () => {
 
                 const engine = await initializeEngineTest({
                     target,
-                    extraCompilation: {
+                    compilation: {
                         graph,
                         nodeImplementations,
                         audioSettings: audioSettings,
@@ -241,7 +241,7 @@ describe('Engine', () => {
 
                 const engine = await initializeEngineTest({
                     target,
-                    extraCompilation: {
+                    compilation: {
                         graph,
                         nodeImplementations,
                         audioSettings: audioSettings,
@@ -786,7 +786,7 @@ describe('Engine', () => {
                 const engine = await initializeEngineTest({
                     target,
                     testCode,
-                    extraCompilation: {
+                    compilation: {
                         outletListenerSpecs,
                         graph,
                     },
@@ -833,7 +833,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     'someNodeType': {
-                        messageReceivers: (_, {globs}) => ({
+                        messages: (_, {globs}) => ({
                             'someInlet': `messageReceived = ${globs.inMessage}`
                         })
                     }
@@ -856,7 +856,7 @@ describe('Engine', () => {
                 const engine = await initializeEngineTest({
                     target,
                     testCode,
-                    extraCompilation: {
+                    compilation: {
                         inletCallerSpecs,
                         graph,
                         nodeImplementations,

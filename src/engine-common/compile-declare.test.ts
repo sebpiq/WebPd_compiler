@@ -121,7 +121,7 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messageReceivers: () => ({
+                messages: () => ({
                     '0': '// [+] message receiver'
                 })
             },
@@ -160,7 +160,7 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messageReceivers: () => ({
+                messages: () => ({
                     '0': '// [+] message receiver'
                 })
             },
@@ -199,7 +199,7 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messageReceivers: () => ({})
+                messages: () => ({})
             },
         }
 
@@ -251,7 +251,7 @@ describe('compileDeclare', () => {
         const nodeImplementations: NodeImplementations = {
             twenty: {},
             float: {
-                messageReceivers: () => ({
+                messages: () => ({
                     '0': '// [float] message receiver'
                 }),
             }
@@ -313,7 +313,7 @@ describe('compileDeclare', () => {
         const nodeImplementations: NodeImplementations = {
             '+': {},
             'float': {
-                messageReceivers: () => ({
+                messages: () => ({
                     '0': '// [float] message receiver'
                 }),
             },
@@ -371,7 +371,7 @@ describe('compileDeclare', () => {
             'osc~': {
                 declare: () => ``,
                 loop: () => ``,
-                messageReceivers: () => ({
+                messages: () => ({
                     '0_message': '// [osc~] message receiver'
                 })
             },

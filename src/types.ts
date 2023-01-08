@@ -46,10 +46,12 @@ export type CodeVariableName = string
  */
 export interface Engine {
     configure: (sampleRate: number, blockSize: number) => void
+
     loop: (
         input: Array<FloatArray>,
         output: Array<FloatArray>
     ) => void
+    
     setArray: (
         arrayName: string,
         data: FloatArray | Array<number>
@@ -214,7 +216,7 @@ export interface NodeImplementation<NodeArgsType> {
     declare?: NodeCodeGenerator<NodeArgsType>
     initialize?: NodeCodeGenerator<NodeArgsType>
     loop?: NodeCodeGenerator<NodeArgsType>
-    messageReceivers?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {[inletId: DspGraph.PortletId]: Code},
+    messages?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {[inletId: DspGraph.PortletId]: Code},
     stateVariables?: Array<string>
 }
 

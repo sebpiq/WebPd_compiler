@@ -44,8 +44,8 @@ export default (
             ]
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             const nodeDeclare = nodeImplementation.declare
-            const nodeMessageReceivers = nodeImplementation.messageReceivers ? 
-                nodeImplementation.messageReceivers(...nodeCodeGeneratorArgs): {}
+            const nodeMessageReceivers = nodeImplementation.messages ? 
+                nodeImplementation.messages(...nodeCodeGeneratorArgs): {}
             const nodeInletCallers = inletCallerSpecs[node.id] || []
 
             return [
