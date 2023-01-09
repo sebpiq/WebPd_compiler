@@ -43,11 +43,6 @@ export interface msg_WasmExports extends core_WasmExports {
         templatePointer: ArrayBufferOfIntegersPointer
     ) => MessagePointer
     msg_getTokenTypes: (messagePointer: MessagePointer) => TypedArrayPointer
-    msg_createArray: () => InternalPointer
-    msg_pushToArray: (
-        messageArrayPointer: InternalPointer,
-        messagePointer: MessagePointer
-    ) => void
     msg_writeStringToken: (
         messagePointer: MessagePointer,
         tokenIndex: number,

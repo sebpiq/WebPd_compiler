@@ -110,11 +110,11 @@ export const generateFramesForNode = async (
 
                     // Messages received for message outlets are directly proxied
                     if (fakeSourceNode.outlets[outletId].type === 'message') {
-                        code = `${snds[outletId]}(${globs.inMessage})`
+                        code = `${snds[outletId]}(${globs.m})`
                     
                     // Messages received for signal outlets are written to the loop
                     } else {
-                        code = `${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.inMessage}, 0)`
+                        code = `${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.m}, 0)`
                     }
 
                     return {
@@ -149,7 +149,7 @@ export const generateFramesForNode = async (
                 .filter(inletId => fakeSinkNode.inlets[inletId].type === 'message')
                 .reduce((messageMap, inletId) => ({
                     ...messageMap,
-                    [inletId]: `${snds[inletId]}(${globs.inMessage})`,
+                    [inletId]: `${snds[inletId]}(${globs.m})`,
                 }), {} as {[inletId: DspGraph.PortletId]: Code}),
         },
     }
@@ -195,8 +195,7 @@ export const generateFramesForNode = async (
     })
 
     const blockSize = 1
-    engine.configure(nodeTestSettings.engineDspParams.sampleRate, blockSize)
-
+    let configured = false
     const outputFrames: Array<Frame> = []
     const engineInput = buildEngineBlock(
         Float32Array,
@@ -211,6 +210,14 @@ export const generateFramesForNode = async (
 
     inputFrames.forEach((inputFrame) => {
         const outputFrame: Frame = {}
+        // Set default values for output frame
+        Object.values(testNode.outlets).forEach(outlet => {
+            if (outlet.type === 'message') {
+                outputFrame[outlet.id] = []
+            }
+        })
+
+        // Set up outletListeners to receive sent messages
         Object.keys(engine.outletListeners['fakeSinkNode']).forEach(outletId => {
             engine.outletListeners['fakeSinkNode'][outletId] = {
                 onMessage: (m) => {
@@ -224,6 +231,15 @@ export const generateFramesForNode = async (
                 }
             }
         })
+
+        // We make sure we configure after assigning the outletListeners, so we can receive messages sent
+        // during configure.
+        if (configured === false) {
+            engine.configure(nodeTestSettings.engineDspParams.sampleRate, blockSize)
+            configured = true
+        }
+
+        // Send in the input frame and run the loop
         Object.entries(inputFrame).forEach(([inletId, value]) => {
             if (testNode.inlets[inletId].type === 'message') {
                 if (!Array.isArray(value)) {

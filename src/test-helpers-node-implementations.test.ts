@@ -55,7 +55,7 @@ describe('test-helpers-node-implementations', () => {
                         '0': `
                             ${snds.$0}(
                                 msg_floats([
-                                    msg_readFloatToken(${globs.inMessage}, 0) + 0.1
+                                    msg_readFloatToken(${globs.m}, 0) + 0.1
                                 ])
                             )
                         `

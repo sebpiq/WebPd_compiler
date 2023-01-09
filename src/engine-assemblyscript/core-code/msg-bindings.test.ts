@@ -57,8 +57,6 @@ describe('msg-bindings', () => {
 
                 export {
                     x_msg_create as msg_create,
-                    x_msg_createArray as msg_createArray,
-                    x_msg_pushToArray as msg_pushToArray,
                     x_msg_getTokenTypes as msg_getTokenTypes,
                     msg_writeStringToken,
                     msg_writeFloatToken,
@@ -247,75 +245,73 @@ describe('msg-bindings', () => {
         )
     })
 
-    describe('msg_createArray / msg_pushToArray', () => {
+    describe('msg_bang / msg_floats', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
         ])(
-            'should create message array and push message to array %s',
+            'should create floats message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const code = getBaseTestCode({ bitDepth }) +  `
-                export function testMessageArray(messageArray: Message[], index: Int): Message {
-                    return messageArray[index]
+                const code = getBaseTestCode({bitDepth}) + `
+                export function testCreateFloatsMessage(): Message {
+                    return msg_floats([111, 222])
+                }
+                export function testCreateEmptyFloatsMessage(): Message {
+                    return msg_floats([])
                 }
             `
 
                 const exports = {
                     ...baseExports,
-                    testMessageArray: 1,
+                    testCreateFloatsMessage: 1,
+                    testCreateEmptyFloatsMessage: 1,
                 }
 
-                const { wasmExports, floatArrayType } =
-                    await initializeCoreCodeTest({ code, bitDepth, exports })
-
-                const messagePointer1 = lowerMessage(wasmExports, ['\x00\x00'])
-                const messagePointer2 = lowerMessage(wasmExports, [0])
-
-                const messageArrayPointer = wasmExports.msg_createArray()
-                wasmExports.msg_pushToArray(
-                    messageArrayPointer,
-                    messagePointer1
-                )
-                wasmExports.msg_pushToArray(
-                    messageArrayPointer,
-                    messagePointer2
-                )
-
-                const messagePointer1Bis: number = wasmExports.testMessageArray(
-                    messageArrayPointer,
-                    0
-                )
-                const messagePointer2Bis: number = wasmExports.testMessageArray(
-                    messageArrayPointer,
-                    1
-                )
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
 
                 assert.deepStrictEqual(
-                    [0, 1, 2, 3, 4, 5].map((i) =>
-                        wasmExports.testReadMessageData(messagePointer1Bis, i)
-                    ),
-                    [
-                        1,
-                        wasmExports.MSG_STRING_TOKEN.valueOf(),
-                        INT_ARRAY_BYTES_PER_ELEMENT * 4,
-                        INT_ARRAY_BYTES_PER_ELEMENT * 4 + 2 * 4, // 4 bytes per char
-                        0,
-                        0,
-                    ]
+                    liftMessage(wasmExports, wasmExports.testCreateFloatsMessage()),
+                    [111, 222]
                 )
                 assert.deepStrictEqual(
-                    [0, 1, 2, 3, 4].map((i) =>
-                        wasmExports.testReadMessageData(messagePointer2Bis, i)
-                    ),
-                    [
-                        1,
-                        wasmExports.MSG_FLOAT_TOKEN.valueOf(),
-                        INT_ARRAY_BYTES_PER_ELEMENT * 4,
-                        INT_ARRAY_BYTES_PER_ELEMENT * 4 +
-                            floatArrayType.BYTES_PER_ELEMENT,
-                        0,
-                    ]
+                    liftMessage(wasmExports, wasmExports.testCreateEmptyFloatsMessage()),
+                    []
+                )
+            }
+        )
+
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+            { bitDepth: 32 },
+            { bitDepth: 64 },
+        ])(
+            'should create bang message %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
+                export function testCreateBang(): Message {
+                    return msg_bang()
+                }
+            `
+
+                const exports = {
+                    ...baseExports,
+                    testCreateBang: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.deepStrictEqual(
+                    liftMessage(wasmExports, wasmExports.testCreateBang()),
+                    ['bang']
                 )
             }
         )

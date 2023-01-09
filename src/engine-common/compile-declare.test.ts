@@ -212,6 +212,32 @@ describe('compileDeclare', () => {
         assert.throws(() => compileDeclare(compilation, [graph.add]))
     })
 
+
+    it('shouldnt throw an error if message receiver is implemented but string empty', () => {
+        const graph = makeGraph({
+            add: {
+                type: '+',
+                inlets: {
+                    '0': { id: '0', type: 'message' },
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            '+': {
+                messages: () => ({'0': ''})
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            nodeImplementations,
+        })
+
+        assert.doesNotThrow(() => compileDeclare(compilation, [graph.add]))
+    })
+
     it('should compile node message senders for message outlets', () => {
         const graph = makeGraph({
             // Sending messages to several sinks, 

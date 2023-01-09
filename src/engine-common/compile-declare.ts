@@ -64,14 +64,14 @@ export default (
                         if (inlet.type !== 'message') {
                             return false
                         }
-                        if (!nodeMessageReceivers[inlet.id]) {
+                        if (typeof nodeMessageReceivers[inlet.id] !== 'string') {
                             throw new Error(`Message receiver for inlet "${inlet.id}" of node type "${node.type}" is not implemented`)
                         }
                         return true
                     })
                     .map(inlet => `
                         function ${rcvs[inlet.id]} ${macros.typedFuncHeader([
-                            macros.typedVar(globs.inMessage, 'Message')
+                            macros.typedVar(globs.m, 'Message')
                         ], 'void')} {
                             ${nodeMessageReceivers[inlet.id]}
                         }
@@ -117,9 +117,9 @@ export default (
                                     macros.typedVar('m', 'Message')
                                 ], 'void')} {
                                     ${hasOutletListener ? 
-                                        `${engineVariableNames.outletListeners[node.id][outlet.id]}(${globs.inMessage})` : ''}
+                                        `${engineVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : ''}
                                     ${outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
-                                        `${engineVariableNames.n[sinkNodeId].rcvs[inletId]}(${globs.inMessage})`
+                                        `${engineVariableNames.n[sinkNodeId].rcvs[inletId]}(${globs.m})`
                                     )}
                                 }
                             `

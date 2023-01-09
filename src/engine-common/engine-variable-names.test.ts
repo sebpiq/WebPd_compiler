@@ -224,7 +224,7 @@ describe('engine-variable-names', () => {
 
     describe('createNamespace', () => {
         it('should proxy access to exisinting keys', () => {
-            const namespace = createNamespace({
+            const namespace = createNamespace('dummy', {
                 bla: '1',
                 hello: '2',
             })
@@ -233,7 +233,7 @@ describe('engine-variable-names', () => {
         })
 
         it('should create automatic $ alias for keys starting with a number', () => {
-            const namespace: { [key: string]: string } = createNamespace({
+            const namespace: { [key: string]: string } = createNamespace('dummy', {
                 '0': 'blabla',
                 '0_bla': 'bloblo',
             })
@@ -242,7 +242,7 @@ describe('engine-variable-names', () => {
         })
 
         it('should throw error when trying to access unknown key', () => {
-            const namespace: { [key: string]: string } = createNamespace({
+            const namespace: { [key: string]: string } = createNamespace('dummy', {
                 bla: '1',
                 hello: '2',
             })
@@ -250,7 +250,7 @@ describe('engine-variable-names', () => {
         })
 
         it('should not prevent from using JSON stringify', () => {
-            const namespace: { [key: string]: string } = createNamespace({
+            const namespace: { [key: string]: string } = createNamespace('dummy', {
                 bla: '1',
                 hello: '2',
             })

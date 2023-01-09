@@ -834,7 +834,7 @@ describe('Engine', () => {
                 const nodeImplementations: NodeImplementations = {
                     'someNodeType': {
                         messages: (_, {globs}) => ({
-                            'someInlet': `messageReceived = ${globs.inMessage}`
+                            'someInlet': `messageReceived = ${globs.m}`
                         })
                     }
                 }

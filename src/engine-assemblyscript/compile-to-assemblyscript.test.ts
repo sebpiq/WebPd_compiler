@@ -48,8 +48,6 @@ describe('compileToAssemblyscript', () => {
             MSG_STRING_TOKEN: new WebAssembly.Global({ value: 'i32' }),
             msg_create: () => 0,
             msg_getTokenTypes: () => 0,
-            msg_createArray: () => 0,
-            msg_pushToArray: () => undefined,
             msg_writeStringToken: () => undefined,
             msg_writeFloatToken: () => undefined,
             msg_readStringToken: () => 0,

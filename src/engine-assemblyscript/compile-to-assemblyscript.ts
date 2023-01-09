@@ -89,8 +89,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
             // MSG EXPORTS
             x_msg_create as msg_create,
-            x_msg_createArray as msg_createArray,
-            x_msg_pushToArray as msg_pushToArray,
             x_msg_getTokenTypes as msg_getTokenTypes,
             msg_writeStringToken,
             msg_writeFloatToken,

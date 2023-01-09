@@ -32,7 +32,7 @@ export const generate = (
     graph: DspGraph.Graph,
     debug: boolean,
 ): EngineVariableNames => ({
-    n: createNamespace(
+    n: createNamespace('n', 
         Object.values(graph).reduce<EngineVariableNames['n']>(
             (nodeMap, node) => {
                 const nodeImplementation = getNodeImplementation(
@@ -44,19 +44,19 @@ export const generate = (
                 const prefix = debug ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`) : _v(node.id)
 
                 nodeMap[node.id] = {
-                    ins: createNamespaceFromPortlets(node.inlets, 'signal', 
+                    ins: createNamespaceFromPortlets('ins', node.inlets, 'signal', 
                         inlet => `${prefix}_INS_${_v(inlet.id)}`
                     ),
-                    rcvs: createNamespaceFromPortlets(node.inlets, 'message', 
+                    rcvs: createNamespaceFromPortlets('rcvs', node.inlets, 'message', 
                         inlet => `${prefix}_RCVS_${_v(inlet.id)}`
                     ),
-                    outs: createNamespaceFromPortlets(node.outlets, 'signal',
+                    outs: createNamespaceFromPortlets('outs', node.outlets, 'signal',
                         outlet => `${prefix}_OUTS_${_v(outlet.id)}`
                     ),
-                    snds: createNamespaceFromPortlets(node.outlets, 'message', 
+                    snds: createNamespaceFromPortlets('snds', node.outlets, 'message', 
                         outlet => `${prefix}_SNDS_${_v(outlet.id)}`
                     ),
-                    state: createNamespace(nodeStateVariables.reduce(
+                    state: createNamespace('state', nodeStateVariables.reduce(
                         (nameMap, stateVariable) => {
                             nameMap[stateVariable] = `${prefix}_STATE_${_v(stateVariable)}`
                             return nameMap
@@ -69,23 +69,20 @@ export const generate = (
             {}
         )
     ),
-    g: createNamespace({
+    g: createNamespace('g', {
         arrays: 'ARRAYS',
-        // Reusable variable to iterate over outlets
         iterOutlet: 'O',
-        // Frame count, reinitialized at each loop start
         iterFrame: 'F',
-        // Frame count, never reinitialized
         frame: 'FRAME',
         blockSize: 'BLOCK_SIZE',
         sampleRate: 'SAMPLE_RATE',
         output: 'OUTPUT',
         input: 'INPUT',
-        inMessage: 'm',
+        m: 'm',
     }),
-    outletListeners: createNamespace({}),
-    inletCallers: createNamespace({}),
-    types: createNamespace({}),
+    outletListeners: createNamespace('outletListeners', {}),
+    inletCallers: createNamespace('inletCallers', {}),
+    types: createNamespace('types', {}),
 })
 
 /**
@@ -152,7 +149,7 @@ export const attachTypes = (
  * @param namespace
  * @returns
  */
-export const createNamespace = <T extends Object>(namespace: T) => {
+export const createNamespace = <T extends Object>(name: string, namespace: T) => {
     return new Proxy<T>(namespace, {
         get: (target, k) => {
             const key = String(k)
@@ -175,7 +172,7 @@ export const createNamespace = <T extends Object>(namespace: T) => {
                 ) {
                     return undefined
                 }
-                throw new Error(`Namespace doesn't know key "${String(key)}"`)
+                throw new Error(`Namespace "${name}" doesn't know key "${String(key)}"`)
             }
             return (target as any)[key]
         },
@@ -196,11 +193,12 @@ const _v = assertValidNamePart
 const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/
 
 export const createNamespaceFromPortlets = <T>(
+    name: string,
     portletMap: DspGraph.PortletMap, 
     portletType: DspGraph.PortletType, 
     mapFunction: (portlet: DspGraph.Portlet) => T
 ) =>
-    createNamespace(Object.values(portletMap)
+    createNamespace(name, Object.values(portletMap)
         .filter(portlet => portlet.type === portletType)
         .reduce((nameMap, portlet) => {
             nameMap[portlet.id] = mapFunction(portlet)

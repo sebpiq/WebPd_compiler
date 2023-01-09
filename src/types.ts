@@ -168,14 +168,18 @@ export interface EngineVariableNames {
     // Namespace for global variables
     g: {
         arrays: string
+        // Reusable variable to iterate over outlets
         iterOutlet: string
+        // Frame count, reinitialized at each loop start
         iterFrame: string
+        // Frame count, never reinitialized
         frame: string
         blockSize: string
         sampleRate: string
         output: string
         input: string
-        inMessage: string
+        // Input argument for message receiver functions
+        m: string
     }
 
     // Names of types used by the engine (e.g. especially depending on the bitdepth)

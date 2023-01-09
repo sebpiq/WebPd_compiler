@@ -32,12 +32,6 @@ describe('compile', () => {
         target: 'javascript',
     }
 
-    const NODE_IMPLEMENTATIONS: NodeImplementations = {
-        DUMMY: {
-            loop: () => '',
-        },
-    }
-
     it('should compile assemblyscript without error', () => {
         const code = compile({}, {}, COMPILER_SETTINGS_AS)
         assert.strictEqual(typeof code, 'string')
@@ -58,6 +52,7 @@ describe('compile', () => {
                 },
             })
             assert.deepStrictEqual(settings.outletListenerSpecs, {})
+            assert.deepStrictEqual(settings.inletCallerSpecs, {})
         })
 
         it('should throw error if bitDepth invalid', () => {

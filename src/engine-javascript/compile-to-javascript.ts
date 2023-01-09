@@ -47,7 +47,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
                     `${nodeId}: {
                         ${outletIds.map(outletId => `
-                            ${outletId}: {onMessage: () => undefined,}
+                            "${outletId}": {onMessage: () => undefined,}
                         `)}
                     }`
                 )}
@@ -56,7 +56,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
                     `${nodeId}: {
                         ${inletIds.map(inletId => `
-                            ${inletId}: ${engineVariableNames.inletCallers[nodeId][inletId]}
+                            "${inletId}": ${engineVariableNames.inletCallers[nodeId][inletId]}
                         `)}
                     }`
                 )}
