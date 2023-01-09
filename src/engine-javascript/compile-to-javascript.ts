@@ -9,7 +9,6 @@
  *
  */
 
-import { traversal } from '@webpd/dsp-graph'
 import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
@@ -17,11 +16,12 @@ import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
 import generateCoreCode from './core-code'
+import { graphTraversalForCompile } from '../engine-common/core'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const { engineVariableNames, outletListenerSpecs, inletCallerSpecs } =
         compilation
-    const graphTraversal = traversal.breadthFirst(compilation.graph)
+    const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const coreCode = generateCoreCode(engineVariableNames)
 

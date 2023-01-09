@@ -9,7 +9,18 @@
  *
  */
 
-import { DspGraph } from '@webpd/dsp-graph'
+import { DspGraph, traversal } from '@webpd/dsp-graph'
+
+export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
+    const graphTraversalSignal = traversal.signalNodes(graph)
+    const combined = graphTraversalSignal
+    traversal.messageNodes(graph).forEach(node => {
+        if (combined.indexOf(node) === -1) {
+            combined.push(node)
+        }
+    })
+    return combined
+}
 
 export const buildMessageTransferOperations = (
     template: Array<DspGraph.NodeArgument>

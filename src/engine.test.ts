@@ -147,7 +147,7 @@ describe('Engine', () => {
                 const graph = makeGraph({
                     outputNode: {
                         type: 'DUMMY',
-                        isEndSink: true,
+                        isSignalSink: true,
                     },
                 })
 
@@ -218,7 +218,7 @@ describe('Engine', () => {
                 const graph = makeGraph({
                     outputNode: {
                         type: 'DUMMY',
-                        isEndSink: true,
+                        isSignalSink: true,
                     },
                 })
 
@@ -823,7 +823,7 @@ describe('Engine', () => {
                         inlets: {
                             someInlet: { type: 'message', id: 'someInlet' },
                         },
-                        isEndSink: true,
+                        isSignalSink: true,
                     },
                 })
 

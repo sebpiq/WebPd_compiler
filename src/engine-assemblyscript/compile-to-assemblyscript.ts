@@ -9,11 +9,11 @@
  *
  */
 
-import { traversal } from '@webpd/dsp-graph'
 import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
+import { graphTraversalForCompile } from '../engine-common/core'
 import { Compilation } from '../types'
 import generateCoreCode from './core-code'
 import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
@@ -34,7 +34,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             engineVariableNames,
         },
     }
-    const graphTraversal = traversal.breadthFirst(compilation.graph)
+    const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const { FloatArray } = engineVariableNames.types
     const coreCode = generateCoreCode(engineVariableNames)

@@ -12,7 +12,7 @@
 import { DspGraph } from '@webpd/dsp-graph'
 import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
-import { CompilerTarget, NodeImplementations } from './types'
+import { CompilerTarget, NodeImplementation } from './types'
 
 describe('test-helpers-node-implementations', () => {
     describe('assertNodeOutput', () => {
@@ -20,10 +20,8 @@ describe('test-helpers-node-implementations', () => {
             { target: 'javascript' },
             { target: 'assemblyscript' },
         ])('should work with signal inlets %s', async ({ target }) => {
-            const nodeImplementations: NodeImplementations = {
-                counter: {
-                    loop: (_, { ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
-                },
+            const nodeImplementation: NodeImplementation<{}> = {
+                loop: (_, { ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
             }
 
             const node: DspGraph.Node = {
@@ -36,7 +34,7 @@ describe('test-helpers-node-implementations', () => {
                 {
                     target,
                     node,
-                    nodeImplementations,
+                    nodeImplementation,
                 },
                 // Inputs
                 [{ '0': 1 }, { '0': 2 }, { '0': 3 }],
@@ -49,18 +47,16 @@ describe('test-helpers-node-implementations', () => {
             { target: 'javascript' },
             { target: 'assemblyscript' },
         ])('should work with message inlets %s', async ({ target }) => {
-            const nodeImplementations: NodeImplementations = {
-                counter: {
-                    messages: (_, { globs, snds }) => ({
-                        '0': `
-                            ${snds.$0}(
-                                msg_floats([
-                                    msg_readFloatToken(${globs.m}, 0) + 0.1
-                                ])
-                            )
-                        `
-                    })
-                },
+            const nodeImplementation: NodeImplementation<{}> = {
+                messages: (_, { globs, snds }) => ({
+                    '0': `
+                        ${snds.$0}(
+                            msg_floats([
+                                msg_readFloatToken(${globs.m}, 0) + 0.1
+                            ])
+                        )
+                    `
+                })
             }
 
             const node: DspGraph.Node = {
@@ -73,7 +69,7 @@ describe('test-helpers-node-implementations', () => {
                 {
                     target,
                     node,
-                    nodeImplementations,
+                    nodeImplementation,
                 },
                 // Inputs
                 [{ '0': [[1]] }, { '0': [[2]] }, { '0': [[3]] }],

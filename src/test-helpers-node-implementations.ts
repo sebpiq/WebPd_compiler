@@ -20,14 +20,15 @@ import {
     CompilerTarget,
     FloatArray,
     Code,
+    NodeImplementation,
 } from './types'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
-interface NodeTestSettings {
+interface NodeTestSettings <NodeArguments>{
     target: CompilerTarget
     node: DspGraph.Node
-    nodeImplementations: NodeImplementations
+    nodeImplementation: NodeImplementation<NodeArguments>
     engineDspParams?: typeof ENGINE_DSP_PARAMS
 }
 
@@ -35,8 +36,8 @@ export type Frame = {
     [portletId: string]: Array<Message> | Signal
 }
 
-export const generateFramesForNode = async (
-    nodeTestSettings: NodeTestSettings,
+export const generateFramesForNode = async <NodeArguments>(
+    nodeTestSettings: NodeTestSettings<NodeArguments>,
     inputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
 ): Promise<Array<Frame>> => {
@@ -63,6 +64,7 @@ export const generateFramesForNode = async (
         sinks: makeConnectionEndpointMap('testNode', Array.from(connectedInlets)),
         inlets: makeMessagePortlets(Object.keys(testNodeInlets)),
         outlets: testNodeInlets,
+        isMessageSource: true,
     }
 
     // Node to test
@@ -84,7 +86,7 @@ export const generateFramesForNode = async (
         sinks: {},
         inlets: testNodeOutlets,
         outlets: makeMessagePortlets(Object.keys(testNodeOutlets)),
-        isEndSink: true,
+        isSignalSink: true,
     }
 
     const graph: DspGraph.Graph = {
@@ -95,7 +97,7 @@ export const generateFramesForNode = async (
 
     // --------------- Generating implementation for testing recorder & engine
     const nodeImplementations: NodeImplementations = {
-        ...nodeTestSettings.nodeImplementations,
+        [testNode.type]: nodeTestSettings.nodeImplementation,
 
         'fake_source_node': {
             declare: (_, {state, macros}) => Object.keys(fakeSourceNode.outlets)
@@ -267,8 +269,8 @@ export const generateFramesForNode = async (
     return outputFrames
 }
 
-export const assertNodeOutput = async (
-    nodeTestSettings: NodeTestSettings,
+export const assertNodeOutput = async <NodeArguments>(
+    nodeTestSettings: NodeTestSettings<NodeArguments>,
     inputFrames: Array<Frame>,
     expectedOutputFrames: Array<Frame>,
     arrays?: { [arrayName: string]: Array<number> }
