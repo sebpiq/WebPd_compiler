@@ -100,7 +100,7 @@ const getJSEvalErrorSite = async (code: string) => {
             const lineBefore = Math.max(lineNumber - 3, 0)
             const lineAfter = lineNumber + 3
             const codeLines = code.split('\n').map((line, i) => (i + 1) === lineNumber ? '-> ' + line + ' <-': '  ' + line)
-            return `line ${lineNumber} : \n` + codeLines.slice(lineBefore, lineAfter).join('\n')
+            return `line ${lineNumber} : \n` + codeLines.slice(lineBefore, lineAfter).join('\n') + '\n-----\n' + error.toString()
         } else {
             console.warn(`couldn't parse error line`)
             return `copy/pasting node command stacktrace : \n` + error.toString()

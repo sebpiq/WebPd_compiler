@@ -14,7 +14,7 @@ import { compileWasmModule } from './test-helpers'
 import { readMetadata } from './AssemblyScriptWasmEngine'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation } from '../test-helpers'
-import { EngineMetadata } from './types'
+import { EngineMetadata } from '../types'
 
 describe('AssemblyScriptWasmEngine', () => {
     describe('readMetadata', () => {
@@ -36,8 +36,12 @@ describe('AssemblyScriptWasmEngine', () => {
             const metadata = await readMetadata(wasmBuffer)
 
             assert.deepStrictEqual(metadata, {
+                audioSettings: {
+                    ...compilation.audioSettings,
+                    blockSize: 0,
+                    sampleRate: 0,
+                },
                 compilation: {
-                    audioSettings: compilation.audioSettings,
                     engineVariableNames: compilation.engineVariableNames,
                     inletCallerSpecs: {},
                     outletListenerSpecs: {},

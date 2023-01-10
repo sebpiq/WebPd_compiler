@@ -19,7 +19,7 @@
  * @module
  */
 
-import { AudioSettings, CodeVariableName, Engine, Message, SoundFileInfo } from '../types'
+import { AudioSettings, CodeVariableName, Engine, EngineMetadata, Message, SoundFileInfo } from '../types'
 import {
     liftString,
     lowerString,
@@ -36,15 +36,9 @@ import {
 import {
     AssemblyScriptWasmExports,
     AssemblyScriptWasmImports,
-    EngineMetadata,
     MessagePointer,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
-
-interface AudioConfig {
-    sampleRate: number
-    blockSize: number
-}
 
 /**
  * Convenience function to create and initialize an engine.
@@ -68,9 +62,10 @@ export class AssemblyScriptWasmEngine implements Engine {
     private wasmBuffer: ArrayBuffer
     private wasmOutput: FloatArray
     private wasmInput: FloatArray
-    private audioConfig: AudioConfig
     private arrayType: typeof Float32Array | typeof Float64Array
+    // We use these two values only for caching, to avoid frequent nested access
     private bitDepth: AudioSettings['bitDepth']
+    private blockSize: EngineMetadata['audioSettings']['blockSize']
 
     constructor(wasmBuffer: ArrayBuffer) {
         this.wasmBuffer = wasmBuffer
@@ -79,7 +74,7 @@ export class AssemblyScriptWasmEngine implements Engine {
     async initialize() {
         // We need to read metadata before everything, because it is used by other initialization functions
         this.metadata = await readMetadata(this.wasmBuffer)
-        this.bitDepth = this.metadata.compilation.audioSettings.bitDepth
+        this.bitDepth = this.metadata.audioSettings.bitDepth
         this.arrayType =
             this.bitDepth === 32
                 ? Float32Array
@@ -101,10 +96,9 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     configure(sampleRate: number, blockSize: number): void {
-        this.audioConfig = {
-            sampleRate,
-            blockSize,
-        }
+        this.blockSize = blockSize
+        this.metadata.audioSettings.blockSize = blockSize
+        this.metadata.audioSettings.sampleRate = sampleRate
         this.wasmExports.configure(sampleRate, blockSize)
         this._updateWasmInOuts()
     }
@@ -116,15 +110,15 @@ export class AssemblyScriptWasmEngine implements Engine {
         for (let channel = 0; channel < input.length; channel++) {
             this.wasmInput.set(
                 input[channel],
-                channel * this.audioConfig.blockSize
+                channel * this.blockSize
             )
         }
         this.wasmExports.loop()
         for (let channel = 0; channel < output.length; channel++) {
             output[channel].set(
                 this.wasmOutput.subarray(
-                    this.audioConfig.blockSize * channel,
-                    this.audioConfig.blockSize * (channel + 1)
+                    this.blockSize * channel,
+                    this.blockSize * (channel + 1)
                 )
             )
         }

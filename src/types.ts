@@ -41,10 +41,24 @@ export type Code = string
 // Name of a variable in generated code
 export type CodeVariableName = string
 
+export interface EngineMetadata {
+    readonly audioSettings: Compilation['audioSettings'] & { 
+        sampleRate: number
+        blockSize: number
+    }
+    compilation: {
+        readonly inletCallerSpecs: Compilation['inletCallerSpecs']
+        readonly outletListenerSpecs: Compilation['outletListenerSpecs']
+        readonly engineVariableNames: Compilation['engineVariableNames']
+    }
+}
+
 /**
  *  Base interface for DSP engine
  */
 export interface Engine {
+    metadata: EngineMetadata
+
     configure: (sampleRate: number, blockSize: number) => void
 
     loop: (

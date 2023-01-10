@@ -41,22 +41,23 @@ export const generate = (
                 )
                 const nodeStateVariables =
                     nodeImplementation.stateVariables ? nodeImplementation.stateVariables(node) : []
+                const namespaceLabel = `[${node.type}] ${node.id}`
                 const prefix = debug ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`) : _v(node.id)
 
                 nodeMap[node.id] = {
-                    ins: createNamespaceFromPortlets('ins', node.inlets, 'signal', 
+                    ins: createNamespaceFromPortlets(`${namespaceLabel}.ins`, node.inlets, 'signal', 
                         inlet => `${prefix}_INS_${_v(inlet.id)}`
                     ),
-                    rcvs: createNamespaceFromPortlets('rcvs', node.inlets, 'message', 
+                    rcvs: createNamespaceFromPortlets(`${namespaceLabel}.rcvs`, node.inlets, 'message', 
                         inlet => `${prefix}_RCVS_${_v(inlet.id)}`
                     ),
-                    outs: createNamespaceFromPortlets('outs', node.outlets, 'signal',
+                    outs: createNamespaceFromPortlets(`${namespaceLabel}.outs`, node.outlets, 'signal',
                         outlet => `${prefix}_OUTS_${_v(outlet.id)}`
                     ),
-                    snds: createNamespaceFromPortlets('snds', node.outlets, 'message', 
+                    snds: createNamespaceFromPortlets(`${namespaceLabel}.snds`, node.outlets, 'message', 
                         outlet => `${prefix}_SNDS_${_v(outlet.id)}`
                     ),
-                    state: createNamespace('state', nodeStateVariables.reduce(
+                    state: createNamespace(`${namespaceLabel}.state`, nodeStateVariables.reduce(
                         (nameMap, stateVariable) => {
                             nameMap[stateVariable] = `${prefix}_STATE_${_v(stateVariable)}`
                             return nameMap
@@ -149,7 +150,7 @@ export const attachTypes = (
  * @param namespace
  * @returns
  */
-export const createNamespace = <T extends Object>(name: string, namespace: T) => {
+export const createNamespace = <T extends Object>(label: string, namespace: T) => {
     return new Proxy<T>(namespace, {
         get: (target, k) => {
             const key = String(k)
@@ -172,7 +173,7 @@ export const createNamespace = <T extends Object>(name: string, namespace: T) =>
                 ) {
                     return undefined
                 }
-                throw new Error(`Namespace "${name}" doesn't know key "${String(key)}"`)
+                throw new Error(`Namespace "${label}" doesn't know key "${String(key)}"`)
             }
             return (target as any)[key]
         },
@@ -193,12 +194,12 @@ const _v = assertValidNamePart
 const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/
 
 export const createNamespaceFromPortlets = <T>(
-    name: string,
+    label: string,
     portletMap: DspGraph.PortletMap, 
     portletType: DspGraph.PortletType, 
     mapFunction: (portlet: DspGraph.Portlet) => T
 ) =>
-    createNamespace(name, Object.values(portletMap)
+    createNamespace(label, Object.values(portletMap)
         .filter(portlet => portlet.type === portletType)
         .reduce((nameMap, portlet) => {
             nameMap[portlet.id] = mapFunction(portlet)

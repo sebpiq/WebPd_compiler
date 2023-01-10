@@ -43,18 +43,6 @@ export type InternalPointer = number
 export type ArrayBufferOfIntegersPointer = number
 
 /**
- * Metadata of an assemblyscript compiled engine
- */
-export interface EngineMetadata {
-    compilation: {
-        readonly audioSettings: Compilation['audioSettings']
-        readonly inletCallerSpecs: Compilation['inletCallerSpecs']
-        readonly outletListenerSpecs: Compilation['outletListenerSpecs']
-        readonly engineVariableNames: Compilation['engineVariableNames']
-    }
-}
-
-/**
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */

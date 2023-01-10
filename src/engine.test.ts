@@ -166,7 +166,7 @@ describe('Engine', () => {
                     compilation: {
                         graph,
                         nodeImplementations,
-                        audioSettings: audioSettings,
+                        audioSettings,
                     },
                 })
 
@@ -244,7 +244,7 @@ describe('Engine', () => {
                     compilation: {
                         graph,
                         nodeImplementations,
-                        audioSettings: audioSettings,
+                        audioSettings,
                     },
                 })
 
@@ -255,6 +255,65 @@ describe('Engine', () => {
                     new Float32Array([1, 3, 5, 7]),
                     new Float32Array([0, 0, 0, 0]),
                 ])
+            }
+        )
+
+        it.each([
+            { target: 'javascript' as CompilerTarget },
+            { target: 'assemblyscript' as CompilerTarget },
+        ])(
+            'should export metadata audio settings and update it after configure %s',
+            async ({ target }) => {
+                const graph = makeGraph({
+                    'bla': {
+                        inlets: {'blo': {type: 'message', id: 'blo'}},
+                        isMessageSource: true,
+                    },
+                    'bli': {
+                        outlets: {'blu': {type: 'message', id: 'blu'}},
+                    },
+                })
+
+                const nodeImplementations = {
+                    'DUMMY': {
+                        messages: () => ({'blo': ''})
+                    }
+                }
+
+                const audioSettings: AudioSettings = {
+                    bitDepth: 32,
+                    channelCount: { in: 2, out: 3 },
+                }
+
+                const engine = await initializeEngineTest({
+                    target,
+                    compilation: {
+                        graph,
+                        nodeImplementations,
+                        audioSettings,
+                        inletCallerSpecs: {'bla': ['blo']},
+                        outletListenerSpecs: {'bli': ['blu']},
+                    },
+                })
+
+                assert.deepStrictEqual(engine.metadata, {
+                    audioSettings: {
+                        ...audioSettings,
+                        blockSize: 0,
+                        sampleRate: 0,
+                    },
+                    compilation: {
+                        inletCallerSpecs: {'bla': ['blo']},
+                        outletListenerSpecs: {'bli': ['blu']},
+                        engineVariableNames: engine.metadata.compilation.engineVariableNames
+                    }
+                })
+                assert.ok(Object.keys(engine.metadata.compilation.engineVariableNames).length)
+
+                engine.configure(44100, 1024)
+
+                assert.strictEqual(engine.metadata.audioSettings.blockSize, 1024)
+                assert.strictEqual(engine.metadata.audioSettings.sampleRate, 44100)
             }
         )
     })
@@ -828,7 +887,7 @@ describe('Engine', () => {
                 })
 
                 const inletCallerSpecs: InletCallerSpecs = {
-                    ['someNode']: ['someInlet'],
+                    'someNode': ['someInlet'],
                 }
 
                 const nodeImplementations: NodeImplementations = {

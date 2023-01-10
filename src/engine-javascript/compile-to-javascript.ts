@@ -13,28 +13,45 @@ import { renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation } from '../types'
+import { Compilation, EngineMetadata } from '../types'
 import { JavaScriptEngineCode } from './types'
 import generateCoreCode from './core-code'
 import { graphTraversalForCompile } from '../engine-common/core'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { engineVariableNames, outletListenerSpecs, inletCallerSpecs } =
+    const { engineVariableNames, outletListenerSpecs, inletCallerSpecs, audioSettings } =
         compilation
     const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.engineVariableNames.g
     const coreCode = generateCoreCode(engineVariableNames)
+    const metadata: EngineMetadata = {
+        audioSettings: {
+            ...audioSettings,
+            // Determined at configure
+            sampleRate: 0,
+            blockSize: 0,
+        },
+        compilation: {
+            inletCallerSpecs,
+            outletListenerSpecs,
+            engineVariableNames,
+        },
+    }
 
     // prettier-ignore
     return renderCode`
         ${coreCode}
+
         ${compileDeclare(compilation, graphTraversal)}
         ${compileOutletListeners(compilation)}
 
         const exports = {
+            metadata: ${JSON.stringify(metadata)},
             configure: (sampleRate, blockSize) => {
                 ${globs.sampleRate} = sampleRate
                 ${globs.blockSize} = blockSize
+                exports.metadata.audioSettings.sampleRate = sampleRate
+                exports.metadata.audioSettings.blockSize = blockSize
                 ${compileInitialize(compilation, graphTraversal)}
             },
             loop: (${globs.input}, ${globs.output}) => {
@@ -72,7 +89,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 sendWriteSoundFileResponse: x_fs_onWriteSoundFileResponse,
                 sendSoundStreamData: x_fs_onSoundStreamData,
                 closeSoundStream: x_fs_onCloseSoundStream,
-            }
+            },
         }
 
         // FS IMPORTS

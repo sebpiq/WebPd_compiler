@@ -14,9 +14,9 @@ import compileDeclare from '../engine-common/compile-declare'
 import compileInitialize from '../engine-common/compile-initialize'
 import compileLoop from '../engine-common/compile-loop'
 import { graphTraversalForCompile } from '../engine-common/core'
-import { Compilation } from '../types'
+import { Compilation, EngineMetadata } from '../types'
 import generateCoreCode from './core-code'
-import { AssemblyScriptWasmEngineCode, EngineMetadata } from './types'
+import { AssemblyScriptWasmEngineCode } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
@@ -26,18 +26,23 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         engineVariableNames,
     } = compilation
     const { channelCount } = audioSettings
+    const graphTraversal = graphTraversalForCompile(compilation.graph)
+    const globs = compilation.engineVariableNames.g
+    const { FloatArray } = engineVariableNames.types
+    const coreCode = generateCoreCode(engineVariableNames)
     const metadata: EngineMetadata = {
+        audioSettings: {
+            ...audioSettings,
+            // Determined at configure
+            sampleRate: 0,
+            blockSize: 0,
+        },
         compilation: {
-            audioSettings,
             inletCallerSpecs,
             outletListenerSpecs,
             engineVariableNames,
         },
     }
-    const graphTraversal = graphTraversalForCompile(compilation.graph)
-    const globs = compilation.engineVariableNames.g
-    const { FloatArray } = engineVariableNames.types
-    const coreCode = generateCoreCode(engineVariableNames)
 
     // prettier-ignore
     return renderCode`
