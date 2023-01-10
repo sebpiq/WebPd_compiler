@@ -24,7 +24,7 @@ export default (
     return renderCode`
         ${globs.iterFrame} = 0
         ${globs.iterOutlet} = 0
-        ${globs.frame} = -1
+        ${globs.frame} = 0
 
         ${graphTraversal.map((node) => {
             const nodeInitialize = getNodeImplementation(compilation.nodeImplementations, node.type).initialize

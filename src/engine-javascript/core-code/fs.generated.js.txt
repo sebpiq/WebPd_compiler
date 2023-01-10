@@ -8,21 +8,21 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-var FS_OPERATION_SUCCESS = ${FS_OPERATION_SUCCESS};
-var FS_OPERATION_FAILURE = ${FS_OPERATION_FAILURE};
-var _FS_OPERATIONS_IDS = new Set();
-var _FS_OPERATIONS_CALLBACKS = new Map();
-var _FS_OPERATIONS_SOUND_CALLBACKS = new Map();
-var _FS_SOUND_STREAM_BUFFERS = new Map();
+const FS_OPERATION_SUCCESS = ${FS_OPERATION_SUCCESS};
+const FS_OPERATION_FAILURE = ${FS_OPERATION_FAILURE};
+const _FS_OPERATIONS_IDS = new Set();
+const _FS_OPERATIONS_CALLBACKS = new Map();
+const _FS_OPERATIONS_SOUND_CALLBACKS = new Map();
+const _FS_SOUND_STREAM_BUFFERS = new Map();
 // We start at 1, because 0 is what ASC uses when host forgets to pass an arg to 
 // a function. Therefore we can get false negatives when a test happens to expect a 0.
-var _FS_OPERATION_COUNTER = 1;
+let _FS_OPERATION_COUNTER = 1;
 // =========================== EXPORTED API
 function x_fs_onReadSoundFileResponse(id, status, sound) {
     _fs_assertOperationExists(id, 'x_fs_onReadSoundFileResponse');
     _FS_OPERATIONS_IDS.delete(id);
     // Finish cleaning before calling the callback in case it would throw an error.
-    var callback = _FS_OPERATIONS_SOUND_CALLBACKS.get(id);
+    const callback = _FS_OPERATIONS_SOUND_CALLBACKS.get(id);
     callback(id, status, sound);
     _FS_OPERATIONS_SOUND_CALLBACKS.delete(id);
 }
@@ -30,7 +30,7 @@ function x_fs_onWriteSoundFileResponse(id, status) {
     _fs_assertOperationExists(id, 'x_fs_onWriteSoundFileResponse');
     _FS_OPERATIONS_IDS.delete(id);
     // Finish cleaning before calling the callback in case it would throw an error.
-    var callback = _FS_OPERATIONS_CALLBACKS.get(id);
+    const callback = _FS_OPERATIONS_CALLBACKS.get(id);
     callback(id, status);
     _FS_OPERATIONS_CALLBACKS.delete(id);
 }
@@ -43,30 +43,30 @@ function x_fs_onCloseSoundStream(id, status) {
 }
 // =========================== FS API
 function fs_readSoundFile(url, info, callback) {
-    var id = _fs_createOperationId();
+    const id = _fs_createOperationId();
     _FS_OPERATIONS_SOUND_CALLBACKS.set(id, callback);
     i_fs_readSoundFile(id, url, info);
     return id;
 }
 function fs_writeSoundFile(sound, url, info, callback) {
-    var id = _fs_createOperationId();
+    const id = _fs_createOperationId();
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
     i_fs_writeSoundFile(id, sound, url, info);
     return id;
 }
 function fs_openSoundReadStream(url, info, callback) {
-    var id = _fs_createOperationId();
-    var channelCount = ${Int}(msg_readFloatToken(info, 0));
-    var buffer = new _fs_SoundBuffer(channelCount);
+    const id = _fs_createOperationId();
+    const channelCount = ${Int}(msg_readFloatToken(info, 0));
+    const buffer = new _fs_SoundBuffer(channelCount);
     _FS_SOUND_STREAM_BUFFERS.set(id, buffer);
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
     i_fs_openSoundReadStream(id, url, info);
     return id;
 }
 function fs_openSoundWriteStream(url, info, callback) {
-    var id = _fs_createOperationId();
-    var channelCount = ${Int}(msg_readFloatToken(info, 0));
-    var buffer = new _fs_SoundBuffer(channelCount);
+    const id = _fs_createOperationId();
+    const channelCount = ${Int}(msg_readFloatToken(info, 0));
+    const buffer = new _fs_SoundBuffer(channelCount);
     _FS_SOUND_STREAM_BUFFERS.set(id, buffer);
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
     i_fs_openSoundWriteStream(id, url, info);
@@ -93,14 +93,14 @@ function fs_closeSoundStream(id, status) {
 }
 // Structure : [channelCount]
 function fs_soundInfo(channelCount) {
-    var info = msg_create([MSG_FLOAT_TOKEN]);
+    const info = msg_create([MSG_FLOAT_TOKEN]);
     msg_writeFloatToken(info, 0, ${Float}(channelCount));
     return info;
 }
 // =========================== PRIVATE
 // TODO : Optimize by flattening frames + ring buffer (allows to read/write directly from host)
-var _fs_SoundBuffer = /** @class */ (function () {
-    function _fs_SoundBuffer(channelCount) {
+class _fs_SoundBuffer {
+    constructor(channelCount) {
         this.voidBlock = [new ${FloatArray}(0)];
         this.frameArray = new ${FloatArray}(channelCount);
         this.channelCount = channelCount;
@@ -109,7 +109,7 @@ var _fs_SoundBuffer = /** @class */ (function () {
         this.currentBlock = [];
         this._loadCurrentBlock(this.voidBlock);
     }
-    _fs_SoundBuffer.prototype.pushBlock = function (block) {
+    pushBlock(block) {
         this.currentLength += block[0].length;
         if (!this._hasCurrentBlock()) {
             this._loadCurrentBlock(block);
@@ -118,11 +118,11 @@ var _fs_SoundBuffer = /** @class */ (function () {
             this.blocks.push(block);
         }
         return this.availableFrameCount();
-    };
-    _fs_SoundBuffer.prototype.availableFrameCount = function () {
+    }
+    availableFrameCount() {
         return this.currentLength - this.currentBlockCursor;
-    };
-    _fs_SoundBuffer.prototype.pullFrame = function () {
+    }
+    pullFrame() {
         if (this.currentBlockCursor >= this.currentBlockLength) {
             // Discard current block and load next one
             if (this._hasCurrentBlock()) {
@@ -139,33 +139,32 @@ var _fs_SoundBuffer = /** @class */ (function () {
                 return this.frameArray;
             }
         }
-        var currentBlockCursor = this.currentBlockCursor++;
-        var currentBlock = this.currentBlock;
-        for (var channel = 0; channel < this.channelCount; channel++) {
+        const currentBlockCursor = this.currentBlockCursor++;
+        const currentBlock = this.currentBlock;
+        for (let channel = 0; channel < this.channelCount; channel++) {
             this.frameArray[channel] = currentBlock[channel][currentBlockCursor];
         }
         return this.frameArray;
-    };
-    _fs_SoundBuffer.prototype.getCurrentBlock = function () {
+    }
+    getCurrentBlock() {
         return this.currentBlock;
-    };
-    _fs_SoundBuffer.prototype._loadCurrentBlock = function (block) {
+    }
+    _loadCurrentBlock(block) {
         this.currentBlock = block;
         this.currentBlockLength = block[0].length;
         this.currentBlockCursor = 0;
-    };
-    _fs_SoundBuffer.prototype._hasCurrentBlock = function () {
+    }
+    _hasCurrentBlock() {
         return this.currentBlock[0].length !== 0;
-    };
-    _fs_SoundBuffer.prototype._resetFrameArray = function () {
-        for (var channel = 0; channel < this.channelCount; channel++) {
+    }
+    _resetFrameArray() {
+        for (let channel = 0; channel < this.channelCount; channel++) {
             this.frameArray[channel] = 0;
         }
-    };
-    return _fs_SoundBuffer;
-}());
+    }
+}
 function _fs_createOperationId() {
-    var id = _FS_OPERATION_COUNTER++;
+    const id = _FS_OPERATION_COUNTER++;
     _FS_OPERATIONS_IDS.add(id);
     return id;
 }

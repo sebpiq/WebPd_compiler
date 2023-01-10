@@ -13,10 +13,7 @@ import { DspGraph } from '@webpd/dsp-graph'
 import {
     FS_OPERATION_SUCCESS,
     FS_OPERATION_FAILURE,
-    MSG_FLOAT_TOKEN,
-    MSG_STRING_TOKEN,
 } from './constants'
-import { MSG_TOKEN_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/constants'
 import {
     Code,
     CodeVariableNames,
@@ -86,12 +83,4 @@ export const replaceCoreCodePlaceholders = (
         .replaceAll('${setFloat}', setFloat)
         .replaceAll('${FS_OPERATION_SUCCESS}', FS_OPERATION_SUCCESS.toString())
         .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
-        .replaceAll(
-            '${MSG_FLOAT_TOKEN}',
-            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_FLOAT_TOKEN].toString()
-        )
-        .replaceAll(
-            '${MSG_STRING_TOKEN}',
-            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_STRING_TOKEN].toString()
-        )
 }

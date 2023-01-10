@@ -13,9 +13,7 @@ import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import { MSG_FLOAT_TOKEN, MSG_STRING_TOKEN } from '../constants'
 import { Code } from '../types'
-import { MSG_TOKEN_TYPES_ASSEMBLYSCRIPT } from './constants'
 import { createEngine } from '../test-helpers'
 import { AssemblyScriptWasmEngine } from './AssemblyScriptWasmEngine'
 
@@ -29,14 +27,6 @@ export const getAssemblyscriptCoreCode = () => {
         .replaceAll('${Float}', 'f64')
         .replaceAll('${getFloat}', 'getFloat64')
         .replaceAll('${setFloat}', 'setFloat64')
-        .replaceAll(
-            '${MSG_FLOAT_TOKEN}',
-            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_FLOAT_TOKEN].toString()
-        )
-        .replaceAll(
-            '${MSG_STRING_TOKEN}',
-            MSG_TOKEN_TYPES_ASSEMBLYSCRIPT[MSG_STRING_TOKEN].toString()
-        )
 }
 
 export const compileWasmModule = async (
@@ -46,7 +36,7 @@ export const compileWasmModule = async (
         optimizeLevel: 3,
         runtime: 'stub',
         exportRuntime: true,
-        // For 32 bits version of Math, not needed since we do tests with bitDepth 64
+        // For 32 bits version of Math
         // use: ['Math=NativeMathf'],
     })
     if (error) {

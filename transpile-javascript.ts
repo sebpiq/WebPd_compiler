@@ -4,7 +4,11 @@ import { readFileSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 const { transpileModule } = ts
 
-const TRANSPILATION_SETTINGS: ts.TranspileOptions = {}
+const TRANSPILATION_SETTINGS: ts.TranspileOptions = {
+    compilerOptions: {
+        target: ts.ScriptTarget.ES2021,
+    }
+}
 
 export const renderJs = (
     jsStrings: Array<string>,

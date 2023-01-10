@@ -77,5 +77,38 @@ describe('test-helpers-node-implementations', () => {
                 [{ '0': [[1.1]] }, { '0': [[2.1]] }, { '0': [[3.1]] }]
             )
         })
+
+        it.each<{ target: CompilerTarget }>([
+            { target: 'javascript' },
+            { target: 'assemblyscript' },
+        ])('should send message at the right frame %s', async ({ target }) => {
+            const nodeImplementation: NodeImplementation<{}> = {
+                messages: (_, { globs, snds }) => ({
+                    '0': `
+                        ${snds.$0}(
+                            msg_floats([${globs.frame}])
+                        )
+                    `,
+                }),
+            }
+
+            const node: DspGraph.Node = {
+                ...nodeDefaults('someNode', 'counter'),
+                inlets: { '0': { id: '0', type: 'message' } },
+                outlets: { '0': { id: '0', type: 'message' } },
+            }
+
+            await nodeImplementationsTestHelpers.assertNodeOutput(
+                {
+                    target,
+                    node,
+                    nodeImplementation,
+                },
+                // Inputs
+                [{ '0': [['bang']] }, { '0': [['bang']] }, { '0': [['bang']] }],
+                // Expected outputsmessage
+                [{ '0': [[0]] }, { '0': [[1]] }, { '0': [[2]] }]
+            )
+        })
     })
 })

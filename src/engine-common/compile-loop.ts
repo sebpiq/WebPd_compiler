@@ -22,8 +22,8 @@ export default (
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${
         globs.iterFrame
     }++) {
-            ${globs.frame}++
             ${loopIteration(compilation, graphTraversal)}
+            ${globs.frame}++
         }
     `
 }

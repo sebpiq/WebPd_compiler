@@ -99,15 +99,15 @@ describe('compileLoop', () => {
             normalizeCode(loop),
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
-                FRAME++
                 // [osc~] : frequency 440
                 plus_INS_0 = osc_OUTS_0
                 dac_INS_0 = osc_OUTS_0
-            
+                
                 // [+~] : value 110
                 dac_INS_1 = plus_OUTS_0
-
+                
                 // [dac~] : channelCount 2
+                FRAME++
             }
         `)
         )
@@ -168,10 +168,10 @@ describe('compileLoop', () => {
             normalizeCode(loop),
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
-                FRAME++
                 // [osc~] : frequency 440
                 dac_INS_0 = osc_OUTS_0
                 // [dac~] : channelCount 2
+                FRAME++
             }
         `)
         )
@@ -210,8 +210,8 @@ describe('compileLoop', () => {
             normalizeCode(loop),
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
-                FRAME++
                 // [dac~] : channelCount 2
+                FRAME++
             }
         `)
         )

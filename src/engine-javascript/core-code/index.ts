@@ -9,13 +9,17 @@ const f64 = i32
 `
 
 const MSG = `
-const MSG_FLOAT_TOKEN = \${MSG_FLOAT_TOKEN}
-const MSG_STRING_TOKEN = \${MSG_STRING_TOKEN}
+const MSG_FLOAT_TOKEN = "number"
+const MSG_STRING_TOKEN = "string"
 const msg_create = () => []
 const msg_getLength = (m) => m.length
 const msg_getTokenType = (m, i) => typeof m[i]
 const msg_isStringToken = (m, i) => msg_getTokenType(m, i) === 'string'
 const msg_isFloatToken = (m, i) => msg_getTokenType(m, i) === 'number'
+const msg_isMatching = (m, tokenTypes) => {
+    return (m.length === tokenTypes.length) 
+        && m.every((v, i) => msg_getTokenType(m, i) === tokenTypes[i])
+}
 const msg_writeFloatToken = ( m, i, v ) => m[i] = v
 const msg_writeStringToken = msg_writeFloatToken
 const msg_readFloatToken = ( m, i ) => m[i]

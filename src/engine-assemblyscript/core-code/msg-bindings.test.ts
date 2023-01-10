@@ -313,4 +313,63 @@ describe('msg-bindings', () => {
             )
         })
     })
+
+    describe('msg_isMatching', () => {
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+            { bitDepth: 32 },
+            { bitDepth: 64 },
+        ])('should match given message %s', async ({ bitDepth }) => {
+            // prettier-ignore
+            const code = getBaseTestCode({bitDepth}) + `
+                export function testMatch1(): boolean {
+                    const m: Message = msg_create([MSG_FLOAT_TOKEN])
+                    return msg_isMatching(m, [MSG_FLOAT_TOKEN])
+                }
+                export function testMatch2(): boolean {
+                    const m: Message = msg_create([MSG_STRING_TOKEN, 1])
+                    return msg_isMatching(m, [MSG_STRING_TOKEN])
+                }
+                export function testMatch3(): boolean {
+                    const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 1, MSG_FLOAT_TOKEN])
+                    return msg_isMatching(m, [MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, MSG_FLOAT_TOKEN])
+                }
+                export function testMatch4(): boolean {
+                    const m: Message = msg_create([])
+                    return msg_isMatching(m, [])
+                }
+                export function testNotMatching1(): boolean {
+                    const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN])
+                    return msg_isMatching(m, [MSG_FLOAT_TOKEN])
+                }
+                export function testNotMatching2(): boolean {
+                    const m: Message = msg_create([MSG_STRING_TOKEN, 1])
+                    return msg_isMatching(m, [MSG_FLOAT_TOKEN])
+                }
+            `
+
+            const exports = {
+                ...baseExports,
+                testMatch1: 1,
+                testMatch2: 1,
+                testMatch3: 1,
+                testMatch4: 1,
+                testNotMatching1: 1,
+                testNotMatching2: 1,
+            }
+
+            const { wasmExports } = await initializeCoreCodeTest({
+                code,
+                bitDepth,
+                exports,
+            })
+
+            assert.ok(wasmExports.testMatch1())
+            assert.ok(wasmExports.testMatch2())
+            assert.ok(wasmExports.testMatch3())
+            assert.ok(wasmExports.testMatch4())
+            assert.ok(!wasmExports.testNotMatching1())
+            assert.ok(!wasmExports.testNotMatching2())
+        })
+
+    })
 })

@@ -74,7 +74,7 @@ describe('compileInitialize', () => {
             normalizeCode(`
             F = 0
             O = 0
-            FRAME = -1
+            FRAME = 0
             // [osc~] frequency 440
             // [dac~] channelCount 2                
         `)
