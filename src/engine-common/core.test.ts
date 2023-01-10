@@ -9,14 +9,14 @@
  *
  */
 
-import { makeGraph } from "@webpd/dsp-graph/src/test-helpers"
-import assert from "assert"
-import { graphTraversalForCompile } from "./core"
+import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
+import assert from 'assert'
+import { graphTraversalForCompile } from './core'
 
 describe('core', () => {
     describe('graphTraversalForCompile', () => {
         it('should combine signal and message traversals and remove duplicates', () => {
-            // [  n1  ]     
+            // [  n1  ]
             //    / \
             //   |  [  n2  ]
             //   |    /   \

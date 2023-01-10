@@ -265,19 +265,19 @@ describe('Engine', () => {
             'should export metadata audio settings and update it after configure %s',
             async ({ target }) => {
                 const graph = makeGraph({
-                    'bla': {
-                        inlets: {'blo': {type: 'message', id: 'blo'}},
+                    bla: {
+                        inlets: { blo: { type: 'message', id: 'blo' } },
                         isMessageSource: true,
                     },
-                    'bli': {
-                        outlets: {'blu': {type: 'message', id: 'blu'}},
+                    bli: {
+                        outlets: { blu: { type: 'message', id: 'blu' } },
                     },
                 })
 
                 const nodeImplementations = {
-                    'DUMMY': {
-                        messages: () => ({'blo': ''})
-                    }
+                    DUMMY: {
+                        messages: () => ({ blo: '' }),
+                    },
                 }
 
                 const audioSettings: AudioSettings = {
@@ -291,8 +291,8 @@ describe('Engine', () => {
                         graph,
                         nodeImplementations,
                         audioSettings,
-                        inletCallerSpecs: {'bla': ['blo']},
-                        outletListenerSpecs: {'bli': ['blu']},
+                        inletCallerSpecs: { bla: ['blo'] },
+                        outletListenerSpecs: { bli: ['blu'] },
                     },
                 })
 
@@ -303,17 +303,27 @@ describe('Engine', () => {
                         sampleRate: 0,
                     },
                     compilation: {
-                        inletCallerSpecs: {'bla': ['blo']},
-                        outletListenerSpecs: {'bli': ['blu']},
-                        engineVariableNames: engine.metadata.compilation.engineVariableNames
-                    }
+                        inletCallerSpecs: { bla: ['blo'] },
+                        outletListenerSpecs: { bli: ['blu'] },
+                        codeVariableNames:
+                            engine.metadata.compilation.codeVariableNames,
+                    },
                 })
-                assert.ok(Object.keys(engine.metadata.compilation.engineVariableNames).length)
+                assert.ok(
+                    Object.keys(engine.metadata.compilation.codeVariableNames)
+                        .length
+                )
 
                 engine.configure(44100, 1024)
 
-                assert.strictEqual(engine.metadata.audioSettings.blockSize, 1024)
-                assert.strictEqual(engine.metadata.audioSettings.sampleRate, 44100)
+                assert.strictEqual(
+                    engine.metadata.audioSettings.blockSize,
+                    1024
+                )
+                assert.strictEqual(
+                    engine.metadata.audioSettings.sampleRate,
+                    44100
+                )
             }
         )
     })
@@ -672,16 +682,22 @@ describe('Engine', () => {
                 engine.testSendSoundStreamData(operationId)
                 assert.strictEqual(calledSoundStreamData.length, 2)
                 assert.deepStrictEqual(calledSoundStreamData, [
-                    [operationId, [
-                        new FloatArrayType([10, 11]),
-                        new FloatArrayType([20, 21]),
-                        new FloatArrayType([30, 31]),
-                    ]],
-                    [operationId, [
-                        new FloatArrayType([12, 13]),
-                        new FloatArrayType([22, 23]),
-                        new FloatArrayType([32, 33]),
-                    ]]
+                    [
+                        operationId,
+                        [
+                            new FloatArrayType([10, 11]),
+                            new FloatArrayType([20, 21]),
+                            new FloatArrayType([30, 31]),
+                        ],
+                    ],
+                    [
+                        operationId,
+                        [
+                            new FloatArrayType([12, 13]),
+                            new FloatArrayType([22, 23]),
+                            new FloatArrayType([32, 33]),
+                        ],
+                    ],
                 ])
 
                 // 3. The stream is closed
@@ -813,7 +829,7 @@ describe('Engine', () => {
         ])(
             'should create the specified outlet listeners %s',
             async ({ target }) => {
-                // We only test that the outlet listeners are created and that calling them works. 
+                // We only test that the outlet listeners are created and that calling them works.
                 // We don't need to actually compile any node
                 const graph = makeGraph({
                     someNode: {
@@ -887,15 +903,15 @@ describe('Engine', () => {
                 })
 
                 const inletCallerSpecs: InletCallerSpecs = {
-                    'someNode': ['someInlet'],
+                    someNode: ['someInlet'],
                 }
 
                 const nodeImplementations: NodeImplementations = {
-                    'someNodeType': {
-                        messages: (_, {globs}) => ({
-                            'someInlet': `messageReceived = ${globs.m}`
-                        })
-                    }
+                    someNodeType: {
+                        messages: (_, { globs }) => ({
+                            someInlet: `messageReceived = ${globs.m}`,
+                        }),
+                    },
                 }
 
                 const testCode: Code = `

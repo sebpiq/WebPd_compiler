@@ -19,11 +19,15 @@ import generateCoreCode from './core-code'
 import { graphTraversalForCompile } from '../engine-common/core'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { engineVariableNames, outletListenerSpecs, inletCallerSpecs, audioSettings } =
-        compilation
+    const {
+        codeVariableNames,
+        outletListenerSpecs,
+        inletCallerSpecs,
+        audioSettings,
+    } = compilation
     const graphTraversal = graphTraversalForCompile(compilation.graph)
-    const globs = compilation.engineVariableNames.g
-    const coreCode = generateCoreCode(engineVariableNames)
+    const globs = compilation.codeVariableNames.g
+    const coreCode = generateCoreCode(codeVariableNames)
     const metadata: EngineMetadata = {
         audioSettings: {
             ...audioSettings,
@@ -34,7 +38,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         compilation: {
             inletCallerSpecs,
             outletListenerSpecs,
-            engineVariableNames,
+            codeVariableNames,
         },
     }
 
@@ -73,7 +77,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
                     `${nodeId}: {
                         ${inletIds.map(inletId => `
-                            "${inletId}": ${engineVariableNames.inletCallers[nodeId][inletId]}
+                            "${inletId}": ${codeVariableNames.inletCallers[nodeId][inletId]}
                         `)}
                     }`
                 )}
@@ -104,13 +108,13 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
 
 export const compileOutletListeners = ({
     outletListenerSpecs,
-    engineVariableNames,
+    codeVariableNames,
 }: Compilation) => {
     return renderCode`${Object.entries(outletListenerSpecs).map(
         ([nodeId, outletIds]) =>
             outletIds.map((outletId) => {
                 const listenerVariableName =
-                    engineVariableNames.outletListeners[nodeId][outletId]
+                    codeVariableNames.outletListeners[nodeId][outletId]
                 return `
                     const ${listenerVariableName} = (m) => {
                         exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)

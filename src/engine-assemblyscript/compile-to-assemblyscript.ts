@@ -23,13 +23,13 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         audioSettings,
         inletCallerSpecs,
         outletListenerSpecs,
-        engineVariableNames,
+        codeVariableNames,
     } = compilation
     const { channelCount } = audioSettings
     const graphTraversal = graphTraversalForCompile(compilation.graph)
-    const globs = compilation.engineVariableNames.g
-    const { FloatArray } = engineVariableNames.types
-    const coreCode = generateCoreCode(engineVariableNames)
+    const globs = compilation.codeVariableNames.g
+    const { FloatArray } = codeVariableNames.types
+    const coreCode = generateCoreCode(codeVariableNames)
     const metadata: EngineMetadata = {
         audioSettings: {
             ...audioSettings,
@@ -40,7 +40,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         compilation: {
             inletCallerSpecs,
             outletListenerSpecs,
-            engineVariableNames,
+            codeVariableNames,
         },
     }
 
@@ -112,7 +112,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             // INLET CALLERS
             ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 
                 inletIds.map(inletId => 
-                    engineVariableNames.inletCallers[nodeId][inletId] + ','
+                    codeVariableNames.inletCallers[nodeId][inletId] + ','
                 )
             )}
         }
@@ -121,20 +121,17 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
 export const compileOutletListeners = ({
     outletListenerSpecs,
-    engineVariableNames,
+    codeVariableNames,
 }: Compilation) => {
     return renderCode`
-        ${Object.entries(outletListenerSpecs).map(
-            ([nodeId, outletIds]) =>
-                outletIds.map((outletId) => {
-                    const outletListenerVariableName =
-                        engineVariableNames.outletListeners[nodeId][
-                            outletId
-                        ]
-                    return `
+        ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
+            outletIds.map((outletId) => {
+                const outletListenerVariableName =
+                    codeVariableNames.outletListeners[nodeId][outletId]
+                return `
                     export declare function ${outletListenerVariableName}(m: Message): void
                 `
-                })
+            })
         )}
     `
 }

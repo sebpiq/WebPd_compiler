@@ -44,15 +44,15 @@ describe('compileToJavascript', () => {
             metadata: {
                 audioSettings: {
                     bitDepth: 32,
-                    channelCount: {in: 2, out: 2},
+                    channelCount: { in: 2, out: 2 },
                     sampleRate: 0,
                     blockSize: 0,
                 },
                 compilation: {
                     inletCallerSpecs: {},
                     outletListenerSpecs: {},
-                    engineVariableNames: {} as any,
-                }
+                    codeVariableNames: {} as any,
+                },
             },
             configure: (_: number) => {},
             loop: () => new Float32Array(),

@@ -1,5 +1,5 @@
 import { replaceCoreCodePlaceholders } from '../../compile-helpers'
-import { EngineVariableNames } from '../../types'
+import { CodeVariableNames } from '../../types'
 import FS_JS from './fs.generated.js.txt'
 
 const COMPAT = `
@@ -28,9 +28,9 @@ const TARRAY = `
 const tarray_create = (size) => new \${FloatArray}(size)
 `
 
-export default (engineVariableNames: EngineVariableNames) => {
+export default (codeVariableNames: CodeVariableNames) => {
     return replaceCoreCodePlaceholders(
-        engineVariableNames,
+        codeVariableNames,
         COMPAT + TARRAY + MSG + FS_JS
     )
 }

@@ -19,7 +19,7 @@ import {
 import { MSG_TOKEN_TYPES_ASSEMBLYSCRIPT } from './engine-assemblyscript/constants'
 import {
     Code,
-    EngineVariableNames,
+    CodeVariableNames,
     NodeImplementation,
     NodeImplementations,
 } from './types'
@@ -73,11 +73,11 @@ export const getNodeImplementation = (
 }
 
 export const replaceCoreCodePlaceholders = (
-    engineVariableNames: EngineVariableNames,
+    codeVariableNames: CodeVariableNames,
     code: Code
 ) => {
     const { Int, Float, FloatArray, getFloat, setFloat } =
-        engineVariableNames.types
+        codeVariableNames.types
     return code
         .replaceAll('${Int}', Int)
         .replaceAll('${Float}', Float)

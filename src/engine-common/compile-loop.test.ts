@@ -60,7 +60,7 @@ describe('compileLoop', () => {
                 args: {
                     value: 110,
                 },
-                inlets: {'0': { id: '0', type: 'signal' }},
+                inlets: { '0': { id: '0', type: 'signal' } },
                 outlets: {
                     '0': { id: '0', type: 'signal' },
                     '1': { id: '1', type: 'message' },
@@ -204,10 +204,7 @@ describe('compileLoop', () => {
             nodeImplementations: NODE_IMPLEMENTATIONS,
         })
 
-        const loop = compileLoop(compilation, [
-            graph.print,
-            graph.dac,
-        ])
+        const loop = compileLoop(compilation, [graph.print, graph.dac])
 
         assert.strictEqual(
             normalizeCode(loop),

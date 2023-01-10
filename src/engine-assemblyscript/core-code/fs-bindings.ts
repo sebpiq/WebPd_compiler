@@ -36,7 +36,7 @@ export interface fs_WasmImports {
     ) => void
     i_fs_sendSoundStreamData: (
         operationId: number,
-        block: InternalPointer,
+        block: InternalPointer
     ) => void
     i_fs_closeSoundStream: (
         operationId: number,

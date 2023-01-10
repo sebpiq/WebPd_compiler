@@ -14,7 +14,7 @@ import { DspGraph, traversal } from '@webpd/dsp-graph'
 export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
     const graphTraversalSignal = traversal.signalNodes(graph)
     const combined = graphTraversalSignal
-    traversal.messageNodes(graph).forEach(node => {
+    traversal.messageNodes(graph).forEach((node) => {
         if (combined.indexOf(node) === -1) {
             combined.push(node)
         }

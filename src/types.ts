@@ -42,14 +42,14 @@ export type Code = string
 export type CodeVariableName = string
 
 export interface EngineMetadata {
-    readonly audioSettings: Compilation['audioSettings'] & { 
+    readonly audioSettings: Compilation['audioSettings'] & {
         sampleRate: number
         blockSize: number
     }
     compilation: {
         readonly inletCallerSpecs: Compilation['inletCallerSpecs']
         readonly outletListenerSpecs: Compilation['outletListenerSpecs']
-        readonly engineVariableNames: Compilation['engineVariableNames']
+        readonly codeVariableNames: Compilation['codeVariableNames']
     }
 }
 
@@ -61,15 +61,9 @@ export interface Engine {
 
     configure: (sampleRate: number, blockSize: number) => void
 
-    loop: (
-        input: Array<FloatArray>,
-        output: Array<FloatArray>
-    ) => void
-    
-    setArray: (
-        arrayName: string,
-        data: FloatArray | Array<number>
-    ) => void
+    loop: (input: Array<FloatArray>, output: Array<FloatArray>) => void
+
+    setArray: (arrayName: string, data: FloatArray | Array<number>) => void
 
     inletCallers: {
         [nodeId: DspGraph.NodeId]: {
@@ -119,26 +113,26 @@ export interface Engine {
         onReadSoundFile: (
             operationId: number,
             url: string,
-            info: SoundFileInfo,
+            info: SoundFileInfo
         ) => void
 
         onWriteSoundFile: (
             operationId: number,
             sound: Array<FloatArray>,
             url: string,
-            info: SoundFileInfo,
+            info: SoundFileInfo
         ) => void
 
         onOpenSoundReadStream: (
             operationId: number,
             url: string,
-            info: SoundFileInfo,
+            info: SoundFileInfo
         ) => void
 
         onOpenSoundWriteStream: (
             operationId: number,
             url: string,
-            info: SoundFileInfo,
+            info: SoundFileInfo
         ) => void
 
         onSoundStreamData: (
@@ -157,7 +151,7 @@ export interface Compilation {
     readonly audioSettings: AudioSettings
     readonly outletListenerSpecs: OutletListenerSpecs
     readonly inletCallerSpecs: InletCallerSpecs
-    readonly engineVariableNames: EngineVariableNames
+    readonly codeVariableNames: CodeVariableNames
     readonly macros: CodeMacros
     readonly debug: boolean
 }
@@ -175,7 +169,7 @@ export interface NodeVariableNames {
     state: { [key: string]: CodeVariableName }
 }
 
-export interface EngineVariableNames {
+export interface CodeVariableNames {
     // Namespace for individual nodes
     n: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
@@ -223,8 +217,8 @@ export interface EngineVariableNames {
 export type NodeCodeGenerator<NodeArgsType> = (
     node: DspGraph.Node<NodeArgsType>,
     variableNames: NodeVariableNames & {
-        types: EngineVariableNames['types']
-        globs: EngineVariableNames['g']
+        types: CodeVariableNames['types']
+        globs: CodeVariableNames['g']
         macros: CodeMacros
     },
     compilation: Compilation
@@ -234,8 +228,10 @@ export interface NodeImplementation<NodeArgsType> {
     declare?: NodeCodeGenerator<NodeArgsType>
     initialize?: NodeCodeGenerator<NodeArgsType>
     loop?: NodeCodeGenerator<NodeArgsType>
-    messages?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {[inletId: DspGraph.PortletId]: Code},
-    stateVariables?: (node: DspGraph.Node<NodeArgsType>) => Array<string>,
+    messages?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {
+        [inletId: DspGraph.PortletId]: Code
+    }
+    stateVariables?: (node: DspGraph.Node<NodeArgsType>) => Array<string>
 }
 
 export type NodeImplementations = {

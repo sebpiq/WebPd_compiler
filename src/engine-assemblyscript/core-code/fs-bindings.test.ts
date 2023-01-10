@@ -128,9 +128,8 @@ describe('fs-bindings', () => {
                 })
 
                 const operationId: number = wasmExports.testStartReadFile()
-                const readCalled: Array<Array<any>> = called.get(
-                    'i_fs_readSoundFile'
-                )
+                const readCalled: Array<Array<any>> =
+                    called.get('i_fs_readSoundFile')
                 assert.strictEqual(readCalled.length, 1)
                 assert.strictEqual(readCalled[0].length, 3)
                 assert.deepStrictEqual(
@@ -662,7 +661,6 @@ describe('fs-bindings', () => {
     })
 
     describe('write sound streams', () => {
-
         describe('fs_openSoundWriteStream', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
                 { bitDepth: 32 },
@@ -710,7 +708,8 @@ describe('fs-bindings', () => {
             ])('should push data to the buffer %s', async ({ bitDepth }) => {
                 const code =
                     getBaseTestCode({ bitDepth }) +
-                    replacePlaceholdersForTesting(`
+                    replacePlaceholdersForTesting(
+                        `
                         let counter: Float = 0
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundWriteStream('/some/url', fs_soundInfo(2), someCallback)
@@ -731,7 +730,9 @@ describe('fs-bindings', () => {
                             counter++
                             fs_sendSoundStreamData(id, block)
                         }
-                    `, { bitDepth })
+                    `,
+                        { bitDepth }
+                    )
 
                 const exports = {
                     ...baseExports,
@@ -753,43 +754,42 @@ describe('fs-bindings', () => {
                 wasmExports.testSendSoundStreamData(operationId)
                 wasmExports.testSendSoundStreamData(operationId)
                 const receivedCalls = called.get('i_fs_sendSoundStreamData')
-                assert.strictEqual(
-                    receivedCalls.length,
-                    2
-                )
-                assert.strictEqual(
-                    receivedCalls[0].length,
-                    2
-                )
+                assert.strictEqual(receivedCalls.length, 2)
+                assert.strictEqual(receivedCalls[0].length, 2)
                 assert.deepStrictEqual(
                     [
                         receivedCalls[0][0],
-                        readListOfTypedArrays(wasmExports, bitDepth, receivedCalls[0][1]),
+                        readListOfTypedArrays(
+                            wasmExports,
+                            bitDepth,
+                            receivedCalls[0][1]
+                        ),
                     ],
                     [
-                        operationId, 
+                        operationId,
                         [
                             new floatArrayType([10, 11, 12, 13]),
                             new floatArrayType([20, 21, 22, 23]),
-                        ]
+                        ],
                     ]
                 )
 
-                assert.strictEqual(
-                    receivedCalls[1].length,
-                    2
-                )
+                assert.strictEqual(receivedCalls[1].length, 2)
                 assert.deepStrictEqual(
                     [
                         receivedCalls[1][0],
-                        readListOfTypedArrays(wasmExports, bitDepth, receivedCalls[1][1]),
+                        readListOfTypedArrays(
+                            wasmExports,
+                            bitDepth,
+                            receivedCalls[1][1]
+                        ),
                     ],
                     [
-                        operationId, 
+                        operationId,
                         [
                             new floatArrayType([14, 15, 16, 17]),
                             new floatArrayType([24, 25, 26, 27]),
-                        ]
+                        ],
                     ]
                 )
             })
@@ -804,7 +804,8 @@ describe('fs-bindings', () => {
                 async ({ bitDepth }) => {
                     const code =
                         getBaseTestCode({ bitDepth }) +
-                        replacePlaceholdersForTesting(`
+                        replacePlaceholdersForTesting(
+                            `
                             export function testStartStream (array: FloatArray): Int {
                                 return fs_openSoundWriteStream('/some/url', fs_soundInfo(1), someCallback)
                             }
@@ -814,7 +815,9 @@ describe('fs-bindings', () => {
                                 ]
                                 fs_sendSoundStreamData(id, block)
                             }
-                        `, { bitDepth })
+                        `,
+                            { bitDepth }
+                        )
 
                     const exports = {
                         ...baseExports,

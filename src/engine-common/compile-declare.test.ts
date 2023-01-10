@@ -16,7 +16,6 @@ import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileDeclare from './compile-declare'
 
 describe('compileDeclare', () => {
-
     const GLOBAL_VARIABLES_CODE = `
         let F
         let O
@@ -122,8 +121,8 @@ describe('compileDeclare', () => {
         const nodeImplementations: NodeImplementations = {
             '+': {
                 messages: () => ({
-                    '0': '// [+] message receiver'
-                })
+                    '0': '// [+] message receiver',
+                }),
             },
         }
 
@@ -153,7 +152,7 @@ describe('compileDeclare', () => {
             add: {
                 type: '+',
                 inlets: {
-                    '0': { id: '0', type: 'message' }
+                    '0': { id: '0', type: 'message' },
                 },
             },
         })
@@ -161,15 +160,15 @@ describe('compileDeclare', () => {
         const nodeImplementations: NodeImplementations = {
             '+': {
                 messages: () => ({
-                    '0': '// [+] message receiver'
-                })
+                    '0': '// [+] message receiver',
+                }),
             },
         }
 
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            inletCallerSpecs: {'add': ['0']},
+            inletCallerSpecs: { add: ['0'] },
             nodeImplementations,
         })
 
@@ -199,7 +198,7 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messages: () => ({})
+                messages: () => ({}),
             },
         }
 
@@ -211,7 +210,6 @@ describe('compileDeclare', () => {
 
         assert.throws(() => compileDeclare(compilation, [graph.add]))
     })
-
 
     it('shouldnt throw an error if message receiver is implemented but string empty', () => {
         const graph = makeGraph({
@@ -225,7 +223,7 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messages: () => ({'0': ''})
+                messages: () => ({ '0': '' }),
             },
         }
 
@@ -240,7 +238,7 @@ describe('compileDeclare', () => {
 
     it('should compile node message senders for message outlets', () => {
         const graph = makeGraph({
-            // Sending messages to several sinks, 
+            // Sending messages to several sinks,
             twenty: {
                 type: 'twenty',
                 outlets: {
@@ -253,9 +251,9 @@ describe('compileDeclare', () => {
                         ['aFloat', '0'],
                         ['anotherFloat', '0'],
                     ],
-                }
+                },
             },
-            // Sending messages to a single sink, 
+            // Sending messages to a single sink,
             aFloat: {
                 type: 'float',
                 inlets: {
@@ -264,7 +262,7 @@ describe('compileDeclare', () => {
                 outlets: {
                     '0': { id: '0', type: 'message' },
                 },
-                sinks: {'0': [['anotherFloat', '0']]}
+                sinks: { '0': [['anotherFloat', '0']] },
             },
             anotherFloat: {
                 type: 'float',
@@ -278,9 +276,9 @@ describe('compileDeclare', () => {
             twenty: {},
             float: {
                 messages: () => ({
-                    '0': '// [float] message receiver'
+                    '0': '// [float] message receiver',
                 }),
-            }
+            },
         }
 
         const compilation = makeCompilation({
@@ -289,7 +287,11 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [graph.twenty, graph.aFloat, graph.anotherFloat])
+        const declareCode = compileDeclare(compilation, [
+            graph.twenty,
+            graph.aFloat,
+            graph.anotherFloat,
+        ])
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -326,7 +328,7 @@ describe('compileDeclare', () => {
                     '1': { id: '1', type: 'signal' },
                     '2': { id: '2', type: 'message' },
                 },
-                sinks: {'2': [['aFloat', '0']]}
+                sinks: { '2': [['aFloat', '0']] },
             },
             aFloat: {
                 type: 'float',
@@ -338,9 +340,9 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {},
-            'float': {
+            float: {
                 messages: () => ({
-                    '0': '// [float] message receiver'
+                    '0': '// [float] message receiver',
                 }),
             },
         }
@@ -349,10 +351,13 @@ describe('compileDeclare', () => {
             target: 'javascript',
             graph,
             nodeImplementations,
-            outletListenerSpecs: {'add': ['0', '2']}
+            outletListenerSpecs: { add: ['0', '2'] },
         })
 
-        const declareCode = compileDeclare(compilation, [graph.add, graph.aFloat])
+        const declareCode = compileDeclare(compilation, [
+            graph.add,
+            graph.aFloat,
+        ])
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -398,8 +403,8 @@ describe('compileDeclare', () => {
                 declare: () => ``,
                 loop: () => ``,
                 messages: () => ({
-                    '0_message': '// [osc~] message receiver'
-                })
+                    '0_message': '// [osc~] message receiver',
+                }),
             },
             'dac~': {
                 loop: () => ``,

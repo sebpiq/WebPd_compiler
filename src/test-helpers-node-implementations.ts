@@ -25,7 +25,7 @@ import {
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
-interface NodeTestSettings <NodeArguments>{
+interface NodeTestSettings<NodeArguments> {
     target: CompilerTarget
     node: DspGraph.Node
     nodeImplementation: NodeImplementation<NodeArguments>
@@ -46,9 +46,9 @@ export const generateFramesForNode = async <NodeArguments>(
 
     const { target } = nodeTestSettings
     const connectedInlets = new Set<DspGraph.PortletId>([])
-    inputFrames.forEach(frame => 
-        Object.keys(frame).forEach(
-            inletId => connectedInlets.add(inletId)))
+    inputFrames.forEach((frame) =>
+        Object.keys(frame).forEach((inletId) => connectedInlets.add(inletId))
+    )
 
     // --------------- Generating test graph
     //   [fakeSourceNode] -> [testNode] -> [fakeSinkNode]
@@ -61,7 +61,10 @@ export const generateFramesForNode = async <NodeArguments>(
         type: 'fake_source_node',
         args: {},
         sources: {},
-        sinks: makeConnectionEndpointMap('testNode', Array.from(connectedInlets)),
+        sinks: makeConnectionEndpointMap(
+            'testNode',
+            Array.from(connectedInlets)
+        ),
         inlets: makeMessagePortlets(Object.keys(testNodeInlets)),
         outlets: testNodeInlets,
         isMessageSource: true,
@@ -71,8 +74,14 @@ export const generateFramesForNode = async <NodeArguments>(
     const testNode: DspGraph.Node = {
         ...nodeTestSettings.node,
         id: 'testNode',
-        sources: makeConnectionEndpointMap('fakeSourceNode', Array.from(connectedInlets)),
-        sinks: makeConnectionEndpointMap('fakeSinkNode', Object.keys(testNodeOutlets)),
+        sources: makeConnectionEndpointMap(
+            'fakeSourceNode',
+            Array.from(connectedInlets)
+        ),
+        sinks: makeConnectionEndpointMap(
+            'fakeSinkNode',
+            Object.keys(testNodeOutlets)
+        ),
         inlets: testNodeInlets,
         outlets: testNodeOutlets,
     }
@@ -82,7 +91,10 @@ export const generateFramesForNode = async <NodeArguments>(
         id: 'fakeSinkNode',
         type: 'fake_sink_node',
         args: {},
-        sources: makeConnectionEndpointMap('testNode', Object.keys(testNodeOutlets)),
+        sources: makeConnectionEndpointMap(
+            'testNode',
+            Object.keys(testNodeOutlets)
+        ),
         sinks: {},
         inlets: testNodeOutlets,
         outlets: makeMessagePortlets(Object.keys(testNodeOutlets)),
@@ -99,60 +111,101 @@ export const generateFramesForNode = async <NodeArguments>(
     const nodeImplementations: NodeImplementations = {
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
-        'fake_source_node': {
-            declare: (_, {state, macros}) => Object.keys(fakeSourceNode.outlets)
-                .filter(outletId => fakeSourceNode.outlets[outletId].type === 'signal')
-                .map(outletId => `let ${macros.typedVar(state[`VALUE_${outletId}`], 'Float')}`)
-                .join('\n'),
+        fake_source_node: {
+            declare: (_, { state, macros }) =>
+                Object.keys(fakeSourceNode.outlets)
+                    .filter(
+                        (outletId) =>
+                            fakeSourceNode.outlets[outletId].type === 'signal'
+                    )
+                    .map(
+                        (outletId) =>
+                            `let ${macros.typedVar(
+                                state[`VALUE_${outletId}`],
+                                'Float'
+                            )}`
+                    )
+                    .join('\n'),
 
-            messages: (_, {globs, snds, state}) => Object.keys(fakeSourceNode.outlets)
-                .reduce((messageMap, inletId) => {
-                    const outletId = inletId
-                    let code = ''
+            messages: (_, { globs, snds, state }) =>
+                Object.keys(fakeSourceNode.outlets).reduce(
+                    (messageMap, inletId) => {
+                        const outletId = inletId
+                        let code = ''
 
-                    // Messages received for message outlets are directly proxied
-                    if (fakeSourceNode.outlets[outletId].type === 'message') {
-                        code = `${snds[outletId]}(${globs.m})`
-                    
-                    // Messages received for signal outlets are written to the loop
-                    } else {
-                        code = `${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.m}, 0)`
-                    }
+                        // Messages received for message outlets are directly proxied
+                        if (
+                            fakeSourceNode.outlets[outletId].type === 'message'
+                        ) {
+                            code = `${snds[outletId]}(${globs.m})`
 
-                    return {
-                        ...messageMap,
-                        [inletId]: code,
-                    }
-                }, {} as {[inletId: DspGraph.PortletId]: Code}),
-            
-            loop: (_, {outs, state}) => Object.keys(fakeSourceNode.outlets)
-                .filter(outletId => fakeSourceNode.outlets[outletId].type === 'signal')
-                .map(outletId => `${outs[outletId]} = ${state[`VALUE_${outletId}`]}`)
-                .join('\n'),
+                            // Messages received for signal outlets are written to the loop
+                        } else {
+                            code = `${
+                                state[`VALUE_${outletId}`]
+                            } = msg_readFloatToken(${globs.m}, 0)`
+                        }
 
-            stateVariables: () => Object.keys(fakeSourceNode.outlets)
-                .filter(outletId => fakeSourceNode.outlets[outletId].type === 'signal')
-                .map(outletId => `VALUE_${outletId}`)
+                        return {
+                            ...messageMap,
+                            [inletId]: code,
+                        }
+                    },
+                    {} as { [inletId: DspGraph.PortletId]: Code }
+                ),
+
+            loop: (_, { outs, state }) =>
+                Object.keys(fakeSourceNode.outlets)
+                    .filter(
+                        (outletId) =>
+                            fakeSourceNode.outlets[outletId].type === 'signal'
+                    )
+                    .map(
+                        (outletId) =>
+                            `${outs[outletId]} = ${state[`VALUE_${outletId}`]}`
+                    )
+                    .join('\n'),
+
+            stateVariables: () =>
+                Object.keys(fakeSourceNode.outlets)
+                    .filter(
+                        (outletId) =>
+                            fakeSourceNode.outlets[outletId].type === 'signal'
+                    )
+                    .map((outletId) => `VALUE_${outletId}`),
         },
 
-        'fake_sink_node': {
+        fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            loop: (_, { ins, snds }) => Object.keys(testNode.sinks)
-                .filter(outletId => testNode.outlets[outletId].type === 'signal')
-                .map(outletId =>
-                    // prettier-ignore
-                    `
+            loop: (_, { ins, snds }) =>
+                Object.keys(testNode.sinks)
+                    .filter(
+                        (outletId) =>
+                            testNode.outlets[outletId].type === 'signal'
+                    )
+                    .map(
+                        (outletId) =>
+                            // prettier-ignore
+                            `
                     ${snds[outletId]}(msg_floats([${ins[outletId]}]))
                     `
-                ).join('\n'),
+                    )
+                    .join('\n'),
 
             // Take incoming messages and directly proxy them
-            messages: (_, {globs, snds}) => Object.keys(fakeSinkNode.inlets)
-                .filter(inletId => fakeSinkNode.inlets[inletId].type === 'message')
-                .reduce((messageMap, inletId) => ({
-                    ...messageMap,
-                    [inletId]: `${snds[inletId]}(${globs.m})`,
-                }), {} as {[inletId: DspGraph.PortletId]: Code}),
+            messages: (_, { globs, snds }) =>
+                Object.keys(fakeSinkNode.inlets)
+                    .filter(
+                        (inletId) =>
+                            fakeSinkNode.inlets[inletId].type === 'message'
+                    )
+                    .reduce(
+                        (messageMap, inletId) => ({
+                            ...messageMap,
+                            [inletId]: `${snds[inletId]}(${globs.m})`,
+                        }),
+                        {} as { [inletId: DspGraph.PortletId]: Code }
+                    ),
         },
     }
 
@@ -162,10 +215,10 @@ export const generateFramesForNode = async <NodeArguments>(
         graph,
         nodeImplementations,
         inletCallerSpecs: {
-            'fakeSourceNode': Object.keys(fakeSourceNode.inlets)
+            fakeSourceNode: Object.keys(fakeSourceNode.inlets),
         },
         outletListenerSpecs: {
-            'fakeSinkNode': Object.keys(fakeSinkNode.outlets)
+            fakeSinkNode: Object.keys(fakeSinkNode.outlets),
         },
         audioSettings: {
             channelCount: nodeTestSettings.engineDspParams.channelCount,
@@ -213,31 +266,38 @@ export const generateFramesForNode = async <NodeArguments>(
     inputFrames.forEach((inputFrame) => {
         const outputFrame: Frame = {}
         // Set default values for output frame
-        Object.values(testNode.outlets).forEach(outlet => {
+        Object.values(testNode.outlets).forEach((outlet) => {
             if (outlet.type === 'message') {
                 outputFrame[outlet.id] = []
             }
         })
 
         // Set up outletListeners to receive sent messages
-        Object.keys(engine.outletListeners['fakeSinkNode']).forEach(outletId => {
-            engine.outletListeners['fakeSinkNode'][outletId] = {
-                onMessage: (m) => {
-                    if (testNode.outlets[outletId].type === 'message') {
-                        outputFrame[outletId] = outputFrame[outletId] || []
-                        const output = outputFrame[outletId] as Array<Message>
-                        output.push(m)
-                    } else {
-                        outputFrame[outletId] = m[0] as number
-                    }
+        Object.keys(engine.outletListeners['fakeSinkNode']).forEach(
+            (outletId) => {
+                engine.outletListeners['fakeSinkNode'][outletId] = {
+                    onMessage: (m) => {
+                        if (testNode.outlets[outletId].type === 'message') {
+                            outputFrame[outletId] = outputFrame[outletId] || []
+                            const output = outputFrame[
+                                outletId
+                            ] as Array<Message>
+                            output.push(m)
+                        } else {
+                            outputFrame[outletId] = m[0] as number
+                        }
+                    },
                 }
             }
-        })
+        )
 
         // We make sure we configure after assigning the outletListeners, so we can receive messages sent
         // during configure.
         if (configured === false) {
-            engine.configure(nodeTestSettings.engineDspParams.sampleRate, blockSize)
+            engine.configure(
+                nodeTestSettings.engineDspParams.sampleRate,
+                blockSize
+            )
             configured = true
         }
 
@@ -245,13 +305,18 @@ export const generateFramesForNode = async <NodeArguments>(
         Object.entries(inputFrame).forEach(([inletId, value]) => {
             if (testNode.inlets[inletId].type === 'message') {
                 if (!Array.isArray(value)) {
-                    throw new Error(`unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`)
+                    throw new Error(
+                        `unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`
+                    )
                 }
-                value.forEach(
-                    message => engine.inletCallers['fakeSourceNode'][inletId](message))
+                value.forEach((message) =>
+                    engine.inletCallers['fakeSourceNode'][inletId](message)
+                )
             } else {
                 if (typeof value !== 'number') {
-                    throw new Error(`unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`)
+                    throw new Error(
+                        `unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`
+                    )
                 }
                 engine.inletCallers['fakeSourceNode'][inletId]([value])
             }
@@ -323,16 +388,23 @@ export const ENGINE_DSP_PARAMS = {
     channelCount: { in: 2, out: 2 },
 }
 
-const makeConnectionEndpointMap = (nodeId: DspGraph.NodeId, portletList: Array<DspGraph.PortletId>) =>
-    portletList.reduce<DspGraph.ConnectionEndpointMap>((endpointMap, portletId) => ({
-        ...endpointMap,
-        [portletId]: [
-            { nodeId, portletId },
-        ]
-    }), {})
+const makeConnectionEndpointMap = (
+    nodeId: DspGraph.NodeId,
+    portletList: Array<DspGraph.PortletId>
+) =>
+    portletList.reduce<DspGraph.ConnectionEndpointMap>(
+        (endpointMap, portletId) => ({
+            ...endpointMap,
+            [portletId]: [{ nodeId, portletId }],
+        }),
+        {}
+    )
 
 const makeMessagePortlets = (portletList: Array<DspGraph.PortletId>) =>
-    portletList.reduce<DspGraph.PortletMap>((portletMap, portletId) => ({
-        ...portletMap,
-        [portletId]: {id: portletId, type: 'message'}
-    }), {})
+    portletList.reduce<DspGraph.PortletMap>(
+        (portletMap, portletId) => ({
+            ...portletMap,
+            [portletId]: { id: portletId, type: 'message' },
+        }),
+        {}
+    )

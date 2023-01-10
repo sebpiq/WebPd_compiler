@@ -10,10 +10,7 @@
  */
 import assert from 'assert'
 import compile, { validateSettings } from './compile'
-import {
-    CompilerSettings,
-    NodeImplementations,
-} from './types'
+import { CompilerSettings, NodeImplementations } from './types'
 
 describe('compile', () => {
     const COMPILER_SETTINGS_AS: CompilerSettings = {

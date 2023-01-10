@@ -19,7 +19,6 @@ import { EngineMetadata } from '../types'
 describe('AssemblyScriptWasmEngine', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
-
             const compilation = makeCompilation({
                 target: 'assemblyscript',
                 inletCallerSpecs: {},
@@ -42,7 +41,7 @@ describe('AssemblyScriptWasmEngine', () => {
                     sampleRate: 0,
                 },
                 compilation: {
-                    engineVariableNames: compilation.engineVariableNames,
+                    codeVariableNames: compilation.codeVariableNames,
                     inletCallerSpecs: {},
                     outletListenerSpecs: {},
                 },

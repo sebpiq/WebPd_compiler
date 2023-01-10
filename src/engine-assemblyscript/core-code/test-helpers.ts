@@ -28,7 +28,7 @@ export const replacePlaceholdersForTesting = (
     code: Code,
     audioSettings: Partial<AudioSettings>
 ) => {
-    const { engineVariableNames } = makeCompilation({
+    const { codeVariableNames } = makeCompilation({
         target: 'assemblyscript',
         audioSettings: {
             channelCount: { in: 2, out: 2 },
@@ -36,7 +36,7 @@ export const replacePlaceholdersForTesting = (
             ...audioSettings,
         },
     })
-    return replaceCoreCodePlaceholders(engineVariableNames, code)
+    return replaceCoreCodePlaceholders(codeVariableNames, code)
 }
 
 export const getWasmExports = async (

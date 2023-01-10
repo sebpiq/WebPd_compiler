@@ -19,7 +19,14 @@
  * @module
  */
 
-import { AudioSettings, CodeVariableName, Engine, EngineMetadata, Message, SoundFileInfo } from '../types'
+import {
+    AudioSettings,
+    CodeVariableName,
+    Engine,
+    EngineMetadata,
+    Message,
+    SoundFileInfo,
+} from '../types'
 import {
     liftString,
     lowerString,
@@ -75,10 +82,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         // We need to read metadata before everything, because it is used by other initialization functions
         this.metadata = await readMetadata(this.wasmBuffer)
         this.bitDepth = this.metadata.audioSettings.bitDepth
-        this.arrayType =
-            this.bitDepth === 32
-                ? Float32Array
-                : Float64Array
+        this.arrayType = this.bitDepth === 32 ? Float32Array : Float64Array
 
         const wasmImports: AssemblyScriptWasmImports = {
             ...this._fsImports(),
@@ -103,15 +107,9 @@ export class AssemblyScriptWasmEngine implements Engine {
         this._updateWasmInOuts()
     }
 
-    loop(
-        input: Array<FloatArray>,
-        output: Array<FloatArray>
-    ) {
+    loop(input: Array<FloatArray>, output: Array<FloatArray>) {
         for (let channel = 0; channel < input.length; channel++) {
-            this.wasmInput.set(
-                input[channel],
-                channel * this.blockSize
-            )
+            this.wasmInput.set(input[channel], channel * this.blockSize)
         }
         this.wasmExports.loop()
         for (let channel = 0; channel < output.length; channel++) {
@@ -124,10 +122,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         }
     }
 
-    setArray(
-        arrayName: string,
-        data: Array<number> | FloatArray
-    ) {
+    setArray(arrayName: string, data: Array<number> | FloatArray) {
         const stringPointer = lowerString(this.wasmExports, arrayName)
         const { arrayPointer } = lowerTypedArray(
             this.wasmExports,
@@ -174,7 +169,8 @@ export class AssemblyScriptWasmEngine implements Engine {
                 )
                 this._updateWasmInOuts()
             },
-            sendWriteSoundFileResponse: this.wasmExports.fs_onWriteSoundFileResponse,
+            sendWriteSoundFileResponse:
+                this.wasmExports.fs_onWriteSoundFileResponse,
             sendSoundStreamData: (operationId, sound) => {
                 const soundPointer = lowerListOfTypedArrays(
                     this.wasmExports,
@@ -203,7 +199,10 @@ export class AssemblyScriptWasmEngine implements Engine {
         let wasmImports: fs_WasmImports = {
             i_fs_readSoundFile: (operationId, urlPointer, infoPointer) => {
                 const url = liftString(this.wasmExports, urlPointer)
-                const info = liftMessage(this.wasmExports, infoPointer) as SoundFileInfo
+                const info = liftMessage(
+                    this.wasmExports,
+                    infoPointer
+                ) as SoundFileInfo
                 this.fs.onReadSoundFile(operationId, url, info)
             },
 
@@ -219,7 +218,10 @@ export class AssemblyScriptWasmEngine implements Engine {
                     soundPointer
                 ) as Array<FloatArray>
                 const url = liftString(this.wasmExports, urlPointer)
-                const info = liftMessage(this.wasmExports, infoPointer) as SoundFileInfo
+                const info = liftMessage(
+                    this.wasmExports,
+                    infoPointer
+                ) as SoundFileInfo
                 this.fs.onWriteSoundFile(operationId, sound, url, info)
             },
 
@@ -229,7 +231,10 @@ export class AssemblyScriptWasmEngine implements Engine {
                 infoPointer
             ) => {
                 const url = liftString(this.wasmExports, urlPointer)
-                const info = liftMessage(this.wasmExports, infoPointer) as SoundFileInfo
+                const info = liftMessage(
+                    this.wasmExports,
+                    infoPointer
+                ) as SoundFileInfo
                 this.fs.onOpenSoundReadStream(operationId, url, info)
             },
 
@@ -239,13 +244,16 @@ export class AssemblyScriptWasmEngine implements Engine {
                 infoPointer
             ) => {
                 const url = liftString(this.wasmExports, urlPointer)
-                const info = liftMessage(this.wasmExports, infoPointer) as SoundFileInfo
+                const info = liftMessage(
+                    this.wasmExports,
+                    infoPointer
+                ) as SoundFileInfo
                 this.fs.onOpenSoundWriteStream(operationId, url, info)
             },
 
             i_fs_sendSoundStreamData: (operationId, blockPointer) => {
                 const block = readListOfTypedArrays(
-                    this.wasmExports, 
+                    this.wasmExports,
                     this.bitDepth,
                     blockPointer
                 ) as Array<FloatArray>
@@ -265,10 +273,18 @@ export class AssemblyScriptWasmEngine implements Engine {
         ).reduce((inletCallers, [nodeId, inletIds]) => {
             inletCallers[nodeId] = {}
             inletIds.forEach((inletId) => {
-                const inletCallerVariableName = this.metadata.compilation.engineVariableNames.inletCallers[nodeId][inletId]
+                const inletCallerVariableName =
+                    this.metadata.compilation.codeVariableNames.inletCallers[
+                        nodeId
+                    ][inletId]
                 inletCallers[nodeId][inletId] = (message: Message) => {
-                    const messagePointer = lowerMessage(this.wasmExports, message)
-                    ;(this.wasmExports as any)[inletCallerVariableName](messagePointer)
+                    const messagePointer = lowerMessage(
+                        this.wasmExports,
+                        message
+                    )
+                    ;(this.wasmExports as any)[inletCallerVariableName](
+                        messagePointer
+                    )
                 }
             })
             return inletCallers
@@ -294,17 +310,24 @@ export class AssemblyScriptWasmEngine implements Engine {
     // API for data flowing ENGINE -> HOST
     _outletListenersImports() {
         const wasmImports: {
-            [listenerName: CodeVariableName]: (messagePointer: MessagePointer) => void
+            [listenerName: CodeVariableName]: (
+                messagePointer: MessagePointer
+            ) => void
         } = {}
-        const { engineVariableNames } = this.metadata.compilation
+        const { codeVariableNames } = this.metadata.compilation
         Object.entries(this.metadata.compilation.outletListenerSpecs).forEach(
             ([nodeId, outletIds]) => {
                 outletIds.forEach((outletId) => {
                     const listenerName =
-                        engineVariableNames.outletListeners[nodeId][outletId]
+                        codeVariableNames.outletListeners[nodeId][outletId]
                     wasmImports[listenerName] = (messagePointer) => {
-                        const message = liftMessage(this.wasmExports, messagePointer)
-                        this.outletListeners[nodeId][outletId].onMessage(message)
+                        const message = liftMessage(
+                            this.wasmExports,
+                            messagePointer
+                        )
+                        this.outletListeners[nodeId][outletId].onMessage(
+                            message
+                        )
                     }
                 })
             }

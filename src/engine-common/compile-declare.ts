@@ -18,8 +18,14 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
-    const { macros, engineVariableNames, nodeImplementations, outletListenerSpecs, inletCallerSpecs } = compilation
-    const { g: globs, types  } = engineVariableNames
+    const {
+        macros,
+        codeVariableNames,
+        nodeImplementations,
+        outletListenerSpecs,
+        inletCallerSpecs,
+    } = compilation
+    const { g: globs, types } = codeVariableNames
     // prettier-ignore
     return renderCode`
         let ${macros.typedVar(globs.iterFrame, 'Int')}
@@ -30,12 +36,12 @@ export default (
         const ${macros.typedVar(globs.arrays, 'Map<string,FloatArray>')} = new Map()
 
         ${graphTraversal.map(node => {
-            const nodeVariableNames = engineVariableNames.n[node.id]
+            const nodeVariableNames = codeVariableNames.n[node.id]
             const { ins, outs, rcvs } = nodeVariableNames
             const nodeCodeGeneratorArgs: Parameters<NodeCodeGenerator<any>> = [
                 node,
                 {
-                    ...engineVariableNames.n[node.id],
+                    ...codeVariableNames.n[node.id],
                     globs,
                     types,
                     macros,
@@ -81,7 +87,7 @@ export default (
                 // Here not possible to assign directly the receiver because otherwise assemblyscript
                 // doesn't export a function but a global instead.
                 nodeInletCallers.map(inletId => 
-                    `function ${engineVariableNames.inletCallers[node.id][inletId]} ${macros.typedFuncHeader([
+                    `function ${codeVariableNames.inletCallers[node.id][inletId]} ${macros.typedFuncHeader([
                         macros.typedVar('m', 'Message')
                     ], 'void')} {${rcvs[inletId]}(m)}`
                 ),
@@ -95,7 +101,7 @@ export default (
             // This needs to come after all message receivers are declared since we reference them here.
             // If there are outlets listeners declared we also inject the code here.
             graphTraversal.map(node => {
-                const { snds } = engineVariableNames.n[node.id]
+                const { snds } = codeVariableNames.n[node.id]
                 const nodeOutletListeners = outletListenerSpecs[node.id] || []
                 const nodeSinks = traversal.removeDeadSinks(node.sinks, traversalNodeIds)
                 return Object.values(node.outlets)
@@ -107,7 +113,7 @@ export default (
                         // If we send to only a single sink, we directly assign the sink's message receiver.
                         if (outletSinks.length === 1 && !hasOutletListener) {
                             const {nodeId: sinkNodeId, portletId: inletId} = outletSinks[0]
-                            return `const ${snds[outlet.id]} = ${engineVariableNames.n[sinkNodeId].rcvs[inletId]}`
+                            return `const ${snds[outlet.id]} = ${codeVariableNames.n[sinkNodeId].rcvs[inletId]}`
                         
                         // If we send to several sinks, we need to declare a proxy function that sends to all
                         // all the sinks when called.
@@ -117,9 +123,9 @@ export default (
                                     macros.typedVar('m', 'Message')
                                 ], 'void')} {
                                     ${hasOutletListener ? 
-                                        `${engineVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : ''}
+                                        `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : ''}
                                     ${outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
-                                        `${engineVariableNames.n[sinkNodeId].rcvs[inletId]}(${globs.m})`
+                                        `${codeVariableNames.n[sinkNodeId].rcvs[inletId]}(${globs.m})`
                                     )}
                                 }
                             `

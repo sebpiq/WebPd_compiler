@@ -18,7 +18,7 @@ export default (
     graphTraversal: DspGraph.GraphTraversal
 ): Code => {
     const { macros } = compilation
-    const { g: globs, types } = compilation.engineVariableNames
+    const { g: globs, types } = compilation.codeVariableNames
 
     // prettier-ignore
     return renderCode`
@@ -32,7 +32,7 @@ export default (
                 nodeInitialize ? nodeInitialize(
                     node,
                     {
-                        ...compilation.engineVariableNames.n[node.id],
+                        ...compilation.codeVariableNames.n[node.id],
                         globs,
                         macros,
                         types,

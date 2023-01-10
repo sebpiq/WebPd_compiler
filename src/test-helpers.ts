@@ -10,14 +10,14 @@
  */
 
 import { Code, Compilation, CompilerTarget } from './types'
-import * as variableNames from './engine-common/engine-variable-names'
+import * as variableNames from './engine-common/code-variable-names'
 import { getMacros } from './compile'
 import { JavaScriptEngine } from './engine-javascript/types'
 import { compileWasmModule } from './engine-assemblyscript/test-helpers'
 import { createEngine as createAscEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
 import { writeFileSync } from 'fs'
 import { exec } from 'child_process'
-import {promisify} from 'util'
+import { promisify } from 'util'
 const execPromise = promisify(exec)
 
 export const normalizeCode = (rawCode: string) => {
@@ -45,7 +45,7 @@ export const makeCompilation = (
     const graph = compilation.graph || {}
     const outletListenerSpecs = compilation.outletListenerSpecs || {}
     const inletCallerSpecs = compilation.inletCallerSpecs || {}
-    const engineVariableNames = variableNames.generate(
+    const codeVariableNames = variableNames.generate(
         nodeImplementations,
         graph,
         debug
@@ -54,9 +54,9 @@ export const makeCompilation = (
         bitDepth: 32,
         channelCount: { in: 2, out: 2 },
     }
-    variableNames.attachOutletListeners(engineVariableNames, outletListenerSpecs)
-    variableNames.attachInletCallers(engineVariableNames, inletCallerSpecs)
-    variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
+    variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
+    variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
+    variableNames.attachTypes(codeVariableNames, audioSettings.bitDepth)
     return {
         ...compilation,
         target,
@@ -66,8 +66,8 @@ export const makeCompilation = (
         outletListenerSpecs,
         inletCallerSpecs,
         macros: getMacros(target),
-        engineVariableNames,
-        debug
+        codeVariableNames,
+        debug,
     }
 }
 
@@ -93,17 +93,28 @@ const getJSEvalErrorSite = async (code: string) => {
     writeFileSync(filepath, code)
     try {
         await execPromise('node --experimental-vm-modules ' + filepath)
-    } catch(error) {
-        const matched = (new RegExp(`${filepath}:([0-9]+)`)).exec(error.stack)
+    } catch (error) {
+        const matched = new RegExp(`${filepath}:([0-9]+)`).exec(error.stack)
         if (matched) {
             const lineNumber = parseInt(matched[1], 10)
             const lineBefore = Math.max(lineNumber - 3, 0)
             const lineAfter = lineNumber + 3
-            const codeLines = code.split('\n').map((line, i) => (i + 1) === lineNumber ? '-> ' + line + ' <-': '  ' + line)
-            return `line ${lineNumber} : \n` + codeLines.slice(lineBefore, lineAfter).join('\n') + '\n-----\n' + error.toString()
+            const codeLines = code
+                .split('\n')
+                .map((line, i) =>
+                    i + 1 === lineNumber ? '-> ' + line + ' <-' : '  ' + line
+                )
+            return (
+                `line ${lineNumber} : \n` +
+                codeLines.slice(lineBefore, lineAfter).join('\n') +
+                '\n-----\n' +
+                error.toString()
+            )
         } else {
             console.warn(`couldn't parse error line`)
-            return `copy/pasting node command stacktrace : \n` + error.toString()
+            return (
+                `copy/pasting node command stacktrace : \n` + error.toString()
+            )
         }
     }
     console.warn(`no error found :thinking:`)

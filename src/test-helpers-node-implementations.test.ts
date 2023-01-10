@@ -55,8 +55,8 @@ describe('test-helpers-node-implementations', () => {
                                 msg_readFloatToken(${globs.m}, 0) + 0.1
                             ])
                         )
-                    `
-                })
+                    `,
+                }),
             }
 
             const node: DspGraph.Node = {

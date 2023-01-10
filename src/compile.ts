@@ -22,7 +22,7 @@ import compileToJavascript from './engine-javascript/compile-to-javascript'
 import compileToAssemblyscript from './engine-assemblyscript/compile-to-assemblyscript'
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
-import * as variableNames from './engine-common/engine-variable-names'
+import * as variableNames from './engine-common/code-variable-names'
 import { DspGraph } from '@webpd/dsp-graph'
 
 export default (
@@ -30,17 +30,22 @@ export default (
     nodeImplementations: NodeImplementations,
     compilerSettings: CompilerSettings
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletCallerSpecs, outletListenerSpecs, target, debug } =
-        validateSettings(compilerSettings)
+    const {
+        audioSettings,
+        inletCallerSpecs,
+        outletListenerSpecs,
+        target,
+        debug,
+    } = validateSettings(compilerSettings)
     const macros = getMacros(target)
-    const engineVariableNames = variableNames.generate(
+    const codeVariableNames = variableNames.generate(
         nodeImplementations,
         graph,
         debug
     )
-    variableNames.attachInletCallers(engineVariableNames, outletListenerSpecs)
-    variableNames.attachOutletListeners(engineVariableNames, outletListenerSpecs)
-    variableNames.attachTypes(engineVariableNames, audioSettings.bitDepth)
+    variableNames.attachInletCallers(codeVariableNames, outletListenerSpecs)
+    variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
+    variableNames.attachTypes(codeVariableNames, audioSettings.bitDepth)
     return executeCompilation({
         target,
         graph,
@@ -48,9 +53,9 @@ export default (
         audioSettings,
         inletCallerSpecs,
         outletListenerSpecs,
-        engineVariableNames,
+        codeVariableNames,
         macros,
-        debug
+        debug,
     })
 }
 

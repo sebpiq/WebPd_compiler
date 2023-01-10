@@ -32,7 +32,9 @@ describe('compileToAssemblyscript', () => {
             )
         )
 
-        const expectedExports: AssemblyScriptWasmExports & AssemblyScriptWasmImports & AscRuntimeExports = {
+        const expectedExports: AssemblyScriptWasmExports &
+            AssemblyScriptWasmImports &
+            AscRuntimeExports = {
             configure: (_: number) => undefined,
             getOutput: () => 0,
             getInput: () => 0,
