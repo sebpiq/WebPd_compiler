@@ -24,9 +24,9 @@ export type FloatArray = Float32Array | Float64Array
 export type Message = Array<string | number>
 
 /**
- * [channelCount]
+ * [channelCount, sampleRate, bitDepth, encodingFormat, endianness, extraOptions]
  */
-export type SoundFileInfo = [number]
+export type SoundFileInfo = [number, number, number, string, 'b' | 'l' | '', string]
 
 /**
  * Type for values sent through the signal flow.

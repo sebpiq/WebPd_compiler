@@ -21,7 +21,9 @@ import {
     FloatArray,
     Code,
     NodeImplementation,
+    Engine,
 } from './types'
+import { writeFile } from 'fs/promises'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -30,24 +32,37 @@ interface NodeTestSettings<NodeArguments> {
     node: DspGraph.Node
     nodeImplementation: NodeImplementation<NodeArguments>
     engineDspParams?: typeof ENGINE_DSP_PARAMS
+    arrays?: { [arrayName: string]: Array<number> }
 }
 
-export type Frame = {
-    [portletId: string]: Array<Message> | Signal
+type Frame = {
+    fs?: {
+        [FsFuncName in keyof Engine['fs']]?: Parameters<Engine['fs'][FsFuncName]>
+    },
+}
+type FrameIn = Frame & {
+    getArrays?: Array<string>
+    ins?: {[portletId: string]: Array<Message> | Signal}
+}
+export type FrameOut = Frame & {
+    arrays?: {
+        [arrayName: string]: Array<number>
+    }
+    outs: {[portletId: string]: Array<Message> | Signal}
 }
 
 export const generateFramesForNode = async <NodeArguments>(
     nodeTestSettings: NodeTestSettings<NodeArguments>,
-    inputFrames: Array<Frame>,
-    arrays?: { [arrayName: string]: Array<number> }
-): Promise<Array<Frame>> => {
+    inputFrames: Array<FrameIn>,
+): Promise<Array<FrameOut>> => {
     nodeTestSettings.engineDspParams =
         nodeTestSettings.engineDspParams || ENGINE_DSP_PARAMS
 
-    const { target } = nodeTestSettings
+    const { target, arrays } = nodeTestSettings
     const connectedInlets = new Set<DspGraph.PortletId>([])
     inputFrames.forEach((frame) =>
-        Object.keys(frame).forEach((inletId) => connectedInlets.add(inletId))
+        Object.keys(frame.ins || {})
+            .forEach((inletId) => connectedInlets.add(inletId))
     )
 
     // --------------- Generating test graph
@@ -225,7 +240,13 @@ export const generateFramesForNode = async <NodeArguments>(
             bitDepth: 64,
         },
     })
-    const code = executeCompilation(compilation)
+    const code = executeCompilation(compilation) 
+    // Always save latest compilation for easy inspection
+    await writeFile(
+        `./tmp/latest-compilation.${compilation.target === 'javascript' ? 'js': 'asc'}`, 
+        code
+    )
+    
     const engine = await createEngine(compilation.target, code)
 
     if (arrays) {
@@ -251,7 +272,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
     const blockSize = 1
     let configured = false
-    const outputFrames: Array<Frame> = []
+    const outputFrames: Array<FrameOut> = []
     const engineInput = buildEngineBlock(
         Float32Array,
         nodeTestSettings.engineDspParams.channelCount.in,
@@ -264,13 +285,25 @@ export const generateFramesForNode = async <NodeArguments>(
     )
 
     inputFrames.forEach((inputFrame) => {
-        const outputFrame: Frame = {}
+        const outputFrame: FrameOut = {outs: {}}
         // Set default values for output frame
         Object.values(testNode.outlets).forEach((outlet) => {
             if (outlet.type === 'message') {
-                outputFrame[outlet.id] = []
+                outputFrame.outs[outlet.id] = []
             }
         })
+
+        // Set up listeners for fs
+        const _ensureFs = () => {
+            outputFrame.fs = outputFrame.fs || {}
+            return outputFrame.fs
+        }
+        engine.fs.onCloseSoundStream = (...args) => _ensureFs()['onCloseSoundStream'] = args
+        engine.fs.onOpenSoundReadStream = (...args) => _ensureFs()['onOpenSoundReadStream'] = args
+        engine.fs.onOpenSoundWriteStream = (...args) => _ensureFs()['onOpenSoundWriteStream'] = args
+        engine.fs.onReadSoundFile = (...args) => _ensureFs()['onReadSoundFile'] = args
+        engine.fs.onSoundStreamData = (...args) => _ensureFs()['onSoundStreamData'] = args
+        engine.fs.onWriteSoundFile = (...args) => _ensureFs()['onWriteSoundFile'] = args
 
         // Set up outletListeners to receive sent messages
         Object.keys(engine.outletListeners['fakeSinkNode']).forEach(
@@ -278,21 +311,19 @@ export const generateFramesForNode = async <NodeArguments>(
                 engine.outletListeners['fakeSinkNode'][outletId] = {
                     onMessage: (m) => {
                         if (testNode.outlets[outletId].type === 'message') {
-                            outputFrame[outletId] = outputFrame[outletId] || []
-                            const output = outputFrame[
-                                outletId
-                            ] as Array<Message>
+                            outputFrame.outs[outletId] = outputFrame.outs[outletId] || []
+                            const output = outputFrame.outs[outletId] as Array<Message>
                             output.push(m)
                         } else {
-                            outputFrame[outletId] = m[0] as number
+                            outputFrame.outs[outletId] = m[0] as number
                         }
                     },
                 }
             }
         )
 
-        // We make sure we configure after assigning the outletListeners, so we can receive messages sent
-        // during configure.
+        // We make sure we configure AFTER assigning the outletListeners, 
+        // so we can receive messages sent during configure.
         if (configured === false) {
             engine.configure(
                 nodeTestSettings.engineDspParams.sampleRate,
@@ -301,12 +332,30 @@ export const generateFramesForNode = async <NodeArguments>(
             configured = true
         }
 
-        // Send in the input frame and run the loop
-        Object.entries(inputFrame).forEach(([inletId, value]) => {
-            if (testNode.inlets[inletId].type === 'message') {
+        // Send in fs commands
+        if (inputFrame.fs) {
+            Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
+                engine.fs[funcName as keyof FrameIn['fs']].apply(null, args)
+            })
+        }
+
+        // Get requested arrays
+        if (inputFrame.getArrays) {
+            outputFrame.arrays = {}
+            inputFrame.getArrays.forEach(arrayName => {
+                outputFrame.arrays[arrayName] = Array.from(engine.getArray(arrayName))
+            })
+        }
+
+        // Send in the input frame
+        Object.entries(inputFrame.ins || {}).forEach(([inletId, value]) => {
+            if (!testNode.inlets[inletId]) {
+                throw new Error(`Unknown inlet ${inletId} for node ${testNode.type}`)
+
+            } else if (testNode.inlets[inletId].type === 'message') {
                 if (!Array.isArray(value)) {
                     throw new Error(
-                        `unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`
+                        `message inlet ${inletId} : unexpected value ${value} of type <${typeof value}>`
                     )
                 }
                 value.forEach((message) =>
@@ -315,12 +364,14 @@ export const generateFramesForNode = async <NodeArguments>(
             } else {
                 if (typeof value !== 'number') {
                     throw new Error(
-                        `unexpected value ${value} of type <${typeof value}> for inlet ${inletId}`
+                        `signal inlet ${inletId} : unexpected value ${value} of type <${typeof value}>`
                     )
                 }
                 engine.inletCallers['fakeSourceNode'][inletId]([value])
             }
         })
+
+        // Run the loop
         engine.loop(engineInput, engineOutput)
         outputFrames.push(outputFrame)
     })
@@ -336,15 +387,13 @@ export const generateFramesForNode = async <NodeArguments>(
 
 export const assertNodeOutput = async <NodeArguments>(
     nodeTestSettings: NodeTestSettings<NodeArguments>,
-    inputFrames: Array<Frame>,
-    expectedOutputFrames: Array<Frame>,
-    arrays?: { [arrayName: string]: Array<number> }
+    ...frames: Array<[FrameIn, FrameOut]>
 ): Promise<void> => {
-    let actualOutputFrames: Array<Frame>
-    actualOutputFrames = await generateFramesForNode(
+    const expectedOutputFrames: Array<FrameOut> = frames.map(([_, frameOut]) => frameOut)
+    const inputFrames: Array<FrameIn> = frames.map(([frameIn]) => frameIn)
+    let actualOutputFrames: Array<FrameOut> = await generateFramesForNode(
         nodeTestSettings,
         inputFrames,
-        arrays
     )
     assert.deepStrictEqual(
         roundFloatsInFrames(actualOutputFrames),
@@ -352,20 +401,21 @@ export const assertNodeOutput = async <NodeArguments>(
     )
 }
 
-const roundFloatsInFrames = (frames: Array<Frame>) =>
-    frames.map((frame) => {
+const roundFloatsInFrames = (frames: Array<FrameOut>) =>
+    frames.map(frame => {
         const roundDecimal = 5
-        const roundedFrame: Frame = {}
-        Object.entries(frame).forEach(([portletId, arrayOrSignal]) => {
+        const roundedFrame: FrameOut = {...frame}
+        Object.entries(frame.outs).forEach(([portletId, arrayOrSignal]) => {
             if (Array.isArray(arrayOrSignal)) {
-                roundedFrame[portletId] = arrayOrSignal.map((value) => {
+                roundedFrame.outs[portletId] = arrayOrSignal.map((value) => {
                     if (typeof value === 'number') {
                         return round(value, roundDecimal) as any
                     }
                     return value
                 })
-            } else {
-                roundedFrame[portletId] = round(arrayOrSignal, roundDecimal)
+
+            } else if (typeof arrayOrSignal === 'number') {
+                roundedFrame.outs[portletId] = round(arrayOrSignal, roundDecimal)
             }
         })
         return roundedFrame

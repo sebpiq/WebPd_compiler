@@ -27,6 +27,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     } = compilation
     const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.codeVariableNames.g
+    const { FloatArray } = codeVariableNames.types
     const coreCode = generateCoreCode(codeVariableNames)
     const metadata: EngineMetadata = {
         audioSettings: {
@@ -62,7 +63,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${compileLoop(compilation, graphTraversal)}
             },
             setArray: (arrayName, array) => { 
-                ${globs.arrays}.set(arrayName, array)
+                ${globs.arrays}.set(arrayName, new ${FloatArray}(array))
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>

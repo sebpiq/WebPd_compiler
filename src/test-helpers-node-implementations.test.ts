@@ -36,10 +36,9 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                 },
-                // Inputs
-                [{ '0': 1 }, { '0': 2 }, { '0': 3 }],
-                // Expected outputsmessage
-                [{ '0': 1.1 }, { '0': 2.1 }, { '0': 3.1 }]
+                [{ ins: {'0': 1} }, { outs: {'0': 1.1} }], 
+                [{ ins: {'0': 2} }, { outs: {'0': 2.1} }],
+                [{ ins: {'0': 3} }, { outs: {'0': 3.1} }]
             )
         })
 
@@ -71,10 +70,9 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                 },
-                // Inputs
-                [{ '0': [[1]] }, { '0': [[2]] }, { '0': [[3]] }],
-                // Expected outputsmessage
-                [{ '0': [[1.1]] }, { '0': [[2.1]] }, { '0': [[3.1]] }]
+                [{ ins: {'0': [[1]]} }, { outs: {'0': [[1.1]]} }],
+                [{ ins: {'0': [[2]]} }, { outs: {'0': [[2.1]]} }],
+                [{ ins: {'0': [[3]]} }, { outs: {'0': [[3.1]]} }]
             )
         })
 
@@ -104,10 +102,74 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                 },
-                // Inputs
-                [{ '0': [['bang']] }, { '0': [['bang']] }, { '0': [['bang']] }],
-                // Expected outputsmessage
-                [{ '0': [[0]] }, { '0': [[1]] }, { '0': [[2]] }]
+                [{ ins: {'0': [['bang']]} }, { outs: {'0': [[0]]} }],
+                [{ ins: {'0': [['bang']]} }, { outs: {'0': [[1]]} }],
+                [{ ins: {'0': [['bang']]} }, { outs: {'0': [[2]]} }]
+            )
+        })
+
+        it.each<{ target: CompilerTarget }>([
+            { target: 'javascript' },
+            { target: 'assemblyscript' },
+        ])('should handle tests with fs %s', async ({ target }) => {
+            const nodeImplementation: NodeImplementation<{}> = {
+                messages: (_, {}) => ({
+                    '0': `
+                        fs_readSoundFile('/bla', {
+                            channelCount: 11,
+                            sampleRate: 666,
+                            bitDepth: 12,
+                            encodingFormat: 'bla',
+                            endianness: 'l',
+                            extraOptions: 'bli',
+                        }, () => {})
+                    `,
+                }),
+            }
+
+            const node: DspGraph.Node = {
+                ...nodeDefaults('someNode', 'DUMMY'),
+                inlets: { '0': { id: '0', type: 'message' } },
+            }
+
+            await nodeImplementationsTestHelpers.assertNodeOutput(
+                {
+                    target,
+                    node,
+                    nodeImplementation,
+                },
+                [{ ins: {'0': [['bang']]} }, { outs: {}, fs: {onReadSoundFile: [1, '/bla', [11, 666, 12, 'bla', 'l', 'bli']]} }],
+            )
+        })
+
+        it.each<{ target: CompilerTarget }>([
+            { target: 'javascript' },
+            { target: 'assemblyscript' },
+        ])('should handle tests on arrays %s', async ({ target }) => {
+            const nodeImplementation: NodeImplementation<{}> = {
+                messages: (_, {globs}) => ({
+                    '0': `
+                        ${globs.arrays}.get('array1')[0] = 666
+                    `,
+                }),
+            }
+
+            const node: DspGraph.Node = {
+                ...nodeDefaults('someNode', 'DUMMY'),
+                inlets: { '0': { id: '0', type: 'message' } },
+            }
+
+            await nodeImplementationsTestHelpers.assertNodeOutput(
+                {
+                    target,
+                    node,
+                    nodeImplementation,
+                    arrays: {
+                        array1: [111]
+                    }
+                },
+                [{ ins: {'0': [['bang']]} }, { outs: {}}],
+                [{ getArrays: ['array1'] }, { outs: {}, arrays: {array1: [666]}}]
             )
         })
     })

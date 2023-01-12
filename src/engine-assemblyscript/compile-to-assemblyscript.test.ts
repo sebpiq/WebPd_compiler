@@ -24,6 +24,10 @@ describe('compileToAssemblyscript', () => {
             __unpin: () => void
         }
 
+        interface TestExports {
+            getArray: () => void
+        }
+
         const { wasmExports } = await createAscEngine(
             compileToAssemblyscript(
                 makeCompilation({
@@ -34,7 +38,8 @@ describe('compileToAssemblyscript', () => {
 
         const expectedExports: AssemblyScriptWasmExports &
             AssemblyScriptWasmImports &
-            AscRuntimeExports = {
+            AscRuntimeExports & 
+            TestExports = {
             configure: (_: number) => undefined,
             getOutput: () => 0,
             getInput: () => 0,
@@ -70,6 +75,7 @@ describe('compileToAssemblyscript', () => {
             __pin: () => undefined,
             __rtti_base: () => undefined,
             __unpin: () => undefined,
+            getArray: () => undefined,
         }
 
         assert.deepStrictEqual(

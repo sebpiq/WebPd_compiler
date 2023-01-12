@@ -49,6 +49,6 @@ export const createAscEngine = async (code: Code) => {
     const engine = (await createEngine(
         'assemblyscript',
         code
-    )) as AssemblyScriptWasmEngine
+    )) as unknown as AssemblyScriptWasmEngine
     return { engine, wasmExports: engine.wasmExports as any }
 }

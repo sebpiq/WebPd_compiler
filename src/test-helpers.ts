@@ -9,7 +9,7 @@
  *
  */
 
-import { Code, Compilation, CompilerTarget } from './types'
+import { Code, Compilation, CompilerTarget, Engine, FloatArray } from './types'
 import * as variableNames from './engine-common/code-variable-names'
 import { getMacros } from './compile'
 import { JavaScriptEngine } from './engine-javascript/types'
@@ -18,6 +18,7 @@ import { createEngine as createAscEngine } from './engine-assemblyscript/Assembl
 import { writeFileSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { lowerString, readTypedArray } from './engine-assemblyscript/core-code/core-bindings'
 const execPromise = promisify(exec)
 
 export const normalizeCode = (rawCode: string) => {
@@ -71,20 +72,44 @@ export const makeCompilation = (
     }
 }
 
-export const createEngine = async (target: CompilerTarget, code: Code) => {
+/**
+ * Helper function to create a WebPd `Engine` for running tests.
+ * It has for example an added `getArray` function to read arrays.
+ */
+export const createEngine = async (
+    target: CompilerTarget,
+    code: Code
+): Promise<Engine & {getArray: (arrayName: string) => Float32Array}> => {
     if (target === 'javascript') {
+        code += `
+            exports.getArray = (arrayName) => 
+                ARRAYS.get(arrayName)
+        `
         try {
             return new Function(`
                 ${code}
                 return exports
-            `)() as JavaScriptEngine
+            `)() as any
         } catch (err) {
             const errMessage = await getJSEvalErrorSite(code)
             throw new Error('ERROR in generated JS code ' + errMessage)
         }
     } else {
+        code += `
+            export function getArray(arrayName: string): FloatArray {
+                return ARRAYS.get(arrayName)
+            } 
+        `
         const wasmBuffer = await compileWasmModule(code)
-        return await createAscEngine(wasmBuffer)
+        const engine = await createAscEngine(wasmBuffer)
+        ;(engine as any).getArray = (arrayName: string) => {
+            const stringPointer = lowerString(engine.wasmExports, arrayName)
+            const arrayPointer = (engine.wasmExports as any).getArray(stringPointer)
+            return readTypedArray(
+                engine.wasmExports, 
+                engine.metadata.audioSettings.bitDepth === 32 ? Float32Array: Float64Array, arrayPointer)
+        }
+        return engine as any
     }
 }
 

@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../../constants'
 import { round } from '../../test-helpers'
-import { AudioSettings } from '../../types'
+import { AudioSettings, SoundFileInfo } from '../../types'
 import { TypedArrayPointer } from '../types'
 import { liftString, readTypedArray } from './core-bindings'
 import { liftMessage } from './msg-bindings'
@@ -102,6 +102,52 @@ describe('fs-bindings', () => {
             audioSettings
         )
 
+    describe('sound info', () => {
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+            { bitDepth: 32 },
+            { bitDepth: 64 },
+        ])('should be able to convert _fs_SoundInfo to Message %s', async ({ bitDepth }) => {
+            const code =
+                getBaseTestCode({ bitDepth }) +
+                `
+                    export function testSoundInfoToMessage (array: FloatArray): Message {
+                        const soundInfo: _fs_SoundInfo = {
+                            channelCount: 2,
+                            sampleRate: 48000,
+                            bitDepth: 24,
+                            encodingFormat: 'wave',
+                            endianness: 'l',
+                            extraOptions: '--blo --bli',
+                        }
+                        return fs_soundInfoToMessage(soundInfo)
+                    }
+                `
+
+            const exports = {
+                ...baseExports,
+                testSoundInfoToMessage: 1,
+            }
+
+            const { wasmExports } = await initializeCoreCodeTest({
+                code,
+                bitDepth,
+                exports,
+            })
+
+            assert.deepStrictEqual(
+                liftMessage(wasmExports, wasmExports.testSoundInfoToMessage()),
+                [
+                    2,
+                    48000,
+                    24,
+                    'wave',
+                    'l',
+                    '--blo --bli'
+                ] as SoundFileInfo
+            )
+        })
+    })
+
     describe('read sound files', () => {
         describe('fs_readSoundFile', () => {
             it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
@@ -112,7 +158,18 @@ describe('fs-bindings', () => {
                     getBaseTestCode({ bitDepth }) +
                     `
                         export function testStartReadFile (array: FloatArray): Int {
-                            return fs_readSoundFile('/some/url', fs_soundInfo(4), someSoundCallback)
+                            return fs_readSoundFile(
+                                '/some/url', 
+                                {
+                                    channelCount: 4, 
+                                    sampleRate: 44100, 
+                                    bitDepth: 32, 
+                                    encodingFormat: 'wave', 
+                                    endianness: 'b', 
+                                    extraOptions: ''
+                                },
+                                someSoundCallback
+                            )
                         }
                     `
 
@@ -138,7 +195,7 @@ describe('fs-bindings', () => {
                         liftString(wasmExports, readCalled[0][1]),
                         liftMessage(wasmExports, readCalled[0][2]),
                     ],
-                    [operationId, '/some/url', [4]]
+                    [operationId, '/some/url', [4, 44100, 32, 'wave', 'b', ''] as SoundFileInfo]
                 )
                 assert.ok(wasmExports.testCheckOperationProcessing(operationId))
             })
@@ -155,7 +212,18 @@ describe('fs-bindings', () => {
                         getBaseTestCode({ bitDepth }) +
                         `
                     export function testStartReadFile (array: FloatArray): Int {
-                        return fs_readSoundFile('/some/url', fs_soundInfo(3), someSoundCallback)
+                        return fs_readSoundFile(
+                            '/some/url', 
+                            {
+                                channelCount: 3,
+                                sampleRate: 44100,
+                                bitDepth: 32,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: ''
+                            }, 
+                            someSoundCallback
+                        )
                     }
                 `
 
@@ -221,7 +289,18 @@ describe('fs-bindings', () => {
                         getBaseTestCode({ bitDepth }) +
                         `
                     export function testStartReadFile (array: FloatArray): Int {
-                        return fs_readSoundFile('/some/url', fs_soundInfo(1), someSoundCallback)
+                        return fs_readSoundFile(
+                            '/some/url', 
+                            {
+                                channelCount: 1,
+                                sampleRate: 44100,
+                                bitDepth: 32,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someSoundCallback
+                        )
                     }
                 `
 
@@ -477,7 +556,18 @@ describe('fs-bindings', () => {
                     `
                         const channelCount: Int = 22
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_openSoundReadStream('/some/url', fs_soundInfo(channelCount), someCallback)
+                            return fs_openSoundReadStream(
+                                '/some/url', 
+                                {
+                                    channelCount: channelCount,
+                                    sampleRate: 44100,
+                                    bitDepth: 32,
+                                    encodingFormat: 'wave',
+                                    endianness: 'b',
+                                    extraOptions: '',
+                                }, 
+                                someCallback
+                            )
                         }
                         export function testCheckSoundBufferExists(id: fs_OperationId): boolean {
                             return _FS_SOUND_STREAM_BUFFERS.has(id) 
@@ -503,10 +593,13 @@ describe('fs-bindings', () => {
                 )
                 assert.strictEqual(readCalled.length, 1)
                 assert.strictEqual(readCalled[0].length, 3)
-                assert.strictEqual(readCalled[0][0], operationId)
-                assert.strictEqual(
-                    liftString(wasmExports, readCalled[0][1]),
-                    '/some/url'
+                assert.deepStrictEqual(
+                    [
+                        readCalled[0][0],
+                        liftString(wasmExports, readCalled[0][1]),
+                        liftMessage(wasmExports, readCalled[0][2]),
+                    ],
+                    [operationId, '/some/url', [22, 44100, 32, 'wave', 'b', ''] as SoundFileInfo]
                 )
                 assert.ok(wasmExports.testCheckOperationProcessing(operationId))
                 assert.ok(wasmExports.testCheckSoundBufferExists(operationId))
@@ -522,7 +615,18 @@ describe('fs-bindings', () => {
                     getBaseTestCode({ bitDepth }) +
                     `
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_openSoundReadStream('/some/url', fs_soundInfo(2), someCallback)
+                            return fs_openSoundReadStream(
+                                '/some/url', 
+                                {
+                                    channelCount: 2,
+                                    sampleRate: 44100,
+                                    bitDepth: 24,
+                                    encodingFormat: 'wave',
+                                    endianness: 'b',
+                                    extraOptions: '',
+                                },
+                                someCallback
+                            )
                         }
                         export function testBufferPullFrame(id: fs_OperationId): Float {
                             return _FS_SOUND_STREAM_BUFFERS.get(id).pullFrame()[0]
@@ -598,7 +702,18 @@ describe('fs-bindings', () => {
                         getBaseTestCode({ bitDepth }) +
                         `
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_openSoundReadStream('/some/url', fs_soundInfo(2), someCallback)
+                            return fs_openSoundReadStream(
+                                '/some/url', 
+                                {
+                                    channelCount: 2,
+                                    sampleRate: 44100,
+                                    bitDepth: 24,
+                                    encodingFormat: 'wave',
+                                    endianness: 'b',
+                                    extraOptions: '',
+                                }, 
+                                someCallback
+                            )
                         }
                     `
 
@@ -671,7 +786,18 @@ describe('fs-bindings', () => {
                     `
                         const channelCount: Int = 4
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_openSoundWriteStream('/some/url', fs_soundInfo(channelCount), someCallback)
+                            return fs_openSoundWriteStream(
+                                '/some/url', 
+                                {
+                                    channelCount: 2,
+                                    sampleRate: 44100,
+                                    bitDepth: 24,
+                                    encodingFormat: 'wave',
+                                    endianness: 'b',
+                                    extraOptions: '',
+                                }, 
+                                someCallback
+                            )
                         }
                     `
 
@@ -687,15 +813,18 @@ describe('fs-bindings', () => {
                 })
 
                 const operationId: number = wasmExports.testStartStream()
-                const readCalled: Array<Array<any>> = called.get(
+                const writeCalled: Array<Array<any>> = called.get(
                     'i_fs_openSoundWriteStream'
                 )
-                assert.strictEqual(readCalled.length, 1)
-                assert.strictEqual(readCalled[0].length, 3)
-                assert.strictEqual(readCalled[0][0], operationId)
-                assert.strictEqual(
-                    liftString(wasmExports, readCalled[0][1]),
-                    '/some/url'
+                assert.strictEqual(writeCalled.length, 1)
+                assert.strictEqual(writeCalled[0].length, 3)
+                assert.deepStrictEqual(
+                    [
+                        writeCalled[0][0],
+                        liftString(wasmExports, writeCalled[0][1]),
+                        liftMessage(wasmExports, writeCalled[0][2]),
+                    ],
+                    [operationId, '/some/url', [2, 44100, 24, 'wave', 'b', ''] as SoundFileInfo]
                 )
                 assert.ok(wasmExports.testCheckOperationProcessing(operationId))
             })
@@ -712,7 +841,18 @@ describe('fs-bindings', () => {
                         `
                         let counter: Float = 0
                         export function testStartStream (array: FloatArray): Int {
-                            return fs_openSoundWriteStream('/some/url', fs_soundInfo(2), someCallback)
+                            return fs_openSoundWriteStream(
+                                '/some/url', 
+                                {
+                                    channelCount: 2,
+                                    sampleRate: 44100,
+                                    bitDepth: 24,
+                                    encodingFormat: 'wave',
+                                    endianness: 'b',
+                                    extraOptions: '',
+                                }, 
+                                someCallback
+                            )
                         }
                         export function testSendSoundStreamData(id: fs_OperationId): void {
                             const block: FloatArray[] = [
@@ -807,7 +947,18 @@ describe('fs-bindings', () => {
                         replacePlaceholdersForTesting(
                             `
                             export function testStartStream (array: FloatArray): Int {
-                                return fs_openSoundWriteStream('/some/url', fs_soundInfo(1), someCallback)
+                                return fs_openSoundWriteStream(
+                                    '/some/url', 
+                                    {
+                                        channelCount: 1,
+                                        sampleRate: 44100,
+                                        bitDepth: 24,
+                                        encodingFormat: 'wave',
+                                        endianness: 'b',
+                                        extraOptions: '',
+                                    }, 
+                                    someCallback
+                                )
                             }
                             export function testSendSoundStreamData(id: fs_OperationId): void {
                                 const block: FloatArray[] = [
@@ -901,7 +1052,18 @@ describe('fs-bindings', () => {
 
                         export function testStartWriteFile (array: FloatArray): Int {
                             return fs_writeSoundFile(
-                                sound, '/some/url', fs_soundInfo(sound.length), someCallback)
+                                sound, 
+                                '/some/url', 
+                                {
+                                    channelCount: sound.length,
+                                    sampleRate: 44100,
+                                    bitDepth: 24,
+                                    encodingFormat: 'wave',
+                                    endianness: 'b',
+                                    extraOptions: '',
+                                },
+                                someCallback
+                            )
                         }
                     `,
                         { bitDepth }
@@ -944,7 +1106,7 @@ describe('fs-bindings', () => {
                             new floatArrayType([31, 32, 33, 34]),
                         ],
                         '/some/url',
-                        [3],
+                        [3, 44100, 24, 'wave', 'b', ''] as SoundFileInfo,
                     ]
                 )
                 assert.ok(wasmExports.testCheckOperationProcessing(operationId))
@@ -968,7 +1130,18 @@ describe('fs-bindings', () => {
                             ]
                             export function testStartWriteFile (array: FloatArray): Int {
                                 return fs_writeSoundFile(
-                                    sound, '/some/url', fs_soundInfo(sound.length), someCallback)
+                                    sound, 
+                                    '/some/url', 
+                                    {
+                                        channelCount: sound.length,
+                                        sampleRate: 44100,
+                                        bitDepth: 24,
+                                        encodingFormat: 'wave',
+                                        endianness: 'b',
+                                        extraOptions: '',
+                                    }, 
+                                    someCallback
+                                )
                             }
                         `,
                             { bitDepth }
@@ -1021,7 +1194,18 @@ describe('fs-bindings', () => {
                             ]
                             export function testStartWriteFile (array: FloatArray): Int {
                                 return fs_writeSoundFile(
-                                    sound, '/some/url', fs_soundInfo(sound.length), someCallback)
+                                    sound, 
+                                    '/some/url', 
+                                    {
+                                        channelCount: sound.length,
+                                        sampleRate: 44100,
+                                        bitDepth: 24,
+                                        encodingFormat: 'wave',
+                                        endianness: 'b',
+                                        extraOptions: '',
+                                    }, 
+                                    someCallback
+                                )
                             }
                         `,
                             { bitDepth }

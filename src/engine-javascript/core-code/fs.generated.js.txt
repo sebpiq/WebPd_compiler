@@ -42,34 +42,32 @@ function x_fs_onCloseSoundStream(id, status) {
     fs_closeSoundStream(id, status);
 }
 // =========================== FS API
-function fs_readSoundFile(url, info, callback) {
+function fs_readSoundFile(url, soundInfo, callback) {
     const id = _fs_createOperationId();
     _FS_OPERATIONS_SOUND_CALLBACKS.set(id, callback);
-    i_fs_readSoundFile(id, url, info);
+    i_fs_readSoundFile(id, url, fs_soundInfoToMessage(soundInfo));
     return id;
 }
-function fs_writeSoundFile(sound, url, info, callback) {
+function fs_writeSoundFile(sound, url, soundInfo, callback) {
     const id = _fs_createOperationId();
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
-    i_fs_writeSoundFile(id, sound, url, info);
+    i_fs_writeSoundFile(id, sound, url, fs_soundInfoToMessage(soundInfo));
     return id;
 }
-function fs_openSoundReadStream(url, info, callback) {
+function fs_openSoundReadStream(url, soundInfo, callback) {
     const id = _fs_createOperationId();
-    const channelCount = ${Int}(msg_readFloatToken(info, 0));
-    const buffer = new _fs_SoundBuffer(channelCount);
+    const buffer = new _fs_SoundBuffer(soundInfo.channelCount);
     _FS_SOUND_STREAM_BUFFERS.set(id, buffer);
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
-    i_fs_openSoundReadStream(id, url, info);
+    i_fs_openSoundReadStream(id, url, fs_soundInfoToMessage(soundInfo));
     return id;
 }
-function fs_openSoundWriteStream(url, info, callback) {
+function fs_openSoundWriteStream(url, soundInfo, callback) {
     const id = _fs_createOperationId();
-    const channelCount = ${Int}(msg_readFloatToken(info, 0));
-    const buffer = new _fs_SoundBuffer(channelCount);
+    const buffer = new _fs_SoundBuffer(soundInfo.channelCount);
     _FS_SOUND_STREAM_BUFFERS.set(id, buffer);
     _FS_OPERATIONS_CALLBACKS.set(id, callback);
-    i_fs_openSoundWriteStream(id, url, info);
+    i_fs_openSoundWriteStream(id, url, fs_soundInfoToMessage(soundInfo));
     return id;
 }
 function fs_sendSoundStreamData(id, block) {
@@ -91,13 +89,37 @@ function fs_closeSoundStream(id, status) {
     }
     i_fs_closeSoundStream(id, status);
 }
-// Structure : [channelCount]
-function fs_soundInfo(channelCount) {
-    const info = msg_create([MSG_FLOAT_TOKEN]);
-    msg_writeFloatToken(info, 0, ${Float}(channelCount));
+function fs_soundInfoToMessage(soundInfo) {
+    const info = msg_create([
+        MSG_FLOAT_TOKEN,
+        MSG_FLOAT_TOKEN,
+        MSG_FLOAT_TOKEN,
+        MSG_STRING_TOKEN,
+        soundInfo.encodingFormat.length,
+        MSG_STRING_TOKEN,
+        soundInfo.endianness.length,
+        MSG_STRING_TOKEN,
+        soundInfo.extraOptions.length
+    ]);
+    msg_writeFloatToken(info, 0, ${Float}(soundInfo.channelCount));
+    msg_writeFloatToken(info, 1, ${Float}(soundInfo.sampleRate));
+    msg_writeFloatToken(info, 2, ${Float}(soundInfo.bitDepth));
+    msg_writeStringToken(info, 3, soundInfo.encodingFormat);
+    msg_writeStringToken(info, 4, soundInfo.endianness);
+    msg_writeStringToken(info, 5, soundInfo.extraOptions);
     return info;
 }
 // =========================== PRIVATE
+class _fs_SoundInfo {
+    constructor() {
+        this.channelCount = 0;
+        this.sampleRate = 0;
+        this.bitDepth = 0;
+        this.encodingFormat = '';
+        this.endianness = '';
+        this.extraOptions = '';
+    }
+}
 // TODO : Optimize by flattening frames + ring buffer (allows to read/write directly from host)
 class _fs_SoundBuffer {
     constructor(channelCount) {

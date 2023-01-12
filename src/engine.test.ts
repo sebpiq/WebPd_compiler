@@ -3,7 +3,7 @@ import assert from 'assert'
 import ts from 'typescript'
 const { transpileModule } = ts
 import { executeCompilation } from './compile'
-import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
+import { FS_OPERATION_SUCCESS } from './constants'
 import { createEngine, makeCompilation, round } from './test-helpers'
 import {
     AudioSettings,
@@ -15,6 +15,7 @@ import {
     Message,
     NodeImplementations,
     InletCallerSpecs,
+    SoundFileInfo,
 } from './types'
 
 const BIT_DEPTH = 64
@@ -343,12 +344,16 @@ describe('Engine', () => {
                 function testReadArray3 (index: Int): Float {
                     return ARRAYS.get('array3')[index]
                 }
+                function testIsFloatArray (index: Int): void {
+                    return ARRAYS.get('array3').set([111, 222])
+                }
             `
 
             const exports = {
                 testReadArray1: 1,
                 testReadArray2: 1,
                 testReadArray3: 1,
+                testIsFloatArray: 1,
             }
 
             const engine = await initializeEngineTest({
@@ -368,6 +373,7 @@ describe('Engine', () => {
             assert.strictEqual(round(actual), 44.4)
             actual = engine.testReadArray3(1)
             assert.strictEqual(round(actual), 77.7)
+            assert.doesNotThrow(() => engine.testIsFloatArray())
         })
     })
 
@@ -378,15 +384,25 @@ describe('Engine', () => {
                 let receivedStatus: fs_OperationStatus = -1
                 let receivedSound: FloatArray[] = []
                 function testStartReadFile (): Int {
-                    return fs_readSoundFile('/some/url', fs_soundInfo(3), function(
-                        id: fs_OperationId,
-                        status: fs_OperationStatus,
-                        sound: FloatArray[],
-                    ): void {
-                        receivedId = id
-                        receivedStatus = status
-                        receivedSound = sound
-                    })
+                    return fs_readSoundFile(
+                        '/some/url', 
+                        {
+                            channelCount: 3,
+                            sampleRate: 48000, 
+                            bitDepth: 64, 
+                            encodingFormat: 'aiff', 
+                            endianness: 'l',
+                            extraOptions: '',
+                        }, function(
+                            id: fs_OperationId,
+                            status: fs_OperationStatus,
+                            sound: FloatArray[],
+                        ): void {
+                            receivedId = id
+                            receivedStatus = status
+                            receivedSound = sound
+                        }
+                    )
                 }
                 function testOperationId(): Int {
                     return receivedId
@@ -444,8 +460,8 @@ describe('Engine', () => {
 
                     // 1. Some function in the engine requests a read file operation.
                     // Request is sent to host via callback
-                    const called: Array<Array<any>> = []
-                    engine.fs.onReadSoundFile = (...args: any) =>
+                    const called: Array<Parameters<Engine['fs']['onReadSoundFile']>> = []
+                    engine.fs.onReadSoundFile = (...args) =>
                         called.push(args)
 
                     const operationId = engine.testStartReadFile()
@@ -453,7 +469,7 @@ describe('Engine', () => {
                     assert.deepStrictEqual(called[0], [
                         operationId,
                         '/some/url',
-                        [3],
+                        [3, 48000, 64, 'aiff', 'l', ''] as SoundFileInfo,
                     ])
 
                     // 2. Hosts handles the operation. It then calls fs_sendReadSoundFileResponse when done.
@@ -486,13 +502,24 @@ describe('Engine', () => {
                 let receivedStatus: fs_OperationStatus = -1
                 const channelCount: Int = 3
                 function testStartReadStream (array: FloatArray): Int {
-                    return fs_openSoundReadStream('/some/url', fs_soundInfo(channelCount), function(
-                        id: fs_OperationId,
-                        status: fs_OperationStatus,
-                    ): void {
-                        receivedId = id
-                        receivedStatus = status
-                    })
+                    return fs_openSoundReadStream(
+                        '/some/url', 
+                        {
+                            channelCount: channelCount,
+                            sampleRate: 48000, 
+                            bitDepth: 32, 
+                            encodingFormat: 'next', 
+                            endianness: 'l',
+                            extraOptions: '--some 8 --options'
+                        }, 
+                        function(
+                            id: fs_OperationId,
+                            status: fs_OperationStatus,
+                        ): void {
+                            receivedId = id
+                            receivedStatus = status
+                        }
+                    )
                 }
                 function testOperationId(): Int {
                     return receivedId
@@ -543,18 +570,18 @@ describe('Engine', () => {
 
                 // 1. Some function in the engine requests a read stream operation.
                 // Request is sent to host via callback
-                const calledOpen: Array<Array<any>> = []
-                const calledClose: Array<Array<any>> = []
-                engine.fs.onOpenSoundReadStream = (...args: any) =>
+                const calledOpen: Array<Parameters<Engine['fs']['onOpenSoundReadStream']>> = []
+                const calledClose: Array<Parameters<Engine['fs']['onCloseSoundStream']>> = []
+                engine.fs.onOpenSoundReadStream = (...args) =>
                     calledOpen.push(args)
-                engine.fs.onCloseSoundStream = (...args: any) =>
+                engine.fs.onCloseSoundStream = (...args) =>
                     calledClose.push(args)
 
                 const operationId = engine.testStartReadStream()
                 assert.deepStrictEqual(calledOpen[0], [
                     operationId,
                     '/some/url',
-                    [3],
+                    [3, 48000, 32, 'next', 'l', '--some 8 --options'] as SoundFileInfo,
                 ])
                 assert.strictEqual(
                     engine.testOperationChannelCount(operationId),
@@ -598,13 +625,24 @@ describe('Engine', () => {
                 const blockSize: Int = 2
                 let counter: Float = 0
                 function testStartWriteStream (): Int {
-                    return fs_openSoundWriteStream('/some/url', fs_soundInfo(channelCount), function(
-                        id: fs_OperationId,
-                        status: fs_OperationStatus,
-                    ): void {
-                        receivedId = id
-                        receivedStatus = status
-                    })
+                    return fs_openSoundWriteStream(
+                        '/some/url', 
+                        {
+                            channelCount: channelCount,
+                            sampleRate: 44100, 
+                            bitDepth: 24, 
+                            encodingFormat: 'aiff', 
+                            endianness: 'b',
+                            extraOptions: '--bla',
+                        }, 
+                        function(
+                            id: fs_OperationId,
+                            status: fs_OperationStatus,
+                        ): void {
+                            receivedId = id
+                            receivedStatus = status
+                        }
+                    )
                 }
                 function testSendSoundStreamData(id: fs_OperationId): void {
                     const block: FloatArray[] = [
@@ -660,21 +698,21 @@ describe('Engine', () => {
 
                 // 1. Some function in the engine requests a write stream operation.
                 // Request is sent to host via callback
-                const calledOpen: Array<Array<any>> = []
-                const calledClose: Array<Array<any>> = []
-                const calledSoundStreamData: Array<Array<any>> = []
-                engine.fs.onOpenSoundWriteStream = (...args: any) =>
+                const calledOpen: Array<Parameters<Engine['fs']['onOpenSoundWriteStream']>> = []
+                const calledClose: Array<Parameters<Engine['fs']['onCloseSoundStream']>> = []
+                const calledSoundStreamData: Array<Parameters<Engine['fs']['onSoundStreamData']>> = []
+                engine.fs.onOpenSoundWriteStream = (...args) =>
                     calledOpen.push(args)
-                engine.fs.onSoundStreamData = (...args: any) =>
+                engine.fs.onSoundStreamData = (...args) =>
                     calledSoundStreamData.push(args)
-                engine.fs.onCloseSoundStream = (...args: any) =>
+                engine.fs.onCloseSoundStream = (...args) =>
                     calledClose.push(args)
 
                 const operationId = engine.testStartWriteStream()
                 assert.deepStrictEqual(calledOpen[0], [
                     operationId,
                     '/some/url',
-                    [3],
+                    [3, 44100, 24, 'aiff', 'b', '--bla'] as SoundFileInfo,
                 ])
 
                 // 2. Engine starts to send data blocks
@@ -740,14 +778,21 @@ describe('Engine', () => {
                     return fs_writeSoundFile(
                         sound, 
                         '/some/url', 
-                        fs_soundInfo(sound.length
-                    ), function(
-                        id: fs_OperationId,
-                        status: fs_OperationStatus,
-                    ): void {
-                        receivedId = id
-                        receivedStatus = status
-                    })
+                        {
+                            channelCount: sound.length,
+                            sampleRate: 44100, 
+                            bitDepth: 24, 
+                            encodingFormat: 'wave', 
+                            endianness: 'l',
+                            extraOptions: '',
+                        }, function(
+                            id: fs_OperationId,
+                            status: fs_OperationStatus,
+                        ): void {
+                            receivedId = id
+                            receivedStatus = status
+                        }
+                    )
                 }
                 function testOperationId(): Int {
                     return receivedId
@@ -786,8 +831,8 @@ describe('Engine', () => {
 
                     // 1. Some function in the engine requests a write file operation.
                     // Request is sent to host via callback
-                    const called: Array<Array<any>> = []
-                    engine.fs.onWriteSoundFile = (...args: any) =>
+                    const called: Array<Parameters<Engine['fs']['onWriteSoundFile']>> = []
+                    engine.fs.onWriteSoundFile = (...args) =>
                         called.push(args)
 
                     const operationId = engine.testStartWriteFile()
@@ -801,7 +846,7 @@ describe('Engine', () => {
                             new FloatArrayType([41, 42]),
                         ],
                         '/some/url',
-                        [4],
+                        [4, 44100, 24, 'wave', 'l', ''] as SoundFileInfo,
                     ])
 
                     // 2. Hosts handles the operation. It then calls fs_sendWriteSoundFileResponse when done.
