@@ -460,9 +460,10 @@ describe('Engine', () => {
 
                     // 1. Some function in the engine requests a read file operation.
                     // Request is sent to host via callback
-                    const called: Array<Parameters<Engine['fs']['onReadSoundFile']>> = []
-                    engine.fs.onReadSoundFile = (...args) =>
-                        called.push(args)
+                    const called: Array<
+                        Parameters<Engine['fs']['onReadSoundFile']>
+                    > = []
+                    engine.fs.onReadSoundFile = (...args) => called.push(args)
 
                     const operationId = engine.testStartReadFile()
 
@@ -570,8 +571,12 @@ describe('Engine', () => {
 
                 // 1. Some function in the engine requests a read stream operation.
                 // Request is sent to host via callback
-                const calledOpen: Array<Parameters<Engine['fs']['onOpenSoundReadStream']>> = []
-                const calledClose: Array<Parameters<Engine['fs']['onCloseSoundStream']>> = []
+                const calledOpen: Array<
+                    Parameters<Engine['fs']['onOpenSoundReadStream']>
+                > = []
+                const calledClose: Array<
+                    Parameters<Engine['fs']['onCloseSoundStream']>
+                > = []
                 engine.fs.onOpenSoundReadStream = (...args) =>
                     calledOpen.push(args)
                 engine.fs.onCloseSoundStream = (...args) =>
@@ -581,7 +586,14 @@ describe('Engine', () => {
                 assert.deepStrictEqual(calledOpen[0], [
                     operationId,
                     '/some/url',
-                    [3, 48000, 32, 'next', 'l', '--some 8 --options'] as SoundFileInfo,
+                    [
+                        3,
+                        48000,
+                        32,
+                        'next',
+                        'l',
+                        '--some 8 --options',
+                    ] as SoundFileInfo,
                 ])
                 assert.strictEqual(
                     engine.testOperationChannelCount(operationId),
@@ -698,9 +710,15 @@ describe('Engine', () => {
 
                 // 1. Some function in the engine requests a write stream operation.
                 // Request is sent to host via callback
-                const calledOpen: Array<Parameters<Engine['fs']['onOpenSoundWriteStream']>> = []
-                const calledClose: Array<Parameters<Engine['fs']['onCloseSoundStream']>> = []
-                const calledSoundStreamData: Array<Parameters<Engine['fs']['onSoundStreamData']>> = []
+                const calledOpen: Array<
+                    Parameters<Engine['fs']['onOpenSoundWriteStream']>
+                > = []
+                const calledClose: Array<
+                    Parameters<Engine['fs']['onCloseSoundStream']>
+                > = []
+                const calledSoundStreamData: Array<
+                    Parameters<Engine['fs']['onSoundStreamData']>
+                > = []
                 engine.fs.onOpenSoundWriteStream = (...args) =>
                     calledOpen.push(args)
                 engine.fs.onSoundStreamData = (...args) =>
@@ -831,9 +849,10 @@ describe('Engine', () => {
 
                     // 1. Some function in the engine requests a write file operation.
                     // Request is sent to host via callback
-                    const called: Array<Parameters<Engine['fs']['onWriteSoundFile']>> = []
-                    engine.fs.onWriteSoundFile = (...args) =>
-                        called.push(args)
+                    const called: Array<
+                        Parameters<Engine['fs']['onWriteSoundFile']>
+                    > = []
+                    engine.fs.onWriteSoundFile = (...args) => called.push(args)
 
                     const operationId = engine.testStartWriteFile()
 

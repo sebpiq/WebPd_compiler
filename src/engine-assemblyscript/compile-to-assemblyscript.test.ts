@@ -38,7 +38,7 @@ describe('compileToAssemblyscript', () => {
 
         const expectedExports: AssemblyScriptWasmExports &
             AssemblyScriptWasmImports &
-            AscRuntimeExports & 
+            AscRuntimeExports &
             TestExports = {
             configure: (_: number) => undefined,
             getOutput: () => 0,

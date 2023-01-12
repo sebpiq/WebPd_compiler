@@ -18,7 +18,10 @@ import { createEngine as createAscEngine } from './engine-assemblyscript/Assembl
 import { writeFileSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { lowerString, readTypedArray } from './engine-assemblyscript/core-code/core-bindings'
+import {
+    lowerString,
+    readTypedArray,
+} from './engine-assemblyscript/core-code/core-bindings'
 const execPromise = promisify(exec)
 
 export const normalizeCode = (rawCode: string) => {
@@ -79,7 +82,7 @@ export const makeCompilation = (
 export const createEngine = async (
     target: CompilerTarget,
     code: Code
-): Promise<Engine & {getArray: (arrayName: string) => Float32Array}> => {
+): Promise<Engine & { getArray: (arrayName: string) => Float32Array }> => {
     if (target === 'javascript') {
         code += `
             exports.getArray = (arrayName) => 
@@ -104,10 +107,16 @@ export const createEngine = async (
         const engine = await createAscEngine(wasmBuffer)
         ;(engine as any).getArray = (arrayName: string) => {
             const stringPointer = lowerString(engine.wasmExports, arrayName)
-            const arrayPointer = (engine.wasmExports as any).getArray(stringPointer)
+            const arrayPointer = (engine.wasmExports as any).getArray(
+                stringPointer
+            )
             return readTypedArray(
-                engine.wasmExports, 
-                engine.metadata.audioSettings.bitDepth === 32 ? Float32Array: Float64Array, arrayPointer)
+                engine.wasmExports,
+                engine.metadata.audioSettings.bitDepth === 32
+                    ? Float32Array
+                    : Float64Array,
+                arrayPointer
+            )
         }
         return engine as any
     }

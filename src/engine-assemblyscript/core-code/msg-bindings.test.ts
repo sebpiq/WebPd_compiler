@@ -370,6 +370,5 @@ describe('msg-bindings', () => {
             assert.ok(!wasmExports.testNotMatching1())
             assert.ok(!wasmExports.testNotMatching2())
         })
-
     })
 })

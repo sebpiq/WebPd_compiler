@@ -36,9 +36,9 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                 },
-                [{ ins: {'0': 1} }, { outs: {'0': 1.1} }], 
-                [{ ins: {'0': 2} }, { outs: {'0': 2.1} }],
-                [{ ins: {'0': 3} }, { outs: {'0': 3.1} }]
+                [{ ins: { '0': 1 } }, { outs: { '0': 1.1 } }],
+                [{ ins: { '0': 2 } }, { outs: { '0': 2.1 } }],
+                [{ ins: { '0': 3 } }, { outs: { '0': 3.1 } }]
             )
         })
 
@@ -70,9 +70,9 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                 },
-                [{ ins: {'0': [[1]]} }, { outs: {'0': [[1.1]]} }],
-                [{ ins: {'0': [[2]]} }, { outs: {'0': [[2.1]]} }],
-                [{ ins: {'0': [[3]]} }, { outs: {'0': [[3.1]]} }]
+                [{ ins: { '0': [[1]] } }, { outs: { '0': [[1.1]] } }],
+                [{ ins: { '0': [[2]] } }, { outs: { '0': [[2.1]] } }],
+                [{ ins: { '0': [[3]] } }, { outs: { '0': [[3.1]] } }]
             )
         })
 
@@ -102,9 +102,9 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                 },
-                [{ ins: {'0': [['bang']]} }, { outs: {'0': [[0]]} }],
-                [{ ins: {'0': [['bang']]} }, { outs: {'0': [[1]]} }],
-                [{ ins: {'0': [['bang']]} }, { outs: {'0': [[2]]} }]
+                [{ ins: { '0': [['bang']] } }, { outs: { '0': [[0]] } }],
+                [{ ins: { '0': [['bang']] } }, { outs: { '0': [[1]] } }],
+                [{ ins: { '0': [['bang']] } }, { outs: { '0': [[2]] } }]
             )
         })
 
@@ -138,7 +138,19 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                 },
-                [{ ins: {'0': [['bang']]} }, { outs: {}, fs: {onReadSoundFile: [1, '/bla', [11, 666, 12, 'bla', 'l', 'bli']]} }],
+                [
+                    { ins: { '0': [['bang']] } },
+                    {
+                        outs: {},
+                        fs: {
+                            onReadSoundFile: [
+                                1,
+                                '/bla',
+                                [11, 666, 12, 'bla', 'l', 'bli'],
+                            ],
+                        },
+                    },
+                ]
             )
         })
 
@@ -147,7 +159,7 @@ describe('test-helpers-node-implementations', () => {
             { target: 'assemblyscript' },
         ])('should handle tests on arrays %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
-                messages: (_, {globs}) => ({
+                messages: (_, { globs }) => ({
                     '0': `
                         ${globs.arrays}.get('array1')[0] = 666
                     `,
@@ -165,11 +177,14 @@ describe('test-helpers-node-implementations', () => {
                     node,
                     nodeImplementation,
                     arrays: {
-                        array1: [111]
-                    }
+                        array1: [111],
+                    },
                 },
-                [{ ins: {'0': [['bang']]} }, { outs: {}}],
-                [{ getArrays: ['array1'] }, { outs: {}, arrays: {array1: [666]}}]
+                [{ ins: { '0': [['bang']] } }, { outs: {} }],
+                [
+                    { getArrays: ['array1'] },
+                    { outs: {}, arrays: { array1: [666] } },
+                ]
             )
         })
     })

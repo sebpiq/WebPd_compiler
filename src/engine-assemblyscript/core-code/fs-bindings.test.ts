@@ -106,10 +106,12 @@ describe('fs-bindings', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
-        ])('should be able to convert _fs_SoundInfo to Message %s', async ({ bitDepth }) => {
-            const code =
-                getBaseTestCode({ bitDepth }) +
-                `
+        ])(
+            'should be able to convert _fs_SoundInfo to Message %s',
+            async ({ bitDepth }) => {
+                const code =
+                    getBaseTestCode({ bitDepth }) +
+                    `
                     export function testSoundInfoToMessage (array: FloatArray): Message {
                         const soundInfo: _fs_SoundInfo = {
                             channelCount: 2,
@@ -123,29 +125,26 @@ describe('fs-bindings', () => {
                     }
                 `
 
-            const exports = {
-                ...baseExports,
-                testSoundInfoToMessage: 1,
+                const exports = {
+                    ...baseExports,
+                    testSoundInfoToMessage: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.deepStrictEqual(
+                    liftMessage(
+                        wasmExports,
+                        wasmExports.testSoundInfoToMessage()
+                    ),
+                    [2, 48000, 24, 'wave', 'l', '--blo --bli'] as SoundFileInfo
+                )
             }
-
-            const { wasmExports } = await initializeCoreCodeTest({
-                code,
-                bitDepth,
-                exports,
-            })
-
-            assert.deepStrictEqual(
-                liftMessage(wasmExports, wasmExports.testSoundInfoToMessage()),
-                [
-                    2,
-                    48000,
-                    24,
-                    'wave',
-                    'l',
-                    '--blo --bli'
-                ] as SoundFileInfo
-            )
-        })
+        )
     })
 
     describe('read sound files', () => {
@@ -195,7 +194,11 @@ describe('fs-bindings', () => {
                         liftString(wasmExports, readCalled[0][1]),
                         liftMessage(wasmExports, readCalled[0][2]),
                     ],
-                    [operationId, '/some/url', [4, 44100, 32, 'wave', 'b', ''] as SoundFileInfo]
+                    [
+                        operationId,
+                        '/some/url',
+                        [4, 44100, 32, 'wave', 'b', ''] as SoundFileInfo,
+                    ]
                 )
                 assert.ok(wasmExports.testCheckOperationProcessing(operationId))
             })
@@ -599,7 +602,11 @@ describe('fs-bindings', () => {
                         liftString(wasmExports, readCalled[0][1]),
                         liftMessage(wasmExports, readCalled[0][2]),
                     ],
-                    [operationId, '/some/url', [22, 44100, 32, 'wave', 'b', ''] as SoundFileInfo]
+                    [
+                        operationId,
+                        '/some/url',
+                        [22, 44100, 32, 'wave', 'b', ''] as SoundFileInfo,
+                    ]
                 )
                 assert.ok(wasmExports.testCheckOperationProcessing(operationId))
                 assert.ok(wasmExports.testCheckSoundBufferExists(operationId))
@@ -824,7 +831,11 @@ describe('fs-bindings', () => {
                         liftString(wasmExports, writeCalled[0][1]),
                         liftMessage(wasmExports, writeCalled[0][2]),
                     ],
-                    [operationId, '/some/url', [2, 44100, 24, 'wave', 'b', ''] as SoundFileInfo]
+                    [
+                        operationId,
+                        '/some/url',
+                        [2, 44100, 24, 'wave', 'b', ''] as SoundFileInfo,
+                    ]
                 )
                 assert.ok(wasmExports.testCheckOperationProcessing(operationId))
             })

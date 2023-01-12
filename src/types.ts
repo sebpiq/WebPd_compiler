@@ -26,7 +26,14 @@ export type Message = Array<string | number>
 /**
  * [channelCount, sampleRate, bitDepth, encodingFormat, endianness, extraOptions]
  */
-export type SoundFileInfo = [number, number, number, string, 'b' | 'l' | '', string]
+export type SoundFileInfo = [
+    number,
+    number,
+    number,
+    string,
+    'b' | 'l' | '',
+    string
+]
 
 /**
  * Type for values sent through the signal flow.

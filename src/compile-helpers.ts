@@ -10,10 +10,7 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import {
-    FS_OPERATION_SUCCESS,
-    FS_OPERATION_FAILURE,
-} from './constants'
+import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
 import {
     Code,
     CodeVariableNames,
