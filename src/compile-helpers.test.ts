@@ -16,7 +16,7 @@ import {
     graphTraversalForCompile,
     renderCode,
 } from './compile-helpers'
-import { NodeImplementations } from './types'
+import { NodeImplementation, NodeImplementations } from './types'
 
 describe('compile-helpers', () => {
     describe('renderCode', () => {
@@ -31,12 +31,33 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
             someNodeType: { loop: () => `` },
+            boringNodeType: {}
         }
 
         it('should return node implementation if it exists', () => {
             assert.strictEqual(
-                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType'),
-                NODE_IMPLEMENTATIONS['someNodeType']
+                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType').loop,
+                NODE_IMPLEMENTATIONS['someNodeType'].loop
+            )
+        })
+
+        it('should fill-in all fields with default functions', () => {
+            const referenceImplementation: Required<NodeImplementation<any>> = {
+                stateVariables: {},
+                declare: () => '',
+                loop: () => '',
+                messages: () => ({}),
+                events: () => ({}),
+                sharedCode: () => [],
+            }
+            const defaultImplementation = getNodeImplementation(
+                NODE_IMPLEMENTATIONS, 'boringNodeType')
+            
+            assert.deepStrictEqual(
+                Object.entries(referenceImplementation).map(
+                    ([name, obj]) => [name, typeof obj === 'function' ? (obj as any)() : obj ]),
+                Object.entries(defaultImplementation).map(
+                    ([name, obj]) => [name, typeof obj === 'function' ? (obj as any)() : obj ]),
             )
         })
 

@@ -50,20 +50,24 @@ const renderCodeLines = (codeLines: CodeLines | Code): Code => {
 
 /**
  * Helper to get node implementation or throw an error if not implemented.
- *
- * @param nodeImplementations
- * @param nodeType
- * @returns
  */
 export const getNodeImplementation = (
     nodeImplementations: NodeImplementations,
     nodeType: DspGraph.NodeType
-): NodeImplementation<DspGraph.NodeArguments> => {
+): Required<NodeImplementation<DspGraph.NodeArguments>> => {
     const nodeImplementation = nodeImplementations[nodeType]
     if (!nodeImplementation) {
         throw new Error(`node ${nodeType} is not implemented`)
     }
-    return nodeImplementation
+    return {
+        stateVariables: {},
+        declare: () => '',
+        loop: () => '',
+        messages: () => ({}),
+        events: () => ({}),
+        sharedCode: () => [],
+        ...nodeImplementation
+    }
 }
 
 export const replaceCoreCodePlaceholders = (

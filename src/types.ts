@@ -223,6 +223,8 @@ export interface CodeVariableNames {
 }
 
 export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: string}> {
+    stateVariables?: NodeState,
+
     declare?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
@@ -265,7 +267,11 @@ export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: s
         configure?: Code
     }
 
-    stateVariables?: NodeState
+    sharedCode?: (context: {
+        macros: CodeMacros
+        globs: CodeVariableNames['globs']
+        compilation: Compilation
+    }) => Array<Code>
 }
 
 export type NodeImplementations = {

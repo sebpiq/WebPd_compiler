@@ -27,6 +27,7 @@ export default (
         inletCallerSpecs,
     } = compilation
     const { globs } = codeVariableNames
+    const sharedCode: Set<Code> = new Set()
     // prettier-ignore
     return renderCode`
         let ${macros.typedVar(globs.iterFrame, 'Int')}
@@ -39,14 +40,26 @@ export default (
         }
 
         ${graphTraversal.map(node => {
-            const nodeVariableNames = codeVariableNames.nodes[node.id]
-            const { ins, outs, rcvs, snds, state } = nodeVariableNames
+            // 0. De-duplicate and insert shared code required by nodes
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
-            const nodeDeclare = nodeImplementation.declare
-            const nodeMessageReceivers = nodeImplementation.messages ? 
-                nodeImplementation.messages({
-                    macros, globs, state, snds, node, compilation
-                }): {}
+            return nodeImplementation.sharedCode({ macros, globs, compilation })
+                .filter(code => {
+                    if (sharedCode.has(code)) {
+                        return false
+                    } else {
+                        sharedCode.add(code)
+                        return true
+                    }
+                })
+            })
+        }
+
+        ${graphTraversal.map(node => {
+            const { ins, outs, rcvs, snds, state } = codeVariableNames.nodes[node.id]
+            const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
+            const nodeMessageReceivers = nodeImplementation.messages({
+                macros, globs, state, snds, node, compilation
+            })
             const nodeInletCallers = inletCallerSpecs[node.id] || []
 
             return [
@@ -88,13 +101,13 @@ export default (
                 ),
 
                 // 4. Custom declarations for the node
-                nodeDeclare ? nodeDeclare({
+                nodeImplementation.declare({
                     macros, globs, state, node, compilation
-                }): '',
+                }),
             ]
         })}
 
-        ${  // 5. Declares message senders for all message outlets.
+        ${  // 6. Declares message senders for all message outlets.
             // This needs to come after all message receivers are declared since we reference them here.
             // If there are outlets listeners declared we also inject the code here.
             graphTraversal.map(node => {

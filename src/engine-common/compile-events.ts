@@ -49,14 +49,14 @@ export const getEventCode = (
     const { macros } = compilation
     const { globs } = compilation.codeVariableNames
     const { state, snds } = compilation.codeVariableNames.nodes[node.id]
-    return nodeImplementation.events
-        ? nodeImplementation.events({
-              node,
-              globs,
-              macros,
-              compilation,
-              state,
-              snds,
-          })[eventName] || ''
-        : ''
+    return (
+        nodeImplementation.events({
+            node,
+            globs,
+            macros,
+            compilation,
+            state,
+            snds,
+        })[eventName] || ''
+    )
 }

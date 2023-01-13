@@ -16,11 +16,16 @@ import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileDeclare from './compile-declare'
 
 describe('compileDeclare', () => {
-    const GLOBAL_VARIABLES_CODE = `
+    const GLOBAL_VARIABLES_CODE_NO_EVENTS = `
         let F
         let FRAME 
         let BLOCK_SIZE
         let SAMPLE_RATE
+    `
+
+    const GLOBAL_VARIABLES_CODE = GLOBAL_VARIABLES_CODE_NO_EVENTS + `
+        function _events_ArraysChanged () {
+        }
     `
 
     it('should compile declaration for global variables', () => {
@@ -39,11 +44,7 @@ describe('compileDeclare', () => {
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(
-                GLOBAL_VARIABLES_CODE +
-                    `
-            function _events_ArraysChanged () {
-            }
-            `
+                GLOBAL_VARIABLES_CODE
             )
         )
     })
@@ -99,8 +100,6 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
-                function _events_ArraysChanged () {
-                }
                 
                 let osc_INS_0_signal = 0
                 let osc_OUTS_0 = 0
@@ -144,8 +143,6 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
-                function _events_ArraysChanged () {
-                }
                 
                 let add_INS_1 = 0
                 function add_RCVS_0 (m) {
@@ -186,8 +183,6 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
-                function _events_ArraysChanged () {
-                }
                 
                 function add_RCVS_0 (m) {
                     // [+] message receiver
@@ -308,8 +303,6 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
-                function _events_ArraysChanged () {
-                }
 
                 function aFloat_RCVS_0 (m) {
                     // [float] message receiver
@@ -376,8 +369,6 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
-                function _events_ArraysChanged () {
-                }
 
                 let add_OUTS_1 = 0
 
@@ -392,6 +383,52 @@ describe('compileDeclare', () => {
                     outletListener_add_2(m)
                     aFloat_RCVS_0(m)
                 }
+            `)
+        )
+    })
+
+    it('should inject shared code from nodes avoiding duplicates', () => {
+        const graph = makeGraph({
+            node1: {
+                type: 'nodeType1',
+            },
+            node2: {
+                type: 'nodeType1',
+            },
+            node3: {
+                type: 'nodeType2',
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            nodeType1: {
+                sharedCode: () => [
+                    `// blockSize`,
+                ],
+            },
+            nodeType2: {
+                sharedCode: () => [
+                    // Put same shared code as nodeType1
+                    `// blockSize`,
+                    `// sampleRate`,
+                ],
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            nodeImplementations,
+        })
+
+        const declareCode = compileDeclare(compilation, [graph.node1, graph.node2, graph.node3])
+
+        assert.strictEqual(
+            normalizeCode(declareCode),
+            normalizeCode(`
+                ${GLOBAL_VARIABLES_CODE}
+                // blockSize
+                // sampleRate
             `)
         )
     })
@@ -422,7 +459,7 @@ describe('compileDeclare', () => {
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
+                ${GLOBAL_VARIABLES_CODE_NO_EVENTS}
                 function _events_ArraysChanged () {
                     // [float] arrays changed
                 }

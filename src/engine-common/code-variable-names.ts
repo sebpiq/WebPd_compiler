@@ -40,9 +40,6 @@ export const generate = (
                     nodeImplementations,
                     node.type
                 )
-                const nodeStateVariables = nodeImplementation.stateVariables
-                    ? nodeImplementation.stateVariables
-                    : {}
                 const namespaceLabel = `[${node.type}] ${node.id}`
                 const prefix = debug
                     ? _v(
@@ -79,7 +76,7 @@ export const generate = (
                     ),
                     state: createNamespace(
                         `${namespaceLabel}.state`,
-                        Object.keys(nodeStateVariables).reduce((nameMap, stateVariable) => {
+                        Object.keys(nodeImplementation.stateVariables).reduce((nameMap, stateVariable) => {
                             nameMap[stateVariable] = `${prefix}_STATE_${_v(
                                 stateVariable
                             )}`

@@ -36,25 +36,24 @@ const loopIteration = (
     const { codeVariableNames, macros, nodeImplementations } = compilation
     const { globs } = codeVariableNames
     return renderCode`${graphTraversal.map((node) => {
-        const {outs, ins, snds, state} = codeVariableNames.nodes[node.id]
-        const nodeLoop = getNodeImplementation(
+        const { outs, ins, snds, state } = codeVariableNames.nodes[node.id]
+        const nodeImplementation = getNodeImplementation(
             nodeImplementations,
             node.type
-        ).loop
-        if (!nodeLoop) {
-            return ''
-        }
+        )
 
         const nodeVariableNames = codeVariableNames.nodes[node.id]
         return [
             // 1. Node loop implementation
-            nodeLoop({
+            nodeImplementation.loop({
                 macros,
                 globs,
                 node,
                 state,
-                ins, outs, snds,
-                compilation
+                ins,
+                outs,
+                snds,
+                compilation,
             }),
 
             // 2. Node outs to sinks ins
