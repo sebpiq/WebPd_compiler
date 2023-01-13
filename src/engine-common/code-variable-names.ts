@@ -32,61 +32,67 @@ export const generate = (
     graph: DspGraph.Graph,
     debug: boolean
 ): CodeVariableNames => ({
-    n: createNamespace(
+    nodes: createNamespace(
         'n',
-        Object.values(graph).reduce<CodeVariableNames['n']>((nodeMap, node) => {
-            const nodeImplementation = getNodeImplementation(
-                nodeImplementations,
-                node.type
-            )
-            const nodeStateVariables = nodeImplementation.stateVariables
-                ? nodeImplementation.stateVariables(node)
-                : []
-            const namespaceLabel = `[${node.type}] ${node.id}`
-            const prefix = debug
-                ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`)
-                : _v(node.id)
+        Object.values(graph).reduce<CodeVariableNames['nodes']>(
+            (nodeMap, node) => {
+                const nodeImplementation = getNodeImplementation(
+                    nodeImplementations,
+                    node.type
+                )
+                const nodeStateVariables = nodeImplementation.stateVariables
+                    ? nodeImplementation.stateVariables(node)
+                    : []
+                const namespaceLabel = `[${node.type}] ${node.id}`
+                const prefix = debug
+                    ? _v(
+                          `${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${
+                              node.id
+                          }`
+                      )
+                    : _v(node.id)
 
-            nodeMap[node.id] = {
-                ins: createNamespaceFromPortlets(
-                    `${namespaceLabel}.ins`,
-                    node.inlets,
-                    'signal',
-                    (inlet) => `${prefix}_INS_${_v(inlet.id)}`
-                ),
-                rcvs: createNamespaceFromPortlets(
-                    `${namespaceLabel}.rcvs`,
-                    node.inlets,
-                    'message',
-                    (inlet) => `${prefix}_RCVS_${_v(inlet.id)}`
-                ),
-                outs: createNamespaceFromPortlets(
-                    `${namespaceLabel}.outs`,
-                    node.outlets,
-                    'signal',
-                    (outlet) => `${prefix}_OUTS_${_v(outlet.id)}`
-                ),
-                snds: createNamespaceFromPortlets(
-                    `${namespaceLabel}.snds`,
-                    node.outlets,
-                    'message',
-                    (outlet) => `${prefix}_SNDS_${_v(outlet.id)}`
-                ),
-                state: createNamespace(
-                    `${namespaceLabel}.state`,
-                    nodeStateVariables.reduce((nameMap, stateVariable) => {
-                        nameMap[stateVariable] = `${prefix}_STATE_${_v(
-                            stateVariable
-                        )}`
-                        return nameMap
-                    }, {} as NodeVariableNames['state'])
-                ),
-            }
-            return nodeMap
-        }, {})
+                nodeMap[node.id] = {
+                    ins: createNamespaceFromPortlets(
+                        `${namespaceLabel}.ins`,
+                        node.inlets,
+                        'signal',
+                        (inlet) => `${prefix}_INS_${_v(inlet.id)}`
+                    ),
+                    rcvs: createNamespaceFromPortlets(
+                        `${namespaceLabel}.rcvs`,
+                        node.inlets,
+                        'message',
+                        (inlet) => `${prefix}_RCVS_${_v(inlet.id)}`
+                    ),
+                    outs: createNamespaceFromPortlets(
+                        `${namespaceLabel}.outs`,
+                        node.outlets,
+                        'signal',
+                        (outlet) => `${prefix}_OUTS_${_v(outlet.id)}`
+                    ),
+                    snds: createNamespaceFromPortlets(
+                        `${namespaceLabel}.snds`,
+                        node.outlets,
+                        'message',
+                        (outlet) => `${prefix}_SNDS_${_v(outlet.id)}`
+                    ),
+                    state: createNamespace(
+                        `${namespaceLabel}.state`,
+                        nodeStateVariables.reduce((nameMap, stateVariable) => {
+                            nameMap[stateVariable] = `${prefix}_STATE_${_v(
+                                stateVariable
+                            )}`
+                            return nameMap
+                        }, {} as NodeVariableNames['state'])
+                    ),
+                }
+                return nodeMap
+            },
+            {}
+        )
     ),
-    g: createNamespace('g', {
-        arrays: 'ARRAYS',
+    globs: createNamespace('g', {
         iterOutlet: 'O',
         iterFrame: 'F',
         frame: 'FRAME',
@@ -94,6 +100,7 @@ export const generate = (
         sampleRate: 'SAMPLE_RATE',
         output: 'OUTPUT',
         input: 'INPUT',
+        // TODO : not a glob
         m: 'm',
     }),
     outletListeners: createNamespace('outletListeners', {}),

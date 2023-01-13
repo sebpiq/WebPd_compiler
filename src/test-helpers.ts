@@ -77,17 +77,12 @@ export const makeCompilation = (
 
 /**
  * Helper function to create a WebPd `Engine` for running tests.
- * It has for example an added `getArray` function to read arrays.
  */
 export const createEngine = async (
     target: CompilerTarget,
     code: Code
-): Promise<Engine & { getArray: (arrayName: string) => Float32Array }> => {
+): Promise<Engine> => {
     if (target === 'javascript') {
-        code += `
-            exports.getArray = (arrayName) => 
-                ARRAYS.get(arrayName)
-        `
         try {
             return new Function(`
                 ${code}
@@ -98,26 +93,8 @@ export const createEngine = async (
             throw new Error('ERROR in generated JS code ' + errMessage)
         }
     } else {
-        code += `
-            export function getArray(arrayName: string): FloatArray {
-                return ARRAYS.get(arrayName)
-            } 
-        `
         const wasmBuffer = await compileWasmModule(code)
         const engine = await createAscEngine(wasmBuffer)
-        ;(engine as any).getArray = (arrayName: string) => {
-            const stringPointer = lowerString(engine.wasmExports, arrayName)
-            const arrayPointer = (engine.wasmExports as any).getArray(
-                stringPointer
-            )
-            return readTypedArray(
-                engine.wasmExports,
-                engine.metadata.audioSettings.bitDepth === 32
-                    ? Float32Array
-                    : Float64Array,
-                arrayPointer
-            )
-        }
         return engine as any
     }
 }

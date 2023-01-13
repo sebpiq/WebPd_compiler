@@ -70,8 +70,6 @@ export interface Engine {
 
     loop: (input: Array<FloatArray>, output: Array<FloatArray>) => void
 
-    setArray: (arrayName: string, data: FloatArray | Array<number>) => void
-
     inletCallers: {
         [nodeId: DspGraph.NodeId]: {
             [inletId: DspGraph.PortletId]: (m: Message) => void
@@ -84,6 +82,12 @@ export interface Engine {
                 onMessage: (message: Message) => void
             }
         }
+    }
+
+    // Typed arrays API for the engine
+    tarray: {
+        get: (arrayName: string) => FloatArray
+        set: (arrayName: string, array: FloatArray | Array<number>) => void
     }
 
     // Filesystem API for the engine
@@ -178,11 +182,10 @@ export interface NodeVariableNames {
 
 export interface CodeVariableNames {
     // Namespace for individual nodes
-    n: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
+    nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
     // Namespace for global variables
-    g: {
-        arrays: string
+    globs: {
         // Reusable variable to iterate over outlets
         iterOutlet: string
         // Frame count, reinitialized at each loop start
@@ -221,11 +224,18 @@ export interface CodeVariableNames {
     }
 }
 
+export type GlobCodeGenerator = (args: {
+    macros: CodeMacros
+    globs: CodeVariableNames['globs']
+    types: CodeVariableNames['types']
+    audioSettings: Compilation['audioSettings']
+}) => Code
+
 export type NodeCodeGenerator<NodeArgsType> = (
     node: DspGraph.Node<NodeArgsType>,
     variableNames: NodeVariableNames & {
         types: CodeVariableNames['types']
-        globs: CodeVariableNames['g']
+        globs: CodeVariableNames['globs']
         macros: CodeMacros
     },
     compilation: Compilation
@@ -233,10 +243,13 @@ export type NodeCodeGenerator<NodeArgsType> = (
 
 export interface NodeImplementation<NodeArgsType> {
     declare?: NodeCodeGenerator<NodeArgsType>
-    initialize?: NodeCodeGenerator<NodeArgsType>
     loop?: NodeCodeGenerator<NodeArgsType>
     messages?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {
         [inletId: DspGraph.PortletId]: Code
+    }
+    events?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {
+        arraysChanged?: Code
+        configure?: Code
     }
     stateVariables?: (node: DspGraph.Node<NodeArgsType>) => Array<string>
 }

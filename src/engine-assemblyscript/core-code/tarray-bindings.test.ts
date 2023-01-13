@@ -1,5 +1,6 @@
 import assert from 'assert'
 import { AudioSettings } from '../../types'
+import { readTypedArray } from './core-bindings'
 import {
     lowerTypedArray,
     lowerListOfTypedArrays,
@@ -260,5 +261,61 @@ describe('tarray-bindings', () => {
             arrays[1][1] = 88
             assert.deepStrictEqual(wasmExports.testReadSomeValue(), 88)
         })
+    })
+
+    describe('tarray_set', () => {
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+            { bitDepth: 32 },
+            { bitDepth: 64 },
+        ])(
+            'should set the array and call the events hooks %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
+                let handlerCalled: boolean = false
+                function _events_ArraysChanged(): void {
+                    handlerCalled = true
+                }
+
+                export function testSetArray (): void {
+                    const array = tarray_create(3)
+                    array[0] = 11
+                    array[1] = 12
+                    array[2] = 13
+                    tarray_set('array1', array)
+                }
+
+                export function testGetArray (): FloatArray {
+                    return tarray_get('array1')
+                }
+
+                export function testHandlerWasCalled (): boolean {
+                    return handlerCalled
+                }
+            `
+
+                const exports = {
+                    testSetArray: 1,
+                    testHandlerWasCalled: 1,
+                    testGetArray: 1,
+                }
+
+                const { wasmExports, floatArrayType } =
+                    await initializeCoreCodeTest({
+                        code,
+                        bitDepth,
+                        exports,
+                    })
+
+                wasmExports.testSetArray()
+                assert.ok(wasmExports.testHandlerWasCalled())
+                const array = readTypedArray(
+                    wasmExports,
+                    floatArrayType,
+                    wasmExports.testGetArray()
+                )
+                assert.deepStrictEqual(array, new floatArrayType([11, 12, 13]))
+            }
+        )
     })
 })

@@ -17,19 +17,14 @@ import compileLoop from './compile-loop'
 
 describe('compileLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
-        print: {
-            initialize: () => ``,
-        },
+        print: {},
         'osc~': {
-            initialize: () => ``,
             loop: (node) => `// [osc~] : frequency ${node.args.frequency}`,
         },
         '+~': {
-            initialize: () => ``,
             loop: (node) => `// [+~] : value ${node.args.value}`,
         },
         'dac~': {
-            initialize: () => ``,
             loop: (_, __, { audioSettings }) =>
                 `// [dac~] : channelCount ${audioSettings.channelCount.out}`,
         },

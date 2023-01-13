@@ -9,7 +9,7 @@
  *
  */
 
-import { DspGraph } from '@webpd/dsp-graph'
+import { DspGraph, traversal } from '@webpd/dsp-graph'
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
 import {
     Code,
@@ -80,4 +80,15 @@ export const replaceCoreCodePlaceholders = (
         .replaceAll('${setFloat}', setFloat)
         .replaceAll('${FS_OPERATION_SUCCESS}', FS_OPERATION_SUCCESS.toString())
         .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
+}
+
+export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
+    const graphTraversalSignal = traversal.signalNodes(graph)
+    const combined = graphTraversalSignal
+    traversal.messageNodes(graph).forEach((node) => {
+        if (combined.indexOf(node) === -1) {
+            combined.push(node)
+        }
+    })
+    return combined
 }

@@ -9,14 +9,13 @@
  *
  */
 
-import { renderCode } from '../compile-helpers'
+import { graphTraversalForCompile, renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
-import compileInitialize from '../engine-common/compile-initialize'
+import { compileEventConfigure } from '../engine-common/compile-events'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation, EngineMetadata } from '../types'
 import { JavaScriptEngineCode } from './types'
-import generateCoreCode from './core-code'
-import { graphTraversalForCompile } from '../engine-common/core'
+import generateCoreCodeJs from './core-code'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
@@ -26,9 +25,8 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         audioSettings,
     } = compilation
     const graphTraversal = graphTraversalForCompile(compilation.graph)
-    const globs = compilation.codeVariableNames.g
+    const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
-    const coreCode = generateCoreCode(codeVariableNames)
     const metadata: EngineMetadata = {
         audioSettings: {
             ...audioSettings,
@@ -45,7 +43,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
 
     // prettier-ignore
     return renderCode`
-        ${coreCode}
+        ${generateCoreCodeJs(codeVariableNames)}
 
         ${compileDeclare(compilation, graphTraversal)}
         ${compileOutletListeners(compilation)}
@@ -57,13 +55,14 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${globs.blockSize} = blockSize
                 exports.metadata.audioSettings.sampleRate = sampleRate
                 exports.metadata.audioSettings.blockSize = blockSize
-                ${compileInitialize(compilation, graphTraversal)}
+                ${compileEventConfigure(compilation, graphTraversal)}
             },
             loop: (${globs.input}, ${globs.output}) => {
                 ${compileLoop(compilation, graphTraversal)}
             },
-            setArray: (arrayName, array) => { 
-                ${globs.arrays}.set(arrayName, new ${FloatArray}(array))
+            tarray: {
+                get: tarray_get,
+                set: (arrayName, array) => tarray_set(arrayName, new ${FloatArray}(array)),
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>

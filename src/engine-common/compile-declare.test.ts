@@ -22,7 +22,6 @@ describe('compileDeclare', () => {
         let FRAME 
         let BLOCK_SIZE
         let SAMPLE_RATE
-        const ARRAYS = new Map()
     `
 
     it('should compile declaration for global variables', () => {
@@ -40,7 +39,13 @@ describe('compileDeclare', () => {
 
         assert.strictEqual(
             normalizeCode(declareCode),
-            normalizeCode(GLOBAL_VARIABLES_CODE)
+            normalizeCode(
+                GLOBAL_VARIABLES_CODE +
+                    `
+            function _events_ArraysChanged () {
+            }
+            `
+            )
         )
     })
 
@@ -95,6 +100,8 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
+                function _events_ArraysChanged () {
+                }
                 
                 let osc_INS_0_signal = 0
                 let osc_OUTS_0 = 0
@@ -138,6 +145,8 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
+                function _events_ArraysChanged () {
+                }
                 
                 let add_INS_1 = 0
                 function add_RCVS_0 (m) {
@@ -178,6 +187,9 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
+                function _events_ArraysChanged () {
+                }
+                
                 function add_RCVS_0 (m) {
                     // [+] message receiver
                 }
@@ -297,6 +309,8 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
+                function _events_ArraysChanged () {
+                }
 
                 function aFloat_RCVS_0 (m) {
                     // [float] message receiver
@@ -363,7 +377,11 @@ describe('compileDeclare', () => {
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
+                function _events_ArraysChanged () {
+                }
+
                 let add_OUTS_1 = 0
+
                 function aFloat_RCVS_0 (m) {
                     // [float] message receiver
                 }
@@ -374,6 +392,40 @@ describe('compileDeclare', () => {
                 function add_SNDS_2 (m) {
                     outletListener_add_2(m)
                     aFloat_RCVS_0(m)
+                }
+            `)
+        )
+    })
+
+    it('should inject arrays change event handlers', () => {
+        const graph = makeGraph({
+            someNode: {
+                type: 'float',
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            float: {
+                events: () => ({
+                    arraysChanged: '// [float] arrays changed',
+                }),
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            nodeImplementations,
+        })
+
+        const declareCode = compileDeclare(compilation, [graph.someNode])
+
+        assert.strictEqual(
+            normalizeCode(declareCode),
+            normalizeCode(`
+                ${GLOBAL_VARIABLES_CODE}
+                function _events_ArraysChanged () {
+                    // [float] arrays changed
                 }
             `)
         )

@@ -64,8 +64,10 @@ export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
     public inletCallers: Engine['inletCallers']
     public outletListeners: Engine['outletListeners']
+    public tarray: Engine['tarray']
     public fs: Engine['fs']
     public metadata: EngineMetadata
+
     private wasmBuffer: ArrayBuffer
     private wasmOutput: FloatArray
     private wasmInput: FloatArray
@@ -94,6 +96,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         })
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
+        this.tarray = this._bindTarray()
         this.fs = this._bindFs()
         this.inletCallers = this._bindInletCallers()
         this.outletListeners = this._bindOutletListeners()
@@ -122,17 +125,6 @@ export class AssemblyScriptWasmEngine implements Engine {
         }
     }
 
-    setArray(arrayName: string, data: Array<number> | FloatArray) {
-        const stringPointer = lowerString(this.wasmExports, arrayName)
-        const { arrayPointer } = lowerTypedArray(
-            this.wasmExports,
-            this.bitDepth,
-            data
-        )
-        this.wasmExports.setArray(stringPointer, arrayPointer)
-        this._updateWasmInOuts()
-    }
-
     // This must be called again when doing something on the wasm module
     // which could cause memory grow (lowerString, lowerMessage,
     //      lowerBuffer, lowerMessage) :
@@ -148,6 +140,35 @@ export class AssemblyScriptWasmEngine implements Engine {
             this.arrayType,
             this.wasmExports.getInput()
         ) as FloatArray
+    }
+
+    // API for data flowing HOST -> ENGINE
+    _bindTarray(): Engine['tarray'] {
+        return {
+            get: (arrayName) => {
+                const arrayNamePointer = lowerString(
+                    this.wasmExports,
+                    arrayName
+                )
+                const arrayPointer =
+                    this.wasmExports.tarray_get(arrayNamePointer)
+                return readTypedArray(
+                    this.wasmExports,
+                    this.arrayType,
+                    arrayPointer
+                ) as FloatArray
+            },
+            set: (arrayName, array) => {
+                const stringPointer = lowerString(this.wasmExports, arrayName)
+                const { arrayPointer } = lowerTypedArray(
+                    this.wasmExports,
+                    this.bitDepth,
+                    array
+                )
+                this.wasmExports.tarray_set(stringPointer, arrayPointer)
+                this._updateWasmInOuts()
+            },
+        }
     }
 
     // API for data flowing HOST -> ENGINE

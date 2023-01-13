@@ -24,10 +24,6 @@ describe('compileToAssemblyscript', () => {
             __unpin: () => void
         }
 
-        interface TestExports {
-            getArray: () => void
-        }
-
         const { wasmExports } = await createAscEngine(
             compileToAssemblyscript(
                 makeCompilation({
@@ -38,44 +34,43 @@ describe('compileToAssemblyscript', () => {
 
         const expectedExports: AssemblyScriptWasmExports &
             AssemblyScriptWasmImports &
-            AscRuntimeExports &
-            TestExports = {
-            configure: (_: number) => undefined,
-            getOutput: () => 0,
-            getInput: () => 0,
+            AscRuntimeExports = {
+            configure: () => undefined,
+            getOutput: () => undefined,
+            getInput: () => undefined,
             loop: () => new Float32Array(),
-            setArray: () => undefined,
-            tarray_create: (_: number) => 0,
-            tarray_createListOfArrays: () => 0,
-            tarray_pushToListOfArrays: (_: number, __: number) => undefined,
-            tarray_getListOfArraysLength: (_: number) => 0,
-            tarray_getListOfArraysElem: (_: number, __: number) => 0,
+            tarray_get: () => undefined,
+            tarray_set: () => undefined,
+            tarray_create: () => undefined,
+            tarray_createListOfArrays: () => undefined,
+            tarray_pushToListOfArrays: () => undefined,
+            tarray_getListOfArraysLength: () => undefined,
+            tarray_getListOfArraysElem: () => undefined,
             metadata: new WebAssembly.Global({ value: 'i32' }),
             MSG_FLOAT_TOKEN: new WebAssembly.Global({ value: 'i32' }),
             MSG_STRING_TOKEN: new WebAssembly.Global({ value: 'i32' }),
-            msg_create: () => 0,
-            msg_getTokenTypes: () => 0,
+            msg_create: () => undefined,
+            msg_getTokenTypes: () => undefined,
             msg_writeStringToken: () => undefined,
             msg_writeFloatToken: () => undefined,
-            msg_readStringToken: () => 0,
-            msg_readFloatToken: () => 0,
-            fs_onReadSoundFileResponse: () => 0,
-            fs_onWriteSoundFileResponse: () => 0,
-            fs_onCloseSoundStream: () => 0,
-            fs_onSoundStreamData: () => 0,
+            msg_readStringToken: () => undefined,
+            msg_readFloatToken: () => undefined,
+            fs_onReadSoundFileResponse: () => undefined,
+            fs_onWriteSoundFileResponse: () => undefined,
+            fs_onCloseSoundStream: () => undefined,
+            fs_onSoundStreamData: () => undefined,
             i_fs_readSoundFile: () => undefined,
             i_fs_writeSoundFile: () => undefined,
             i_fs_openSoundReadStream: () => undefined,
             i_fs_openSoundWriteStream: () => undefined,
             i_fs_sendSoundStreamData: () => undefined,
             i_fs_closeSoundStream: () => undefined,
-            __new: () => 0,
+            __new: () => undefined,
             memory: new WebAssembly.Memory({ initial: 128 }),
             __collect: () => undefined,
             __pin: () => undefined,
             __rtti_base: () => undefined,
             __unpin: () => undefined,
-            getArray: () => undefined,
         }
 
         assert.deepStrictEqual(

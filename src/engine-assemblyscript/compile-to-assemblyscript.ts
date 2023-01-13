@@ -9,13 +9,12 @@
  *
  */
 
-import { renderCode } from '../compile-helpers'
+import { graphTraversalForCompile, renderCode } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
-import compileInitialize from '../engine-common/compile-initialize'
+import { compileEventConfigure } from '../engine-common/compile-events'
 import compileLoop from '../engine-common/compile-loop'
-import { graphTraversalForCompile } from '../engine-common/core'
 import { Compilation, EngineMetadata } from '../types'
-import generateCoreCode from './core-code'
+import generateCoreCodeAsc from './core-code'
 import { AssemblyScriptWasmEngineCode } from './types'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
@@ -27,9 +26,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     } = compilation
     const { channelCount } = audioSettings
     const graphTraversal = graphTraversalForCompile(compilation.graph)
-    const globs = compilation.codeVariableNames.g
+    const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
-    const coreCode = generateCoreCode(codeVariableNames)
     const metadata: EngineMetadata = {
         audioSettings: {
             ...audioSettings,
@@ -46,21 +44,21 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
     // prettier-ignore
     return renderCode`
-        ${coreCode}
+        ${generateCoreCodeAsc(codeVariableNames)}
+
+        ${compileDeclare(compilation, graphTraversal)}
+        ${compileOutletListeners(compilation)}
 
         const metadata: string = '${JSON.stringify(metadata)}'
         let ${globs.input}: FloatArray = new ${FloatArray}(0)
         let ${globs.output}: FloatArray = new ${FloatArray}(0)
-    
-        ${compileDeclare(compilation, graphTraversal)}
-        ${compileOutletListeners(compilation)}
         
         export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
             ${globs.input} = new ${FloatArray}(${globs.blockSize} * ${channelCount.in.toString()})
             ${globs.output} = new ${FloatArray}(${globs.blockSize} * ${channelCount.out.toString()})
-            ${compileInitialize(compilation, graphTraversal)}
+            ${compileEventConfigure(compilation, graphTraversal)}
         }
 
         export function getInput(): ${FloatArray} { return ${globs.input} }
@@ -69,10 +67,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
         export function loop(): void {
             ${compileLoop(compilation, graphTraversal)}
-        }
-
-        export function setArray(arrayName: string, array: FloatArray): void {
-            ${globs.arrays}.set(arrayName, array)
         }
 
         // FS IMPORTS
@@ -107,6 +101,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
             x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
             x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
+            tarray_set,
+            tarray_get, 
             tarray_create,
 
             // INLET CALLERS

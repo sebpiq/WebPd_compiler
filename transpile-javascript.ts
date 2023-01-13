@@ -7,6 +7,7 @@ const { transpileModule } = ts
 const TRANSPILATION_SETTINGS: ts.TranspileOptions = {
     compilerOptions: {
         target: ts.ScriptTarget.ES2021,
+        module: ts.ModuleKind.None,
     },
 }
 
@@ -129,9 +130,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const FS_ASC = readFileSync(
         './src/engine-assemblyscript/core-code/fs.asc'
     ).toString('utf8')
+    const TARRAY_ASC = readFileSync(
+        './src/engine-assemblyscript/core-code/tarray.asc'
+    ).toString('utf8')
 
     for (let [filepath, ascCode] of [
         ['./src/engine-javascript/core-code/fs.generated.js.txt', FS_ASC],
+        ['./src/engine-javascript/core-code/tarray.generated.js.txt', TARRAY_ASC],
     ]) {
         const [ascStrings, ascVariables] = splitAscCode(ascCode)
         const [jsStrings, jsVariablesIndexes] = transpileAscStrings(

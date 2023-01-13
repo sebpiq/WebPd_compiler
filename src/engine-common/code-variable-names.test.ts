@@ -65,7 +65,7 @@ describe('code-variable-names', () => {
             const variableNames = generate(nodeImplementations, graph, false)
 
             assert.deepStrictEqual(
-                JSON.parse(JSON.stringify({ ...variableNames.n })),
+                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
                 {
                     myOsc: {
                         ins: {
@@ -123,7 +123,7 @@ describe('code-variable-names', () => {
             const variableNames = generate(nodeImplementations, graph, true)
 
             assert.deepStrictEqual(
-                JSON.parse(JSON.stringify({ ...variableNames.n })),
+                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
                 {
                     someObj: {
                         ins: {
@@ -166,12 +166,20 @@ describe('code-variable-names', () => {
 
             const variableNames = generate(nodeImplementations, graph, false)
 
-            assert.throws(() => variableNames.n.unknownNode)
-            assert.throws(() => variableNames.n.myOsc.ins['unknown portlet'])
-            assert.throws(() => variableNames.n.myOsc.rcvs['unknown receiver'])
-            assert.throws(() => variableNames.n.myOsc.outs['unknown portlet'])
-            assert.throws(() => variableNames.n.myOsc.snds['unknown sender'])
-            assert.throws(() => variableNames.n.myOsc.state['unknown var'])
+            assert.throws(() => variableNames.nodes.unknownNode)
+            assert.throws(
+                () => variableNames.nodes.myOsc.ins['unknown portlet']
+            )
+            assert.throws(
+                () => variableNames.nodes.myOsc.rcvs['unknown receiver']
+            )
+            assert.throws(
+                () => variableNames.nodes.myOsc.outs['unknown portlet']
+            )
+            assert.throws(
+                () => variableNames.nodes.myOsc.snds['unknown sender']
+            )
+            assert.throws(() => variableNames.nodes.myOsc.state['unknown var'])
         })
     })
 

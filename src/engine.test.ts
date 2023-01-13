@@ -20,7 +20,7 @@ import {
 
 const BIT_DEPTH = 64
 const FloatArray = 'Float64Array'
-const FloatArrayType = Float64Array
+const floatArrayType = Float64Array
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
@@ -329,51 +329,85 @@ describe('Engine', () => {
         )
     })
 
-    describe('setArray', () => {
-        it.each([
-            { target: 'javascript' as CompilerTarget },
-            { target: 'assemblyscript' as CompilerTarget },
-        ])('should set the array %s', async ({ target }) => {
-            const testCode: Code = `
-                function testReadArray1 (index: Int): Float {
-                    return ARRAYS.get('array1')[index]
-                }
-                function testReadArray2 (index: Int): Float {
-                    return ARRAYS.get('array2')[index]
-                }
-                function testReadArray3 (index: Int): Float {
-                    return ARRAYS.get('array3')[index]
-                }
-                function testIsFloatArray (index: Int): void {
-                    return ARRAYS.get('array3').set([111, 222])
-                }
-            `
+    describe('tarray', () => {
+        describe('get', () => {
+            it.each([
+                { target: 'javascript' as CompilerTarget },
+                { target: 'assemblyscript' as CompilerTarget },
+            ])('should set the array %s', async ({ target }) => {
+                const testCode: Code = `
+                    const array = new ${FloatArray}(4)
+                    array[0] = 123
+                    array[1] = 456
+                    array[2] = 789
+                    array[3] = 234
+                    _tarray_ARRAYS.set('array1', array)
+                `
 
-            const exports = {
-                testReadArray1: 1,
-                testReadArray2: 1,
-                testReadArray3: 1,
-                testIsFloatArray: 1,
-            }
+                const exports = {}
 
-            const engine = await initializeEngineTest({
-                target,
-                testCode,
-                exports,
+                const engine = await initializeEngineTest({
+                    target,
+                    testCode,
+                    exports,
+                })
+
+                assert.deepStrictEqual(
+                    engine.tarray.get('array1'),
+                    new floatArrayType([123, 456, 789, 234])
+                )
             })
+        })
 
-            engine.setArray('array1', new Float32Array([11.1, 22.2, 33.3]))
-            engine.setArray('array2', new Float64Array([44.4, 55.5]))
-            engine.setArray('array3', [66.6, 77.7])
+        describe('set', () => {
+            it.each([
+                { target: 'javascript' as CompilerTarget },
+                { target: 'assemblyscript' as CompilerTarget },
+            ])('should set the array %s', async ({ target }) => {
+                const testCode: Code = `
+                    function testReadArray1 (index: Int): Float {
+                        return _tarray_ARRAYS.get('array1')[index]
+                    }
+                    function testReadArray2 (index: Int): Float {
+                        return _tarray_ARRAYS.get('array2')[index]
+                    }
+                    function testReadArray3 (index: Int): Float {
+                        return _tarray_ARRAYS.get('array3')[index]
+                    }
+                    function testIsFloatArray (index: Int): void {
+                        return _tarray_ARRAYS.get('array3').set([111, 222])
+                    }
+                `
 
-            let actual: number
-            actual = engine.testReadArray1(1)
-            assert.strictEqual(round(actual), 22.2)
-            actual = engine.testReadArray2(0)
-            assert.strictEqual(round(actual), 44.4)
-            actual = engine.testReadArray3(1)
-            assert.strictEqual(round(actual), 77.7)
-            assert.doesNotThrow(() => engine.testIsFloatArray())
+                const exports = {
+                    testReadArray1: 1,
+                    testReadArray2: 1,
+                    testReadArray3: 1,
+                    testIsFloatArray: 1,
+                }
+
+                const engine = await initializeEngineTest({
+                    target,
+                    testCode,
+                    exports,
+                })
+
+                engine.tarray.set(
+                    'array1',
+                    new Float32Array([11.1, 22.2, 33.3])
+                )
+                engine.tarray.set('array2', new Float64Array([44.4, 55.5]))
+                engine.tarray.set('array3', [66.6, 77.7])
+
+                let actual: number
+                actual = engine.testReadArray1(1)
+                assert.strictEqual(round(actual), 22.2)
+                actual = engine.testReadArray2(0)
+                assert.strictEqual(round(actual), 44.4)
+                actual = engine.testReadArray3(1)
+                assert.strictEqual(round(actual), 77.7)
+                assert.doesNotThrow(() => engine.testIsFloatArray())
+            })
         })
     })
 
@@ -741,17 +775,17 @@ describe('Engine', () => {
                     [
                         operationId,
                         [
-                            new FloatArrayType([10, 11]),
-                            new FloatArrayType([20, 21]),
-                            new FloatArrayType([30, 31]),
+                            new floatArrayType([10, 11]),
+                            new floatArrayType([20, 21]),
+                            new floatArrayType([30, 31]),
                         ],
                     ],
                     [
                         operationId,
                         [
-                            new FloatArrayType([12, 13]),
-                            new FloatArrayType([22, 23]),
-                            new FloatArrayType([32, 33]),
+                            new floatArrayType([12, 13]),
+                            new floatArrayType([22, 23]),
+                            new floatArrayType([32, 33]),
                         ],
                     ],
                 ])
@@ -859,10 +893,10 @@ describe('Engine', () => {
                     assert.deepStrictEqual(called[0], [
                         operationId,
                         [
-                            new FloatArrayType([11, 12]),
-                            new FloatArrayType([21, 22]),
-                            new FloatArrayType([31, 32]),
-                            new FloatArrayType([41, 42]),
+                            new floatArrayType([11, 12]),
+                            new floatArrayType([21, 22]),
+                            new floatArrayType([31, 32]),
+                            new floatArrayType([41, 42]),
                         ],
                         '/some/url',
                         [4, 44100, 24, 'wave', 'l', ''] as SoundFileInfo,

@@ -12,6 +12,7 @@
 import { DspGraph, traversal } from '@webpd/dsp-graph'
 import { getNodeImplementation, renderCode } from '../compile-helpers'
 import { Code, Compilation, NodeCodeGenerator } from '../types'
+import { compileEventArraysChanged } from './compile-events'
 
 export default (
     compilation: Compilation,
@@ -25,7 +26,7 @@ export default (
         outletListenerSpecs,
         inletCallerSpecs,
     } = compilation
-    const { g: globs, types } = codeVariableNames
+    const { globs, types } = codeVariableNames
     // prettier-ignore
     return renderCode`
         let ${macros.typedVar(globs.iterFrame, 'Int')}
@@ -33,15 +34,18 @@ export default (
         let ${macros.typedVar(globs.frame, 'Int')}
         let ${macros.typedVar(globs.blockSize, 'Int')}
         let ${macros.typedVar(globs.sampleRate, 'Float')}
-        const ${macros.typedVar(globs.arrays, 'Map<string,FloatArray>')} = new Map()
+        
+        function _events_ArraysChanged ${macros.typedFuncHeader([], 'void')} {
+            ${compileEventArraysChanged(compilation, graphTraversal)}
+        }
 
         ${graphTraversal.map(node => {
-            const nodeVariableNames = codeVariableNames.n[node.id]
+            const nodeVariableNames = codeVariableNames.nodes[node.id]
             const { ins, outs, rcvs } = nodeVariableNames
             const nodeCodeGeneratorArgs: Parameters<NodeCodeGenerator<any>> = [
                 node,
                 {
-                    ...codeVariableNames.n[node.id],
+                    ...codeVariableNames.nodes[node.id],
                     globs,
                     types,
                     macros,
@@ -101,7 +105,7 @@ export default (
             // This needs to come after all message receivers are declared since we reference them here.
             // If there are outlets listeners declared we also inject the code here.
             graphTraversal.map(node => {
-                const { snds } = codeVariableNames.n[node.id]
+                const { snds } = codeVariableNames.nodes[node.id]
                 const nodeOutletListeners = outletListenerSpecs[node.id] || []
                 const nodeSinks = traversal.removeDeadSinks(node.sinks, traversalNodeIds)
                 return Object.values(node.outlets)
@@ -113,7 +117,7 @@ export default (
                         // If we send to only a single sink, we directly assign the sink's message receiver.
                         if (outletSinks.length === 1 && !hasOutletListener) {
                             const {nodeId: sinkNodeId, portletId: inletId} = outletSinks[0]
-                            return `const ${snds[outlet.id]} = ${codeVariableNames.n[sinkNodeId].rcvs[inletId]}`
+                            return `const ${snds[outlet.id]} = ${codeVariableNames.nodes[sinkNodeId].rcvs[inletId]}`
                         
                         // If we send to several sinks, we need to declare a proxy function that sends to all
                         // all the sinks when called.
@@ -125,7 +129,7 @@ export default (
                                     ${hasOutletListener ? 
                                         `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : ''}
                                     ${outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
-                                        `${codeVariableNames.n[sinkNodeId].rcvs[inletId]}(${globs.m})`
+                                        `${codeVariableNames.nodes[sinkNodeId].rcvs[inletId]}(${globs.m})`
                                     )}
                                 }
                             `

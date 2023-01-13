@@ -43,12 +43,15 @@ type Frame = {
     }
 }
 type FrameIn = Frame & {
-    getArrays?: Array<string>
+    tarray?: {
+        get?: Array<string>
+        set?: { [arrayName: string]: Array<number> }
+    }
     ins?: { [portletId: string]: Array<Message> | Signal }
 }
 export type FrameOut = Frame & {
-    arrays?: {
-        [arrayName: string]: Array<number>
+    tarray?: {
+        get?: { [arrayName: string]: Array<number> }
     }
     outs: { [portletId: string]: Array<Message> | Signal }
 }
@@ -204,9 +207,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     .map(
                         (outletId) =>
                             // prettier-ignore
-                            `
-                    ${snds[outletId]}(msg_floats([${ins[outletId]}]))
-                    `
+                            `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
                     )
                     .join('\n'),
 
@@ -256,7 +257,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
-            engine.setArray(arrayName, data)
+            engine.tarray.set(arrayName, data)
         })
     }
 
@@ -354,13 +355,23 @@ export const generateFramesForNode = async <NodeArguments>(
         }
 
         // Get requested arrays
-        if (inputFrame.getArrays) {
-            outputFrame.arrays = {}
-            inputFrame.getArrays.forEach((arrayName) => {
-                outputFrame.arrays[arrayName] = Array.from(
-                    engine.getArray(arrayName)
+        if (inputFrame.tarray) {
+            if (inputFrame.tarray.get) {
+                outputFrame.tarray = {}
+                outputFrame.tarray.get = {}
+                inputFrame.tarray.get.forEach((arrayName) => {
+                    outputFrame.tarray.get[arrayName] = Array.from(
+                        engine.tarray.get(arrayName)
+                    )
+                })
+            }
+            if (inputFrame.tarray.set) {
+                Object.entries(inputFrame.tarray.set).forEach(
+                    ([arrayName, array]) => {
+                        engine.tarray.set(arrayName, array)
+                    }
                 )
-            })
+            }
         }
 
         // Send in the input frame

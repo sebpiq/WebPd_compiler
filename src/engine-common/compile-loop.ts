@@ -17,11 +17,11 @@ export default (
     compilation: Compilation,
     graphTraversal: DspGraph.GraphTraversal
 ) => {
-    const { g: globs } = compilation.codeVariableNames
+    const { globs } = compilation.codeVariableNames
+
+    // prettier-ignore
     return `
-        for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${
-        globs.iterFrame
-    }++) {
+        for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             ${loopIteration(compilation, graphTraversal)}
             ${globs.frame}++
         }
@@ -34,7 +34,7 @@ const loopIteration = (
 ): Code => {
     const traversalNodeIds = graphTraversal.map((node) => node.id)
     const { codeVariableNames, macros, nodeImplementations } = compilation
-    const { g: globs, types } = codeVariableNames
+    const { globs, types } = codeVariableNames
     return renderCode`${graphTraversal.map((node) => {
         const nodeLoop = getNodeImplementation(
             nodeImplementations,
@@ -44,7 +44,7 @@ const loopIteration = (
             return ''
         }
 
-        const nodeVariableNames = codeVariableNames.n[node.id]
+        const nodeVariableNames = codeVariableNames.nodes[node.id]
         return [
             // 1. Node loop implementation
             nodeLoop(
@@ -74,7 +74,8 @@ const loopIteration = (
                         { nodeId: sinkNodeId, portletId: inletId },
                     ]) => {
                         const { outs: sourceOuts } = nodeVariableNames
-                        const { ins: sinkIns } = codeVariableNames.n[sinkNodeId]
+                        const { ins: sinkIns } =
+                            codeVariableNames.nodes[sinkNodeId]
                         return `${sinkIns[inletId]} = ${sourceOuts[outletId]}`
                     }
                 ),

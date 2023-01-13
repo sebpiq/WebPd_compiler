@@ -159,9 +159,9 @@ describe('test-helpers-node-implementations', () => {
             { target: 'assemblyscript' },
         ])('should handle tests on arrays %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
-                messages: (_, { globs }) => ({
+                messages: () => ({
                     '0': `
-                        ${globs.arrays}.get('array1')[0] = 666
+                        tarray_get('array1')[0] = 666
                     `,
                 }),
             }
@@ -182,8 +182,8 @@ describe('test-helpers-node-implementations', () => {
                 },
                 [{ ins: { '0': [['bang']] } }, { outs: {} }],
                 [
-                    { getArrays: ['array1'] },
-                    { outs: {}, arrays: { array1: [666] } },
+                    { tarray: { get: ['array1'] } },
+                    { outs: {}, tarray: { get: { array1: [666] } } },
                 ]
             )
         })

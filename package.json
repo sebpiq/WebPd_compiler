@@ -10,7 +10,7 @@
         "rollup": "npx rollup --config rollup.mjs",
         "rollup:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
         "transpile": "node --experimental-specifier-resolution=node --loader ts-node/esm --no-warnings ./transpile-javascript.ts",
-        "prettier": "node_modules/@webpd/dev/node_modules/.bin/prettier --write --config node_modules/@webpd/dev/configs/prettier.json $(pwd)",
+        "prettier": "npm explore @webpd/dev -- npm run prettier $(pwd)/src",
         "eslint": "npm explore @webpd/dev -- npm run eslint $(pwd)/src",
         "all": "npm run test-bail && npm run prettier && npm run eslint"
     },

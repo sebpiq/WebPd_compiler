@@ -15,13 +15,15 @@ import {
     readTypedArray,
     TypedArrayConstructor,
 } from './core-bindings'
-import { InternalPointer, TypedArrayPointer } from '../types'
+import { InternalPointer, StringPointer, TypedArrayPointer } from '../types'
 
 export type FloatArrayConstructor = typeof Float32Array | typeof Float64Array
 export type FloatArray = InstanceType<FloatArrayConstructor>
 
 export interface tarray_WasmExports extends core_WasmExports {
     tarray_create: (length: number) => TypedArrayPointer
+    tarray_get: (arrayName: StringPointer) => TypedArrayPointer
+    tarray_set: (arrayName: StringPointer, array: TypedArrayPointer) => void
     tarray_createListOfArrays: () => InternalPointer
     tarray_pushToListOfArrays: (
         arrays: InternalPointer,

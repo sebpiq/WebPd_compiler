@@ -52,10 +52,6 @@ export type AssemblyScriptWasmExports = tarray_WasmExports &
     fs_WasmExports & {
         configure: (sampleRate: number, blockSize: number) => void
         loop: () => void
-        setArray: (
-            arrayName: StringPointer,
-            arrayPointer: TypedArrayPointer
-        ) => void
 
         // Pointers to input and output buffers
         getOutput: () => TypedArrayPointer

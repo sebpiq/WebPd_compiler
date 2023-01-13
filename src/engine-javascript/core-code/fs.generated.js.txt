@@ -111,14 +111,6 @@ function fs_soundInfoToMessage(soundInfo) {
 }
 // =========================== PRIVATE
 class _fs_SoundInfo {
-    constructor() {
-        this.channelCount = 0;
-        this.sampleRate = 0;
-        this.bitDepth = 0;
-        this.encodingFormat = '';
-        this.endianness = '';
-        this.extraOptions = '';
-    }
 }
 // TODO : Optimize by flattening frames + ring buffer (allows to read/write directly from host)
 class _fs_SoundBuffer {
