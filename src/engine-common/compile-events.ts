@@ -21,7 +21,6 @@ export const compileEventConfigure = (
 
     return renderCode`
         ${globs.iterFrame} = 0
-        ${globs.iterOutlet} = 0
         ${globs.frame} = 0
         ${graphTraversal.map((node) =>
             getEventCode(compilation, node, 'configure')
@@ -48,17 +47,16 @@ export const getEventCode = (
         node.type
     )
     const { macros } = compilation
-    const { globs, types } = compilation.codeVariableNames
+    const { globs } = compilation.codeVariableNames
+    const { state, snds } = compilation.codeVariableNames.nodes[node.id]
     return nodeImplementation.events
-        ? nodeImplementation.events(
+        ? nodeImplementation.events({
               node,
-              {
-                  ...compilation.codeVariableNames.nodes[node.id],
-                  globs,
-                  macros,
-                  types,
-              },
-              compilation
-          )[eventName] || ''
+              globs,
+              macros,
+              compilation,
+              state,
+              snds,
+          })[eventName] || ''
         : ''
 }

@@ -11,7 +11,7 @@
 
 import { DspGraph, traversal } from '@webpd/dsp-graph'
 import { getNodeImplementation, renderCode } from '../compile-helpers'
-import { Code, Compilation, NodeCodeGenerator } from '../types'
+import { Code, Compilation } from '../types'
 import { compileEventArraysChanged } from './compile-events'
 
 export default (
@@ -26,11 +26,10 @@ export default (
         outletListenerSpecs,
         inletCallerSpecs,
     } = compilation
-    const { globs, types } = codeVariableNames
+    const { globs } = codeVariableNames
     // prettier-ignore
     return renderCode`
         let ${macros.typedVar(globs.iterFrame, 'Int')}
-        let ${macros.typedVar(globs.iterOutlet, 'Int')}
         let ${macros.typedVar(globs.frame, 'Int')}
         let ${macros.typedVar(globs.blockSize, 'Int')}
         let ${macros.typedVar(globs.sampleRate, 'Float')}
@@ -41,21 +40,13 @@ export default (
 
         ${graphTraversal.map(node => {
             const nodeVariableNames = codeVariableNames.nodes[node.id]
-            const { ins, outs, rcvs } = nodeVariableNames
-            const nodeCodeGeneratorArgs: Parameters<NodeCodeGenerator<any>> = [
-                node,
-                {
-                    ...codeVariableNames.nodes[node.id],
-                    globs,
-                    types,
-                    macros,
-                },
-                compilation
-            ]
+            const { ins, outs, rcvs, snds, state } = nodeVariableNames
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             const nodeDeclare = nodeImplementation.declare
             const nodeMessageReceivers = nodeImplementation.messages ? 
-                nodeImplementation.messages(...nodeCodeGeneratorArgs): {}
+                nodeImplementation.messages({
+                    macros, globs, state, snds, node, compilation
+                }): {}
             const nodeInletCallers = inletCallerSpecs[node.id] || []
 
             return [
@@ -97,7 +88,9 @@ export default (
                 ),
 
                 // 4. Custom declarations for the node
-                nodeDeclare ? nodeDeclare(...nodeCodeGeneratorArgs): '',
+                nodeDeclare ? nodeDeclare({
+                    macros, globs, state, node, compilation
+                }): '',
             ]
         })}
 

@@ -186,8 +186,6 @@ export interface CodeVariableNames {
 
     // Namespace for global variables
     globs: {
-        // Reusable variable to iterate over outlets
-        iterOutlet: string
         // Frame count, reinitialized at each loop start
         iterFrame: string
         // Frame count, never reinitialized
@@ -224,38 +222,54 @@ export interface CodeVariableNames {
     }
 }
 
-export type GlobCodeGenerator = (args: {
-    macros: CodeMacros
-    globs: CodeVariableNames['globs']
-    types: CodeVariableNames['types']
-    audioSettings: Compilation['audioSettings']
-}) => Code
-
-export type NodeCodeGenerator<NodeArgsType> = (
-    node: DspGraph.Node<NodeArgsType>,
-    variableNames: NodeVariableNames & {
-        types: CodeVariableNames['types']
-        globs: CodeVariableNames['globs']
+export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: string}> {
+    declare?: (context: {
         macros: CodeMacros
-    },
-    compilation: Compilation
-) => Code
+        globs: CodeVariableNames['globs']
+        state: {[Paramater in keyof NodeState]: string}
+        node: DspGraph.Node<NodeArgsType>
+        compilation: Compilation
+    }) => Code
 
-export interface NodeImplementation<NodeArgsType> {
-    declare?: NodeCodeGenerator<NodeArgsType>
-    loop?: NodeCodeGenerator<NodeArgsType>
-    messages?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {
+    loop?: (context: {
+        macros: CodeMacros
+        globs: CodeVariableNames['globs']
+        state: {[Paramater in keyof NodeState]: string}
+        ins: NodeVariableNames['ins']
+        outs: NodeVariableNames['outs']
+        snds: NodeVariableNames['snds']
+        node: DspGraph.Node<NodeArgsType>
+        compilation: Compilation
+    }) => Code
+
+    messages?: (context: {
+        macros: CodeMacros
+        globs: CodeVariableNames['globs']
+        state: {[Paramater in keyof NodeState]: string}
+        snds: NodeVariableNames['snds']
+        node: DspGraph.Node<NodeArgsType>
+        compilation: Compilation
+    }) => {
         [inletId: DspGraph.PortletId]: Code
     }
-    events?: (...args: Parameters<NodeCodeGenerator<NodeArgsType>>) => {
+
+    events?: (context: {
+        macros: CodeMacros
+        globs: CodeVariableNames['globs']
+        state: {[Paramater in keyof NodeState]: string}
+        snds: NodeVariableNames['snds']
+        node: DspGraph.Node<NodeArgsType>
+        compilation: Compilation
+    }) => {
         arraysChanged?: Code
         configure?: Code
     }
-    stateVariables?: (node: DspGraph.Node<NodeArgsType>) => Array<string>
+
+    stateVariables?: NodeState
 }
 
 export type NodeImplementations = {
-    [nodeType: string]: NodeImplementation<any>
+    [nodeType: string]: NodeImplementation<any, {[name: string]: any}>
 }
 
 export type OutletListenerSpecs = {

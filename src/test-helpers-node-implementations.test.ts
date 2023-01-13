@@ -21,7 +21,7 @@ describe('test-helpers-node-implementations', () => {
             { target: 'assemblyscript' },
         ])('should work with signal inlets %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
-                loop: (_, { ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
+                loop: ({ ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
             }
 
             const node: DspGraph.Node = {
@@ -47,7 +47,7 @@ describe('test-helpers-node-implementations', () => {
             { target: 'assemblyscript' },
         ])('should work with message inlets %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
-                messages: (_, { globs, snds }) => ({
+                messages: ({ globs, snds }) => ({
                     '0': `
                         ${snds.$0}(
                             msg_floats([
@@ -81,7 +81,7 @@ describe('test-helpers-node-implementations', () => {
             { target: 'assemblyscript' },
         ])('should send message at the right frame %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
-                messages: (_, { globs, snds }) => ({
+                messages: ({ globs, snds }) => ({
                     '0': `
                         ${snds.$0}(
                             msg_floats([${globs.frame}])
@@ -113,7 +113,7 @@ describe('test-helpers-node-implementations', () => {
             { target: 'assemblyscript' },
         ])('should handle tests with fs %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
-                messages: (_, {}) => ({
+                messages: ({}) => ({
                     '0': `
                         fs_readSoundFile('/bla', {
                             channelCount: 11,

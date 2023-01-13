@@ -127,9 +127,7 @@ describe('Engine', () => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
                         loop: (
-                            _,
-                            { globs },
-                            { audioSettings: { channelCount }, target }
+                            { globs, compilation: { audioSettings: { channelCount }, target } }
                         ) =>
                             target === 'assemblyscript'
                                 ? `
@@ -196,9 +194,7 @@ describe('Engine', () => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
                         loop: (
-                            _,
-                            { globs },
-                            { audioSettings: { channelCount }, target }
+                            { globs, compilation: { audioSettings: { channelCount }, target } }                            
                         ) =>
                             target === 'assemblyscript'
                                 ? `
@@ -1006,7 +1002,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messages: (_, { globs }) => ({
+                        messages: ({ globs }) => ({
                             someInlet: `messageReceived = ${globs.m}`,
                         }),
                     },

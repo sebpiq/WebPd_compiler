@@ -36,7 +36,11 @@ describe('code-variable-names', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     loop: () => `// [osc~] loop`,
-                    stateVariables: () => ['phase', 'currentThing', 'k'],
+                    stateVariables: {
+                        phase: 1,
+                        currentThing: 1,
+                        k: 1,
+                    },
                 },
                 'dac~': {
                     loop: () => `// [dac~] loop`,
@@ -103,7 +107,7 @@ describe('code-variable-names', () => {
             const nodeImplementations: NodeImplementations = {
                 'dac~bla*wow!': {
                     loop: () => `// [dac~] loop`,
-                    stateVariables: () => ['bli'],
+                    stateVariables: { bli: 1 },
                 },
             }
 
@@ -148,7 +152,7 @@ describe('code-variable-names', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
                     loop: () => `// [osc~] loop`,
-                    stateVariables: () => ['phase'],
+                    stateVariables: { phase: 1 },
                 },
             }
 

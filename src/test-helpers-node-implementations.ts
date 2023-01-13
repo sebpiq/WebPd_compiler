@@ -27,10 +27,10 @@ import { writeFile } from 'fs/promises'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
-interface NodeTestSettings<NodeArguments> {
+interface NodeTestSettings<NodeArguments, NodeState> {
     target: CompilerTarget
     node: DspGraph.Node
-    nodeImplementation: NodeImplementation<NodeArguments>
+    nodeImplementation: NodeImplementation<NodeArguments, NodeState>
     engineDspParams?: typeof ENGINE_DSP_PARAMS
     arrays?: { [arrayName: string]: Array<number> }
 }
@@ -56,8 +56,8 @@ export type FrameOut = Frame & {
     outs: { [portletId: string]: Array<Message> | Signal }
 }
 
-export const generateFramesForNode = async <NodeArguments>(
-    nodeTestSettings: NodeTestSettings<NodeArguments>,
+export const generateFramesForNode = async <NodeArguments, NodeState>(
+    nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     inputFrames: Array<FrameIn>
 ): Promise<Array<FrameOut>> => {
     nodeTestSettings.engineDspParams =
@@ -133,7 +133,7 @@ export const generateFramesForNode = async <NodeArguments>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            declare: (_, { state, macros }) =>
+            declare: ({ state, macros }) =>
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -148,7 +148,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     )
                     .join('\n'),
 
-            messages: (_, { globs, snds, state }) =>
+            messages: ({ globs, snds, state }) =>
                 Object.keys(fakeSourceNode.outlets).reduce(
                     (messageMap, inletId) => {
                         const outletId = inletId
@@ -175,7 +175,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     {} as { [inletId: DspGraph.PortletId]: Code }
                 ),
 
-            loop: (_, { outs, state }) =>
+            loop: ({ outs, state }) =>
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -187,18 +187,21 @@ export const generateFramesForNode = async <NodeArguments>(
                     )
                     .join('\n'),
 
-            stateVariables: () =>
+            stateVariables: 
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
                             fakeSourceNode.outlets[outletId].type === 'signal'
                     )
-                    .map((outletId) => `VALUE_${outletId}`),
+                    .reduce((stateVariables, outletId) => {
+                        stateVariables[`VALUE_${outletId}`] = 1
+                        return stateVariables
+                    }, {} as {[name: string]: 1}),
         },
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            loop: (_, { ins, snds }) =>
+            loop: ({ ins, snds }) =>
                 Object.keys(testNode.sinks)
                     .filter(
                         (outletId) =>
@@ -212,7 +215,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     .join('\n'),
 
             // Take incoming messages and directly proxy them
-            messages: (_, { globs, snds }) =>
+            messages: ({ globs, snds }) =>
                 Object.keys(fakeSinkNode.inlets)
                     .filter(
                         (inletId) =>
@@ -413,8 +416,8 @@ export const generateFramesForNode = async <NodeArguments>(
     return outputFrames
 }
 
-export const assertNodeOutput = async <NodeArguments>(
-    nodeTestSettings: NodeTestSettings<NodeArguments>,
+export const assertNodeOutput = async <NodeArguments, NodeState>(
+    nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     ...frames: Array<[FrameIn, FrameOut]>
 ): Promise<void> => {
     const expectedOutputFrames: Array<FrameOut> = frames.map(

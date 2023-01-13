@@ -19,13 +19,13 @@ describe('compileLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         print: {},
         'osc~': {
-            loop: (node) => `// [osc~] : frequency ${node.args.frequency}`,
+            loop: ({node}) => `// [osc~] : frequency ${node.args.frequency}`,
         },
         '+~': {
-            loop: (node) => `// [+~] : value ${node.args.value}`,
+            loop: ({node}) => `// [+~] : value ${node.args.value}`,
         },
         'dac~': {
-            loop: (_, __, { audioSettings }) =>
+            loop: ({ compilation: {audioSettings} }) =>
                 `// [dac~] : channelCount ${audioSettings.channelCount.out}`,
         },
     }

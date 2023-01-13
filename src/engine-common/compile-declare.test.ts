@@ -18,7 +18,6 @@ import compileDeclare from './compile-declare'
 describe('compileDeclare', () => {
     const GLOBAL_VARIABLES_CODE = `
         let F
-        let O
         let FRAME 
         let BLOCK_SIZE
         let SAMPLE_RATE
@@ -73,12 +72,12 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             'osc~': {
-                declare: (node, _) =>
+                declare: ({node}) =>
                     `// [osc~] frequency ${node.args.frequency}`,
                 loop: () => ``,
             },
             'dac~': {
-                declare: (_, __, { audioSettings }) =>
+                declare: ({ compilation: {audioSettings} }) =>
                     `// [dac~] channelCount ${audioSettings.channelCount.out}`,
                 loop: () => ``,
             },

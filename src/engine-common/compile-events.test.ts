@@ -119,13 +119,13 @@ describe('compile-events', () => {
 
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    events: (node, _) => ({
+                    events: ({node}) => ({
                         configure: `// [osc~] frequency ${node.args.frequency}`,
                     }),
                     loop: () => ``,
                 },
                 'dac~': {
-                    events: (_, __, { audioSettings }) => ({
+                    events: ({compilation: {audioSettings} }) => ({
                         configure: `// [dac~] channelCount ${audioSettings.channelCount.out}`,
                     }),
                     loop: () => ``,
@@ -151,7 +151,6 @@ describe('compile-events', () => {
                 normalizeCode(code),
                 normalizeCode(`
                 F = 0
-                O = 0
                 FRAME = 0
                 // [osc~] frequency 440
                 // [dac~] channelCount 2                

@@ -41,8 +41,8 @@ export const generate = (
                     node.type
                 )
                 const nodeStateVariables = nodeImplementation.stateVariables
-                    ? nodeImplementation.stateVariables(node)
-                    : []
+                    ? nodeImplementation.stateVariables
+                    : {}
                 const namespaceLabel = `[${node.type}] ${node.id}`
                 const prefix = debug
                     ? _v(
@@ -79,7 +79,7 @@ export const generate = (
                     ),
                     state: createNamespace(
                         `${namespaceLabel}.state`,
-                        nodeStateVariables.reduce((nameMap, stateVariable) => {
+                        Object.keys(nodeStateVariables).reduce((nameMap, stateVariable) => {
                             nameMap[stateVariable] = `${prefix}_STATE_${_v(
                                 stateVariable
                             )}`
@@ -93,7 +93,6 @@ export const generate = (
         )
     ),
     globs: createNamespace('g', {
-        iterOutlet: 'O',
         iterFrame: 'F',
         frame: 'FRAME',
         blockSize: 'BLOCK_SIZE',
