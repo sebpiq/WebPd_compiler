@@ -66,7 +66,7 @@ export const getNodeImplementation = (
         messages: () => ({}),
         events: () => ({}),
         sharedCode: () => [],
-        ...nodeImplementation
+        ...nodeImplementation,
     }
 }
 

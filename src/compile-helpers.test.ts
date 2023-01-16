@@ -31,12 +31,13 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
             someNodeType: { loop: () => `` },
-            boringNodeType: {}
+            boringNodeType: {},
         }
 
         it('should return node implementation if it exists', () => {
             assert.strictEqual(
-                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType').loop,
+                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType')
+                    .loop,
                 NODE_IMPLEMENTATIONS['someNodeType'].loop
             )
         })
@@ -51,13 +52,19 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
                 sharedCode: () => [],
             }
             const defaultImplementation = getNodeImplementation(
-                NODE_IMPLEMENTATIONS, 'boringNodeType')
-            
+                NODE_IMPLEMENTATIONS,
+                'boringNodeType'
+            )
+
             assert.deepStrictEqual(
-                Object.entries(referenceImplementation).map(
-                    ([name, obj]) => [name, typeof obj === 'function' ? (obj as any)() : obj ]),
-                Object.entries(defaultImplementation).map(
-                    ([name, obj]) => [name, typeof obj === 'function' ? (obj as any)() : obj ]),
+                Object.entries(referenceImplementation).map(([name, obj]) => [
+                    name,
+                    typeof obj === 'function' ? (obj as any)() : obj,
+                ]),
+                Object.entries(defaultImplementation).map(([name, obj]) => [
+                    name,
+                    typeof obj === 'function' ? (obj as any)() : obj,
+                ])
             )
         })
 

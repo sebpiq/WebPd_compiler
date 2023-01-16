@@ -222,13 +222,16 @@ export interface CodeVariableNames {
     }
 }
 
-export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: string}> {
-    stateVariables?: NodeState,
+export interface NodeImplementation<
+    NodeArgsType,
+    NodeState = { [name: string]: string }
+> {
+    stateVariables?: NodeState
 
     declare?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: {[Paramater in keyof NodeState]: string}
+        state: { [Paramater in keyof NodeState]: string }
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => Code
@@ -236,7 +239,7 @@ export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: s
     loop?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: {[Paramater in keyof NodeState]: string}
+        state: { [Paramater in keyof NodeState]: string }
         ins: NodeVariableNames['ins']
         outs: NodeVariableNames['outs']
         snds: NodeVariableNames['snds']
@@ -247,7 +250,7 @@ export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: s
     messages?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: {[Paramater in keyof NodeState]: string}
+        state: { [Paramater in keyof NodeState]: string }
         snds: NodeVariableNames['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
@@ -258,7 +261,7 @@ export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: s
     events?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: {[Paramater in keyof NodeState]: string}
+        state: { [Paramater in keyof NodeState]: string }
         snds: NodeVariableNames['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
@@ -275,7 +278,7 @@ export interface NodeImplementation<NodeArgsType, NodeState = {[name: string]: s
 }
 
 export type NodeImplementations = {
-    [nodeType: string]: NodeImplementation<any, {[name: string]: any}>
+    [nodeType: string]: NodeImplementation<any, { [name: string]: any }>
 }
 
 export type OutletListenerSpecs = {

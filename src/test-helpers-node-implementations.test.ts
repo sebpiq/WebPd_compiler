@@ -32,6 +32,7 @@ describe('test-helpers-node-implementations', () => {
 
             await nodeImplementationsTestHelpers.assertNodeOutput(
                 {
+                    bitDepth: 32,
                     target,
                     node,
                     nodeImplementation,
@@ -66,6 +67,7 @@ describe('test-helpers-node-implementations', () => {
 
             await nodeImplementationsTestHelpers.assertNodeOutput(
                 {
+                    bitDepth: 64,
                     target,
                     node,
                     nodeImplementation,
@@ -84,7 +86,7 @@ describe('test-helpers-node-implementations', () => {
                 messages: ({ globs, snds }) => ({
                     '0': `
                         ${snds.$0}(
-                            msg_floats([${globs.frame}])
+                            msg_floats([toFloat(${globs.frame})])
                         )
                     `,
                 }),
@@ -98,6 +100,7 @@ describe('test-helpers-node-implementations', () => {
 
             await nodeImplementationsTestHelpers.assertNodeOutput(
                 {
+                    bitDepth: 32,
                     target,
                     node,
                     nodeImplementation,
@@ -134,6 +137,7 @@ describe('test-helpers-node-implementations', () => {
 
             await nodeImplementationsTestHelpers.assertNodeOutput(
                 {
+                    bitDepth: 64,
                     target,
                     node,
                     nodeImplementation,
@@ -173,6 +177,7 @@ describe('test-helpers-node-implementations', () => {
 
             await nodeImplementationsTestHelpers.assertNodeOutput(
                 {
+                    bitDepth: 32,
                     target,
                     node,
                     nodeImplementation,

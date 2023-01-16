@@ -22,6 +22,7 @@ import {
     Code,
     NodeImplementation,
     Engine,
+    AudioSettings,
 } from './types'
 import { writeFile } from 'fs/promises'
 export { executeCompilation } from './compile'
@@ -31,7 +32,7 @@ interface NodeTestSettings<NodeArguments, NodeState> {
     target: CompilerTarget
     node: DspGraph.Node
     nodeImplementation: NodeImplementation<NodeArguments, NodeState>
-    engineDspParams?: typeof ENGINE_DSP_PARAMS
+    bitDepth: AudioSettings['bitDepth']
     arrays?: { [arrayName: string]: Array<number> }
 }
 
@@ -60,10 +61,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     inputFrames: Array<FrameIn>
 ): Promise<Array<FrameOut>> => {
-    nodeTestSettings.engineDspParams =
-        nodeTestSettings.engineDspParams || ENGINE_DSP_PARAMS
-
-    const { target, arrays } = nodeTestSettings
+    const { target, arrays, bitDepth } = nodeTestSettings
     const connectedInlets = new Set<DspGraph.PortletId>([])
     inputFrames.forEach((frame) =>
         Object.keys(frame.ins || {}).forEach((inletId) =>
@@ -187,16 +185,15 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     )
                     .join('\n'),
 
-            stateVariables: 
-                Object.keys(fakeSourceNode.outlets)
-                    .filter(
-                        (outletId) =>
-                            fakeSourceNode.outlets[outletId].type === 'signal'
-                    )
-                    .reduce((stateVariables, outletId) => {
-                        stateVariables[`VALUE_${outletId}`] = 1
-                        return stateVariables
-                    }, {} as {[name: string]: 1}),
+            stateVariables: Object.keys(fakeSourceNode.outlets)
+                .filter(
+                    (outletId) =>
+                        fakeSourceNode.outlets[outletId].type === 'signal'
+                )
+                .reduce((stateVariables, outletId) => {
+                    stateVariables[`VALUE_${outletId}`] = 1
+                    return stateVariables
+                }, {} as { [name: string]: 1 }),
         },
 
         fake_sink_node: {
@@ -243,8 +240,8 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
             fakeSinkNode: Object.keys(fakeSinkNode.outlets),
         },
         audioSettings: {
-            channelCount: nodeTestSettings.engineDspParams.channelCount,
-            bitDepth: 64,
+            channelCount: ENGINE_DSP_PARAMS.channelCount,
+            bitDepth,
         },
     })
     const code = executeCompilation(compilation)
@@ -256,7 +253,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         code
     )
 
-    const engine = await createEngine(compilation.target, code)
+    const engine = await createEngine(compilation.target, bitDepth, code)
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -284,12 +281,12 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     const outputFrames: Array<FrameOut> = []
     const engineInput = buildEngineBlock(
         Float32Array,
-        nodeTestSettings.engineDspParams.channelCount.in,
+        ENGINE_DSP_PARAMS.channelCount.in,
         blockSize
     )
     const engineOutput = buildEngineBlock(
         Float32Array,
-        nodeTestSettings.engineDspParams.channelCount.out,
+        ENGINE_DSP_PARAMS.channelCount.out,
         blockSize
     )
 
@@ -343,10 +340,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         // We make sure we configure AFTER assigning the outletListeners,
         // so we can receive messages sent during configure.
         if (configured === false) {
-            engine.configure(
-                nodeTestSettings.engineDspParams.sampleRate,
-                blockSize
-            )
+            engine.configure(ENGINE_DSP_PARAMS.sampleRate, blockSize)
             configured = true
         }
 

@@ -13,7 +13,7 @@ import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import { Code } from '../types'
+import { AudioSettings, Code } from '../types'
 import { createEngine } from '../test-helpers'
 import { AssemblyScriptWasmEngine } from './AssemblyScriptWasmEngine'
 
@@ -30,24 +30,31 @@ export const getAssemblyscriptCoreCode = () => {
 }
 
 export const compileWasmModule = async (
-    ascCode: Code
+    ascCode: Code,
+    bitDepth: AudioSettings['bitDepth'] = 64
 ): Promise<ArrayBuffer> => {
-    const { error, binary, stderr } = await asc.compileString(ascCode, {
+    const options: any = {
         optimizeLevel: 3,
-        runtime: 'stub',
+        runtime: 'incremental',
         exportRuntime: true,
-        // For 32 bits version of Math
-        // use: ['Math=NativeMathf'],
-    })
+    }
+    if (bitDepth === 32) {
+        options.use = ['Math=NativeMathf']
+    }
+    const { error, binary, stderr } = await asc.compileString(ascCode, options)
     if (error) {
         throw new Error(stderr.toString())
     }
     return binary
 }
 
-export const createAscEngine = async (code: Code) => {
+export const createAscEngine = async (
+    code: Code,
+    bitDepth: AudioSettings['bitDepth']
+) => {
     const engine = (await createEngine(
         'assemblyscript',
+        bitDepth,
         code
     )) as unknown as AssemblyScriptWasmEngine
     return { engine, wasmExports: engine.wasmExports as any }

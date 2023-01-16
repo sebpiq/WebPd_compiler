@@ -1,5 +1,6 @@
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
+import { writeFile } from 'fs/promises'
 import ts from 'typescript'
 const { transpileModule } = ts
 import { executeCompilation } from './compile'
@@ -18,9 +19,28 @@ import {
     SoundFileInfo,
 } from './types'
 
-const BIT_DEPTH = 64
-const FloatArray = 'Float64Array'
-const floatArrayType = Float64Array
+const TEST_PARAMETERS = [
+    {
+        target: 'javascript' as CompilerTarget,
+        bitDepth: 32 as AudioSettings['bitDepth'],
+        floatArrayType: Float32Array,
+    },
+    {
+        target: 'javascript' as CompilerTarget,
+        bitDepth: 64 as AudioSettings['bitDepth'],
+        floatArrayType: Float64Array,
+    },
+    {
+        target: 'assemblyscript' as CompilerTarget,
+        bitDepth: 32 as AudioSettings['bitDepth'],
+        floatArrayType: Float32Array,
+    },
+    {
+        target: 'assemblyscript' as CompilerTarget,
+        bitDepth: 64 as AudioSettings['bitDepth'],
+        floatArrayType: Float64Array,
+    },
+]
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
@@ -31,6 +51,7 @@ describe('Engine', () => {
 
     interface EngineTestSettings<ExportsKeys extends TestEngineExportsKeys> {
         target: CompilerTarget
+        bitDepth: AudioSettings['bitDepth']
         testCode?: Code
         exports?: ExportsKeys
         compilation?: Partial<Compilation>
@@ -40,6 +61,7 @@ describe('Engine', () => {
         ExportsKeys extends TestEngineExportsKeys
     >({
         target,
+        bitDepth,
         testCode = '',
         exports,
         compilation: extraCompilation = {},
@@ -49,7 +71,7 @@ describe('Engine', () => {
             target,
             audioSettings: {
                 channelCount: { in: 2, out: 2 },
-                bitDepth: BIT_DEPTH,
+                bitDepth,
             },
             ...extraCompilation,
         })
@@ -62,6 +84,13 @@ describe('Engine', () => {
         }
 
         let code = executeCompilation(compilation) + transpiledTestCode
+        // Always save latest compilation for easy inspection
+        await writeFile(
+            `./tmp/latest-compilation.${
+                compilation.target === 'javascript' ? 'js' : 'asc'
+            }`,
+            code
+        )
 
         // Generate export statement for test functions
         const exportKeys = Object.keys(exports || {}) as Array<
@@ -86,6 +115,7 @@ describe('Engine', () => {
 
         const engine = (await createEngine(
             target,
+            bitDepth,
             code
         )) as TestEngine<ExportsKeys>
 
@@ -105,30 +135,48 @@ describe('Engine', () => {
                 target: 'javascript' as CompilerTarget,
                 outputChannels: 2,
                 blockSize: 4,
+                bitDepth: 32 as AudioSettings['bitDepth'],
+                floatArrayType: Float32Array,
             },
             {
                 target: 'javascript' as CompilerTarget,
                 outputChannels: 3,
                 blockSize: 5,
+                bitDepth: 64 as AudioSettings['bitDepth'],
+                floatArrayType: Float64Array,
             },
             {
                 target: 'assemblyscript' as CompilerTarget,
                 outputChannels: 2,
                 blockSize: 4,
+                bitDepth: 32 as AudioSettings['bitDepth'],
+                floatArrayType: Float32Array,
             },
             {
                 target: 'assemblyscript' as CompilerTarget,
                 outputChannels: 3,
                 blockSize: 5,
+                bitDepth: 64 as AudioSettings['bitDepth'],
+                floatArrayType: Float64Array,
             },
         ])(
             'should configure and return an output block of the right size %s',
-            async ({ target, outputChannels, blockSize }) => {
+            async ({
+                target,
+                outputChannels,
+                blockSize,
+                bitDepth,
+                floatArrayType,
+            }) => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        loop: (
-                            { globs, compilation: { audioSettings: { channelCount }, target } }
-                        ) =>
+                        loop: ({
+                            globs,
+                            compilation: {
+                                audioSettings: { channelCount },
+                                target,
+                            },
+                        }) =>
                             target === 'assemblyscript'
                                 ? `
                         for (let channel: Int = 0; channel < ${channelCount.out}; channel++) {
@@ -150,18 +198,19 @@ describe('Engine', () => {
                     },
                 })
 
-                const input: Array<Float32Array> = [
-                    new Float32Array(blockSize),
-                    new Float32Array(blockSize),
+                const input: Array<Float32Array | Float64Array> = [
+                    new floatArrayType(blockSize),
+                    new floatArrayType(blockSize),
                 ]
 
                 const audioSettings: AudioSettings = {
-                    bitDepth: 32,
+                    bitDepth,
                     channelCount: { in: 2, out: outputChannels },
                 }
 
                 const engine = await initializeEngineTest({
                     target,
+                    bitDepth,
                     compilation: {
                         graph,
                         nodeImplementations,
@@ -169,14 +218,14 @@ describe('Engine', () => {
                     },
                 })
 
-                const output: Array<Float32Array> = []
+                const output: Array<Float32Array | Float64Array> = []
                 for (let channel = 0; channel < outputChannels; channel++) {
-                    output.push(new Float32Array(blockSize))
+                    output.push(new floatArrayType(blockSize))
                 }
 
-                const expected: Array<Float32Array> = []
+                const expected: Array<Float32Array | Float64Array> = []
                 for (let channel = 0; channel < outputChannels; channel++) {
-                    expected.push(new Float32Array(blockSize).fill(2))
+                    expected.push(new floatArrayType(blockSize).fill(2))
                 }
 
                 engine.configure(44100, blockSize)
@@ -185,17 +234,18 @@ describe('Engine', () => {
             }
         )
 
-        it.each([
-            { target: 'javascript' as CompilerTarget },
-            { target: 'assemblyscript' as CompilerTarget },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should take input block and pass it to the loop %s',
-            async ({ target }) => {
+            async ({ target, bitDepth }) => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        loop: (
-                            { globs, compilation: { audioSettings: { channelCount }, target } }                            
-                        ) =>
+                        loop: ({
+                            globs,
+                            compilation: {
+                                audioSettings: { channelCount },
+                                target,
+                            },
+                        }) =>
                             target === 'assemblyscript'
                                 ? `
                         for (let channel: Int = 0; channel < ${channelCount.in}; channel++) {
@@ -220,7 +270,7 @@ describe('Engine', () => {
                 })
 
                 const audioSettings: AudioSettings = {
-                    bitDepth: 32,
+                    bitDepth,
                     channelCount: { in: 2, out: 3 },
                 }
 
@@ -238,6 +288,7 @@ describe('Engine', () => {
 
                 const engine = await initializeEngineTest({
                     target,
+                    bitDepth,
                     compilation: {
                         graph,
                         nodeImplementations,
@@ -255,12 +306,9 @@ describe('Engine', () => {
             }
         )
 
-        it.each([
-            { target: 'javascript' as CompilerTarget },
-            { target: 'assemblyscript' as CompilerTarget },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should export metadata audio settings and update it after configure %s',
-            async ({ target }) => {
+            async ({ target, bitDepth }) => {
                 const graph = makeGraph({
                     bla: {
                         inlets: { blo: { type: 'message', id: 'blo' } },
@@ -278,12 +326,13 @@ describe('Engine', () => {
                 }
 
                 const audioSettings: AudioSettings = {
-                    bitDepth: 32,
+                    bitDepth,
                     channelCount: { in: 2, out: 3 },
                 }
 
                 const engine = await initializeEngineTest({
                     target,
+                    bitDepth,
                     compilation: {
                         graph,
                         nodeImplementations,
@@ -327,12 +376,11 @@ describe('Engine', () => {
 
     describe('tarray', () => {
         describe('get', () => {
-            it.each([
-                { target: 'javascript' as CompilerTarget },
-                { target: 'assemblyscript' as CompilerTarget },
-            ])('should set the array %s', async ({ target }) => {
-                const testCode: Code = `
-                    const array = new ${FloatArray}(4)
+            it.each(TEST_PARAMETERS)(
+                'should set the array %s',
+                async ({ target, bitDepth, floatArrayType }) => {
+                    const testCode: Code = `
+                    const array = new ${floatArrayType.name}(4)
                     array[0] = 123
                     array[1] = 456
                     array[2] = 789
@@ -340,27 +388,28 @@ describe('Engine', () => {
                     _tarray_ARRAYS.set('array1', array)
                 `
 
-                const exports = {}
+                    const exports = {}
 
-                const engine = await initializeEngineTest({
-                    target,
-                    testCode,
-                    exports,
-                })
+                    const engine = await initializeEngineTest({
+                        target,
+                        bitDepth,
+                        testCode,
+                        exports,
+                    })
 
-                assert.deepStrictEqual(
-                    engine.tarray.get('array1'),
-                    new floatArrayType([123, 456, 789, 234])
-                )
-            })
+                    assert.deepStrictEqual(
+                        engine.tarray.get('array1'),
+                        new floatArrayType([123, 456, 789, 234])
+                    )
+                }
+            )
         })
 
         describe('set', () => {
-            it.each([
-                { target: 'javascript' as CompilerTarget },
-                { target: 'assemblyscript' as CompilerTarget },
-            ])('should set the array %s', async ({ target }) => {
-                const testCode: Code = `
+            it.each(TEST_PARAMETERS)(
+                'should set the array %s',
+                async ({ target, bitDepth }) => {
+                    const testCode: Code = `
                     function testReadArray1 (index: Int): Float {
                         return _tarray_ARRAYS.get('array1')[index]
                     }
@@ -375,35 +424,37 @@ describe('Engine', () => {
                     }
                 `
 
-                const exports = {
-                    testReadArray1: 1,
-                    testReadArray2: 1,
-                    testReadArray3: 1,
-                    testIsFloatArray: 1,
+                    const exports = {
+                        testReadArray1: 1,
+                        testReadArray2: 1,
+                        testReadArray3: 1,
+                        testIsFloatArray: 1,
+                    }
+
+                    const engine = await initializeEngineTest({
+                        target,
+                        bitDepth,
+                        testCode,
+                        exports,
+                    })
+
+                    engine.tarray.set(
+                        'array1',
+                        new Float32Array([11.1, 22.2, 33.3])
+                    )
+                    engine.tarray.set('array2', new Float64Array([44.4, 55.5]))
+                    engine.tarray.set('array3', [66.6, 77.7])
+
+                    let actual: number
+                    actual = engine.testReadArray1(1)
+                    assert.strictEqual(round(actual), 22.2)
+                    actual = engine.testReadArray2(0)
+                    assert.strictEqual(round(actual), 44.4)
+                    actual = engine.testReadArray3(1)
+                    assert.strictEqual(round(actual), 77.7)
+                    assert.doesNotThrow(() => engine.testIsFloatArray())
                 }
-
-                const engine = await initializeEngineTest({
-                    target,
-                    testCode,
-                    exports,
-                })
-
-                engine.tarray.set(
-                    'array1',
-                    new Float32Array([11.1, 22.2, 33.3])
-                )
-                engine.tarray.set('array2', new Float64Array([44.4, 55.5]))
-                engine.tarray.set('array3', [66.6, 77.7])
-
-                let actual: number
-                actual = engine.testReadArray1(1)
-                assert.strictEqual(round(actual), 22.2)
-                actual = engine.testReadArray2(0)
-                assert.strictEqual(round(actual), 44.4)
-                actual = engine.testReadArray3(1)
-                assert.strictEqual(round(actual), 77.7)
-                assert.doesNotThrow(() => engine.testIsFloatArray())
-            })
+            )
         })
     })
 
@@ -451,12 +502,9 @@ describe('Engine', () => {
                 }
             `
 
-            it.each([
-                { target: 'javascript' as CompilerTarget },
-                { target: 'assemblyscript' as CompilerTarget },
-            ])(
+            it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
-                async ({ target }) => {
+                async ({ target, bitDepth, floatArrayType }) => {
                     const testCode: Code =
                         sharedTestingCode +
                         `
@@ -484,6 +532,7 @@ describe('Engine', () => {
 
                     const engine = await initializeEngineTest({
                         target,
+                        bitDepth,
                         testCode,
                         exports,
                     })
@@ -508,9 +557,9 @@ describe('Engine', () => {
                         operationId,
                         FS_OPERATION_SUCCESS,
                         [
-                            new Float32Array([-1, -2, -3]),
-                            new Float32Array([4, 5, 6]),
-                            new Float32Array([-7, -8, -9]),
+                            new floatArrayType([-1, -2, -3]),
+                            new floatArrayType([4, 5, 6]),
+                            new floatArrayType([-7, -8, -9]),
                         ]
                     )
 
@@ -558,7 +607,7 @@ describe('Engine', () => {
                 function testOperationStatus(): Int {
                     return receivedStatus
                 }
-                function testOperationChannelCount(id: fs_OperationId): Float {
+                function testOperationChannelCount(id: fs_OperationId): Int {
                     return _FS_SOUND_STREAM_BUFFERS.get(id).channelCount
                 }
                 function testOperationCleaned (id: fs_OperationId): boolean {
@@ -569,13 +618,12 @@ describe('Engine', () => {
                 }
             `
 
-            it.each([
-                { target: 'javascript' as CompilerTarget },
-                { target: 'assemblyscript' as CompilerTarget },
-            ])('should stream data in %s', async ({ target }) => {
-                const testCode: Code =
-                    sharedTestingCode +
-                    `
+            it.each(TEST_PARAMETERS)(
+                'should stream data in %s',
+                async ({ target, bitDepth }) => {
+                    const testCode: Code =
+                        sharedTestingCode +
+                        `
                         function testReceivedSound(id: fs_OperationId): boolean {
                             const buffer = _FS_SOUND_STREAM_BUFFERS.get(id)
                             return buffer.pullFrame()[0] === -1
@@ -584,88 +632,93 @@ describe('Engine', () => {
                         }
                     `
 
-                const exports = {
-                    testStartReadStream: 1,
-                    testOperationId: 1,
-                    testOperationStatus: 1,
-                    testReceivedSound: 1,
-                    testOperationCleaned: 1,
-                    testOperationChannelCount: 1,
+                    const exports = {
+                        testStartReadStream: 1,
+                        testOperationId: 1,
+                        testOperationStatus: 1,
+                        testReceivedSound: 1,
+                        testOperationCleaned: 1,
+                        testOperationChannelCount: 1,
+                    }
+
+                    const engine = await initializeEngineTest({
+                        target,
+                        bitDepth,
+                        testCode,
+                        exports,
+                    })
+
+                    // 1. Some function in the engine requests a read stream operation.
+                    // Request is sent to host via callback
+                    const calledOpen: Array<
+                        Parameters<Engine['fs']['onOpenSoundReadStream']>
+                    > = []
+                    const calledClose: Array<
+                        Parameters<Engine['fs']['onCloseSoundStream']>
+                    > = []
+                    engine.fs.onOpenSoundReadStream = (...args) =>
+                        calledOpen.push(args)
+                    engine.fs.onCloseSoundStream = (...args) =>
+                        calledClose.push(args)
+
+                    const operationId = engine.testStartReadStream()
+                    assert.deepStrictEqual(calledOpen[0], [
+                        operationId,
+                        '/some/url',
+                        [
+                            3,
+                            48000,
+                            32,
+                            'next',
+                            'l',
+                            '--some 8 --options',
+                        ] as SoundFileInfo,
+                    ])
+                    assert.strictEqual(
+                        engine.testOperationChannelCount(operationId),
+                        3
+                    )
+
+                    // 2. Hosts handles the operation. It then calls fs_sendSoundStreamData to send in data.
+                    const writtenFrameCount = engine.fs.sendSoundStreamData(
+                        operationId,
+                        [
+                            new Float32Array([-1, -2, -3]),
+                            new Float32Array([4, 5, 6]),
+                            new Float32Array([-7, -8, -9]),
+                        ]
+                    )
+                    assert.strictEqual(writtenFrameCount, 3)
+                    assert.ok(engine.testReceivedSound(operationId))
+
+                    // 3. The stream is closed
+                    engine.fs.closeSoundStream(
+                        operationId,
+                        FS_OPERATION_SUCCESS
+                    )
+                    assert.ok(engine.testOperationCleaned(operationId))
+                    // Test host callback was called
+                    assert.deepStrictEqual(calledClose[0].slice(0, 2), [
+                        operationId,
+                        FS_OPERATION_SUCCESS,
+                    ])
+                    // Test engine callback was called
+                    assert.strictEqual(engine.testOperationId(), operationId)
+                    assert.strictEqual(
+                        engine.testOperationStatus(),
+                        FS_OPERATION_SUCCESS
+                    )
                 }
-
-                const engine = await initializeEngineTest({
-                    target,
-                    testCode,
-                    exports,
-                })
-
-                // 1. Some function in the engine requests a read stream operation.
-                // Request is sent to host via callback
-                const calledOpen: Array<
-                    Parameters<Engine['fs']['onOpenSoundReadStream']>
-                > = []
-                const calledClose: Array<
-                    Parameters<Engine['fs']['onCloseSoundStream']>
-                > = []
-                engine.fs.onOpenSoundReadStream = (...args) =>
-                    calledOpen.push(args)
-                engine.fs.onCloseSoundStream = (...args) =>
-                    calledClose.push(args)
-
-                const operationId = engine.testStartReadStream()
-                assert.deepStrictEqual(calledOpen[0], [
-                    operationId,
-                    '/some/url',
-                    [
-                        3,
-                        48000,
-                        32,
-                        'next',
-                        'l',
-                        '--some 8 --options',
-                    ] as SoundFileInfo,
-                ])
-                assert.strictEqual(
-                    engine.testOperationChannelCount(operationId),
-                    3
-                )
-
-                // 2. Hosts handles the operation. It then calls fs_sendSoundStreamData to send in data.
-                const writtenFrameCount = engine.fs.sendSoundStreamData(
-                    operationId,
-                    [
-                        new Float32Array([-1, -2, -3]),
-                        new Float32Array([4, 5, 6]),
-                        new Float32Array([-7, -8, -9]),
-                    ]
-                )
-                assert.strictEqual(writtenFrameCount, 3)
-                assert.ok(engine.testReceivedSound(operationId))
-
-                // 3. The stream is closed
-                engine.fs.closeSoundStream(operationId, FS_OPERATION_SUCCESS)
-                assert.ok(engine.testOperationCleaned(operationId))
-                // Test host callback was called
-                assert.deepStrictEqual(calledClose[0].slice(0, 2), [
-                    operationId,
-                    FS_OPERATION_SUCCESS,
-                ])
-                // Test engine callback was called
-                assert.strictEqual(engine.testOperationId(), operationId)
-                assert.strictEqual(
-                    engine.testOperationStatus(),
-                    FS_OPERATION_SUCCESS
-                )
-            })
+            )
         })
 
         describe('write sound stream', () => {
-            const sharedTestingCode = `
+            const sharedTestingCode = (FloatArray: string) => `
                 let receivedId: fs_OperationId = -1
                 let receivedStatus: fs_OperationStatus = -1
                 const channelCount: Int = 3
                 const blockSize: Int = 2
-                let counter: Float = 0
+                let counter: Int = 0
                 function testStartWriteStream (): Int {
                     return fs_openSoundWriteStream(
                         '/some/url', 
@@ -692,14 +745,14 @@ describe('Engine', () => {
                         new ${FloatArray}(blockSize),
                         new ${FloatArray}(blockSize),
                     ]
-                    block[0][0] = 10 + blockSize * counter
-                    block[0][1] = 11 + blockSize * counter
+                    block[0][0] = toFloat(10 + blockSize * counter)
+                    block[0][1] = toFloat(11 + blockSize * counter)
 
-                    block[1][0] = 20 + blockSize * counter
-                    block[1][1] = 21 + blockSize * counter
+                    block[1][0] = toFloat(20 + blockSize * counter)
+                    block[1][1] = toFloat(21 + blockSize * counter)
 
-                    block[2][0] = 30 + blockSize * counter
-                    block[2][1] = 31 + blockSize * counter
+                    block[2][0] = toFloat(30 + blockSize * counter)
+                    block[2][1] = toFloat(31 + blockSize * counter)
 
                     counter++
                     fs_sendSoundStreamData(id, block)
@@ -718,93 +771,99 @@ describe('Engine', () => {
                 }
             `
 
-            it.each([
-                { target: 'javascript' as CompilerTarget },
-                { target: 'assemblyscript' as CompilerTarget },
-            ])('should stream data in %s', async ({ target }) => {
-                const testCode: Code = sharedTestingCode
+            it.each(TEST_PARAMETERS)(
+                'should stream data in %s',
+                async ({ target, bitDepth, floatArrayType }) => {
+                    const testCode: Code = sharedTestingCode(
+                        floatArrayType.name
+                    )
 
-                const exports = {
-                    testStartWriteStream: 1,
-                    testOperationId: 1,
-                    testOperationStatus: 1,
-                    testSendSoundStreamData: 1,
-                    testOperationCleaned: 1,
+                    const exports = {
+                        testStartWriteStream: 1,
+                        testOperationId: 1,
+                        testOperationStatus: 1,
+                        testSendSoundStreamData: 1,
+                        testOperationCleaned: 1,
+                    }
+
+                    const engine = await initializeEngineTest({
+                        target,
+                        bitDepth,
+                        testCode,
+                        exports,
+                    })
+
+                    // 1. Some function in the engine requests a write stream operation.
+                    // Request is sent to host via callback
+                    const calledOpen: Array<
+                        Parameters<Engine['fs']['onOpenSoundWriteStream']>
+                    > = []
+                    const calledClose: Array<
+                        Parameters<Engine['fs']['onCloseSoundStream']>
+                    > = []
+                    const calledSoundStreamData: Array<
+                        Parameters<Engine['fs']['onSoundStreamData']>
+                    > = []
+                    engine.fs.onOpenSoundWriteStream = (...args) =>
+                        calledOpen.push(args)
+                    engine.fs.onSoundStreamData = (...args) =>
+                        calledSoundStreamData.push(args)
+                    engine.fs.onCloseSoundStream = (...args) =>
+                        calledClose.push(args)
+
+                    const operationId = engine.testStartWriteStream()
+                    assert.deepStrictEqual(calledOpen[0], [
+                        operationId,
+                        '/some/url',
+                        [3, 44100, 24, 'aiff', 'b', '--bla'] as SoundFileInfo,
+                    ])
+
+                    // 2. Engine starts to send data blocks
+                    engine.testSendSoundStreamData(operationId)
+                    engine.testSendSoundStreamData(operationId)
+                    assert.strictEqual(calledSoundStreamData.length, 2)
+                    assert.deepStrictEqual(calledSoundStreamData, [
+                        [
+                            operationId,
+                            [
+                                new floatArrayType([10, 11]),
+                                new floatArrayType([20, 21]),
+                                new floatArrayType([30, 31]),
+                            ],
+                        ],
+                        [
+                            operationId,
+                            [
+                                new floatArrayType([12, 13]),
+                                new floatArrayType([22, 23]),
+                                new floatArrayType([32, 33]),
+                            ],
+                        ],
+                    ])
+
+                    // 3. The stream is closed
+                    engine.fs.closeSoundStream(
+                        operationId,
+                        FS_OPERATION_SUCCESS
+                    )
+                    assert.ok(engine.testOperationCleaned(operationId))
+                    // Test host callback was called
+                    assert.deepStrictEqual(calledClose[0].slice(0, 2), [
+                        operationId,
+                        FS_OPERATION_SUCCESS,
+                    ])
+                    // Test engine callback was called
+                    assert.strictEqual(engine.testOperationId(), operationId)
+                    assert.strictEqual(
+                        engine.testOperationStatus(),
+                        FS_OPERATION_SUCCESS
+                    )
                 }
-
-                const engine = await initializeEngineTest({
-                    target,
-                    testCode,
-                    exports,
-                })
-
-                // 1. Some function in the engine requests a write stream operation.
-                // Request is sent to host via callback
-                const calledOpen: Array<
-                    Parameters<Engine['fs']['onOpenSoundWriteStream']>
-                > = []
-                const calledClose: Array<
-                    Parameters<Engine['fs']['onCloseSoundStream']>
-                > = []
-                const calledSoundStreamData: Array<
-                    Parameters<Engine['fs']['onSoundStreamData']>
-                > = []
-                engine.fs.onOpenSoundWriteStream = (...args) =>
-                    calledOpen.push(args)
-                engine.fs.onSoundStreamData = (...args) =>
-                    calledSoundStreamData.push(args)
-                engine.fs.onCloseSoundStream = (...args) =>
-                    calledClose.push(args)
-
-                const operationId = engine.testStartWriteStream()
-                assert.deepStrictEqual(calledOpen[0], [
-                    operationId,
-                    '/some/url',
-                    [3, 44100, 24, 'aiff', 'b', '--bla'] as SoundFileInfo,
-                ])
-
-                // 2. Engine starts to send data blocks
-                engine.testSendSoundStreamData(operationId)
-                engine.testSendSoundStreamData(operationId)
-                assert.strictEqual(calledSoundStreamData.length, 2)
-                assert.deepStrictEqual(calledSoundStreamData, [
-                    [
-                        operationId,
-                        [
-                            new floatArrayType([10, 11]),
-                            new floatArrayType([20, 21]),
-                            new floatArrayType([30, 31]),
-                        ],
-                    ],
-                    [
-                        operationId,
-                        [
-                            new floatArrayType([12, 13]),
-                            new floatArrayType([22, 23]),
-                            new floatArrayType([32, 33]),
-                        ],
-                    ],
-                ])
-
-                // 3. The stream is closed
-                engine.fs.closeSoundStream(operationId, FS_OPERATION_SUCCESS)
-                assert.ok(engine.testOperationCleaned(operationId))
-                // Test host callback was called
-                assert.deepStrictEqual(calledClose[0].slice(0, 2), [
-                    operationId,
-                    FS_OPERATION_SUCCESS,
-                ])
-                // Test engine callback was called
-                assert.strictEqual(engine.testOperationId(), operationId)
-                assert.strictEqual(
-                    engine.testOperationStatus(),
-                    FS_OPERATION_SUCCESS
-                )
-            })
+            )
         })
 
         describe('write sound file', () => {
-            const sharedTestingCode = `
+            const sharedTestingCode = (FloatArray: string) => `
                 let receivedId: fs_OperationId = -1
                 let receivedStatus: fs_OperationStatus = -1
                 const sound: FloatArray[] = [
@@ -856,13 +915,12 @@ describe('Engine', () => {
                 }
             `
 
-            it.each([
-                { target: 'javascript' as CompilerTarget },
-                { target: 'assemblyscript' as CompilerTarget },
-            ])(
+            it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
-                async ({ target }) => {
-                    const testCode: Code = sharedTestingCode
+                async ({ target, bitDepth, floatArrayType }) => {
+                    const testCode: Code = sharedTestingCode(
+                        floatArrayType.name
+                    )
 
                     const exports = {
                         testStartWriteFile: 1,
@@ -873,6 +931,7 @@ describe('Engine', () => {
 
                     const engine = await initializeEngineTest({
                         target,
+                        bitDepth,
                         testCode,
                         exports,
                     })
@@ -917,12 +976,9 @@ describe('Engine', () => {
     })
 
     describe('outletListeners', () => {
-        it.each([
-            { target: 'javascript' as CompilerTarget },
-            { target: 'assemblyscript' as CompilerTarget },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should create the specified outlet listeners %s',
-            async ({ target }) => {
+            async ({ target, bitDepth }) => {
                 // We only test that the outlet listeners are created and that calling them works.
                 // We don't need to actually compile any node
                 const graph = makeGraph({
@@ -954,6 +1010,7 @@ describe('Engine', () => {
 
                 const engine = await initializeEngineTest({
                     target,
+                    bitDepth,
                     testCode,
                     compilation: {
                         outletListenerSpecs,
@@ -980,12 +1037,9 @@ describe('Engine', () => {
     })
 
     describe('inletCallers', () => {
-        it.each([
-            { target: 'javascript' as CompilerTarget },
-            // { target: 'assemblyscript' as CompilerTarget },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should create the specified inlet callers %s',
-            async ({ target }) => {
+            async ({ target, bitDepth }) => {
                 const graph = makeGraph({
                     someNode: {
                         type: 'someNodeType',
@@ -1009,14 +1063,14 @@ describe('Engine', () => {
                 }
 
                 const testCode: Code = `
-                    const messageReceived: Message = msg_create([])
+                    let messageReceived: Message = msg_create([])
 
                     function testMessageReceived(): boolean {
                         return msg_getLength(messageReceived) === 2
                             && msg_isFloatToken(messageReceived, 0)
                             && msg_isStringToken(messageReceived, 1)
                             && msg_readFloatToken(messageReceived, 0) === 666
-                            && msg_readStringToken(messageReceived, 1) === '🔥👿🔥'
+                            && msg_readStringToken(messageReceived, 1) === 'n4t4s'
                     }
                 `
 
@@ -1024,6 +1078,7 @@ describe('Engine', () => {
 
                 const engine = await initializeEngineTest({
                     target,
+                    bitDepth,
                     testCode,
                     compilation: {
                         inletCallerSpecs,
@@ -1038,8 +1093,92 @@ describe('Engine', () => {
                 )
 
                 assert.ok(!engine.testMessageReceived())
-                engine.inletCallers.someNode.someInlet([666, '🔥👿🔥'])
+                engine.inletCallers.someNode.someInlet([666, 'n4t4s'])
                 assert.ok(engine.testMessageReceived())
+            }
+        )
+    })
+
+    describe('messages', () => {
+        it.each(TEST_PARAMETERS)(
+            'should send a message through graph with multiple / single connections %s',
+            async ({ target, bitDepth }) => {
+                const graph = makeGraph({
+                    node1: {
+                        type: 'someNodeType',
+                        isMessageSource: true,
+                        inlets: {
+                            '0': { type: 'message', id: '0' },
+                        },
+                        outlets: {
+                            '0': { type: 'message', id: '0' },
+                            '1': { type: 'message', id: '1' },
+                        },
+                        sinks: {
+                            // Outlet 0 connected to 2 different sinks
+                            '0': [
+                                ['node2', '0'],
+                                ['node2', '1'],
+                            ],
+
+                            // Outlet 1 connected to a single sink
+                            '1': [['node2', '0']],
+                        },
+                    },
+                    node2: {
+                        type: 'someNodeType',
+                        inlets: {
+                            '0': { type: 'message', id: '0' },
+                            '1': { type: 'message', id: '1' },
+                        },
+                        outlets: {
+                            '0': { type: 'message', id: '0' },
+                            '1': { type: 'message', id: '1' },
+                        },
+                    },
+                })
+
+                const inletCallerSpecs: InletCallerSpecs = {
+                    node1: ['0'],
+                }
+
+                const outletListenerSpecs: OutletListenerSpecs = {
+                    node2: ['0', '1'],
+                }
+
+                const nodeImplementations: NodeImplementations = {
+                    someNodeType: {
+                        messages: ({ globs, snds }) => ({
+                            '0': `${snds['0']}(${globs.m})`,
+                            '1': `${snds['1']}(${globs.m})`,
+                        }),
+                    },
+                }
+
+                const exports = {}
+
+                const engine = await initializeEngineTest({
+                    target,
+                    bitDepth,
+                    compilation: {
+                        inletCallerSpecs,
+                        outletListenerSpecs,
+                        graph,
+                        nodeImplementations,
+                    },
+                    exports,
+                })
+
+                const calledOutlet0: Array<Message> = []
+                const calledOutlet1: Array<Message> = []
+                engine.outletListeners.node2['0'].onMessage = (m) =>
+                    calledOutlet0.push(m)
+                engine.outletListeners.node2['1'].onMessage = (m) =>
+                    calledOutlet1.push(m)
+
+                engine.inletCallers.node1['0']([123, 'bla', 456])
+                assert.deepStrictEqual(calledOutlet0, [[123, 'bla', 456]])
+                assert.deepStrictEqual(calledOutlet1, [[123, 'bla', 456]])
             }
         )
     })

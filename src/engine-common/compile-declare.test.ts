@@ -23,7 +23,9 @@ describe('compileDeclare', () => {
         let SAMPLE_RATE
     `
 
-    const GLOBAL_VARIABLES_CODE = GLOBAL_VARIABLES_CODE_NO_EVENTS + `
+    const GLOBAL_VARIABLES_CODE =
+        GLOBAL_VARIABLES_CODE_NO_EVENTS +
+        `
         function _events_ArraysChanged () {
         }
     `
@@ -43,9 +45,7 @@ describe('compileDeclare', () => {
 
         assert.strictEqual(
             normalizeCode(declareCode),
-            normalizeCode(
-                GLOBAL_VARIABLES_CODE
-            )
+            normalizeCode(GLOBAL_VARIABLES_CODE)
         )
     })
 
@@ -73,12 +73,12 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             'osc~': {
-                declare: ({node}) =>
+                declare: ({ node }) =>
                     `// [osc~] frequency ${node.args.frequency}`,
                 loop: () => ``,
             },
             'dac~': {
-                declare: ({ compilation: {audioSettings} }) =>
+                declare: ({ compilation: { audioSettings } }) =>
                     `// [dac~] channelCount ${audioSettings.channelCount.out}`,
                 loop: () => ``,
             },
@@ -402,9 +402,7 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             nodeType1: {
-                sharedCode: () => [
-                    `// blockSize`,
-                ],
+                sharedCode: () => [`// blockSize`],
             },
             nodeType2: {
                 sharedCode: () => [
@@ -421,7 +419,11 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [graph.node1, graph.node2, graph.node3])
+        const declareCode = compileDeclare(compilation, [
+            graph.node1,
+            graph.node2,
+            graph.node3,
+        ])
 
         assert.strictEqual(
             normalizeCode(declareCode),

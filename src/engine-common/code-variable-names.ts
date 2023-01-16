@@ -76,12 +76,15 @@ export const generate = (
                     ),
                     state: createNamespace(
                         `${namespaceLabel}.state`,
-                        Object.keys(nodeImplementation.stateVariables).reduce((nameMap, stateVariable) => {
-                            nameMap[stateVariable] = `${prefix}_STATE_${_v(
-                                stateVariable
-                            )}`
-                            return nameMap
-                        }, {} as NodeVariableNames['state'])
+                        Object.keys(nodeImplementation.stateVariables).reduce(
+                            (nameMap, stateVariable) => {
+                                nameMap[stateVariable] = `${prefix}_STATE_${_v(
+                                    stateVariable
+                                )}`
+                                return nameMap
+                            },
+                            {} as NodeVariableNames['state']
+                        )
                     ),
                 }
                 return nodeMap

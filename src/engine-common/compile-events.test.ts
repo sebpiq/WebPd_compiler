@@ -119,13 +119,13 @@ describe('compile-events', () => {
 
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    events: ({node}) => ({
+                    events: ({ node }) => ({
                         configure: `// [osc~] frequency ${node.args.frequency}`,
                     }),
                     loop: () => ``,
                 },
                 'dac~': {
-                    events: ({compilation: {audioSettings} }) => ({
+                    events: ({ compilation: { audioSettings } }) => ({
                         configure: `// [dac~] channelCount ${audioSettings.channelCount.out}`,
                     }),
                     loop: () => ``,

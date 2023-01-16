@@ -15,6 +15,8 @@ import compileToAssemblyscript from './compile-to-assemblyscript'
 import { createAscEngine } from './test-helpers'
 import { AssemblyScriptWasmExports, AssemblyScriptWasmImports } from './types'
 
+const BIT_DEPTH = 32
+
 describe('compileToAssemblyscript', () => {
     it('should have all expected wasm exports when compiled', async () => {
         interface AscRuntimeExports {
@@ -29,7 +31,8 @@ describe('compileToAssemblyscript', () => {
                 makeCompilation({
                     target: 'assemblyscript',
                 })
-            )
+            ),
+            BIT_DEPTH
         )
 
         const expectedExports: AssemblyScriptWasmExports &

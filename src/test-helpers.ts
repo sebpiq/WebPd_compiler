@@ -9,19 +9,20 @@
  *
  */
 
-import { Code, Compilation, CompilerTarget, Engine, FloatArray } from './types'
+import {
+    AudioSettings,
+    Code,
+    Compilation,
+    CompilerTarget,
+    Engine,
+} from './types'
 import * as variableNames from './engine-common/code-variable-names'
 import { getMacros } from './compile'
-import { JavaScriptEngine } from './engine-javascript/types'
 import { compileWasmModule } from './engine-assemblyscript/test-helpers'
 import { createEngine as createAscEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
 import { writeFileSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import {
-    lowerString,
-    readTypedArray,
-} from './engine-assemblyscript/core-code/core-bindings'
 const execPromise = promisify(exec)
 
 export const normalizeCode = (rawCode: string) => {
@@ -32,8 +33,14 @@ export const normalizeCode = (rawCode: string) => {
     return lines.join('\n')
 }
 
-export const round = (v: number, decimals: number = 3) =>
-    Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals)
+export const round = (v: number, decimals: number = 4) => {
+    const rounded =
+        Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals)
+    if (rounded === 0) {
+        return 0
+    }
+    return rounded
+}
 
 export const makeCompilation = (
     compilation: Partial<Compilation>
@@ -80,6 +87,7 @@ export const makeCompilation = (
  */
 export const createEngine = async (
     target: CompilerTarget,
+    bitDepth: AudioSettings['bitDepth'],
     code: Code
 ): Promise<Engine> => {
     if (target === 'javascript') {
@@ -93,7 +101,7 @@ export const createEngine = async (
             throw new Error('ERROR in generated JS code ' + errMessage)
         }
     } else {
-        const wasmBuffer = await compileWasmModule(code)
+        const wasmBuffer = await compileWasmModule(code, bitDepth)
         const engine = await createAscEngine(wasmBuffer)
         return engine as any
     }
