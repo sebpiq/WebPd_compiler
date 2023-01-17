@@ -57,7 +57,7 @@ export const getNodeImplementation = (
 ): Required<NodeImplementation<DspGraph.NodeArguments>> => {
     const nodeImplementation = nodeImplementations[nodeType]
     if (!nodeImplementation) {
-        throw new Error(`node ${nodeType} is not implemented`)
+        throw new Error(`node [${nodeType}] is not implemented`)
     }
     return {
         stateVariables: {},

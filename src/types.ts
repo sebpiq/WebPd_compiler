@@ -168,8 +168,8 @@ export interface Compilation {
 }
 
 export type CodeMacros = {
-    typedVar: (name: CodeVariableName, typeString: Code) => Code
-    typedFuncHeader: (args: Array<Code>, returnType: Code) => Code
+    Var: (name: CodeVariableName, typeString: Code) => Code
+    Func: (args: Array<Code>, returnType: Code) => Code
 }
 
 export interface NodeVariableNames {

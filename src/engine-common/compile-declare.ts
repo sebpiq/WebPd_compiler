@@ -26,16 +26,17 @@ export default (
         outletListenerSpecs,
         inletCallerSpecs,
     } = compilation
+    const { Var, Func } = macros
     const { globs } = codeVariableNames
     const sharedCode: Set<Code> = new Set()
     // prettier-ignore
     return renderCode`
-        let ${macros.typedVar(globs.iterFrame, 'Int')}
-        let ${macros.typedVar(globs.frame, 'Int')}
-        let ${macros.typedVar(globs.blockSize, 'Int')}
-        let ${macros.typedVar(globs.sampleRate, 'Float')}
+        let ${Var(globs.iterFrame, 'Int')}
+        let ${Var(globs.frame, 'Int')}
+        let ${Var(globs.blockSize, 'Int')}
+        let ${Var(globs.sampleRate, 'Float')}
         
-        function _events_ArraysChanged ${macros.typedFuncHeader([], 'void')} {
+        function _events_ArraysChanged ${Func([], 'void')} {
             ${compileEventArraysChanged(compilation, graphTraversal)}
         }
 
@@ -66,11 +67,11 @@ export default (
                 // 1. Declares signal inlets and outlets
                 Object.values(node.inlets)
                     .filter(inlet => inlet.type === 'signal')
-                    .map(inlet => `let ${macros.typedVar(ins[inlet.id], 'Float')} = 0`),
+                    .map(inlet => `let ${Var(ins[inlet.id], 'Float')} = 0`),
                 
                 Object.values(node.outlets)
                     .filter(outlet => outlet.type === 'signal')
-                    .map(outlet => `let ${macros.typedVar(outs[outlet.id], 'Float')} = 0`),
+                    .map(outlet => `let ${Var(outs[outlet.id], 'Float')} = 0`),
 
                 // 2. Declares message receivers for all message inlets.
                 Object.values(node.inlets)
@@ -84,8 +85,8 @@ export default (
                         return true
                     })
                     .map(inlet => `
-                        function ${rcvs[inlet.id]} ${macros.typedFuncHeader([
-                            macros.typedVar(globs.m, 'Message')
+                        function ${rcvs[inlet.id]} ${macros.Func([
+                            Var(globs.m, 'Message')
                         ], 'void')} {
                             ${nodeMessageReceivers[inlet.id]}
                         }
@@ -95,8 +96,8 @@ export default (
                 // Here not possible to assign directly the receiver because otherwise assemblyscript
                 // doesn't export a function but a global instead.
                 nodeInletCallers.map(inletId => 
-                    `function ${codeVariableNames.inletCallers[node.id][inletId]} ${macros.typedFuncHeader([
-                        macros.typedVar('m', 'Message')
+                    `function ${codeVariableNames.inletCallers[node.id][inletId]} ${macros.Func([
+                        Var('m', 'Message')
                     ], 'void')} {${rcvs[inletId]}(m)}`
                 ),
 
@@ -129,8 +130,8 @@ export default (
                         // all the sinks when called.
                         } else {
                             return renderCode`
-                                function ${snds[outlet.id]} ${macros.typedFuncHeader([
-                                    macros.typedVar('m', 'Message')
+                                function ${snds[outlet.id]} ${macros.Func([
+                                    Var('m', 'Message')
                                 ], 'void')} {
                                     ${hasOutletListener ? 
                                         `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : ''}

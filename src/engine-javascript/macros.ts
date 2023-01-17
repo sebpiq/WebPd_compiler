@@ -11,13 +11,13 @@
 
 import { Code, CodeMacros, CodeVariableName } from '../types'
 
-const typedVar = (name: CodeVariableName) => `${name}`
+const Var = (name: CodeVariableName) => `${name}`
 
-const typedFuncHeader = (args: Array<Code>) => `(${args.join(', ')})`
+const Func = (args: Array<Code>) => `(${args.join(', ')})`
 
 const macros: CodeMacros = {
-    typedVar,
-    typedFuncHeader,
+    Var,
+    Func,
 }
 
 export default macros

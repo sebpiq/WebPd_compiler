@@ -139,10 +139,8 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     )
                     .map(
                         (outletId) =>
-                            `let ${macros.typedVar(
-                                state[`VALUE_${outletId}`],
-                                'Float'
-                            )}`
+                            // prettier-ignore
+                            `let ${macros.Var(state[`VALUE_${outletId}`], 'Float')}`
                     )
                     .join('\n'),
 
@@ -434,12 +432,9 @@ const roundFloatsInFrames = (frames: Array<FrameOut>) =>
         const roundedFrame: FrameOut = { ...frame }
         Object.entries(frame.outs).forEach(([portletId, arrayOrSignal]) => {
             if (Array.isArray(arrayOrSignal)) {
-                roundedFrame.outs[portletId] = arrayOrSignal.map((value) => {
-                    if (typeof value === 'number') {
-                        return round(value, roundDecimal) as any
-                    }
-                    return value
-                })
+                roundedFrame.outs[portletId] = arrayOrSignal.map((message) =>
+                    message.map(value => typeof value === 'number' ? round(value, roundDecimal): value)
+                )
             } else if (typeof arrayOrSignal === 'number') {
                 roundedFrame.outs[portletId] = round(
                     arrayOrSignal,
