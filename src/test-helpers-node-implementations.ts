@@ -423,29 +423,30 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
         inputFrames
     )
     assert.deepStrictEqual(
-        roundFloatsInFrames(actualOutputFrames),
-        roundFloatsInFrames(expectedOutputFrames)
+        roundNestedFloats(actualOutputFrames),
+        roundNestedFloats(expectedOutputFrames)
     )
 }
 
-const roundFloatsInFrames = (frames: Array<FrameOut>) =>
-    frames.map((frame) => {
-        const roundDecimal = 4
-        const roundedFrame: FrameOut = { ...frame }
-        Object.entries(frame.outs).forEach(([portletId, arrayOrSignal]) => {
-            if (Array.isArray(arrayOrSignal)) {
-                roundedFrame.outs[portletId] = arrayOrSignal.map((message) =>
-                    message.map(value => typeof value === 'number' ? round(value, roundDecimal): value)
-                )
-            } else if (typeof arrayOrSignal === 'number') {
-                roundedFrame.outs[portletId] = round(
-                    arrayOrSignal,
-                    roundDecimal
-                )
-            }
-        })
-        return roundedFrame
-    })
+/**
+ * Helper to round test results even nested in complex objects / arrays.
+ */
+const roundNestedFloats = <T>(obj: T): T => {
+    const roundDecimal = 4
+    if (typeof obj === 'number') {
+        return round(obj, roundDecimal) as unknown as T
+
+    } else if (Array.isArray(obj) || obj instanceof Float32Array || obj instanceof Float64Array) {
+        return obj.map(roundNestedFloats) as unknown as T
+
+    } else if (typeof obj === 'object') {
+        Object.entries(obj).map(([name, value]) => (obj as any)[name] = roundNestedFloats(value))
+        return obj
+
+    } else {
+        return obj
+    }
+}
 
 export const buildEngineBlock = (
     constructor: typeof Float32Array | typeof Float64Array,

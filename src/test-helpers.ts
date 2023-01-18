@@ -34,8 +34,13 @@ export const normalizeCode = (rawCode: string) => {
 }
 
 export const round = (v: number, decimals: number = 4) => {
+    // Useful to round big numbers in scientific notation, e.g. 3.282417323806467e+38
+    if (v > 1000000) {
+        return +v.toPrecision(decimals)
+    }
     const rounded =
         Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals)
+    // Useful to normalise -0 / 0 which compare as different.
     if (rounded === 0) {
         return 0
     }
