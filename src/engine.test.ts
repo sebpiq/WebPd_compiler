@@ -321,7 +321,7 @@ describe('Engine', () => {
 
                 const nodeImplementations = {
                     DUMMY: {
-                        messages: () => ({ blo: '' }),
+                        messages: () => ({ blo: 'return' }),
                     },
                 }
 
@@ -1057,7 +1057,7 @@ describe('Engine', () => {
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
                         messages: ({ globs }) => ({
-                            someInlet: `messageReceived = ${globs.m}`,
+                            someInlet: `messageReceived = ${globs.m};return`,
                         }),
                     },
                 }
@@ -1149,8 +1149,8 @@ describe('Engine', () => {
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
                         messages: ({ globs, snds }) => ({
-                            '0': `${snds['0']}(${globs.m})`,
-                            '1': `${snds['1']}(${globs.m})`,
+                            '0': `${snds['0']}(${globs.m});return`,
+                            '1': `${snds['1']}(${globs.m});return`,
                         }),
                     },
                 }
@@ -1179,6 +1179,50 @@ describe('Engine', () => {
                 engine.inletCallers.node1['0']([123, 'bla', 456])
                 assert.deepStrictEqual(calledOutlet0, [[123, 'bla', 456]])
                 assert.deepStrictEqual(calledOutlet1, [[123, 'bla', 456]])
+            }
+        )
+
+        it.each(TEST_PARAMETERS)(
+            'should thrown an error for unsupported message %s',
+            async ({ target, bitDepth }) => {
+                const graph = makeGraph({
+                    someNode: {
+                        type: 'someNodeType',
+                        isMessageSource: true,
+                        inlets: {
+                            'someInlet': { type: 'message', id: 'someInlet' },
+                        },
+                    },
+                })
+
+                const inletCallerSpecs: InletCallerSpecs = {
+                    someNode: ['someInlet'],
+                }
+
+                const nodeImplementations: NodeImplementations = {
+                    someNodeType: {
+                        messages: () => ({
+                            // No return so an error will be thrown
+                            'someInlet': ``,
+                        }),
+                    },
+                }
+
+                const exports = {}
+
+                const engine = await initializeEngineTest({
+                    target,
+                    bitDepth,
+                    compilation: {
+                        inletCallerSpecs,
+                        graph,
+                        nodeImplementations,
+                    },
+                    exports,
+                })
+
+                await expect(() => engine.inletCallers.someNode.someInlet([123, 'bla']))
+                    .toThrow(/\[someNodeType\], id "someNode", inlet "someInlet", unsupported message : \[123(.0)*, "bla"\]( at [0-9]+:[0-9]+)?/)
             }
         )
     })

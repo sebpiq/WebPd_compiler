@@ -11,6 +11,7 @@
 
 import assert from 'assert'
 import { AudioSettings } from '../../types'
+import { liftString } from './core-bindings'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     liftMessage,
@@ -369,6 +370,39 @@ describe('msg-bindings', () => {
             assert.ok(wasmExports.testMatch4())
             assert.ok(!wasmExports.testNotMatching1())
             assert.ok(!wasmExports.testNotMatching2())
+        })
+    })
+
+    describe('msg_display', () => {
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
+            { bitDepth: 32 },
+            { bitDepth: 64 },
+        ])('should return a display version of a message %s', async ({ bitDepth }) => {
+            // prettier-ignore
+            const code = getBaseTestCode({bitDepth}) + `
+                export function testDisplay(): string {
+                    const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
+                    msg_writeFloatToken(m, 0, -123)
+                    msg_writeStringToken(m, 1, 'bla')
+                    return msg_display(m)
+                }
+            `
+
+            const exports = {
+                ...baseExports,
+                testDisplay: 1,
+            }
+
+            const { wasmExports } = await initializeCoreCodeTest({
+                code,
+                bitDepth,
+                exports,
+            })
+
+            assert.strictEqual(
+                liftString(wasmExports, wasmExports.testDisplay()),
+                '[-123.0, "bla"]'
+            )
         })
     })
 })

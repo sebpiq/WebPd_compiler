@@ -55,6 +55,7 @@ describe('test-helpers-node-implementations', () => {
                                 msg_readFloatToken(${globs.m}, 0) + 0.1
                             ])
                         )
+                        return
                     `,
                 }),
             }
@@ -88,6 +89,7 @@ describe('test-helpers-node-implementations', () => {
                         ${snds.$0}(
                             msg_floats([toFloat(${globs.frame})])
                         )
+                        return
                     `,
                 }),
             }
@@ -126,6 +128,7 @@ describe('test-helpers-node-implementations', () => {
                             endianness: 'l',
                             extraOptions: 'bli',
                         }, () => {})
+                        return
                     `,
                 }),
             }
@@ -166,6 +169,7 @@ describe('test-helpers-node-implementations', () => {
                 messages: () => ({
                     '0': `
                         tarray_get('array1')[0] = 666
+                        return
                     `,
                 }),
             }

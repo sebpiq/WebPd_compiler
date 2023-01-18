@@ -25,6 +25,7 @@ export default (
         nodeImplementations,
         outletListenerSpecs,
         inletCallerSpecs,
+        debug,
     } = compilation
     const { Var, Func } = macros
     const { globs } = codeVariableNames
@@ -84,11 +85,14 @@ export default (
                         }
                         return true
                     })
+                    // prettier-ignore
                     .map(inlet => `
                         function ${rcvs[inlet.id]} ${macros.Func([
                             Var(globs.m, 'Message')
                         ], 'void')} {
                             ${nodeMessageReceivers[inlet.id]}
+                            throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${globs.m})${
+                                debug ? "+ '\nDEBUG : remember, you must return from message receiver'": ''})
                         }
                     `),
                 

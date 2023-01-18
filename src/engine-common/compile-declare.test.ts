@@ -147,6 +147,7 @@ describe('compileDeclare', () => {
                 let add_INS_1 = 0
                 function add_RCVS_0 (m) {
                     // [+] message receiver
+                    throw new Error('[+], id "add", inlet "0", unsupported message : ' + msg_display(m))
                 }
             `)
         )
@@ -186,6 +187,7 @@ describe('compileDeclare', () => {
                 
                 function add_RCVS_0 (m) {
                     // [+] message receiver
+                    throw new Error('[+], id "add", inlet "0", unsupported message : ' + msg_display(m))
                 }
                 function inletCaller_add_0 (m) {add_RCVS_0(m)}
             `)
@@ -306,10 +308,12 @@ describe('compileDeclare', () => {
 
                 function aFloat_RCVS_0 (m) {
                     // [float] message receiver
+                    throw new Error('[float], id "aFloat", inlet "0", unsupported message : ' + msg_display(m))
                 }
 
                 function anotherFloat_RCVS_0 (m) {
                     // [float] message receiver
+                    throw new Error('[float], id "anotherFloat", inlet "0", unsupported message : ' + msg_display(m))
                 }
 
                 function twenty_SNDS_0 (m) {
@@ -374,6 +378,7 @@ describe('compileDeclare', () => {
 
                 function aFloat_RCVS_0 (m) {
                     // [float] message receiver
+                    throw new Error('[float], id "aFloat", inlet "0", unsupported message : ' + msg_display(m))
                 }
 
                 function add_SNDS_0 (m) {

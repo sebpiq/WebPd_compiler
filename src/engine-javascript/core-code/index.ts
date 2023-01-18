@@ -29,6 +29,9 @@ const msg_readFloatToken = ( m, i ) => m[i]
 const msg_readStringToken = msg_readFloatToken
 const msg_bang = () => ['bang']
 const msg_floats = (v) => v
+const msg_display = (m) => '[' + m
+    .map(t => typeof t === 'string' ? '"' + t + '"' : t.toString())
+    .join(', ') + ']'
 `
 
 export default (codeVariableNames: CodeVariableNames) => {

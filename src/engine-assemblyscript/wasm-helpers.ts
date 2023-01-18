@@ -21,18 +21,18 @@ export const instantiateWasmModule = async (
         env: {
             abort: (
                 messagePointer: StringPointer,
-                fileNamePointer: StringPointer,
+                // filename, not useful because we compile everything to a single string
+                _: StringPointer,
                 lineNumber: number,
                 columnNumber: number
             ) => {
-                const message = liftString(wasmExports, messagePointer >>> 0)
-                const fileName = liftString(wasmExports, fileNamePointer >>> 0)
-                lineNumber = lineNumber >>> 0
-                columnNumber = columnNumber >>> 0
+                const message = liftString(wasmExports, messagePointer)
+                lineNumber = lineNumber
+                columnNumber = columnNumber
                 ;(() => {
                     // @external.js
                     throw Error(
-                        `${message} in ${fileName}:${lineNumber}:${columnNumber}`
+                        `${message} at ${lineNumber}:${columnNumber}`
                     )
                 })()
             },

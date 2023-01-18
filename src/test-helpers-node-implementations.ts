@@ -154,13 +154,15 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                         if (
                             fakeSourceNode.outlets[outletId].type === 'message'
                         ) {
-                            code = `${snds[outletId]}(${globs.m})`
+                            code = `${snds[outletId]}(${globs.m});return`
 
                             // Messages received for signal outlets are written to the loop
                         } else {
                             code = `${
                                 state[`VALUE_${outletId}`]
-                            } = msg_readFloatToken(${globs.m}, 0)`
+                            } = msg_readFloatToken(${globs.m}, 0)
+                            return
+                            `
                         }
 
                         return {
@@ -219,7 +221,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     .reduce(
                         (messageMap, inletId) => ({
                             ...messageMap,
-                            [inletId]: `${snds[inletId]}(${globs.m})`,
+                            [inletId]: `${snds[inletId]}(${globs.m});return`,
                         }),
                         {} as { [inletId: DspGraph.PortletId]: Code }
                     ),
@@ -428,7 +430,7 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
 
 const roundFloatsInFrames = (frames: Array<FrameOut>) =>
     frames.map((frame) => {
-        const roundDecimal = 5
+        const roundDecimal = 4
         const roundedFrame: FrameOut = { ...frame }
         Object.entries(frame.outs).forEach(([portletId, arrayOrSignal]) => {
             if (Array.isArray(arrayOrSignal)) {
