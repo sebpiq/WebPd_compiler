@@ -13,7 +13,7 @@ import { Code, Compilation } from '../types'
 import { core_WasmExports } from './core-code/core-bindings'
 import { fs_WasmExports, fs_WasmImports } from './core-code/fs-bindings'
 import { msg_WasmExports } from './core-code/msg-bindings'
-import { tarray_WasmExports } from './core-code/tarray-bindings'
+import { farray_WasmExports } from './core-code/farray-bindings'
 
 /**
  * AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
@@ -46,7 +46,7 @@ export type ArrayBufferOfIntegersPointer = number
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
-export type AssemblyScriptWasmExports = tarray_WasmExports &
+export type AssemblyScriptWasmExports = farray_WasmExports &
     core_WasmExports &
     msg_WasmExports &
     fs_WasmExports & {

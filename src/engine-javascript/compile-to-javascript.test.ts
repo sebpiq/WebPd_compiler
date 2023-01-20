@@ -40,7 +40,7 @@ describe('compileToJavascript', () => {
             onCloseSoundStream: () => undefined,
         }
 
-        const modelTarray: JavaScriptEngine['tarray'] = {
+        const modelTarray: JavaScriptEngine['farray'] = {
             get: () => undefined,
             set: () => undefined,
         }
@@ -61,7 +61,7 @@ describe('compileToJavascript', () => {
             },
             configure: (_: number) => {},
             loop: () => new Float32Array(),
-            tarray: modelTarray,
+            farray: modelTarray,
             fs: modelFs,
             inletCallers: {},
             outletListeners: {},
@@ -72,7 +72,7 @@ describe('compileToJavascript', () => {
             Object.keys(modelEngine).sort()
         )
         assert.deepStrictEqual(
-            Object.keys(engine.tarray).sort(),
+            Object.keys(engine.farray).sort(),
             Object.keys(modelTarray).sort()
         )
         assert.deepStrictEqual(

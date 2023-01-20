@@ -44,14 +44,14 @@ type Frame = {
     }
 }
 type FrameIn = Frame & {
-    tarray?: {
+    farray?: {
         get?: Array<string>
         set?: { [arrayName: string]: Array<number> }
     }
     ins?: { [portletId: string]: Array<Message> | Signal }
 }
 export type FrameOut = Frame & {
-    tarray?: {
+    farray?: {
         get?: { [arrayName: string]: Array<number> }
     }
     outs: { [portletId: string]: Array<Message> | Signal }
@@ -258,7 +258,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
-            engine.tarray.set(arrayName, data)
+            engine.farray.set(arrayName, data)
         })
     }
 
@@ -301,7 +301,10 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         })
 
         // Set up listeners for fs
-        const _fsCallback = (funcName: keyof typeof outputFrame.fs, args: any) => {
+        const _fsCallback = (
+            funcName: keyof typeof outputFrame.fs,
+            args: any
+        ) => {
             outputFrame.fs = outputFrame.fs || {}
             outputFrame.sequence.push(funcName)
             outputFrame.fs[funcName] = args
@@ -355,20 +358,20 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         }
 
         // Get requested arrays
-        if (inputFrame.tarray) {
-            if (inputFrame.tarray.get) {
-                outputFrame.tarray = {}
-                outputFrame.tarray.get = {}
-                inputFrame.tarray.get.forEach((arrayName) => {
-                    outputFrame.tarray.get[arrayName] = Array.from(
-                        engine.tarray.get(arrayName)
+        if (inputFrame.farray) {
+            if (inputFrame.farray.get) {
+                outputFrame.farray = {}
+                outputFrame.farray.get = {}
+                inputFrame.farray.get.forEach((arrayName) => {
+                    outputFrame.farray.get[arrayName] = Array.from(
+                        engine.farray.get(arrayName)
                     )
                 })
             }
-            if (inputFrame.tarray.set) {
-                Object.entries(inputFrame.tarray.set).forEach(
+            if (inputFrame.farray.set) {
+                Object.entries(inputFrame.farray.set).forEach(
                     ([arrayName, array]) => {
-                        engine.tarray.set(arrayName, array)
+                        engine.farray.set(arrayName, array)
                     }
                 )
             }
@@ -418,7 +421,9 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
     ...frames: Array<[FrameIn, FrameOut]>
 ): Promise<void> => {
     const inputFrames: Array<FrameIn> = frames.map(([frameIn]) => frameIn)
-    const expectedOutputFrames: Array<FrameOut> = frames.map(([_, frameOut]) => frameOut)
+    const expectedOutputFrames: Array<FrameOut> = frames.map(
+        ([_, frameOut]) => frameOut
+    )
     let actualOutputFrames: Array<FrameOut> = await generateFramesForNode(
         nodeTestSettings,
         inputFrames
@@ -430,10 +435,10 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
             delete actualOutputFrame.sequence
         }
     })
-    
+
     assert.deepStrictEqual(
         roundNestedFloats(actualOutputFrames),
-        roundNestedFloats(expectedOutputFrames),
+        roundNestedFloats(expectedOutputFrames)
     )
 }
 
@@ -444,14 +449,17 @@ const roundNestedFloats = <T>(obj: T): T => {
     const roundDecimal = 4
     if (typeof obj === 'number') {
         return round(obj, roundDecimal) as unknown as T
-
-    } else if (Array.isArray(obj) || obj instanceof Float32Array || obj instanceof Float64Array) {
+    } else if (
+        Array.isArray(obj) ||
+        obj instanceof Float32Array ||
+        obj instanceof Float64Array
+    ) {
         return obj.map(roundNestedFloats) as unknown as T
-
     } else if (typeof obj === 'object') {
-        Object.entries(obj).map(([name, value]) => (obj as any)[name] = roundNestedFloats(value))
+        Object.entries(obj).map(
+            ([name, value]) => ((obj as any)[name] = roundNestedFloats(value))
+        )
         return obj
-
     } else {
         return obj
     }

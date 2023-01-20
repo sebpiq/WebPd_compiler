@@ -60,9 +60,9 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             loop: (${globs.input}, ${globs.output}) => {
                 ${compileLoop(compilation, graphTraversal)}
             },
-            tarray: {
-                get: tarray_get,
-                set: (arrayName, array) => tarray_set(arrayName, new ${FloatArray}(array)),
+            farray: {
+                get: farray_get,
+                set: (arrayName, array) => farray_set(arrayName, new ${FloatArray}(array)),
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>

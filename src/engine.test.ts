@@ -374,7 +374,7 @@ describe('Engine', () => {
         )
     })
 
-    describe('tarray', () => {
+    describe('farray', () => {
         describe('get', () => {
             it.each(TEST_PARAMETERS)(
                 'should set the array %s',
@@ -385,7 +385,7 @@ describe('Engine', () => {
                     array[1] = 456
                     array[2] = 789
                     array[3] = 234
-                    _tarray_ARRAYS.set('array1', array)
+                    _farray_ARRAYS.set('array1', array)
                 `
 
                     const exports = {}
@@ -398,7 +398,7 @@ describe('Engine', () => {
                     })
 
                     assert.deepStrictEqual(
-                        engine.tarray.get('array1'),
+                        engine.farray.get('array1'),
                         new floatArrayType([123, 456, 789, 234])
                     )
                 }
@@ -411,16 +411,16 @@ describe('Engine', () => {
                 async ({ target, bitDepth }) => {
                     const testCode: Code = `
                     function testReadArray1 (index: Int): Float {
-                        return _tarray_ARRAYS.get('array1')[index]
+                        return _farray_ARRAYS.get('array1')[index]
                     }
                     function testReadArray2 (index: Int): Float {
-                        return _tarray_ARRAYS.get('array2')[index]
+                        return _farray_ARRAYS.get('array2')[index]
                     }
                     function testReadArray3 (index: Int): Float {
-                        return _tarray_ARRAYS.get('array3')[index]
+                        return _farray_ARRAYS.get('array3')[index]
                     }
                     function testIsFloatArray (index: Int): void {
-                        return _tarray_ARRAYS.get('array3').set([111, 222])
+                        return _farray_ARRAYS.get('array3').set([111, 222])
                     }
                 `
 
@@ -438,12 +438,12 @@ describe('Engine', () => {
                         exports,
                     })
 
-                    engine.tarray.set(
+                    engine.farray.set(
                         'array1',
                         new Float32Array([11.1, 22.2, 33.3])
                     )
-                    engine.tarray.set('array2', new Float64Array([44.4, 55.5]))
-                    engine.tarray.set('array3', [66.6, 77.7])
+                    engine.farray.set('array2', new Float64Array([44.4, 55.5]))
+                    engine.farray.set('array3', [66.6, 77.7])
 
                     let actual: number
                     actual = engine.testReadArray1(1)
@@ -1190,7 +1190,7 @@ describe('Engine', () => {
                         type: 'someNodeType',
                         isMessageSource: true,
                         inlets: {
-                            'someInlet': { type: 'message', id: 'someInlet' },
+                            someInlet: { type: 'message', id: 'someInlet' },
                         },
                     },
                 })
@@ -1203,7 +1203,7 @@ describe('Engine', () => {
                     someNodeType: {
                         messages: () => ({
                             // No return so an error will be thrown
-                            'someInlet': ``,
+                            someInlet: ``,
                         }),
                     },
                 }
@@ -1221,8 +1221,11 @@ describe('Engine', () => {
                     exports,
                 })
 
-                await expect(() => engine.inletCallers.someNode.someInlet([123, 'bla']))
-                    .toThrow(/\[someNodeType\], id "someNode", inlet "someInlet", unsupported message : \[123(.0)*, "bla"\]( at [0-9]+:[0-9]+)?/)
+                await expect(() =>
+                    engine.inletCallers.someNode.someInlet([123, 'bla'])
+                ).toThrow(
+                    /\[someNodeType\], id "someNode", inlet "someInlet", unsupported message : \[123(.0)*, "bla"\]( at [0-9]+:[0-9]+)?/
+                )
             }
         )
     })

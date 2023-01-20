@@ -168,7 +168,7 @@ describe('test-helpers-node-implementations', () => {
             const nodeImplementation: NodeImplementation<{}> = {
                 messages: () => ({
                     '0': `
-                        tarray_get('array1')[0] = 666
+                        farray_get('array1')[0] = 666
                         return
                     `,
                 }),
@@ -191,8 +191,8 @@ describe('test-helpers-node-implementations', () => {
                 },
                 [{ ins: { '0': [['bang']] } }, { outs: {} }],
                 [
-                    { tarray: { get: ['array1'] } },
-                    { outs: {}, tarray: { get: { array1: [666] } } },
+                    { farray: { get: ['array1'] } },
+                    { outs: {}, farray: { get: { array1: [666] } } },
                 ]
             )
         })

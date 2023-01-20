@@ -15,7 +15,6 @@ import { liftString } from './core-bindings'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
     liftMessage,
-    lowerArrayBufferOfIntegers,
     lowerMessage,
 } from './msg-bindings'
 import {
@@ -54,6 +53,7 @@ describe('msg-bindings', () => {
 
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
         getAscCode('core.asc', audioSettings) +
+        getAscCode('farray.asc', audioSettings) +
         getAscCode('msg.asc', audioSettings) +
         replacePlaceholdersForTesting(
             `
@@ -62,8 +62,14 @@ describe('msg-bindings', () => {
                 }
 
                 export {
+                    x_farray_createListOfArrays as farray_createListOfArrays,
+                    x_farray_pushToListOfArrays as farray_pushToListOfArrays,
+                    x_farray_getListOfArraysLength as farray_getListOfArraysLength,
+                    x_farray_getListOfArraysElem as farray_getListOfArraysElem,
+                    farray_create,
                     x_msg_create as msg_create,
                     x_msg_getTokenTypes as msg_getTokenTypes,
+                    x_msg_createTemplate as msg_createTemplate,
                     msg_writeStringToken,
                     msg_writeFloatToken,
                     msg_readStringToken,
@@ -74,54 +80,6 @@ describe('msg-bindings', () => {
             `,
             audioSettings
         )
-
-    describe('lowerArrayBufferOfIntegers', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
-            'should correctly lower the given array to an ArrayBuffer of integers %s',
-            async ({ bitDepth }) => {
-                // prettier-ignore
-                const code = getBaseTestCode({ bitDepth }) + `
-                export function testReadArrayBufferOfIntegers(buffer: ArrayBuffer, index: Int): Int {
-                    const dataView = new DataView(buffer)
-                    return dataView.getInt32(index * sizeof<Int>())
-                }
-            `
-
-                const exports = {
-                    ...baseExports,
-                    testReadArrayBufferOfIntegers: 1,
-                }
-
-                const { wasmExports } = await initializeCoreCodeTest({
-                    code,
-                    bitDepth,
-                    exports,
-                })
-
-                const bufferPointer = lowerArrayBufferOfIntegers(
-                    wasmExports,
-                    [1, 22, 333, 4444]
-                )
-
-                assert.strictEqual(
-                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 0),
-                    1
-                )
-                assert.strictEqual(
-                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 1),
-                    22
-                )
-                assert.strictEqual(
-                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 2),
-                    333
-                )
-                assert.strictEqual(
-                    wasmExports.testReadArrayBufferOfIntegers(bufferPointer, 3),
-                    4444
-                )
-            }
-        )
-    })
 
     describe('lowerMessage', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(

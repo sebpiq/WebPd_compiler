@@ -6,9 +6,9 @@ import { TypedArrayPointer } from '../types'
 import { liftString, readTypedArray } from './core-bindings'
 import { liftMessage } from './msg-bindings'
 import {
-    lowerListOfTypedArrays,
-    readListOfTypedArrays,
-} from './tarray-bindings'
+    lowerListOfFloatArrays,
+    readListOfFloatArrays,
+} from './farray-bindings'
 import {
     getAscCode,
     initializeCoreCodeTest,
@@ -27,7 +27,7 @@ describe('fs-bindings', () => {
 
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
         getAscCode('core.asc', audioSettings) +
-        getAscCode('tarray.asc', audioSettings) +
+        getAscCode('farray.asc', audioSettings) +
         getAscCode('msg.asc', audioSettings) +
         getAscCode('fs.asc', audioSettings) +
         replacePlaceholdersForTesting(
@@ -84,6 +84,7 @@ describe('fs-bindings', () => {
                     // MSG EXPORTS
                     x_msg_create as msg_create,
                     x_msg_getTokenTypes as msg_getTokenTypes,
+                    x_msg_createTemplate as msg_createTemplate,
                     msg_writeStringToken,
                     msg_writeFloatToken,
                     msg_readStringToken,
@@ -91,12 +92,12 @@ describe('fs-bindings', () => {
                     MSG_FLOAT_TOKEN,
                     MSG_STRING_TOKEN,
         
-                    // TARRAY EXPORTS
-                    x_tarray_createListOfArrays as tarray_createListOfArrays,
-                    x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
-                    x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
-                    x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
-                    tarray_create,
+                    // FARRAY EXPORTS
+                    x_farray_createListOfArrays as farray_createListOfArrays,
+                    x_farray_pushToListOfArrays as farray_pushToListOfArrays,
+                    x_farray_getListOfArraysLength as farray_getListOfArraysLength,
+                    x_farray_getListOfArraysElem as farray_getListOfArraysElem,
+                    farray_create,
                 }
             `,
             audioSettings
@@ -247,7 +248,7 @@ describe('fs-bindings', () => {
                     assert.strictEqual(wasmExports.testCallbackOperationId(), 0)
 
                     // 2. Operation is done, call fs_sendReadSoundFileResponse
-                    const soundPointer = lowerListOfTypedArrays(
+                    const soundPointer = lowerListOfFloatArrays(
                         wasmExports,
                         bitDepth,
                         [
@@ -268,7 +269,7 @@ describe('fs-bindings', () => {
                         wasmExports.testCallbackOperationId(),
                         operationId
                     )
-                    const sound = readListOfTypedArrays(
+                    const sound = readListOfFloatArrays(
                         wasmExports,
                         bitDepth,
                         wasmExports.testCallbackOperationSound()
@@ -661,7 +662,7 @@ describe('fs-bindings', () => {
                 // 2. Send in some sound
                 availableFrameCount = wasmExports.fs_onSoundStreamData(
                     operationId,
-                    lowerListOfTypedArrays(wasmExports, bitDepth, [
+                    lowerListOfFloatArrays(wasmExports, bitDepth, [
                         new floatArrayType([-0.1, -0.2, -0.3]),
                         new floatArrayType([0.1, 0.2, 0.3]),
                     ])
@@ -671,7 +672,7 @@ describe('fs-bindings', () => {
                 // 3. Send in more sound
                 availableFrameCount = wasmExports.fs_onSoundStreamData(
                     operationId,
-                    lowerListOfTypedArrays(wasmExports, bitDepth, [
+                    lowerListOfFloatArrays(wasmExports, bitDepth, [
                         new floatArrayType([0.4, 0.5, 0.6]),
                         new floatArrayType([-0.4, -0.5, -0.6]),
                     ])
@@ -681,7 +682,7 @@ describe('fs-bindings', () => {
                 // 4. Send in more sound than the buffer can hold
                 availableFrameCount = wasmExports.fs_onSoundStreamData(
                     operationId,
-                    lowerListOfTypedArrays(wasmExports, bitDepth, [
+                    lowerListOfFloatArrays(wasmExports, bitDepth, [
                         new floatArrayType([0.7, 0.8, 0.9]),
                         new floatArrayType([-0.7, -0.8, -0.9]),
                     ])
@@ -743,7 +744,7 @@ describe('fs-bindings', () => {
                     // 2. Send in some sound
                     wasmExports.fs_onSoundStreamData(
                         operationId,
-                        lowerListOfTypedArrays(wasmExports, bitDepth, [
+                        lowerListOfFloatArrays(wasmExports, bitDepth, [
                             new floatArrayType([-0.1, -0.2, -0.3]),
                             new floatArrayType([0.1, 0.2, 0.3]),
                         ])
@@ -910,7 +911,7 @@ describe('fs-bindings', () => {
                 assert.deepStrictEqual(
                     [
                         receivedCalls[0][0],
-                        readListOfTypedArrays(
+                        readListOfFloatArrays(
                             wasmExports,
                             bitDepth,
                             receivedCalls[0][1]
@@ -929,7 +930,7 @@ describe('fs-bindings', () => {
                 assert.deepStrictEqual(
                     [
                         receivedCalls[1][0],
-                        readListOfTypedArrays(
+                        readListOfFloatArrays(
                             wasmExports,
                             bitDepth,
                             receivedCalls[1][1]
@@ -1101,7 +1102,7 @@ describe('fs-bindings', () => {
                 assert.deepStrictEqual(
                     [
                         writeCalled[0][0],
-                        readListOfTypedArrays(
+                        readListOfFloatArrays(
                             wasmExports,
                             bitDepth,
                             writeCalled[0][1]

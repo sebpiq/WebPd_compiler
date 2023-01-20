@@ -130,13 +130,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const FS_ASC = readFileSync(
         './src/engine-assemblyscript/core-code/fs.asc'
     ).toString('utf8')
-    const TARRAY_ASC = readFileSync(
-        './src/engine-assemblyscript/core-code/tarray.asc'
+    const FARRAY_ASC = readFileSync(
+        './src/engine-assemblyscript/core-code/farray.asc'
     ).toString('utf8')
 
     for (let [filepath, ascCode] of [
         ['./src/engine-javascript/core-code/fs.generated.js.txt', FS_ASC],
-        ['./src/engine-javascript/core-code/tarray.generated.js.txt', TARRAY_ASC],
+        ['./src/engine-javascript/core-code/farray.generated.js.txt', FARRAY_ASC],
     ]) {
         const [ascStrings, ascVariables] = splitAscCode(ascCode)
         const [jsStrings, jsVariablesIndexes] = transpileAscStrings(

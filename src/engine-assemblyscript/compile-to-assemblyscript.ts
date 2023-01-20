@@ -89,6 +89,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             // MSG EXPORTS
             x_msg_create as msg_create,
             x_msg_getTokenTypes as msg_getTokenTypes,
+            x_msg_createTemplate as msg_createTemplate,
             msg_writeStringToken,
             msg_writeFloatToken,
             msg_readStringToken,
@@ -96,14 +97,14 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             MSG_FLOAT_TOKEN,
             MSG_STRING_TOKEN,
 
-            // TARRAY EXPORTS
-            x_tarray_createListOfArrays as tarray_createListOfArrays,
-            x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
-            x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
-            x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
-            tarray_set,
-            tarray_get, 
-            tarray_create,
+            // FARRAY EXPORTS
+            x_farray_createListOfArrays as farray_createListOfArrays,
+            x_farray_pushToListOfArrays as farray_pushToListOfArrays,
+            x_farray_getListOfArraysLength as farray_getListOfArraysLength,
+            x_farray_getListOfArraysElem as farray_getListOfArraysElem,
+            farray_set,
+            farray_get, 
+            farray_create,
 
             // INLET CALLERS
             ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 

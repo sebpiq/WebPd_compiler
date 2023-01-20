@@ -2,34 +2,34 @@ import assert from 'assert'
 import { AudioSettings } from '../../types'
 import { readTypedArray } from './core-bindings'
 import {
-    lowerTypedArray,
-    lowerListOfTypedArrays,
-    readListOfTypedArrays,
-} from './tarray-bindings'
+    lowerFloatArray,
+    lowerListOfFloatArrays,
+    readListOfFloatArrays,
+} from './farray-bindings'
 import {
     getAscCode,
     initializeCoreCodeTest,
     replacePlaceholdersForTesting,
 } from './test-helpers'
 
-describe('tarray-bindings', () => {
+describe('farray-bindings', () => {
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
         getAscCode('core.asc', audioSettings) +
-        getAscCode('tarray.asc', audioSettings) +
+        getAscCode('farray.asc', audioSettings) +
         replacePlaceholdersForTesting(
             `
                 export {
-                    x_tarray_createListOfArrays as tarray_createListOfArrays,
-                    x_tarray_pushToListOfArrays as tarray_pushToListOfArrays,
-                    x_tarray_getListOfArraysLength as tarray_getListOfArraysLength,
-                    x_tarray_getListOfArraysElem as tarray_getListOfArraysElem,
-                    tarray_create,
+                    x_farray_createListOfArrays as farray_createListOfArrays,
+                    x_farray_pushToListOfArrays as farray_pushToListOfArrays,
+                    x_farray_getListOfArraysLength as farray_getListOfArraysLength,
+                    x_farray_getListOfArraysElem as farray_getListOfArraysElem,
+                    farray_create,
                 }
             `,
             audioSettings
         )
 
-    describe('lowerTypedArray', () => {
+    describe('lowerFloatArray', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
@@ -57,7 +57,7 @@ describe('tarray-bindings', () => {
                     exports,
                 })
 
-                const { arrayPointer, array } = lowerTypedArray(
+                const { arrayPointer, array } = lowerFloatArray(
                     wasmExports,
                     bitDepth,
                     new Float64Array([111, 222, 333])
@@ -89,7 +89,7 @@ describe('tarray-bindings', () => {
         )
     })
 
-    describe('lowerListOfTypedArrays', () => {
+    describe('lowerListOfFloatArrays', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
@@ -119,7 +119,7 @@ describe('tarray-bindings', () => {
                 exports,
             })
 
-            const arraysPointer = lowerListOfTypedArrays(
+            const arraysPointer = lowerListOfFloatArrays(
                 wasmExports,
                 bitDepth,
                 [
@@ -175,7 +175,7 @@ describe('tarray-bindings', () => {
         })
     })
 
-    describe('readListOfTypedArrays', () => {
+    describe('readListOfFloatArrays', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
@@ -205,7 +205,7 @@ describe('tarray-bindings', () => {
                 await initializeCoreCodeTest({ code, bitDepth, exports })
 
             const arraysPointer = wasmExports.testGetListOfArrays()
-            const arrays = readListOfTypedArrays(
+            const arrays = readListOfFloatArrays(
                 wasmExports,
                 bitDepth,
                 arraysPointer
@@ -253,7 +253,7 @@ describe('tarray-bindings', () => {
             })
 
             const arraysPointer = wasmExports.testGetListOfArrays()
-            const arrays = readListOfTypedArrays(
+            const arrays = readListOfFloatArrays(
                 wasmExports,
                 bitDepth,
                 arraysPointer
@@ -263,7 +263,7 @@ describe('tarray-bindings', () => {
         })
     })
 
-    describe('tarray_set', () => {
+    describe('farray_set', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
             { bitDepth: 32 },
             { bitDepth: 64 },
@@ -278,15 +278,15 @@ describe('tarray-bindings', () => {
                 }
 
                 export function testSetArray (): void {
-                    const array = tarray_create(3)
+                    const array = farray_create(3)
                     array[0] = 11
                     array[1] = 12
                     array[2] = 13
-                    tarray_set('array1', array)
+                    farray_set('array1', array)
                 }
 
                 export function testGetArray (): FloatArray {
-                    return tarray_get('array1')
+                    return farray_get('array1')
                 }
 
                 export function testHandlerWasCalled (): boolean {

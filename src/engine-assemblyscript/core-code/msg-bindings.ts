@@ -20,12 +20,7 @@
  */
 
 import { Message } from '../../types'
-import {
-    core_WasmExports,
-    liftString,
-    lowerBuffer,
-    lowerString,
-} from './core-bindings'
+import { liftString, lowerString } from './core-bindings'
 import { readTypedArray } from './core-bindings'
 import {
     ArrayBufferOfIntegersPointer,
@@ -33,8 +28,9 @@ import {
     StringPointer,
     TypedArrayPointer,
 } from '../types'
+import { farray_WasmExports } from './farray-bindings'
 
-export interface msg_WasmExports extends core_WasmExports {
+export interface msg_WasmExports extends farray_WasmExports {
     MSG_FLOAT_TOKEN: WebAssembly.Global
     MSG_STRING_TOKEN: WebAssembly.Global
 
@@ -42,6 +38,7 @@ export interface msg_WasmExports extends core_WasmExports {
         templatePointer: ArrayBufferOfIntegersPointer
     ) => MessagePointer
     msg_getTokenTypes: (messagePointer: MessagePointer) => TypedArrayPointer
+    msg_createTemplate: (length: number) => TypedArrayPointer
     msg_writeStringToken: (
         messagePointer: MessagePointer,
         tokenIndex: number,
@@ -96,7 +93,7 @@ export const lowerMessage = (
     wasmExports: msg_WasmExports,
     message: Message
 ): MessagePointer => {
-    const messageTemplate: Array<number> = message.reduce((template, value) => {
+    const template: Array<number> = message.reduce((template, value) => {
         if (typeof value === 'number') {
             template.push(wasmExports.MSG_FLOAT_TOKEN.valueOf())
         } else if (typeof value === 'string') {
@@ -108,9 +105,16 @@ export const lowerMessage = (
         return template
     }, [] as Array<number>)
 
-    const messagePointer = wasmExports.msg_create(
-        lowerArrayBufferOfIntegers(wasmExports, messageTemplate)
+    // Here we should ideally pass an array of Int, but I am not sure how
+    // to lower a typed array in a generic manner, so using the available bindings from `farray`.
+    const templateArrayPointer = wasmExports.msg_createTemplate(template.length)
+    const loweredTemplateArray = readTypedArray(
+        wasmExports,
+        Int32Array,
+        templateArrayPointer
     )
+    loweredTemplateArray.set(template)
+    const messagePointer = wasmExports.msg_create(templateArrayPointer)
 
     message.forEach((value, index) => {
         if (typeof value === 'number') {
@@ -126,18 +130,4 @@ export const lowerMessage = (
     })
 
     return messagePointer
-}
-
-export const lowerArrayBufferOfIntegers = (
-    wasmExports: msg_WasmExports,
-    integers: Array<number>
-) => {
-    const buffer = new ArrayBuffer(
-        INT_ARRAY_BYTES_PER_ELEMENT * integers.length
-    )
-    const dataView = new DataView(buffer)
-    for (let i = 0; i < integers.length; i++) {
-        dataView.setInt32(INT_ARRAY_BYTES_PER_ELEMENT * i, integers[i])
-    }
-    return lowerBuffer(wasmExports, buffer)
 }

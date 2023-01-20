@@ -1,7 +1,7 @@
 import { replaceCoreCodePlaceholders } from '../../compile-helpers'
 import { CodeVariableNames } from '../../types'
 import FS_JS from './fs.generated.js.txt'
-import TARRAY_JS from './tarray.generated.js.txt'
+import FARRAY_JS from './farray.generated.js.txt'
 
 const COMPAT = `
 const i32 = (v) => v
@@ -38,6 +38,6 @@ const msg_display = (m) => '[' + m
 export default (codeVariableNames: CodeVariableNames) => {
     return replaceCoreCodePlaceholders(
         codeVariableNames,
-        COMPAT + TARRAY_JS + MSG + FS_JS
+        COMPAT + FARRAY_JS + MSG + FS_JS
     )
 }

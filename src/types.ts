@@ -85,7 +85,7 @@ export interface Engine {
     }
 
     // Typed arrays API for the engine
-    tarray: {
+    farray: {
         get: (arrayName: string) => FloatArray
         set: (arrayName: string, array: FloatArray | Array<number>) => void
     }

@@ -16,4 +16,6 @@ import { dirname, resolve } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-export default readFileSync(resolve(__dirname, '../tarray.asc')).toString()
+export default readFileSync(
+    resolve(__dirname, '../farray.generated.js.txt')
+).toString()

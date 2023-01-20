@@ -31,9 +31,7 @@ export const instantiateWasmModule = async (
                 columnNumber = columnNumber
                 ;(() => {
                     // @external.js
-                    throw Error(
-                        `${message} at ${lineNumber}:${columnNumber}`
-                    )
+                    throw Error(`${message} at ${lineNumber}:${columnNumber}`)
                 })()
             },
             seed: () => {
