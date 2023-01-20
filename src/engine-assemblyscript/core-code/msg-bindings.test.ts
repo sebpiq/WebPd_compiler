@@ -25,6 +25,11 @@ import {
 } from './test-helpers'
 
 describe('msg-bindings', () => {
+    const TEST_PARAMETERS: Array<{ bitDepth: AudioSettings['bitDepth'] }> = [
+        { bitDepth: 32 },
+        { bitDepth: 64 },
+    ]
+
     const BYTES_IN_CHAR = 4
 
     const float64ToInt32Array = (value: number) => {
@@ -71,10 +76,7 @@ describe('msg-bindings', () => {
         )
 
     describe('lowerArrayBufferOfIntegers', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])(
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
             'should correctly lower the given array to an ArrayBuffer of integers %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -122,10 +124,7 @@ describe('msg-bindings', () => {
     })
 
     describe('lowerMessage', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])(
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
             'should create the message with correct header and filled-in data %s',
             async ({ bitDepth }) => {
                 const code = getBaseTestCode({ bitDepth })
@@ -207,10 +206,7 @@ describe('msg-bindings', () => {
     })
 
     describe('liftMessage', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])(
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
             'should read message to a JavaScript array %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -246,13 +242,12 @@ describe('msg-bindings', () => {
         )
     })
 
-    describe('msg_bang / msg_floats', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])('should create floats message %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({bitDepth}) + `
+    describe('msg_bang / msg_floats / msg_strings', () => {
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+            'should create floats message %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
                 export function testCreateFloatsMessage(): Message {
                     return msg_floats([111, 222])
                 }
@@ -261,67 +256,112 @@ describe('msg-bindings', () => {
                 }
             `
 
-            const exports = {
-                ...baseExports,
-                testCreateFloatsMessage: 1,
-                testCreateEmptyFloatsMessage: 1,
+                const exports = {
+                    ...baseExports,
+                    testCreateFloatsMessage: 1,
+                    testCreateEmptyFloatsMessage: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.deepStrictEqual(
+                    liftMessage(
+                        wasmExports,
+                        wasmExports.testCreateFloatsMessage()
+                    ),
+                    [111, 222]
+                )
+                assert.deepStrictEqual(
+                    liftMessage(
+                        wasmExports,
+                        wasmExports.testCreateEmptyFloatsMessage()
+                    ),
+                    []
+                )
             }
+        )
 
-            const { wasmExports } = await initializeCoreCodeTest({
-                code,
-                bitDepth,
-                exports,
-            })
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+            'should create strings message %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
+                export function testCreateStringsMessage(): Message {
+                    return msg_strings(['', 'blabla', 'blo'])
+                }
+                export function testCreateEmptyStringsMessage(): Message {
+                    return msg_strings([])
+                }
+            `
 
-            assert.deepStrictEqual(
-                liftMessage(wasmExports, wasmExports.testCreateFloatsMessage()),
-                [111, 222]
-            )
-            assert.deepStrictEqual(
-                liftMessage(
-                    wasmExports,
-                    wasmExports.testCreateEmptyFloatsMessage()
-                ),
-                []
-            )
-        })
+                const exports = {
+                    ...baseExports,
+                    testCreateStringsMessage: 1,
+                    testCreateEmptyStringsMessage: 1,
+                }
 
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])('should create bang message %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({bitDepth}) + `
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.deepStrictEqual(
+                    liftMessage(
+                        wasmExports,
+                        wasmExports.testCreateStringsMessage()
+                    ),
+                    ['', 'blabla', 'blo']
+                )
+                assert.deepStrictEqual(
+                    liftMessage(
+                        wasmExports,
+                        wasmExports.testCreateEmptyStringsMessage()
+                    ),
+                    []
+                )
+            }
+        )
+
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+            'should create bang message %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
                 export function testCreateBang(): Message {
                     return msg_bang()
                 }
             `
 
-            const exports = {
-                ...baseExports,
-                testCreateBang: 1,
+                const exports = {
+                    ...baseExports,
+                    testCreateBang: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.deepStrictEqual(
+                    liftMessage(wasmExports, wasmExports.testCreateBang()),
+                    ['bang']
+                )
             }
-
-            const { wasmExports } = await initializeCoreCodeTest({
-                code,
-                bitDepth,
-                exports,
-            })
-
-            assert.deepStrictEqual(
-                liftMessage(wasmExports, wasmExports.testCreateBang()),
-                ['bang']
-            )
-        })
+        )
     })
 
     describe('msg_isMatching', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])('should match given message %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({bitDepth}) + `
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+            'should match given message %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
                 export function testMatch1(): boolean {
                     const m: Message = msg_create([MSG_FLOAT_TOKEN])
                     return msg_isMatching(m, [MSG_FLOAT_TOKEN])
@@ -348,38 +388,38 @@ describe('msg-bindings', () => {
                 }
             `
 
-            const exports = {
-                ...baseExports,
-                testMatch1: 1,
-                testMatch2: 1,
-                testMatch3: 1,
-                testMatch4: 1,
-                testNotMatching1: 1,
-                testNotMatching2: 1,
+                const exports = {
+                    ...baseExports,
+                    testMatch1: 1,
+                    testMatch2: 1,
+                    testMatch3: 1,
+                    testMatch4: 1,
+                    testNotMatching1: 1,
+                    testNotMatching2: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.ok(wasmExports.testMatch1())
+                assert.ok(wasmExports.testMatch2())
+                assert.ok(wasmExports.testMatch3())
+                assert.ok(wasmExports.testMatch4())
+                assert.ok(!wasmExports.testNotMatching1())
+                assert.ok(!wasmExports.testNotMatching2())
             }
-
-            const { wasmExports } = await initializeCoreCodeTest({
-                code,
-                bitDepth,
-                exports,
-            })
-
-            assert.ok(wasmExports.testMatch1())
-            assert.ok(wasmExports.testMatch2())
-            assert.ok(wasmExports.testMatch3())
-            assert.ok(wasmExports.testMatch4())
-            assert.ok(!wasmExports.testNotMatching1())
-            assert.ok(!wasmExports.testNotMatching2())
-        })
+        )
     })
 
     describe('msg_display', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])('should return a display version of a message %s', async ({ bitDepth }) => {
-            // prettier-ignore
-            const code = getBaseTestCode({bitDepth}) + `
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+            'should return a display version of a message %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
                 export function testDisplay(): string {
                     const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
                     msg_writeFloatToken(m, 0, -123)
@@ -388,21 +428,22 @@ describe('msg-bindings', () => {
                 }
             `
 
-            const exports = {
-                ...baseExports,
-                testDisplay: 1,
+                const exports = {
+                    ...baseExports,
+                    testDisplay: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.strictEqual(
+                    liftString(wasmExports, wasmExports.testDisplay()),
+                    '[-123.0, "bla"]'
+                )
             }
-
-            const { wasmExports } = await initializeCoreCodeTest({
-                code,
-                bitDepth,
-                exports,
-            })
-
-            assert.strictEqual(
-                liftString(wasmExports, wasmExports.testDisplay()),
-                '[-123.0, "bla"]'
-            )
-        })
+        )
     })
 })

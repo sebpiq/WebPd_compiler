@@ -29,7 +29,6 @@ import {
 import { readTypedArray } from './core-bindings'
 import {
     ArrayBufferOfIntegersPointer,
-    InternalPointer,
     MessagePointer,
     StringPointer,
     TypedArrayPointer,

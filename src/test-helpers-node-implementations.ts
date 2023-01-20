@@ -55,6 +55,7 @@ export type FrameOut = Frame & {
         get?: { [arrayName: string]: Array<number> }
     }
     outs: { [portletId: string]: Array<Message> | Signal }
+    sequence?: Array<string>
 }
 
 export const generateFramesForNode = async <NodeArguments, NodeState>(
@@ -291,7 +292,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     )
 
     inputFrames.forEach((inputFrame) => {
-        const outputFrame: FrameOut = { outs: {} }
+        const outputFrame: FrameOut = { outs: {}, sequence: [] }
         // Set default values for output frame
         Object.values(testNode.outlets).forEach((outlet) => {
             if (outlet.type === 'message') {
@@ -300,22 +301,23 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         })
 
         // Set up listeners for fs
-        const _ensureFs = () => {
+        const _fsCallback = (funcName: keyof typeof outputFrame.fs, args: any) => {
             outputFrame.fs = outputFrame.fs || {}
-            return outputFrame.fs
+            outputFrame.sequence.push(funcName)
+            outputFrame.fs[funcName] = args
         }
         engine.fs.onCloseSoundStream = (...args) =>
-            (_ensureFs()['onCloseSoundStream'] = args)
+            _fsCallback('onCloseSoundStream', args)
         engine.fs.onOpenSoundReadStream = (...args) =>
-            (_ensureFs()['onOpenSoundReadStream'] = args)
+            _fsCallback('onOpenSoundReadStream', args)
         engine.fs.onOpenSoundWriteStream = (...args) =>
-            (_ensureFs()['onOpenSoundWriteStream'] = args)
+            _fsCallback('onOpenSoundWriteStream', args)
         engine.fs.onReadSoundFile = (...args) =>
-            (_ensureFs()['onReadSoundFile'] = args)
+            _fsCallback('onReadSoundFile', args)
         engine.fs.onSoundStreamData = (...args) =>
-            (_ensureFs()['onSoundStreamData'] = args)
+            _fsCallback('onSoundStreamData', args)
         engine.fs.onWriteSoundFile = (...args) =>
-            (_ensureFs()['onWriteSoundFile'] = args)
+            _fsCallback('onWriteSoundFile', args)
 
         // Set up outletListeners to receive sent messages
         Object.keys(engine.outletListeners['fakeSinkNode']).forEach(
@@ -323,6 +325,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                 engine.outletListeners['fakeSinkNode'][outletId] = {
                     onMessage: (m) => {
                         if (testNode.outlets[outletId].type === 'message') {
+                            outputFrame.sequence.push(outletId)
                             outputFrame.outs[outletId] =
                                 outputFrame.outs[outletId] || []
                             const output = outputFrame.outs[
@@ -414,17 +417,23 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     ...frames: Array<[FrameIn, FrameOut]>
 ): Promise<void> => {
-    const expectedOutputFrames: Array<FrameOut> = frames.map(
-        ([_, frameOut]) => frameOut
-    )
     const inputFrames: Array<FrameIn> = frames.map(([frameIn]) => frameIn)
+    const expectedOutputFrames: Array<FrameOut> = frames.map(([_, frameOut]) => frameOut)
     let actualOutputFrames: Array<FrameOut> = await generateFramesForNode(
         nodeTestSettings,
         inputFrames
     )
+
+    frames.forEach(([_, expectedOutputFrame], i) => {
+        const actualOutputFrame = actualOutputFrames[i]
+        if (!expectedOutputFrame.sequence) {
+            delete actualOutputFrame.sequence
+        }
+    })
+    
     assert.deepStrictEqual(
         roundNestedFloats(actualOutputFrames),
-        roundNestedFloats(expectedOutputFrames)
+        roundNestedFloats(expectedOutputFrames),
     )
 }
 
