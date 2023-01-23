@@ -222,6 +222,12 @@ export interface CodeVariableNames {
     }
 }
 
+export type SharedCodeGenerator = (context: {
+    macros: CodeMacros
+    globs: CodeVariableNames['globs']
+    compilation: Compilation
+}) => Code
+
 export interface NodeImplementation<
     NodeArgsType,
     NodeState = { [name: string]: string }
@@ -231,7 +237,7 @@ export interface NodeImplementation<
     declare?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: { [Paramater in keyof NodeState]: string }
+        state: { [Parameter in keyof NodeState]: string }
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => Code
@@ -239,7 +245,7 @@ export interface NodeImplementation<
     loop?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: { [Paramater in keyof NodeState]: string }
+        state: { [Parameter in keyof NodeState]: string }
         ins: NodeVariableNames['ins']
         outs: NodeVariableNames['outs']
         snds: NodeVariableNames['snds']
@@ -250,7 +256,7 @@ export interface NodeImplementation<
     messages?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: { [Paramater in keyof NodeState]: string }
+        state: { [Parameter in keyof NodeState]: string }
         snds: NodeVariableNames['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
@@ -261,7 +267,7 @@ export interface NodeImplementation<
     events?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
-        state: { [Paramater in keyof NodeState]: string }
+        state: { [Parameter in keyof NodeState]: string }
         snds: NodeVariableNames['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
@@ -270,11 +276,7 @@ export interface NodeImplementation<
         configure?: Code
     }
 
-    sharedCode?: (context: {
-        macros: CodeMacros
-        globs: CodeVariableNames['globs']
-        compilation: Compilation
-    }) => Array<Code>
+    sharedCode?: Array<SharedCodeGenerator>
 }
 
 export type NodeImplementations = {

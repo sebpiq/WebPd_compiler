@@ -23,6 +23,7 @@ const msg_isMatching = (m, tokenTypes) => {
     return (m.length === tokenTypes.length) 
         && m.every((v, i) => msg_getTokenType(m, i) === tokenTypes[i])
 }
+const msg_isBang = (m) => m.length === 1 && m[0] === 'bang'
 const msg_writeFloatToken = ( m, i, v ) => m[i] = v
 const msg_writeStringToken = msg_writeFloatToken
 const msg_readFloatToken = ( m, i ) => m[i]

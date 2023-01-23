@@ -26,6 +26,13 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
 
             assert.strictEqual(code, 'bla\nblo\nbli\nblu\nble\nbly')
         })
+
+        it('should render code lines with numbers', () => {
+            const code = renderCode`bla
+${['blo', 456.789, ['blu', ['ble', 123]]]}`
+
+            assert.strictEqual(code, 'bla\nblo\n456.789\nblu\nble\n123')
+        })
     })
 
     describe('getNodeImplementation', () => {
@@ -49,7 +56,7 @@ ${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
                 loop: () => '',
                 messages: () => ({}),
                 events: () => ({}),
-                sharedCode: () => [],
+                sharedCode: [],
             }
             const defaultImplementation = getNodeImplementation(
                 NODE_IMPLEMENTATIONS,

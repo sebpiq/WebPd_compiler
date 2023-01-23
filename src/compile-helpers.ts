@@ -18,7 +18,7 @@ import {
     NodeImplementations,
 } from './types'
 
-type CodeLines = Array<CodeLines | Code>
+type CodeLines = Array<CodeLines | Code | number>
 
 /**
  * Helper to render code.
@@ -41,11 +41,11 @@ export const renderCode = (
     return rendered
 }
 
-const renderCodeLines = (codeLines: CodeLines | Code): Code => {
+const renderCodeLines = (codeLines: CodeLines | Code | number): Code => {
     if (Array.isArray(codeLines)) {
         return codeLines.map(renderCodeLines).join('\n')
     }
-    return codeLines
+    return codeLines.toString()
 }
 
 /**
@@ -65,7 +65,7 @@ export const getNodeImplementation = (
         loop: () => '',
         messages: () => ({}),
         events: () => ({}),
-        sharedCode: () => [],
+        sharedCode: [],
         ...nodeImplementation,
     }
 }

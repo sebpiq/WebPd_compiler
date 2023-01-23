@@ -4,6 +4,7 @@ import { writeFile } from 'fs/promises'
 import ts from 'typescript'
 const { transpileModule } = ts
 import { executeCompilation } from './compile'
+import { renderCode } from './compile-helpers'
 import { FS_OPERATION_SUCCESS } from './constants'
 import { createEngine, makeCompilation, round } from './test-helpers'
 import {
@@ -98,13 +99,12 @@ describe('Engine', () => {
         >
         if (target === 'javascript') {
             code += exportKeys.length
-                ? `
+                ? renderCode`
                 {${exportKeys
                     .map(
                         (name) =>
                             `exports.${name.toString()} = ${name.toString()}`
-                    )
-                    .join('\n')}}
+                    )}}
             `
                 : ''
         } else {

@@ -407,13 +407,13 @@ describe('compileDeclare', () => {
 
         const nodeImplementations: NodeImplementations = {
             nodeType1: {
-                sharedCode: () => [`// blockSize`],
+                sharedCode: [() => `// blockSize`],
             },
             nodeType2: {
-                sharedCode: () => [
+                sharedCode: [
                     // Put same shared code as nodeType1
-                    `// blockSize`,
-                    `// sampleRate`,
+                    () => `// blockSize`,
+                    () => `// sampleRate`,
                 ],
             },
         }

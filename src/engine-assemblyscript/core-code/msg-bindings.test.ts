@@ -372,6 +372,51 @@ describe('msg-bindings', () => {
         )
     })
 
+    describe('msg_isBang', () => {
+        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+            'should match given message %s',
+            async ({ bitDepth }) => {
+                // prettier-ignore
+                const code = getBaseTestCode({bitDepth}) + `
+                export function testMatch(): boolean {
+                    return msg_isBang(msg_bang())
+                }
+                export function testNotMatching1(): boolean {
+                    const m: Message = msg_create([MSG_FLOAT_TOKEN])
+                    return msg_isBang(m)
+                }
+                export function testNotMatching2(): boolean {
+                    const m: Message = msg_create([MSG_STRING_TOKEN, 4, MSG_STRING_TOKEN, 1])
+                    return msg_isBang(m)
+                }
+                export function testNotMatching3(): boolean {
+                    const m: Message = msg_create([MSG_STRING_TOKEN, 4, MSG_FLOAT_TOKEN])
+                    return msg_isBang(m)
+                }
+            `
+
+                const exports = {
+                    ...baseExports,
+                    testMatch: 1,
+                    testNotMatching1: 1,
+                    testNotMatching2: 1,
+                    testNotMatching3: 1,
+                }
+
+                const { wasmExports } = await initializeCoreCodeTest({
+                    code,
+                    bitDepth,
+                    exports,
+                })
+
+                assert.ok(wasmExports.testMatch())
+                assert.ok(!wasmExports.testNotMatching1())
+                assert.ok(!wasmExports.testNotMatching2())
+                assert.ok(!wasmExports.testNotMatching3())
+            }
+        )
+    })
+
     describe('msg_display', () => {
         it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
             'should return a display version of a message %s',

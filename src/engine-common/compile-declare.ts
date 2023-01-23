@@ -44,7 +44,7 @@ export default (
         ${graphTraversal.map(node => {
             // 0. De-duplicate and insert shared code required by nodes
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
-            return nodeImplementation.sharedCode({ macros, globs, compilation })
+            return nodeImplementation.sharedCode.map(codeGenerator => codeGenerator({ macros, globs, compilation }))
                 .filter(code => {
                     if (sharedCode.has(code)) {
                         return false
