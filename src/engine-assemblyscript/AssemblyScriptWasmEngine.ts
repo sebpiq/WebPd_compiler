@@ -46,6 +46,7 @@ import {
     MessagePointer,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
+import { mapArray, mapObject } from '../compile-helpers'
 
 /**
  * Convenience function to create and initialize an engine.
@@ -289,43 +290,37 @@ export class AssemblyScriptWasmEngine implements Engine {
 
     // API for data flowing HOST -> ENGINE
     _bindInletCallers(): Engine['inletCallers'] {
-        return Object.entries(
-            this.metadata.compilation.inletCallerSpecs
-        ).reduce((inletCallers, [nodeId, inletIds]) => {
-            inletCallers[nodeId] = {}
-            inletIds.forEach((inletId) => {
-                const inletCallerVariableName =
-                    this.metadata.compilation.codeVariableNames.inletCallers[
-                        nodeId
-                    ][inletId]
-                inletCallers[nodeId][inletId] = (message: Message) => {
-                    const messagePointer = lowerMessage(
-                        this.wasmExports,
-                        message
-                    )
-                    ;(this.wasmExports as any)[inletCallerVariableName](
-                        messagePointer
-                    )
-                }
-            })
-            return inletCallers
-        }, {} as Engine['inletCallers'])
+        return mapObject(
+            this.metadata.compilation.inletCallerSpecs,
+            (inletIds, nodeId) =>
+                mapArray(inletIds, (inletId) => [
+                    inletId,
+                    (message: Message) => {
+                        const messagePointer = lowerMessage(
+                            this.wasmExports,
+                            message
+                        )
+                        ;(this.wasmExports as any)[
+                            this.metadata.compilation.codeVariableNames
+                                .inletCallers[nodeId][inletId]
+                        ](messagePointer)
+                    },
+                ])
+        )
     }
 
     // API for data flowing HOST -> ENGINE
     _bindOutletListeners(): Engine['outletListeners'] {
-        return Object.entries(
-            this.metadata.compilation.outletListenerSpecs
-        ).reduce((outletListeners, [nodeId, outletIds]) => {
-            outletListeners[nodeId] = {}
-            outletIds.forEach(
-                (outletId) =>
-                    (outletListeners[nodeId][outletId] = {
+        return mapObject(
+            this.metadata.compilation.outletListenerSpecs,
+            (outletIds) =>
+                mapArray(outletIds, (outletId) => [
+                    outletId,
+                    {
                         onMessage: () => undefined,
-                    })
-            )
-            return outletListeners
-        }, {} as Engine['outletListeners'])
+                    },
+                ])
+        )
     }
 
     // API for data flowing ENGINE -> HOST

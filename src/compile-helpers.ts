@@ -23,9 +23,6 @@ type CodeLines = Array<CodeLines | Code | number>
 /**
  * Helper to render code.
  * Allows to pass templated strings with arrays and arrays of arrays of codelines, adding new lines automatically.
- * @param strings
- * @param codeLines
- * @returns
  */
 export const renderCode = (
     strings: TemplateStringsArray,
@@ -95,4 +92,35 @@ export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
         }
     })
     return combined
+}
+
+export const countTo = (count: number) => {
+    const results: Array<number> = []
+    for (let i = 0; i < count; i++) {
+        results.push(i)
+    }
+    return results
+}
+
+export const mapObject = <SrcType, DestType>(
+    src: { [key: string]: SrcType },
+    func: (value: SrcType, key: string, index: number) => DestType
+): { [key: string]: DestType } => {
+    const dest: { [key: string]: DestType } = {}
+    Object.entries(src).forEach(([key, srcValue], i) => {
+        dest[key] = func(srcValue, key, i)
+    })
+    return dest
+}
+
+export const mapArray = <SrcType, DestType>(
+    src: Array<SrcType>,
+    func: (srcValue: SrcType, index: number) => [string, DestType]
+): { [key: string]: DestType } => {
+    const dest: { [key: string]: DestType } = {}
+    src.forEach((srcValue, i) => {
+        const [key, destValue] = func(srcValue, i)
+        dest[key] = destValue
+    })
+    return dest
 }

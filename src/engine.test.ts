@@ -100,11 +100,9 @@ describe('Engine', () => {
         if (target === 'javascript') {
             code += exportKeys.length
                 ? renderCode`
-                {${exportKeys
-                    .map(
-                        (name) =>
-                            `exports.${name.toString()} = ${name.toString()}`
-                    )}}
+                {${exportKeys.map(
+                    (name) => `exports.${name.toString()} = ${name.toString()}`
+                )}}
             `
                 : ''
         } else {

@@ -19,12 +19,12 @@ import {
     NodeImplementations,
     CompilerTarget,
     FloatArray,
-    Code,
     NodeImplementation,
     Engine,
     AudioSettings,
 } from './types'
 import { writeFile } from 'fs/promises'
+import { mapArray, mapObject } from './compile-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -146,33 +146,18 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     .join('\n'),
 
             messages: ({ globs, snds, state }) =>
-                Object.keys(fakeSourceNode.outlets).reduce(
-                    (messageMap, inletId) => {
-                        const outletId = inletId
-                        let code = ''
+                mapObject(fakeSourceNode.outlets, (_, outletId) => {
+                    // Messages received for message outlets are directly proxied
+                    if (fakeSourceNode.outlets[outletId].type === 'message') {
+                        return `${snds[outletId]}(${globs.m});return`
 
-                        // Messages received for message outlets are directly proxied
-                        if (
-                            fakeSourceNode.outlets[outletId].type === 'message'
-                        ) {
-                            code = `${snds[outletId]}(${globs.m});return`
-
-                            // Messages received for signal outlets are written to the loop
-                        } else {
-                            code = `${
-                                state[`VALUE_${outletId}`]
-                            } = msg_readFloatToken(${globs.m}, 0)
-                            return
-                            `
-                        }
-
-                        return {
-                            ...messageMap,
-                            [inletId]: code,
-                        }
-                    },
-                    {} as { [inletId: DspGraph.PortletId]: Code }
-                ),
+                        // Messages received for signal outlets are written to the loop
+                    } else {
+                        return `${
+                            state[`VALUE_${outletId}`]
+                        } = msg_readFloatToken(${globs.m}, 0);return`
+                    }
+                }),
 
             loop: ({ outs, state }) =>
                 Object.keys(fakeSourceNode.outlets)
@@ -186,15 +171,13 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     )
                     .join('\n'),
 
-            stateVariables: Object.keys(fakeSourceNode.outlets)
-                .filter(
+            stateVariables: mapArray(
+                Object.keys(fakeSourceNode.outlets).filter(
                     (outletId) =>
                         fakeSourceNode.outlets[outletId].type === 'signal'
-                )
-                .reduce((stateVariables, outletId) => {
-                    stateVariables[`VALUE_${outletId}`] = 1
-                    return stateVariables
-                }, {} as { [name: string]: 1 }),
+                ),
+                (outletId) => [`VALUE_${outletId}`, 1]
+            ),
         },
 
         fake_sink_node: {
@@ -214,18 +197,16 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
             // Take incoming messages and directly proxy them
             messages: ({ globs, snds }) =>
-                Object.keys(fakeSinkNode.inlets)
-                    .filter(
+                mapArray(
+                    Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>
                             fakeSinkNode.inlets[inletId].type === 'message'
-                    )
-                    .reduce(
-                        (messageMap, inletId) => ({
-                            ...messageMap,
-                            [inletId]: `${snds[inletId]}(${globs.m});return`,
-                        }),
-                        {} as { [inletId: DspGraph.PortletId]: Code }
                     ),
+                    (inletId) => [
+                        inletId,
+                        `${snds[inletId]}(${globs.m});return`,
+                    ]
+                ),
         },
     }
 
@@ -485,20 +466,12 @@ export const ENGINE_DSP_PARAMS = {
 const makeConnectionEndpointMap = (
     nodeId: DspGraph.NodeId,
     portletList: Array<DspGraph.PortletId>
-) =>
-    portletList.reduce<DspGraph.ConnectionEndpointMap>(
-        (endpointMap, portletId) => ({
-            ...endpointMap,
-            [portletId]: [{ nodeId, portletId }],
-        }),
-        {}
-    )
+) => mapArray(portletList, (portletId) => [portletId, [{ nodeId, portletId }]])
 
-const makeMessagePortlets = (portletList: Array<DspGraph.PortletId>) =>
-    portletList.reduce<DspGraph.PortletMap>(
-        (portletMap, portletId) => ({
-            ...portletMap,
-            [portletId]: { id: portletId, type: 'message' },
-        }),
-        {}
-    )
+const makeMessagePortlets = (
+    portletList: Array<DspGraph.PortletId>
+): DspGraph.PortletMap =>
+    mapArray(portletList, (portletId) => [
+        portletId,
+        { id: portletId, type: 'message' },
+    ])

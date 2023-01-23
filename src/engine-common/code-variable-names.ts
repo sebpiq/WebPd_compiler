@@ -10,11 +10,10 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import { getNodeImplementation } from '../compile-helpers'
+import { mapArray, getNodeImplementation, mapObject } from '../compile-helpers'
 import {
     NodeImplementations,
     CodeVariableNames,
-    NodeVariableNames,
     OutletListenerSpecs,
     AudioSettings,
     InletCallerSpecs,
@@ -76,14 +75,10 @@ export const generate = (
                     ),
                     state: createNamespace(
                         `${namespaceLabel}.state`,
-                        Object.keys(nodeImplementation.stateVariables).reduce(
-                            (nameMap, stateVariable) => {
-                                nameMap[stateVariable] = `${prefix}_STATE_${_v(
-                                    stateVariable
-                                )}`
-                                return nameMap
-                            },
-                            {} as NodeVariableNames['state']
+                        mapObject(
+                            nodeImplementation.stateVariables,
+                            (_, stateVariable) =>
+                                `${prefix}_STATE_${_v(stateVariable)}`
                         )
                     ),
                 }
@@ -227,10 +222,10 @@ export const createNamespaceFromPortlets = <T>(
 ) =>
     createNamespace(
         label,
-        Object.values(portletMap)
-            .filter((portlet) => portlet.type === portletType)
-            .reduce((nameMap, portlet) => {
-                nameMap[portlet.id] = mapFunction(portlet)
-                return nameMap
-            }, {} as { [portletId: DspGraph.PortletId]: T })
+        mapArray(
+            Object.values(portletMap).filter(
+                (portlet) => portlet.type === portletType
+            ),
+            (portlet) => [portlet.id, mapFunction(portlet)]
+        )
     )
