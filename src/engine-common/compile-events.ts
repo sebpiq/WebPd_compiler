@@ -10,7 +10,8 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import { getNodeImplementation, renderCode } from '../compile-helpers'
+import { getNodeImplementation } from '../compile-helpers'
+import { renderCode } from '../functional-helpers'
 import { Code, Compilation, NodeImplementation } from '../types'
 
 export const compileEventConfigure = (

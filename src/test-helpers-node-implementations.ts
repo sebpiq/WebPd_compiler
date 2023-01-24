@@ -24,7 +24,7 @@ import {
     AudioSettings,
 } from './types'
 import { writeFile } from 'fs/promises'
-import { mapArray, mapObject } from './compile-helpers'
+import { mapArray, mapObject } from './functional-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 

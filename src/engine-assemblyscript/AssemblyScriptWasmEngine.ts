@@ -46,7 +46,7 @@ import {
     MessagePointer,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
-import { mapArray, mapObject } from '../compile-helpers'
+import { mapArray, mapObject } from '../functional-helpers'
 
 /**
  * Convenience function to create and initialize an engine.

@@ -14,27 +14,10 @@ import assert from 'assert'
 import {
     getNodeImplementation,
     graphTraversalForCompile,
-    renderCode,
 } from './compile-helpers'
 import { NodeImplementation, NodeImplementations } from './types'
 
 describe('compile-helpers', () => {
-    describe('renderCode', () => {
-        it('should render code lines with arbitrary depth', () => {
-            const code = renderCode`bla
-${['blo', 'bli', ['blu', ['ble', 'bly']]]}`
-
-            assert.strictEqual(code, 'bla\nblo\nbli\nblu\nble\nbly')
-        })
-
-        it('should render code lines with numbers', () => {
-            const code = renderCode`bla
-${['blo', 456.789, ['blu', ['ble', 123]]]}`
-
-            assert.strictEqual(code, 'bla\nblo\n456.789\nblu\nble\n123')
-        })
-    })
-
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
             someNodeType: { loop: () => `` },

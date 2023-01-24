@@ -9,10 +9,11 @@
  *
  */
 
-import { graphTraversalForCompile, renderCode } from '../compile-helpers'
+import { graphTraversalForCompile } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import { compileEventConfigure } from '../engine-common/compile-events'
 import compileLoop from '../engine-common/compile-loop'
+import { renderCode } from '../functional-helpers'
 import { Compilation, EngineMetadata } from '../types'
 import generateCoreCodeAsc from './core-code'
 import { AssemblyScriptWasmEngineCode } from './types'

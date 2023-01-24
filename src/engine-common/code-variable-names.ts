@@ -10,7 +10,8 @@
  */
 
 import { DspGraph } from '@webpd/dsp-graph'
-import { mapArray, getNodeImplementation, mapObject } from '../compile-helpers'
+import { getNodeImplementation } from '../compile-helpers'
+import { mapArray, mapObject } from '../functional-helpers'
 import {
     NodeImplementations,
     CodeVariableNames,

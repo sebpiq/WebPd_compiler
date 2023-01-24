@@ -10,7 +10,8 @@
  */
 
 import { traversal, DspGraph } from '@webpd/dsp-graph'
-import { getNodeImplementation, renderCode } from '../compile-helpers'
+import { getNodeImplementation } from '../compile-helpers'
+import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
 
 export default (

@@ -4,7 +4,7 @@ import { writeFile } from 'fs/promises'
 import ts from 'typescript'
 const { transpileModule } = ts
 import { executeCompilation } from './compile'
-import { renderCode } from './compile-helpers'
+import { renderCode } from './functional-helpers'
 import { FS_OPERATION_SUCCESS } from './constants'
 import { createEngine, makeCompilation, round } from './test-helpers'
 import {

@@ -9,13 +9,14 @@
  *
  */
 
-import { graphTraversalForCompile, renderCode } from '../compile-helpers'
+import { graphTraversalForCompile } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import { compileEventConfigure } from '../engine-common/compile-events'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation, EngineMetadata } from '../types'
 import { JavaScriptEngineCode } from './types'
 import generateCoreCodeJs from './core-code'
+import { renderCode } from '../functional-helpers'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
