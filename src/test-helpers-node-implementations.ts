@@ -22,12 +22,19 @@ import {
     NodeImplementation,
     Engine,
     AudioSettings,
+    SharedCodeGenerator,
 } from './types'
 import { writeFile } from 'fs/promises'
 import { mapArray, mapObject } from './functional-helpers'
+import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
+import { AssemblyScriptWasmEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
+import { liftString, lowerString } from './engine-assemblyscript/core-code/core-bindings'
+import { liftMessage, lowerMessage } from './engine-assemblyscript/core-code/msg-bindings'
+import { MessagePointer, StringPointer } from './engine-assemblyscript/types'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
+// ================================ TESTING NODE IMPLEMENTATIONS ================================ //
 interface NodeTestSettings<NodeArguments, NodeState> {
     target: CompilerTarget
     node: DspGraph.Node
@@ -36,21 +43,21 @@ interface NodeTestSettings<NodeArguments, NodeState> {
     arrays?: { [arrayName: string]: Array<number> }
 }
 
-type Frame = {
+type FrameNode = {
     fs?: {
         [FsFuncName in keyof Engine['fs']]?: Parameters<
             Engine['fs'][FsFuncName]
         >
     }
 }
-type FrameIn = Frame & {
+type FrameNodeIn = FrameNode & {
     farray?: {
         get?: Array<string>
         set?: { [arrayName: string]: Array<number> }
     }
     ins?: { [portletId: string]: Array<Message> | Signal }
 }
-export type FrameOut = Frame & {
+export type FrameNodeOut = FrameNode & {
     farray?: {
         get?: { [arrayName: string]: Array<number> }
     }
@@ -60,8 +67,8 @@ export type FrameOut = Frame & {
 
 export const generateFramesForNode = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
-    inputFrames: Array<FrameIn>
-): Promise<Array<FrameOut>> => {
+    inputFrames: Array<FrameNodeIn>
+): Promise<Array<FrameNodeOut>> => {
     const { target, arrays, bitDepth } = nodeTestSettings
     const connectedInlets = new Set<DspGraph.PortletId>([])
     inputFrames.forEach((frame) =>
@@ -260,7 +267,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
     const blockSize = 1
     let configured = false
-    const outputFrames: Array<FrameOut> = []
+    const outputFrames: Array<FrameNodeOut> = []
     const engineInput = buildEngineBlock(
         Float32Array,
         ENGINE_DSP_PARAMS.channelCount.in,
@@ -273,7 +280,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     )
 
     inputFrames.forEach((inputFrame) => {
-        const outputFrame: FrameOut = { outs: {}, sequence: [] }
+        const outputFrame: FrameNodeOut = { outs: {}, sequence: [] }
         // Set default values for output frame
         Object.values(testNode.outlets).forEach((outlet) => {
             if (outlet.type === 'message') {
@@ -334,7 +341,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         // Send in fs commands
         if (inputFrame.fs) {
             Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
-                engine.fs[funcName as keyof FrameIn['fs']].apply(null, args)
+                engine.fs[funcName as keyof FrameNodeIn['fs']].apply(null, args)
             })
         }
 
@@ -399,13 +406,13 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
 export const assertNodeOutput = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
-    ...frames: Array<[FrameIn, FrameOut]>
+    ...frames: Array<[FrameNodeIn, FrameNodeOut]>
 ): Promise<void> => {
-    const inputFrames: Array<FrameIn> = frames.map(([frameIn]) => frameIn)
-    const expectedOutputFrames: Array<FrameOut> = frames.map(
+    const inputFrames: Array<FrameNodeIn> = frames.map(([frameIn]) => frameIn)
+    const expectedOutputFrames: Array<FrameNodeOut> = frames.map(
         ([_, frameOut]) => frameOut
     )
-    let actualOutputFrames: Array<FrameOut> = await generateFramesForNode(
+    let actualOutputFrames: Array<FrameNodeOut> = await generateFramesForNode(
         nodeTestSettings,
         inputFrames
     )
@@ -423,6 +430,114 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
     )
 }
 
+// ================================ TESTING SHARED CODE ================================ //
+type TransferrableType = string | number | Message
+
+interface FrameSharedCode {
+    parameters: Array<TransferrableType>,
+    returns: TransferrableType | boolean
+}
+
+interface SharedCodeTestSettings {
+    target: CompilerTarget
+    sharedCodeGenerator: SharedCodeGenerator
+    functionName: string
+    bitDepth: AudioSettings['bitDepth']
+}
+
+export const assertSharedFunctionOutput = async (
+    sharedCodeTestSettings: SharedCodeTestSettings, 
+    ...frames: Array<FrameSharedCode>
+) => {
+    const { target, bitDepth, sharedCodeGenerator, functionName } = sharedCodeTestSettings
+
+    const compilation = makeCompilation({
+        graph: {
+            'dummy': {
+                ...nodeDefaults('dummy', 'DUMMY'),
+                // Force inclusion of code
+                isMessageSource: true,
+            }
+        },
+        target,
+        nodeImplementations: {
+            'DUMMY': {
+                sharedCode: [ sharedCodeGenerator ]
+            }
+        },
+        audioSettings: {
+            channelCount: ENGINE_DSP_PARAMS.channelCount,
+            bitDepth,
+        },
+    })
+
+    let code = executeCompilation(compilation)
+    if (target === 'javascript') {
+        code += `
+            exports.${functionName} = ${functionName}
+        `
+    } else {
+        code += `
+            export { ${functionName} }
+        `
+    }
+
+    // Always save latest compilation for easy inspection
+    await writeFile(
+        `./tmp/latest-compilation.${
+            compilation.target === 'javascript' ? 'js' : 'asc'
+        }`,
+        code
+    )
+
+    const engine = await createEngine(compilation.target, bitDepth, code) as any
+
+    if (target === 'assemblyscript') {
+        (engine as any)[functionName] = (...args: any) => {
+            return _liftAny((engine as any).wasmExports[functionName](...args.map(_lowerAny)))
+        }
+    }
+
+    const _lowerAny = (obj: TransferrableType) => {
+        const wasmEngine = engine as AssemblyScriptWasmEngine
+        if (typeof obj === 'string') {
+            return lowerString(wasmEngine.wasmExports, obj)
+
+        } else if (typeof obj === 'number') {
+            return obj
+
+        } else  {
+            return lowerMessage(wasmEngine.wasmExports, obj)
+        }
+    }
+
+    const _liftAny = (obj: TransferrableType | MessagePointer | StringPointer) => {
+        const liftAs = frames[0].returns
+        const wasmEngine = engine as AssemblyScriptWasmEngine
+        if (typeof liftAs === 'string') {
+            return liftString(wasmEngine.wasmExports, obj as StringPointer)
+
+        } else if (typeof liftAs === 'number') {
+            return obj
+
+        } else if (typeof liftAs === 'boolean') {
+            return !!obj
+
+        } else {
+            return liftMessage(wasmEngine.wasmExports, obj as MessagePointer)
+        }
+    }
+
+    const actualFrames = frames.map((frame) => {
+        const { parameters } = frame
+        const actualReturns = (engine as any)[functionName](...parameters)
+        return { ...frame, returns: actualReturns }
+    })
+
+    assert.deepStrictEqual(actualFrames, frames)
+}
+
+// ================================ UTILS ================================ //
 /**
  * Helper to round test results even nested in complex objects / arrays.
  */

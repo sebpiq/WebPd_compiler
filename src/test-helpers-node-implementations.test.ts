@@ -14,12 +14,14 @@ import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
 import { CompilerTarget, NodeImplementation } from './types'
 
+const TEST_PARAMETERS: Array<{ target: CompilerTarget }> = [
+    { target: 'javascript' },
+    { target: 'assemblyscript' },
+]
+
 describe('test-helpers-node-implementations', () => {
     describe('assertNodeOutput', () => {
-        it.each<{ target: CompilerTarget }>([
-            { target: 'javascript' },
-            { target: 'assemblyscript' },
-        ])('should work with signal inlets %s', async ({ target }) => {
+        it.each(TEST_PARAMETERS)('should work with signal inlets %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
                 loop: ({ ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
             }
@@ -43,10 +45,7 @@ describe('test-helpers-node-implementations', () => {
             )
         })
 
-        it.each<{ target: CompilerTarget }>([
-            { target: 'javascript' },
-            { target: 'assemblyscript' },
-        ])('should work with message inlets %s', async ({ target }) => {
+        it.each(TEST_PARAMETERS)('should work with message inlets %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
                 messages: ({ globs, snds }) => ({
                     '0': `
@@ -79,10 +78,7 @@ describe('test-helpers-node-implementations', () => {
             )
         })
 
-        it.each<{ target: CompilerTarget }>([
-            { target: 'javascript' },
-            { target: 'assemblyscript' },
-        ])('should send message at the right frame %s', async ({ target }) => {
+        it.each(TEST_PARAMETERS)('should send message at the right frame %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
                 messages: ({ globs, snds }) => ({
                     '0': `
@@ -113,10 +109,7 @@ describe('test-helpers-node-implementations', () => {
             )
         })
 
-        it.each<{ target: CompilerTarget }>([
-            { target: 'javascript' },
-            { target: 'assemblyscript' },
-        ])('should handle tests with fs %s', async ({ target }) => {
+        it.each(TEST_PARAMETERS)('should handle tests with fs %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
                 messages: ({}) => ({
                     '0': `
@@ -161,10 +154,7 @@ describe('test-helpers-node-implementations', () => {
             )
         })
 
-        it.each<{ target: CompilerTarget }>([
-            { target: 'javascript' },
-            { target: 'assemblyscript' },
-        ])('should handle tests on arrays %s', async ({ target }) => {
+        it.each(TEST_PARAMETERS)('should handle tests on arrays %s', async ({ target }) => {
             const nodeImplementation: NodeImplementation<{}> = {
                 messages: () => ({
                     '0': `
@@ -194,6 +184,67 @@ describe('test-helpers-node-implementations', () => {
                     { farray: { get: ['array1'] } },
                     { outs: {}, farray: { get: { array1: [666] } } },
                 ]
+            )
+        })
+    })
+
+    describe('assertSharedFunctionOutput', () => {
+
+        it.each(TEST_PARAMETERS)('should be able to test functions with numbers %s', async ({ target }) => {
+            await nodeImplementationsTestHelpers.assertSharedFunctionOutput(
+                {
+                    bitDepth: 32,
+                    target,
+                    sharedCodeGenerator: ({ macros: { Var, Func }}) => `
+                        function myNumberFunction ${Func([
+                            Var('someNumber', 'Float'),
+                            Var('someOtherNumber', 'Float'),
+                        ], 'Float')} {
+                            return someNumber + someOtherNumber
+                        }
+                    `,
+                    functionName: 'myNumberFunction'
+                },
+                { parameters: [123, 0.5], returns: 123.5 },
+            )
+        })
+
+        it.each(TEST_PARAMETERS)('should be able to test functions with messages %s', async ({ target }) => {
+            await nodeImplementationsTestHelpers.assertSharedFunctionOutput(
+                {
+                    bitDepth: 32,
+                    target,
+                    sharedCodeGenerator: ({ macros: { Var, Func }}) => `
+                        function myMessageFunction ${Func([
+                            Var('someMessage', 'Message'),
+                        ], 'Message')} {
+                            const ${Var('newMessage', 'Message')} = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
+                            msg_writeFloatToken(newMessage, 0, msg_readFloatToken(someMessage, 0) + 0.5)
+                            msg_writeStringToken(newMessage, 1, msg_readStringToken(someMessage, 1) + 'a')
+                            return newMessage
+                        }
+                    `,
+                    functionName: 'myMessageFunction'
+                },
+                { parameters: [[-10, 'bl']], returns: [-9.5, 'bla'] },
+            )
+        })
+
+        it.each(TEST_PARAMETERS)('should be able to test functions with strings %s', async ({ target }) => {
+            await nodeImplementationsTestHelpers.assertSharedFunctionOutput(
+                {
+                    bitDepth: 32,
+                    target,
+                    sharedCodeGenerator: ({ macros: { Var, Func }}) => `
+                        function myStringFunction ${Func([
+                            Var('someString', 'string'),
+                        ], 'string')} {
+                            return someString + '666'
+                        }
+                    `,
+                    functionName: 'myStringFunction'
+                },
+                { parameters: ['hello '], returns: 'hello 666' },
             )
         })
     })
