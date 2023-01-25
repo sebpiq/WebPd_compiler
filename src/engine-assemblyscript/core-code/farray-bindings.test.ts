@@ -10,6 +10,7 @@ import {
     getAscCode,
     initializeCoreCodeTest,
     replacePlaceholdersForTesting,
+    TEST_PARAMETERS,
 } from './test-helpers'
 
 describe('farray-bindings', () => {
@@ -30,10 +31,7 @@ describe('farray-bindings', () => {
         )
 
     describe('lowerFloatArray', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should lower typed array to wasm module %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -90,10 +88,7 @@ describe('farray-bindings', () => {
     })
 
     describe('lowerListOfFloatArrays', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])('should lower a list of typed arrays %s', async ({ bitDepth }) => {
+        it.each(TEST_PARAMETERS)('should lower a list of typed arrays %s', async ({ bitDepth }) => {
             // prettier-ignore
             const code = getBaseTestCode({bitDepth}) + `
                 export function testReadArraysLength (arrays: FloatArray[], index: Int): f64 {
@@ -176,10 +171,7 @@ describe('farray-bindings', () => {
     })
 
     describe('readListOfFloatArrays', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])('should lower a list of typed arrays %s', async ({ bitDepth }) => {
+        it.each(TEST_PARAMETERS)('should lower a list of typed arrays %s', async ({ bitDepth }) => {
             // prettier-ignore
             const code = getBaseTestCode({bitDepth}) + replacePlaceholdersForTesting(`
                 const arrays: FloatArray[] = [
@@ -216,10 +208,7 @@ describe('farray-bindings', () => {
             ])
         })
 
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])('should share the same memory space %s', async ({ bitDepth }) => {
+        it.each(TEST_PARAMETERS)('should share the same memory space %s', async ({ bitDepth }) => {
             // prettier-ignore
             const code = getBaseTestCode({bitDepth}) + replacePlaceholdersForTesting(`
                 const arrays: FloatArray[] = [
@@ -264,10 +253,7 @@ describe('farray-bindings', () => {
     })
 
     describe('farray_set', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should set the array and call the events hooks %s',
             async ({ bitDepth }) => {
                 // prettier-ignore

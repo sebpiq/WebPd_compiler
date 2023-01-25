@@ -12,6 +12,7 @@
 import { DspGraph, traversal } from '@webpd/dsp-graph'
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
 import {
+    AudioSettings,
     Code,
     CodeVariableNames,
     NodeImplementation,
@@ -66,3 +67,6 @@ export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
     })
     return combined
 }
+
+export const getFloatArrayType = (bitDepth: AudioSettings['bitDepth']) =>
+    bitDepth === 64 ? Float64Array : Float32Array

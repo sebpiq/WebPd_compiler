@@ -53,6 +53,8 @@ export const countTo = (count: number) => {
 /**
  * @returns Generates a new object with the same keys as `src` and whose
  * values are the result of mapping `src`'s values with `func`.
+ * 
+ * @todo : fix typings so that keys of SrcType appear in DestType.
  */
 export const mapObject = <SrcType, DestType>(
     src: { [key: string]: SrcType },

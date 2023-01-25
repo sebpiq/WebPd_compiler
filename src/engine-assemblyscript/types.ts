@@ -9,7 +9,7 @@
  *
  */
 
-import { Code, Compilation } from '../types'
+import { Code } from '../types'
 import { core_WasmExports } from './core-code/core-bindings'
 import { fs_WasmExports, fs_WasmImports } from './core-code/fs-bindings'
 import { msg_WasmExports } from './core-code/msg-bindings'
@@ -25,9 +25,9 @@ export type StringPointer = number
 export type MessagePointer = number
 
 /**
- * Pointer to a typed array.
+ * Pointer to a float array.
  */
-export type TypedArrayPointer = number
+export type FloatArrayPointer = number
 
 /**
  * Pointer to data of unknown type that stays in the wasm space (`Message` for example).
@@ -54,8 +54,8 @@ export type AssemblyScriptWasmExports = farray_WasmExports &
         loop: () => void
 
         // Pointers to input and output buffers
-        getOutput: () => TypedArrayPointer
-        getInput: () => TypedArrayPointer
+        getOutput: () => FloatArrayPointer
+        getInput: () => FloatArrayPointer
 
         // Pointer to a JSON string representation of `EngineMetadata`
         metadata: WebAssembly.Global

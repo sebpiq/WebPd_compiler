@@ -188,10 +188,10 @@ describe('test-helpers-node-implementations', () => {
         })
     })
 
-    describe('assertSharedFunctionOutput', () => {
+    describe('assertSharedCodeFunctionOutput', () => {
 
         it.each(TEST_PARAMETERS)('should be able to test functions with numbers %s', async ({ target }) => {
-            await nodeImplementationsTestHelpers.assertSharedFunctionOutput(
+            await nodeImplementationsTestHelpers.assertSharedCodeFunctionOutput(
                 {
                     bitDepth: 32,
                     target,
@@ -210,7 +210,7 @@ describe('test-helpers-node-implementations', () => {
         })
 
         it.each(TEST_PARAMETERS)('should be able to test functions with messages %s', async ({ target }) => {
-            await nodeImplementationsTestHelpers.assertSharedFunctionOutput(
+            await nodeImplementationsTestHelpers.assertSharedCodeFunctionOutput(
                 {
                     bitDepth: 32,
                     target,
@@ -231,7 +231,7 @@ describe('test-helpers-node-implementations', () => {
         })
 
         it.each(TEST_PARAMETERS)('should be able to test functions with strings %s', async ({ target }) => {
-            await nodeImplementationsTestHelpers.assertSharedFunctionOutput(
+            await nodeImplementationsTestHelpers.assertSharedCodeFunctionOutput(
                 {
                     bitDepth: 32,
                     target,

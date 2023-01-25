@@ -16,7 +16,8 @@ export type fs_OperationStatus =
     | typeof FS_OPERATION_SUCCESS
     | typeof FS_OPERATION_FAILURE
 
-export type FloatArray = Float32Array | Float64Array
+export type FloatArrayConstructor = typeof Float32Array | typeof Float64Array
+export type FloatArray = InstanceType<FloatArrayConstructor>
 
 /**
  * Type for messages sent through the control flow.

@@ -21,14 +21,10 @@ import {
     getAscCode,
     initializeCoreCodeTest,
     replacePlaceholdersForTesting,
+    TEST_PARAMETERS,
 } from './test-helpers'
 
 describe('msg-bindings', () => {
-    const TEST_PARAMETERS: Array<{ bitDepth: AudioSettings['bitDepth'] }> = [
-        { bitDepth: 32 },
-        { bitDepth: 64 },
-    ]
-
     const BYTES_IN_CHAR = 4
 
     const float64ToInt32Array = (value: number) => {
@@ -67,6 +63,8 @@ describe('msg-bindings', () => {
                     x_farray_getListOfArraysLength as farray_getListOfArraysLength,
                     x_farray_getListOfArraysElem as farray_getListOfArraysElem,
                     farray_create,
+
+                    // MSG EXPORTS
                     x_msg_create as msg_create,
                     x_msg_getTokenTypes as msg_getTokenTypes,
                     x_msg_createTemplate as msg_createTemplate,
@@ -82,7 +80,7 @@ describe('msg-bindings', () => {
         )
 
     describe('lowerMessage', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+        it.each(TEST_PARAMETERS)(
             'should create the message with correct header and filled-in data %s',
             async ({ bitDepth }) => {
                 const code = getBaseTestCode({ bitDepth })
@@ -164,7 +162,7 @@ describe('msg-bindings', () => {
     })
 
     describe('liftMessage', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+        it.each(TEST_PARAMETERS)(
             'should read message to a JavaScript array %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -201,7 +199,7 @@ describe('msg-bindings', () => {
     })
 
     describe('msg_floats / msg_strings', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+        it.each(TEST_PARAMETERS)(
             'should create floats message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -243,7 +241,7 @@ describe('msg-bindings', () => {
             }
         )
 
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+        it.each(TEST_PARAMETERS)(
             'should create strings message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -287,7 +285,7 @@ describe('msg-bindings', () => {
     })
 
     describe('msg_isMatching', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+        it.each(TEST_PARAMETERS)(
             'should match given message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -345,7 +343,7 @@ describe('msg-bindings', () => {
     })
 
     describe('msg_display', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>(TEST_PARAMETERS)(
+        it.each(TEST_PARAMETERS)(
             'should return a display version of a message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore

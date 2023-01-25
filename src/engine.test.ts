@@ -606,7 +606,7 @@ describe('Engine', () => {
                     return receivedStatus
                 }
                 function testOperationChannelCount(id: fs_OperationId): Int {
-                    return _FS_SOUND_STREAM_BUFFERS.get(id).channelCount
+                    return _FS_SOUND_STREAM_BUFFERS.get(id).length
                 }
                 function testOperationCleaned (id: fs_OperationId): boolean {
                     return !_FS_OPERATIONS_IDS.has(id)
@@ -623,10 +623,10 @@ describe('Engine', () => {
                         sharedTestingCode +
                         `
                         function testReceivedSound(id: fs_OperationId): boolean {
-                            const buffer = _FS_SOUND_STREAM_BUFFERS.get(id)
-                            return buffer.pullFrame()[0] === -1
-                                && buffer.pullFrame()[0] === -2
-                                && buffer.pullFrame()[0] === -3
+                            const buffers = _FS_SOUND_STREAM_BUFFERS.get(id)
+                            return buf_pullSample(buffers[0]) === -1
+                                && buf_pullSample(buffers[0]) === -2
+                                && buf_pullSample(buffers[0]) === -3
                         }
                     `
 

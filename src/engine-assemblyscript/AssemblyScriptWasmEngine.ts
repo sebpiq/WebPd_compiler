@@ -24,6 +24,7 @@ import {
     CodeVariableName,
     Engine,
     EngineMetadata,
+    FloatArray,
     Message,
     SoundFileInfo,
 } from '../types'
@@ -35,7 +36,6 @@ import {
 import { fs_WasmImports } from './core-code/fs-bindings'
 import { liftMessage, lowerMessage } from './core-code/msg-bindings'
 import {
-    FloatArray,
     lowerListOfFloatArrays,
     lowerFloatArray,
     readListOfFloatArrays,
@@ -47,6 +47,7 @@ import {
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
 import { mapArray, mapObject } from '../functional-helpers'
+import { getFloatArrayType } from '../compile-helpers'
 
 /**
  * Convenience function to create and initialize an engine.
@@ -85,7 +86,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         // We need to read metadata before everything, because it is used by other initialization functions
         this.metadata = await readMetadata(this.wasmBuffer)
         this.bitDepth = this.metadata.audioSettings.bitDepth
-        this.arrayType = this.bitDepth === 32 ? Float32Array : Float64Array
+        this.arrayType = getFloatArrayType(this.bitDepth)
 
         const wasmImports: AssemblyScriptWasmImports = {
             ...this._fsImports(),

@@ -1,14 +1,10 @@
 import assert from 'assert'
-import { AudioSettings } from '../../types'
 import { readTypedArray } from './core-bindings'
-import { getAscCode, initializeCoreCodeTest } from './test-helpers'
+import { getAscCode, initializeCoreCodeTest, TEST_PARAMETERS } from './test-helpers'
 
 describe('core-bindings', () => {
     describe('readTypedArray', () => {
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should read existing typed array from wasm module %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
@@ -64,10 +60,7 @@ describe('core-bindings', () => {
             }
         )
 
-        it.each<{ bitDepth: AudioSettings['bitDepth'] }>([
-            { bitDepth: 32 },
-            { bitDepth: 64 },
-        ])(
+        it.each(TEST_PARAMETERS)(
             'should read dynamically created typed array from wasm module %s',
             async ({ bitDepth }) => {
                 const code =

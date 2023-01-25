@@ -27,10 +27,7 @@ import {
 import { writeFile } from 'fs/promises'
 import { mapArray, mapObject } from './functional-helpers'
 import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
-import { AssemblyScriptWasmEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
-import { liftString, lowerString } from './engine-assemblyscript/core-code/core-bindings'
-import { liftMessage, lowerMessage } from './engine-assemblyscript/core-code/msg-bindings'
-import { MessagePointer, StringPointer } from './engine-assemblyscript/types'
+import { AscTransferrableType, assertCoreFunctionOutput } from './engine-assemblyscript/core-code/test-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -236,13 +233,11 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     const code = executeCompilation(compilation)
     // Always save latest compilation for easy inspection
     await writeFile(
-        `./tmp/latest-compilation.${
-            compilation.target === 'javascript' ? 'js' : 'asc'
-        }`,
+        `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'asc'}`,
         code
     )
 
-    const engine = await createEngine(compilation.target, bitDepth, code)
+    const engine = await createEngine(target, bitDepth, code)
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -430,12 +425,10 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
     )
 }
 
-// ================================ TESTING SHARED CODE ================================ //
-type TransferrableType = string | number | Message
-
+// ================================ TESTING GLOBAL FUNCTIONS ================================ //
 interface FrameSharedCode {
-    parameters: Array<TransferrableType>,
-    returns: TransferrableType | boolean
+    parameters: Array<AscTransferrableType>
+    returns: AscTransferrableType
 }
 
 interface SharedCodeTestSettings {
@@ -445,25 +438,29 @@ interface SharedCodeTestSettings {
     bitDepth: AudioSettings['bitDepth']
 }
 
-export const assertSharedFunctionOutput = async (
-    sharedCodeTestSettings: SharedCodeTestSettings, 
+/**
+ * Helper to test functions defined in {@link NodeImplementation#sharedCode}.
+ */
+export const assertSharedCodeFunctionOutput = async (
+    sharedCodeTestSettings: SharedCodeTestSettings,
     ...frames: Array<FrameSharedCode>
 ) => {
-    const { target, bitDepth, sharedCodeGenerator, functionName } = sharedCodeTestSettings
+    const { target, bitDepth, sharedCodeGenerator, functionName } =
+        sharedCodeTestSettings
 
     const compilation = makeCompilation({
         graph: {
-            'dummy': {
+            dummy: {
                 ...nodeDefaults('dummy', 'DUMMY'),
                 // Force inclusion of code
                 isMessageSource: true,
-            }
+            },
         },
         target,
         nodeImplementations: {
-            'DUMMY': {
-                sharedCode: [ sharedCodeGenerator ]
-            }
+            DUMMY: {
+                sharedCode: [sharedCodeGenerator],
+            },
         },
         audioSettings: {
             channelCount: ENGINE_DSP_PARAMS.channelCount,
@@ -484,57 +481,24 @@ export const assertSharedFunctionOutput = async (
 
     // Always save latest compilation for easy inspection
     await writeFile(
-        `./tmp/latest-compilation.${
-            compilation.target === 'javascript' ? 'js' : 'asc'
-        }`,
+        `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'asc'}`,
         code
     )
 
-    const engine = await createEngine(compilation.target, bitDepth, code) as any
-
     if (target === 'assemblyscript') {
-        (engine as any)[functionName] = (...args: any) => {
-            return _liftAny((engine as any).wasmExports[functionName](...args.map(_lowerAny)))
+        await assertCoreFunctionOutput({...sharedCodeTestSettings, code}, ...frames)
+
+    } else {
+        const engine = await createEngine('javascript', bitDepth, code)
+        const actualFrames: Array<FrameSharedCode> = []
+        for (let frame of frames) {
+            actualFrames.push({
+                ...frame,
+                returns: (engine as any)[functionName](...frame.parameters),
+            })
         }
+        assert.deepStrictEqual(actualFrames, frames)
     }
-
-    const _lowerAny = (obj: TransferrableType) => {
-        const wasmEngine = engine as AssemblyScriptWasmEngine
-        if (typeof obj === 'string') {
-            return lowerString(wasmEngine.wasmExports, obj)
-
-        } else if (typeof obj === 'number') {
-            return obj
-
-        } else  {
-            return lowerMessage(wasmEngine.wasmExports, obj)
-        }
-    }
-
-    const _liftAny = (obj: TransferrableType | MessagePointer | StringPointer) => {
-        const liftAs = frames[0].returns
-        const wasmEngine = engine as AssemblyScriptWasmEngine
-        if (typeof liftAs === 'string') {
-            return liftString(wasmEngine.wasmExports, obj as StringPointer)
-
-        } else if (typeof liftAs === 'number') {
-            return obj
-
-        } else if (typeof liftAs === 'boolean') {
-            return !!obj
-
-        } else {
-            return liftMessage(wasmEngine.wasmExports, obj as MessagePointer)
-        }
-    }
-
-    const actualFrames = frames.map((frame) => {
-        const { parameters } = frame
-        const actualReturns = (engine as any)[functionName](...parameters)
-        return { ...frame, returns: actualReturns }
-    })
-
-    assert.deepStrictEqual(actualFrames, frames)
 }
 
 // ================================ UTILS ================================ //

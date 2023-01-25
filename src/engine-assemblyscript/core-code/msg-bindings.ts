@@ -26,7 +26,7 @@ import {
     ArrayBufferOfIntegersPointer,
     MessagePointer,
     StringPointer,
-    TypedArrayPointer,
+    FloatArrayPointer,
 } from '../types'
 import { farray_WasmExports } from './farray-bindings'
 
@@ -37,8 +37,8 @@ export interface msg_WasmExports extends farray_WasmExports {
     msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
     ) => MessagePointer
-    msg_getTokenTypes: (messagePointer: MessagePointer) => TypedArrayPointer
-    msg_createTemplate: (length: number) => TypedArrayPointer
+    msg_getTokenTypes: (messagePointer: MessagePointer) => FloatArrayPointer
+    msg_createTemplate: (length: number) => FloatArrayPointer
     msg_writeStringToken: (
         messagePointer: MessagePointer,
         tokenIndex: number,

@@ -1,4 +1,4 @@
-import { InternalPointer, TypedArrayPointer } from '../types'
+import { InternalPointer, FloatArrayPointer } from '../types'
 
 export type TypedArrayConstructor =
     | typeof Int8Array
@@ -64,10 +64,10 @@ export const lowerBuffer = (
 
 // REF : Assemblyscript ESM bindings `liftTypedArray`
 // TODO : move to other file ?
-export const readTypedArray = (
+export const readTypedArray = <_TypedArrayConstructor extends TypedArrayConstructor>(
     wasmExports: core_WasmExports,
-    constructor: TypedArrayConstructor,
-    pointer: TypedArrayPointer
+    constructor: _TypedArrayConstructor,
+    pointer: FloatArrayPointer
 ) => {
     if (!pointer) return null
     const memoryU32 = new Uint32Array(wasmExports.memory.buffer)
@@ -75,5 +75,5 @@ export const readTypedArray = (
         wasmExports.memory.buffer,
         memoryU32[(pointer + 4) >>> 2],
         memoryU32[(pointer + 8) >>> 2] / constructor.BYTES_PER_ELEMENT
-    )
+    ) as InstanceType<_TypedArrayConstructor>
 }

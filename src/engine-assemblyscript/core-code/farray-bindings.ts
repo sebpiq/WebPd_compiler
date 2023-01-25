@@ -9,25 +9,23 @@
  *
  */
 
-import { AudioSettings } from '../../types'
+import { AudioSettings, FloatArray } from '../../types'
 import {
     core_WasmExports,
     readTypedArray,
     TypedArrayConstructor,
 } from './core-bindings'
-import { InternalPointer, StringPointer, TypedArrayPointer } from '../types'
-
-export type FloatArrayConstructor = typeof Float32Array | typeof Float64Array
-export type FloatArray = InstanceType<FloatArrayConstructor>
+import { InternalPointer, StringPointer, FloatArrayPointer } from '../types'
+import { getFloatArrayType } from '../../compile-helpers'
 
 export interface farray_WasmExports extends core_WasmExports {
-    farray_create: (length: number) => TypedArrayPointer
-    farray_get: (arrayName: StringPointer) => TypedArrayPointer
-    farray_set: (arrayName: StringPointer, array: TypedArrayPointer) => void
+    farray_create: (length: number) => FloatArrayPointer
+    farray_get: (arrayName: StringPointer) => FloatArrayPointer
+    farray_set: (arrayName: StringPointer, array: FloatArrayPointer) => void
     farray_createListOfArrays: () => InternalPointer
     farray_pushToListOfArrays: (
         arrays: InternalPointer,
-        array: TypedArrayPointer
+        array: FloatArrayPointer
     ) => void
     farray_getListOfArraysLength: (
         listOfArraysPointer: InternalPointer
@@ -46,7 +44,7 @@ export const lowerFloatArray = (
     bitDepth: AudioSettings['bitDepth'],
     data: Array<number> | FloatArray
 ) => {
-    const arrayType = getArrayType(bitDepth)
+    const arrayType = getFloatArrayType(bitDepth)
     const arrayPointer = wasmExports.farray_create(data.length)
     const array = readTypedArray(
         wasmExports,
@@ -84,7 +82,7 @@ export const readListOfFloatArrays = (
     const listLength =
         wasmExports.farray_getListOfArraysLength(listOfArraysPointer)
     const arrays: Array<InstanceType<TypedArrayConstructor>> = []
-    const arrayType = getArrayType(bitDepth)
+    const arrayType = getFloatArrayType(bitDepth)
     for (let i = 0; i < listLength; i++) {
         const arrayPointer = wasmExports.farray_getListOfArraysElem(
             listOfArraysPointer,
@@ -94,6 +92,3 @@ export const readListOfFloatArrays = (
     }
     return arrays
 }
-
-const getArrayType = (bitDepth: AudioSettings['bitDepth']) =>
-    bitDepth === 64 ? Float64Array : Float32Array
