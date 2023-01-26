@@ -1,6 +1,7 @@
 import { replaceCoreCodePlaceholders } from '../../compile-helpers'
 import { CodeVariableNames } from '../../types'
 import BUF_JS from './buf.generated.js.txt'
+import SKED_JS from './sked.generated.js.txt'
 import FS_JS from './fs.generated.js.txt'
 import FARRAY_JS from './farray.generated.js.txt'
 
@@ -38,6 +39,6 @@ const msg_display = (m) => '[' + m
 export default (codeVariableNames: CodeVariableNames) => {
     return replaceCoreCodePlaceholders(
         codeVariableNames,
-        COMPAT + FARRAY_JS + BUF_JS + MSG + FS_JS
+        COMPAT + FARRAY_JS + BUF_JS + SKED_JS + MSG + FS_JS 
     )
 }
