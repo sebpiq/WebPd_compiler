@@ -93,7 +93,7 @@ export default (
                         ], 'void')} {
                             ${nodeMessageReceivers[inlet.id]}
                             throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${globs.m})${
-                                debug ? "+ '\nDEBUG : remember, you must return from message receiver'": ''})
+                                debug ? " + '\\nDEBUG : remember, you must return from message receiver'": ''})
                         }
                     `),
                 

@@ -106,13 +106,13 @@ describe('fs-bindings', () => {
 
     describe('sound info', () => {
         it.each(TEST_PARAMETERS)(
-            'should be able to convert _fs_SoundInfo to Message %s',
+            'should be able to convert fs_SoundInfo to Message %s',
             async ({ bitDepth }) => {
                 const code =
                     getBaseTestCode({ bitDepth }) +
                     `
                     export function testSoundInfoToMessage (array: FloatArray): Message {
-                        const soundInfo: _fs_SoundInfo = {
+                        const soundInfo: fs_SoundInfo = {
                             channelCount: 2,
                             sampleRate: 48000,
                             bitDepth: 24,

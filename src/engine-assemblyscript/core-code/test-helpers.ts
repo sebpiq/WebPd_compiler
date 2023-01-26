@@ -18,7 +18,6 @@ import {
 } from '../../compile-helpers'
 import { liftMessage, lowerMessage } from './msg-bindings'
 import { liftString, lowerString, readTypedArray } from './core-bindings'
-import assert from 'assert'
 import { mapObject } from '../../functional-helpers'
 import { lowerFloatArray } from './farray-bindings'
 
@@ -131,40 +130,6 @@ export const initializeCoreCodeTest = async <
         floatArrayType,
         called,
     }
-}
-
-interface FrameCoreFunction {
-    parameters: Array<AscTransferrableType>
-    returns: AscTransferrableType
-}
-
-interface CoreFunctionTestSettings {
-    code: Code
-    functionName: string
-    bitDepth: AudioSettings['bitDepth']
-}
-
-/**
- * Helper to test the core engine code.
- */
-export const assertCoreFunctionOutput = async (
-    coreCodeTestSettings: CoreFunctionTestSettings,
-    ...frames: Array<FrameCoreFunction>
-) => {
-    const { code, functionName, bitDepth } = coreCodeTestSettings
-
-    const bindings = await generateTestBindings(code, bitDepth, {
-        [functionName]: frames[0].returns,
-    })
-
-    const actualFrames: Array<FrameCoreFunction> = []
-    for (let frame of frames) {
-        actualFrames.push({
-            ...frame,
-            returns: bindings[functionName](...frame.parameters),
-        })
-    }
-    assert.deepStrictEqual(actualFrames, frames)
 }
 
 export const generateTestBindings = async <

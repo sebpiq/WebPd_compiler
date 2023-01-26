@@ -47,6 +47,8 @@ function x_fs_onCloseSoundStream(id, status) {
     fs_closeSoundStream(id, status);
 }
 // =========================== FS API
+class fs_SoundInfo {
+}
 function fs_readSoundFile(url, soundInfo, callback) {
     const id = _fs_createOperationId();
     _FS_OPERATIONS_SOUND_CALLBACKS.set(id, callback);
@@ -117,8 +119,6 @@ function fs_soundInfoToMessage(soundInfo) {
     return info;
 }
 // =========================== PRIVATE
-class _fs_SoundInfo {
-}
 function _fs_createOperationId() {
     const id = _FS_OPERATION_COUNTER++;
     _FS_OPERATIONS_IDS.add(id);

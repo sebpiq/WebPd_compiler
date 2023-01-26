@@ -98,5 +98,20 @@ describe('buf-bindings', () => {
                 assert.strictEqual(bindings.testGetPullAvailableLength(soundBuffer), 0)
             }
         )
+
+        it.each(TEST_PARAMETERS)(
+            'should return 0 when pulling from empty SoundBuffer %s',
+            async ({ bitDepth }) => {
+                const code = getBaseTestCode({ bitDepth })
+                const bindings = await generateTestBindings(
+                    code,
+                    bitDepth,
+                    EXPORTED_FUNCTIONS
+                )
+                const soundBuffer = bindings.testCreateSoundBuffer(5)
+                assert.strictEqual(bindings.buf_pullSample(soundBuffer), 0)
+                assert.strictEqual(bindings.buf_pullSample(soundBuffer), 0)
+            }
+        )
     })
 })

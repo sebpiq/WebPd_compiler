@@ -34,7 +34,7 @@ function buf_pushBlock(buffer, block) {
 }
 function buf_pullSample(buffer) {
     if (buffer.pullAvailableLength <= 0) {
-        throw new Error('buffer empty');
+        return 0;
     }
     let readCursor = buffer.writeCursor - buffer.pullAvailableLength;
     if (readCursor < 0) {

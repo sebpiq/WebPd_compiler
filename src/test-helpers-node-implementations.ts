@@ -27,7 +27,7 @@ import {
 import { writeFile } from 'fs/promises'
 import { mapArray, mapObject } from './functional-helpers'
 import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
-import { AscTransferrableType, assertCoreFunctionOutput } from './engine-assemblyscript/core-code/test-helpers'
+import { AscTransferrableType, generateTestBindings as generateTestAscBindings } from './engine-assemblyscript/core-code/test-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -485,20 +485,23 @@ export const assertSharedCodeFunctionOutput = async (
         code
     )
 
+    let bindings: any
     if (target === 'assemblyscript') {
-        await assertCoreFunctionOutput({...sharedCodeTestSettings, code}, ...frames)
-
+        bindings = await generateTestAscBindings(code, bitDepth, {
+            [functionName]: frames[0].returns,
+        })
     } else {
-        const engine = await createEngine('javascript', bitDepth, code)
-        const actualFrames: Array<FrameSharedCode> = []
-        for (let frame of frames) {
-            actualFrames.push({
-                ...frame,
-                returns: (engine as any)[functionName](...frame.parameters),
-            })
-        }
-        assert.deepStrictEqual(actualFrames, frames)
+        bindings = await createEngine('javascript', bitDepth, code)
     }
+
+    const actualFrames: Array<FrameSharedCode> = []
+    for (let frame of frames) {
+        actualFrames.push({
+            ...frame,
+            returns: bindings[functionName](...frame.parameters),
+        })
+    }
+    assert.deepStrictEqual(actualFrames, frames)
 }
 
 // ================================ UTILS ================================ //

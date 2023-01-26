@@ -194,6 +194,48 @@ describe('compileDeclare', () => {
         )
     })
 
+    it('should render correct error throw if debug = true', () => {
+        const graph = makeGraph({
+            someNode: {
+                type: 'add',
+                inlets: {
+                    '0': { id: '0', type: 'message' },
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            'add': {
+                messages: () => ({
+                    '0': '// [add] message receiver',
+                }),
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            inletCallerSpecs: { someNode: ['0'] },
+            debug: true,
+            nodeImplementations,
+        })
+
+        const declareCode = compileDeclare(compilation, [graph.someNode])
+
+        assert.strictEqual(
+            normalizeCode(declareCode),
+            normalizeCode(`
+                ${GLOBAL_VARIABLES_CODE}
+                
+                function add_someNode_RCVS_0 (m) {
+                    // [add] message receiver
+                    throw new Error('[add], id "someNode", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')
+                }
+                function inletCaller_someNode_0 (m) {add_someNode_RCVS_0(m)}
+            `)
+        )
+    })
+
     it('should throw an error if no implementation for message receiver', () => {
         const graph = makeGraph({
             add: {
@@ -219,7 +261,7 @@ describe('compileDeclare', () => {
         assert.throws(() => compileDeclare(compilation, [graph.add]))
     })
 
-    it('shouldnt throw an error if message receiver is implemented but string empty', () => {
+    it('should not throw an error if message receiver is implemented but string empty', () => {
         const graph = makeGraph({
             add: {
                 type: '+',
