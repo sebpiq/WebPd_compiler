@@ -36,9 +36,7 @@ export interface farray_WasmExports extends core_WasmExports {
     ) => number
 }
 
-/**
- * @param bitDepth : Must be the same value as what was used to compile the engine.
- */
+/** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const lowerFloatArray = (
     wasmExports: farray_WasmExports,
     bitDepth: AudioSettings['bitDepth'],
@@ -55,9 +53,7 @@ export const lowerFloatArray = (
     return { array, arrayPointer }
 }
 
-/**
- * @param bitDepth : Must be the same value as what was used to compile the engine.
- */
+/** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const lowerListOfFloatArrays = (
     wasmExports: farray_WasmExports,
     bitDepth: AudioSettings['bitDepth'],
@@ -71,9 +67,7 @@ export const lowerListOfFloatArrays = (
     return arraysPointer
 }
 
-/**
- * @param bitDepth : Must be the same value as what was used to compile the engine.
- */
+/** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const readListOfFloatArrays = (
     wasmExports: farray_WasmExports,
     bitDepth: AudioSettings['bitDepth'],

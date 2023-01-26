@@ -49,9 +49,7 @@ import { instantiateWasmModule } from './wasm-helpers'
 import { mapArray, mapObject } from '../functional-helpers'
 import { getFloatArrayType } from '../compile-helpers'
 
-/**
- * Convenience function to create and initialize an engine.
- */
+/** Convenience function to create and initialize an engine. */
 export const createEngine = async (wasmBuffer: ArrayBuffer) => {
     const engine = new AssemblyScriptWasmEngine(wasmBuffer)
     await engine.initialize()

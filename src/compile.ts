@@ -59,9 +59,7 @@ export default (
     })
 }
 
-/**
- * Asserts settings are valid (or throws error) and sets default values.
- */
+/** Asserts settings are valid (or throws error) and sets default values. */
 export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettings => {
@@ -79,15 +77,11 @@ export const validateSettings = (
     }
 }
 
-/**
- * Helper to get code macros from compile target.
- */
+/** Helper to get code macros from compile target. */
 export const getMacros = (target: CompilerTarget): CodeMacros =>
     ({ javascript: jsMacros, assemblyscript: ascMacros }[target])
 
-/**
- * Helper to execute compilation
- */
+/** Helper to execute compilation */
 export const executeCompilation = (compilation: Compilation) => {
     if (compilation.target === 'javascript') {
         return compileToJavascript(compilation)

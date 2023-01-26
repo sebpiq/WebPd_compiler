@@ -143,9 +143,7 @@ export const attachInletCallers = (
     })
 }
 
-/**
- * Helper to attach types to variable names depending on compile target and bitDepth.
- */
+/** Helper to attach types to variable names depending on compile target and bitDepth. */
 export const attachTypes = (
     codeVariableNames: CodeVariableNames,
     bitDepth: AudioSettings['bitDepth']

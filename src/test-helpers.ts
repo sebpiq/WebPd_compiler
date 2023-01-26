@@ -87,9 +87,7 @@ export const makeCompilation = (
     }
 }
 
-/**
- * Helper function to create a WebPd `Engine` for running tests.
- */
+/** Helper function to create a WebPd `Engine` for running tests. */
 export const createEngine = async (
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],

@@ -11,12 +11,8 @@
 
 import { Code, Engine } from '../types'
 
-/**
- * JavaScript Code that allows to create a JavaScriptEngine when evaled
- */
+/** JavaScript Code that allows to create a JavaScriptEngine when evaled */
 export type JavaScriptEngineCode = Code
 
-/**
- * Interface for JavaScript DSP engine.
- */
+/** Interface for JavaScript DSP engine. */
 export type JavaScriptEngine = Engine

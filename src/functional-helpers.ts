@@ -39,9 +39,7 @@ const _renderCodeRecursive = (codeLines: CodeLines | Code | number): Code => {
     return codeLines.toString()
 }
 
-/**
- * Generate an integer series from 0 to `count`.
- */
+/** Generate an integer series from 0 to `count`. */
 export const countTo = (count: number) => {
     const results: Array<number> = []
     for (let i = 0; i < count; i++) {
@@ -98,9 +96,7 @@ export const renderSwitch = (...routes: Array<[boolean, Code]>) => {
     return route[1]
 }
 
-/**
- * Renders `code` only if `test` is truthy.
- */
+/** Renders `code` only if `test` is truthy. */
 export const renderIf = (test: any, code: Code | (() => Code)) => {
     if (!test) {
         return ''

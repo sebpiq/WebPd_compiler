@@ -9,6 +9,9 @@
  *
  */
 // =========================== BUF API
+/**
+ * Ring buffer
+ */
 class buf_SoundBuffer {
     constructor(length) {
         this.length = length;
@@ -17,7 +20,21 @@ class buf_SoundBuffer {
         this.pullAvailableLength = 0;
     }
 }
-// TODO : Optimize by allowing to read/write directly from host
+/** Erases all the content from the buffer */
+function buf_create(length) {
+    return new buf_SoundBuffer(length);
+}
+/** Erases all the content from the buffer */
+function buf_clear(buffer) {
+    buffer.data.fill(0);
+}
+/**
+ * Pushes a block to the buffer, throwing an error if the buffer is full.
+ * If the block is written successfully, {@link buf_SoundBuffer#writeCursor}
+ * is moved corresponding with the length of data written.
+ *
+ * @todo : Optimize by allowing to read/write directly from host
+ */
 function buf_pushBlock(buffer, block) {
     if (buffer.pullAvailableLength + block.length > buffer.length) {
         throw new Error('buffer full');
@@ -32,14 +49,35 @@ function buf_pushBlock(buffer, block) {
     }
     return buffer.pullAvailableLength;
 }
+/**
+ * Pulls a single sample from the buffer.
+ * This is a destructive operation, and the sample will be
+ * unavailable for subsequent readers with the same operation.
+ */
 function buf_pullSample(buffer) {
     if (buffer.pullAvailableLength <= 0) {
         return 0;
     }
-    let readCursor = buffer.writeCursor - buffer.pullAvailableLength;
-    if (readCursor < 0) {
-        readCursor = buffer.length + readCursor;
-    }
+    const readCursor = buffer.writeCursor - buffer.pullAvailableLength;
     buffer.pullAvailableLength -= 1;
-    return buffer.data[readCursor];
+    return buffer.data[readCursor >= 0 ? readCursor : buffer.length + readCursor];
+}
+/**
+ * Writes a sample at `@link writeCursor` and increments `writeCursor` by one.
+ */
+function buf_writeSample(buffer, value) {
+    buffer.data[buffer.writeCursor] = value;
+    buffer.writeCursor = (buffer.writeCursor + 1) % buffer.length;
+}
+/**
+ * Reads the sample at position `writeCursor - offset`.
+ * @param offset Must be between 0 (for reading the last written sample)
+ *  and {@link buf_SoundBuffer#length} - 1. A value outside these bounds will not cause
+ *  an error, but might cause unexpected results.
+ */
+function buf_readSample(buffer, offset) {
+    // R = (buffer.writeCursor - 1 - offset) -> ideal read position
+    // W = R % buffer.length -> wrap it so that its within buffer length bounds (but could be negative)
+    // (W + buffer.length) % buffer.length -> if W negative, (W + buffer.length) shifts it back to positive.
+    return buffer.data[(buffer.length + ((buffer.writeCursor - 1 - offset) % buffer.length)) % buffer.length];
 }

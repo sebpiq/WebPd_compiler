@@ -19,14 +19,10 @@ export type fs_OperationStatus =
 export type FloatArrayConstructor = typeof Float32Array | typeof Float64Array
 export type FloatArray = InstanceType<FloatArrayConstructor>
 
-/**
- * Type for messages sent through the control flow.
- */
+/** Type for messages sent through the control flow. */
 export type Message = Array<string | number>
 
-/**
- * [channelCount, sampleRate, bitDepth, encodingFormat, endianness, extraOptions]
- */
+/** [channelCount, sampleRate, bitDepth, encodingFormat, endianness, extraOptions] */
 export type SoundFileInfo = [
     number,
     number,
@@ -36,17 +32,15 @@ export type SoundFileInfo = [
     string
 ]
 
-/**
- * Type for values sent through the signal flow.
- */
+/** Type for values sent through the signal flow. */
 export type Signal = number
 
 export type CompilerTarget = 'assemblyscript' | 'javascript'
 
-// Code stored in string variable for later evaluation.
+/** Code stored in string variable for later evaluation. */
 export type Code = string
 
-// Name of a variable in generated code
+/** Name of a variable in generated code */
 export type CodeVariableName = string
 
 export interface EngineMetadata {
@@ -61,9 +55,7 @@ export interface EngineMetadata {
     }
 }
 
-/**
- *  Base interface for DSP engine
- */
+/\*\*  *  Base interface for DSP engine \*/
 export interface Engine {
     metadata: EngineMetadata
 
@@ -85,20 +77,57 @@ export interface Engine {
         }
     }
 
-    // Typed arrays API for the engine
+    /** Float arrays API for the engine */
     farray: {
         get: (arrayName: string) => FloatArray
         set: (arrayName: string, array: FloatArray | Array<number>) => void
     }
 
-    // Filesystem API for the engine
+    /** Filesystem API for the engine */
     fs: {
+        /** Callback which the host environment must set to receive "read sound file" requests. */
+        onReadSoundFile: (
+            operationId: number,
+            url: string,
+            info: SoundFileInfo
+        ) => void
+
+        /** Callback which the host environment must set to receive "write sound file" requests. */
+        onWriteSoundFile: (
+            operationId: number,
+            sound: Array<FloatArray>,
+            url: string,
+            info: SoundFileInfo
+        ) => void
+
+        /** Callback which the host environment must set to receive "read sound stream" requests. */
+        onOpenSoundReadStream: (
+            operationId: number,
+            url: string,
+            info: SoundFileInfo
+        ) => void
+
+        /** Callback which the host environment must set to receive "write sound stream" requests. */
+        onOpenSoundWriteStream: (
+            operationId: number,
+            url: string,
+            info: SoundFileInfo
+        ) => void
+
+        /** Callback which the host environment must set to receive sound stream data for an ongoing write stream. */
+        onSoundStreamData: (
+            operationId: number,
+            sound: Array<FloatArray>
+        ) => void
+
+        /** Callback which the host environment must set to receive "close sound stream" requests. */
+        onCloseSoundStream: (operationId: number, status: number) => void
+
         /**
-         *
-         * @param operationId
-         * @param status
-         * @param sound will be an empty array if operation has failed
-         * @returns
+         * Function for the host environment to send back the response to an engine's
+         * "read sound file" request.
+         * 
+         * @param sound Empty array if the operation has failed.
          */
         sendReadSoundFileResponse: (
             operationId: number,
@@ -120,39 +149,6 @@ export interface Engine {
             operationId: number,
             status: fs_OperationStatus
         ) => void
-
-        // Callbacks
-        onReadSoundFile: (
-            operationId: number,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        onWriteSoundFile: (
-            operationId: number,
-            sound: Array<FloatArray>,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        onOpenSoundReadStream: (
-            operationId: number,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        onOpenSoundWriteStream: (
-            operationId: number,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        onSoundStreamData: (
-            operationId: number,
-            sound: Array<FloatArray>
-        ) => void
-
-        onCloseSoundStream: (operationId: number, status: number) => void
     }
 }
 
@@ -181,25 +177,31 @@ export interface NodeVariableNames {
     state: { [key: string]: CodeVariableName }
 }
 
+/** 
+ * Map of all global variable names used for compilation.
+ * 
+ * @todo : for the sake of completeness, this should include also api functions from the core code. 
+ */
 export interface CodeVariableNames {
-    // Namespace for individual nodes
+
+    /** Namespace for individual nodes */
     nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
-    // Namespace for global variables
+    /** Namespace for global variables */
     globs: {
-        // Frame count, reinitialized at each loop start
+        /** Frame count, reinitialized at each loop start */
         iterFrame: string
-        // Frame count, never reinitialized
+        /** Frame count, never reinitialized */
         frame: string
         blockSize: string
         sampleRate: string
         output: string
         input: string
-        // Input argument for message receiver functions
+        /** Input argument for message receiver functions */
         m: string
     }
 
-    // Names of types used by the engine (e.g. especially depending on the bitdepth)
+    /** Names of types used by the engine (e.g. especially depending on the bitdepth) */
     types: {
         Int?: 'i32'
         Float?: 'f32' | 'f64'
@@ -208,14 +210,14 @@ export interface CodeVariableNames {
         setFloat?: 'setFloat32' | 'setFloat64'
     }
 
-    // Namespace for inlet callers
+    /** Namespace for inlet callers */
     inletCallers: {
         [nodeId: DspGraph.NodeId]: {
             [outletId: DspGraph.PortletId]: CodeVariableName
         }
     }
 
-    // Namespace for outlet listeners callbacks
+    /** Namespace for outlet listeners callbacks */
     outletListeners: {
         [nodeId: DspGraph.NodeId]: {
             [outletId: DspGraph.PortletId]: CodeVariableName

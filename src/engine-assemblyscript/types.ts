@@ -15,23 +15,17 @@ import { fs_WasmExports, fs_WasmImports } from './core-code/fs-bindings'
 import { msg_WasmExports } from './core-code/msg-bindings'
 import { farray_WasmExports } from './core-code/farray-bindings'
 
-/**
- * AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports`
- */
+/** AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports` */
 export type AssemblyScriptWasmEngineCode = Code
 
 export type StringPointer = number
 
 export type MessagePointer = number
 
-/**
- * Pointer to a float array.
- */
+/** Pointer to a float array. */
 export type FloatArrayPointer = number
 
-/**
- * Pointer to data of unknown type that stays in the wasm space (`Message` for example).
- */
+/** Pointer to data of unknown type that stays in the wasm space (`Message` for example). */
 export type InternalPointer = number
 
 /**

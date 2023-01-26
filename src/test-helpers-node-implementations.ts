@@ -438,9 +438,7 @@ interface SharedCodeTestSettings {
     bitDepth: AudioSettings['bitDepth']
 }
 
-/**
- * Helper to test functions defined in {@link NodeImplementation#sharedCode}.
- */
+/** Helper to test functions defined in {@link NodeImplementation#sharedCode}. */
 export const assertSharedCodeFunctionOutput = async (
     sharedCodeTestSettings: SharedCodeTestSettings,
     ...frames: Array<FrameSharedCode>
@@ -505,9 +503,7 @@ export const assertSharedCodeFunctionOutput = async (
 }
 
 // ================================ UTILS ================================ //
-/**
- * Helper to round test results even nested in complex objects / arrays.
- */
+/** Helper to round test results even nested in complex objects / arrays. */
 const roundNestedFloats = <T>(obj: T): T => {
     const roundDecimal = 4
     if (typeof obj === 'number') {

@@ -19,9 +19,7 @@ import {
     NodeImplementations,
 } from './types'
 
-/**
- * Helper to get node implementation or throw an error if not implemented.
- */
+/** Helper to get node implementation or throw an error if not implemented. */
 export const getNodeImplementation = (
     nodeImplementations: NodeImplementations,
     nodeType: DspGraph.NodeType
