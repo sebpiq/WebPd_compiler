@@ -134,8 +134,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const FS_ASC = readFileSync(
         './src/engine-assemblyscript/core-code/fs.asc'
     ).toString('utf8')
-    const FARRAY_ASC = readFileSync(
-        './src/engine-assemblyscript/core-code/farray.asc'
+    const COMMONS_ASC = readFileSync(
+        './src/engine-assemblyscript/core-code/commons.asc'
     ).toString('utf8')
     const BUF_ASC = readFileSync(
         './src/engine-assemblyscript/core-code/buf.asc'
@@ -147,7 +147,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     for (let [filepath, ascCode] of [
         ['./src/engine-javascript/core-code/buf.generated.js.txt', BUF_ASC],
         ['./src/engine-javascript/core-code/fs.generated.js.txt', FS_ASC],
-        ['./src/engine-javascript/core-code/farray.generated.js.txt', FARRAY_ASC],
+        ['./src/engine-javascript/core-code/commons.generated.js.txt', COMMONS_ASC],
         ['./src/engine-javascript/core-code/sked.generated.js.txt', SKED_ASC],
     ]) {
         const [ascStrings, ascVariables] = splitAscCode(ascCode)

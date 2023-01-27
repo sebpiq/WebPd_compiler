@@ -1,3 +1,5 @@
+import { getFloatArrayType } from '../../compile-helpers'
+import { AudioSettings, FloatArray } from '../../types'
 import { InternalPointer, FloatArrayPointer } from '../types'
 
 export type TypedArrayConstructor =
@@ -13,6 +15,18 @@ export type TypedArrayConstructor =
 
 export interface core_WasmExports {
     createFloatArray: (length: number) => FloatArrayPointer
+    core_createListOfArrays: () => InternalPointer
+    core_pushToListOfArrays: (
+        arrays: InternalPointer,
+        array: FloatArrayPointer
+    ) => void
+    core_getListOfArraysLength: (
+        listOfArraysPointer: InternalPointer
+    ) => number
+    core_getListOfArraysElem: (
+        listOfArraysPointer: InternalPointer,
+        index: number
+    ) => number
     // Signatures of internal methods that enable to access wasm memory.
     // REF : https://www.assemblyscript.org/runtime.html#interface
     __new: (length: number, classType: number) => InternalPointer
@@ -79,4 +93,55 @@ export const readTypedArray = <
         memoryU32[(pointer + 4) >>> 2],
         memoryU32[(pointer + 8) >>> 2] / constructor.BYTES_PER_ELEMENT
     ) as InstanceType<_TypedArrayConstructor>
+}
+
+/** @param bitDepth : Must be the same value as what was used to compile the engine. */
+export const lowerFloatArray = (
+    wasmExports: core_WasmExports,
+    bitDepth: AudioSettings['bitDepth'],
+    data: Array<number> | FloatArray
+) => {
+    const arrayType = getFloatArrayType(bitDepth)
+    const arrayPointer = wasmExports.createFloatArray(data.length)
+    const array = readTypedArray(
+        wasmExports,
+        arrayType,
+        arrayPointer
+    ) as FloatArray
+    array.set(data)
+    return { array, arrayPointer }
+}
+
+/** @param bitDepth : Must be the same value as what was used to compile the engine. */
+export const lowerListOfFloatArrays = (
+    wasmExports: core_WasmExports,
+    bitDepth: AudioSettings['bitDepth'],
+    data: Array<Array<number> | FloatArray>
+): InternalPointer => {
+    const arraysPointer = wasmExports.core_createListOfArrays()
+    data.forEach((array) => {
+        const { arrayPointer } = lowerFloatArray(wasmExports, bitDepth, array)
+        wasmExports.core_pushToListOfArrays(arraysPointer, arrayPointer)
+    })
+    return arraysPointer
+}
+
+/** @param bitDepth : Must be the same value as what was used to compile the engine. */
+export const readListOfFloatArrays = (
+    wasmExports: core_WasmExports,
+    bitDepth: AudioSettings['bitDepth'],
+    listOfArraysPointer: InternalPointer
+) => {
+    const listLength =
+        wasmExports.core_getListOfArraysLength(listOfArraysPointer)
+    const arrays: Array<InstanceType<TypedArrayConstructor>> = []
+    const arrayType = getFloatArrayType(bitDepth)
+    for (let i = 0; i < listLength; i++) {
+        const arrayPointer = wasmExports.core_getListOfArraysElem(
+            listOfArraysPointer,
+            i
+        )
+        arrays.push(readTypedArray(wasmExports, arrayType, arrayPointer))
+    }
+    return arrays
 }

@@ -17,9 +17,8 @@ import {
     replaceCoreCodePlaceholders,
 } from '../../compile-helpers'
 import { liftMessage, lowerMessage } from './msg-bindings'
-import { liftString, lowerString, readTypedArray } from './core-bindings'
+import { liftString, lowerString, readTypedArray, lowerFloatArray } from './core-bindings'
 import { mapObject } from '../../functional-helpers'
-import { lowerFloatArray } from './farray-bindings'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

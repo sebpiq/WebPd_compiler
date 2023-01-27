@@ -54,10 +54,11 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         let ${globs.output}: FloatArray = new ${FloatArray}(0)
         
         export function configure(sampleRate: Float, blockSize: Int): void {
+            ${globs.input} = new ${FloatArray}(blockSize * ${channelCount.in.toString()})
+            ${globs.output} = new ${FloatArray}(blockSize * ${channelCount.out.toString()})
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
-            ${globs.input} = new ${FloatArray}(${globs.blockSize} * ${channelCount.in.toString()})
-            ${globs.output} = new ${FloatArray}(${globs.blockSize} * ${channelCount.out.toString()})
+            _commons_emitEngineConfigure()
         }
 
         export function getInput(): ${FloatArray} { return ${globs.input} }
@@ -96,16 +97,16 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             MSG_FLOAT_TOKEN,
             MSG_STRING_TOKEN,
 
-            // FARRAY EXPORTS
-            x_farray_createListOfArrays as farray_createListOfArrays,
-            x_farray_pushToListOfArrays as farray_pushToListOfArrays,
-            x_farray_getListOfArraysLength as farray_getListOfArraysLength,
-            x_farray_getListOfArraysElem as farray_getListOfArraysElem,
-            farray_set,
-            farray_get, 
+            // COMMONS EXPORTS
+            commons_setArray,
+            commons_getArray, 
 
             // CORE EXPORTS
             createFloatArray,
+            x_core_createListOfArrays as core_createListOfArrays,
+            x_core_pushToListOfArrays as core_pushToListOfArrays,
+            x_core_getListOfArraysLength as core_getListOfArraysLength,
+            x_core_getListOfArraysElem as core_getListOfArraysElem,
 
             // INLET CALLERS
             ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 

@@ -3,7 +3,7 @@ import { CodeVariableNames } from '../../types'
 import BUF_JS from './buf.generated.js.txt'
 import SKED_JS from './sked.generated.js.txt'
 import FS_JS from './fs.generated.js.txt'
-import FARRAY_JS from './farray.generated.js.txt'
+import COMMONS_JS from './commons.generated.js.txt'
 
 const CORE = `
 const i32 = (v) => v
@@ -41,6 +41,6 @@ const msg_display = (m) => '[' + m
 export default (codeVariableNames: CodeVariableNames) => {
     return replaceCoreCodePlaceholders(
         codeVariableNames,
-        CORE + BUF_JS + SKED_JS + FARRAY_JS + MSG + FS_JS
+        CORE + BUF_JS + SKED_JS + COMMONS_JS + MSG + FS_JS
     )
 }

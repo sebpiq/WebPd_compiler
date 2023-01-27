@@ -51,15 +51,15 @@ type FrameNode = {
     }
 }
 type FrameNodeIn = FrameNode & {
-    farray?: {
-        get?: Array<string>
-        set?: { [arrayName: string]: Array<number> }
+    commons?: {
+        getArray?: Array<string>
+        setArray?: { [arrayName: string]: Array<number> }
     }
     ins?: { [portletId: string]: Array<Message> | Signal }
 }
 export type FrameNodeOut = FrameNode & {
-    farray?: {
-        get?: { [arrayName: string]: Array<number> }
+    commons?: {
+        getArray?: { [arrayName: string]: Array<number> }
     }
     outs: { [portletId: string]: Array<Message> | Signal }
     sequence?: Array<string>
@@ -244,7 +244,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
-            engine.farray.set(arrayName, data)
+            engine.commons.setArray(arrayName, data)
         })
     }
 
@@ -344,20 +344,20 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         }
 
         // Get requested arrays
-        if (inputFrame.farray) {
-            if (inputFrame.farray.get) {
-                outputFrame.farray = {}
-                outputFrame.farray.get = {}
-                inputFrame.farray.get.forEach((arrayName) => {
-                    outputFrame.farray.get[arrayName] = Array.from(
-                        engine.farray.get(arrayName)
+        if (inputFrame.commons) {
+            if (inputFrame.commons.getArray) {
+                outputFrame.commons = {}
+                outputFrame.commons.getArray = {}
+                inputFrame.commons.getArray.forEach((arrayName) => {
+                    outputFrame.commons.getArray[arrayName] = Array.from(
+                        engine.commons.getArray(arrayName)
                     )
                 })
             }
-            if (inputFrame.farray.set) {
-                Object.entries(inputFrame.farray.set).forEach(
+            if (inputFrame.commons.setArray) {
+                Object.entries(inputFrame.commons.setArray).forEach(
                     ([arrayName, array]) => {
-                        engine.farray.set(arrayName, array)
+                        engine.commons.setArray(arrayName, array)
                     }
                 )
             }

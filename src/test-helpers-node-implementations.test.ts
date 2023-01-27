@@ -172,7 +172,7 @@ describe('test-helpers-node-implementations', () => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     messages: () => ({
                         '0': `
-                        farray_get('array1')[0] = 666
+                        commons_getArray('array1')[0] = 666
                         return
                     `,
                     }),
@@ -195,8 +195,8 @@ describe('test-helpers-node-implementations', () => {
                     },
                     [{ ins: { '0': [['bang']] } }, { outs: {} }],
                     [
-                        { farray: { get: ['array1'] } },
-                        { outs: {}, farray: { get: { array1: [666] } } },
+                        { commons: { getArray: ['array1'] } },
+                        { outs: {}, commons: { getArray: { array1: [666] } } },
                     ]
                 )
             }

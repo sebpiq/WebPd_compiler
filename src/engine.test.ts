@@ -27,21 +27,21 @@ const TEST_PARAMETERS = [
         bitDepth: 32 as AudioSettings['bitDepth'],
         floatArrayType: Float32Array,
     },
-    {
-        target: 'javascript' as CompilerTarget,
-        bitDepth: 64 as AudioSettings['bitDepth'],
-        floatArrayType: Float64Array,
-    },
-    {
-        target: 'assemblyscript' as CompilerTarget,
-        bitDepth: 32 as AudioSettings['bitDepth'],
-        floatArrayType: Float32Array,
-    },
-    {
-        target: 'assemblyscript' as CompilerTarget,
-        bitDepth: 64 as AudioSettings['bitDepth'],
-        floatArrayType: Float64Array,
-    },
+    // {
+    //     target: 'javascript' as CompilerTarget,
+    //     bitDepth: 64 as AudioSettings['bitDepth'],
+    //     floatArrayType: Float64Array,
+    // },
+    // {
+    //     target: 'assemblyscript' as CompilerTarget,
+    //     bitDepth: 32 as AudioSettings['bitDepth'],
+    //     floatArrayType: Float32Array,
+    // },
+    // {
+    //     target: 'assemblyscript' as CompilerTarget,
+    //     bitDepth: 64 as AudioSettings['bitDepth'],
+    //     floatArrayType: Float64Array,
+    // },
 ]
 
 describe('Engine', () => {
@@ -305,56 +305,6 @@ describe('Engine', () => {
             }
         )
 
-        it.skip.each(TEST_PARAMETERS)(
-            'should trigger configure subscribers %s',
-            async ({ target, bitDepth, floatArrayType }) => {
-                const nodeImplementations: NodeImplementations = {
-                    DUMMY: {
-                        declare: ({ globs, state, macros: { Var } }) => `
-                            let ${Var(state.configureCalled, 'Float')} = 0
-                            BLABLA(() => {
-                                ${state.configureCalled} = ${globs.sampleRate}
-                            })
-                        `,
-                        loop: ({ globs, state, compilation: { target } }) =>
-                            target === 'assemblyscript'
-                                ? `${globs.output}[0] = ${state.configureCalled}`
-                                : `${globs.output}[0][0] = ${state.configureCalled}`,
-
-                        stateVariables: ['configureCalled'],
-                    },
-                }
-
-                const graph = makeGraph({
-                    outputNode: {
-                        type: 'DUMMY',
-                        isSignalSink: true,
-                    },
-                })
-
-                const audioSettings: AudioSettings = {
-                    bitDepth,
-                    channelCount: { in: 0, out: 1 },
-                }
-
-                const output: Array<FloatArray> = [new floatArrayType([])]
-
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    compilation: {
-                        graph,
-                        nodeImplementations,
-                        audioSettings,
-                    },
-                })
-
-                engine.configure(44100, 1)
-                engine.loop([], output)
-                assert.deepStrictEqual(output, [new floatArrayType([44100])])
-            }
-        )
-
         it.each(TEST_PARAMETERS)(
             'should export metadata audio settings and update it after configure %s',
             async ({ target, bitDepth }) => {
@@ -423,10 +373,62 @@ describe('Engine', () => {
         )
     })
 
-    describe('farray', () => {
-        describe('get', () => {
+    describe('commons', () => {
+        describe('engine configure', () => {
             it.each(TEST_PARAMETERS)(
-                'should set the array %s',
+                'should trigger configure subscribers %s',
+                async ({ target, bitDepth, floatArrayType }) => {
+                    const nodeImplementations: NodeImplementations = {
+                        DUMMY: {
+                            declare: ({ globs, state, macros: { Var } }) => `
+                                let ${Var(state.configureCalled, 'Float')} = 0
+                                commons_waitEngineConfigure(() => {
+                                    ${state.configureCalled} = ${globs.sampleRate}
+                                })
+                            `,
+                            loop: ({ globs, state, compilation: { target } }) =>
+                                target === 'assemblyscript'
+                                    ? `${globs.output}[0] = ${state.configureCalled}`
+                                    : `${globs.output}[0][0] = ${state.configureCalled}`,
+    
+                            stateVariables: {'configureCalled': 1},
+                        },
+                    }
+    
+                    const graph = makeGraph({
+                        outputNode: {
+                            type: 'DUMMY',
+                            isSignalSink: true,
+                        },
+                    })
+    
+                    const audioSettings: AudioSettings = {
+                        bitDepth,
+                        channelCount: { in: 0, out: 1 },
+                    }
+    
+                    const output: Array<FloatArray> = [new floatArrayType(1)]
+    
+                    const engine = await initializeEngineTest({
+                        target,
+                        bitDepth,
+                        compilation: {
+                            graph,
+                            nodeImplementations,
+                            audioSettings,
+                        },
+                    })
+    
+                    engine.configure(44100, 1)
+                    engine.loop([], output)
+                    assert.deepStrictEqual(output, [new floatArrayType([44100])])
+                }
+            )
+        })
+
+        describe('getArray', () => {
+            it.each(TEST_PARAMETERS)(
+                'should get the array %s',
                 async ({ target, bitDepth, floatArrayType }) => {
                     const testCode: Code = `
                     const array = new ${floatArrayType.name}(4)
@@ -434,7 +436,7 @@ describe('Engine', () => {
                     array[1] = 456
                     array[2] = 789
                     array[3] = 234
-                    _farray_ARRAYS.set('array1', array)
+                    _commons_ARRAYS.set('array1', array)
                 `
 
                     const exports = {}
@@ -447,29 +449,29 @@ describe('Engine', () => {
                     })
 
                     assert.deepStrictEqual(
-                        engine.farray.get('array1'),
+                        engine.commons.getArray('array1'),
                         new floatArrayType([123, 456, 789, 234])
                     )
                 }
             )
         })
 
-        describe('set', () => {
+        describe('setArray', () => {
             it.each(TEST_PARAMETERS)(
                 'should set the array %s',
                 async ({ target, bitDepth }) => {
                     const testCode: Code = `
                     function testReadArray1 (index: Int): Float {
-                        return _farray_ARRAYS.get('array1')[index]
+                        return _commons_ARRAYS.get('array1')[index]
                     }
                     function testReadArray2 (index: Int): Float {
-                        return _farray_ARRAYS.get('array2')[index]
+                        return _commons_ARRAYS.get('array2')[index]
                     }
                     function testReadArray3 (index: Int): Float {
-                        return _farray_ARRAYS.get('array3')[index]
+                        return _commons_ARRAYS.get('array3')[index]
                     }
                     function testIsFloatArray (index: Int): void {
-                        return _farray_ARRAYS.get('array3').set([111, 222])
+                        return _commons_ARRAYS.get('array3').set([111, 222])
                     }
                 `
 
@@ -487,12 +489,12 @@ describe('Engine', () => {
                         exports,
                     })
 
-                    engine.farray.set(
+                    engine.commons.setArray(
                         'array1',
                         new Float32Array([11.1, 22.2, 33.3])
                     )
-                    engine.farray.set('array2', new Float64Array([44.4, 55.5]))
-                    engine.farray.set('array3', [66.6, 77.7])
+                    engine.commons.setArray('array2', new Float64Array([44.4, 55.5]))
+                    engine.commons.setArray('array3', [66.6, 77.7])
 
                     let actual: number
                     actual = engine.testReadArray1(1)

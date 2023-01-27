@@ -32,14 +32,12 @@ import {
     liftString,
     lowerString,
     readTypedArray,
-} from './core-code/core-bindings'
-import { fs_WasmImports } from './core-code/fs-bindings'
-import { liftMessage, lowerMessage } from './core-code/msg-bindings'
-import {
     lowerListOfFloatArrays,
     lowerFloatArray,
     readListOfFloatArrays,
-} from './core-code/farray-bindings'
+} from './core-code/core-bindings'
+import { fs_WasmImports } from './core-code/fs-bindings'
+import { liftMessage, lowerMessage } from './core-code/msg-bindings'
 import {
     AssemblyScriptWasmExports,
     AssemblyScriptWasmImports,
@@ -64,7 +62,7 @@ export class AssemblyScriptWasmEngine implements Engine {
     public wasmExports: AssemblyScriptWasmExports
     public inletCallers: Engine['inletCallers']
     public outletListeners: Engine['outletListeners']
-    public farray: Engine['farray']
+    public commons: Engine['commons']
     public fs: Engine['fs']
     public metadata: EngineMetadata
 
@@ -96,7 +94,7 @@ export class AssemblyScriptWasmEngine implements Engine {
         })
         this.wasmExports =
             wasmInstance.exports as unknown as AssemblyScriptWasmExports
-        this.farray = this._bindTarray()
+        this.commons = this._bindCommons()
         this.fs = this._bindFs()
         this.inletCallers = this._bindInletCallers()
         this.outletListeners = this._bindOutletListeners()
@@ -143,29 +141,29 @@ export class AssemblyScriptWasmEngine implements Engine {
     }
 
     // API for data flowing HOST -> ENGINE
-    _bindTarray(): Engine['farray'] {
+    _bindCommons(): Engine['commons'] {
         return {
-            get: (arrayName) => {
+            getArray: (arrayName) => {
                 const arrayNamePointer = lowerString(
                     this.wasmExports,
                     arrayName
                 )
                 const arrayPointer =
-                    this.wasmExports.farray_get(arrayNamePointer)
+                    this.wasmExports.commons_getArray(arrayNamePointer)
                 return readTypedArray(
                     this.wasmExports,
                     this.arrayType,
                     arrayPointer
                 ) as FloatArray
             },
-            set: (arrayName, array) => {
+            setArray: (arrayName, array) => {
                 const stringPointer = lowerString(this.wasmExports, arrayName)
                 const { arrayPointer } = lowerFloatArray(
                     this.wasmExports,
                     this.bitDepth,
                     array
                 )
-                this.wasmExports.farray_set(stringPointer, arrayPointer)
+                this.wasmExports.commons_setArray(stringPointer, arrayPointer)
                 this._updateWasmInOuts()
             },
         }

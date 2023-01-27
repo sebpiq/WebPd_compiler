@@ -28,9 +28,9 @@ import {
     StringPointer,
     FloatArrayPointer,
 } from '../types'
-import { farray_WasmExports } from './farray-bindings'
+import { commons_WasmExports } from './commons-bindings'
 
-export interface msg_WasmExports extends farray_WasmExports {
+export interface msg_WasmExports extends commons_WasmExports {
     MSG_FLOAT_TOKEN: WebAssembly.Global
     MSG_STRING_TOKEN: WebAssembly.Global
 
@@ -106,7 +106,7 @@ export const lowerMessage = (
     }, [] as Array<number>)
 
     // Here we should ideally pass an array of Int, but I am not sure how
-    // to lower a typed array in a generic manner, so using the available bindings from `farray`.
+    // to lower a typed array in a generic manner, so using the available bindings from `commons`.
     const templateArrayPointer = wasmExports.msg_createTemplate(template.length)
     const loweredTemplateArray = readTypedArray(
         wasmExports,

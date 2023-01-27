@@ -1,7 +1,7 @@
 import { InternalPointer, MessagePointer, StringPointer } from '../types'
-import { farray_WasmExports } from './farray-bindings'
+import { commons_WasmExports } from './commons-bindings'
 
-export interface fs_WasmExports extends farray_WasmExports {
+export interface fs_WasmExports extends commons_WasmExports {
     fs_onReadSoundFileResponse: (
         id: number,
         status: number,

@@ -51,17 +51,18 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         const exports = {
             metadata: ${JSON.stringify(metadata)},
             configure: (sampleRate, blockSize) => {
-                ${globs.sampleRate} = sampleRate
-                ${globs.blockSize} = blockSize
                 exports.metadata.audioSettings.sampleRate = sampleRate
                 exports.metadata.audioSettings.blockSize = blockSize
+                ${globs.sampleRate} = sampleRate
+                ${globs.blockSize} = blockSize
+                _commons_emitEngineConfigure()
             },
             loop: (${globs.input}, ${globs.output}) => {
                 ${compileLoop(compilation, graphTraversal)}
             },
-            farray: {
-                get: farray_get,
-                set: (arrayName, array) => farray_set(arrayName, new ${FloatArray}(array)),
+            commons: {
+                getArray: commons_getArray,
+                setArray: (arrayName, array) => commons_setArray(arrayName, new ${FloatArray}(array)),
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>

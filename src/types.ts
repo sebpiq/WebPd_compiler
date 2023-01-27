@@ -55,7 +55,7 @@ export interface EngineMetadata {
     }
 }
 
-;/\*\*  *  Base interface for DSP engine \*/
+/** Base interface for DSP engine */
 export interface Engine {
     metadata: EngineMetadata
 
@@ -77,10 +77,10 @@ export interface Engine {
         }
     }
 
-    /** Float arrays API for the engine */
-    farray: {
-        get: (arrayName: string) => FloatArray
-        set: (arrayName: string, array: FloatArray | Array<number>) => void
+    /** API for all shared resources, global events, etc ... */
+    commons: {
+        getArray: (arrayName: string) => FloatArray
+        setArray: (arrayName: string, array: FloatArray | Array<number>) => void
     }
 
     /** Filesystem API for the engine */
