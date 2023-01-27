@@ -66,20 +66,18 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
-                    `${nodeId}: {
-                        ${outletIds.map(outletId => `
-                            "${outletId}": {onMessage: () => undefined,}
-                        `)}
-                    }`
+                    renderCode`${nodeId}: {
+                        ${outletIds.map(outletId => 
+                            `"${outletId}": {onMessage: () => undefined},`)}
+                    },`
                 )}
             },
             inletCallers: {
                 ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
-                    `${nodeId}: {
-                        ${inletIds.map(inletId => `
-                            "${inletId}": ${codeVariableNames.inletCallers[nodeId][inletId]}
-                        `)}
-                    }`
+                    renderCode`${nodeId}: {
+                        ${inletIds.map(inletId => 
+                            `"${inletId}": ${codeVariableNames.inletCallers[nodeId][inletId]},`)}
+                    },`
                 )}
             },
             fs: {

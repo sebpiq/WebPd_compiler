@@ -31,6 +31,7 @@ import {
     AscTransferrableType,
     generateTestBindings as generateTestAscBindings,
 } from './engine-assemblyscript/core-code/test-helpers'
+import { getFloatArrayType } from './compile-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -88,11 +89,14 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         type: 'fake_source_node',
         args: {},
         sources: {},
-        sinks: makeConnectionEndpointMap(
-            'testNode',
-            Array.from(connectedInlets)
-        ),
-        inlets: makeMessagePortlets(Object.keys(testNodeInlets)),
+        sinks: mapArray(Array.from(connectedInlets), (portletId) => [
+            portletId,
+            [{ nodeId: 'testNode', portletId }],
+        ]),
+        inlets: mapArray(Object.keys(testNodeInlets), (portletId) => [
+            portletId,
+            { id: portletId, type: 'message' },
+        ]),
         outlets: testNodeInlets,
         isMessageSource: true,
     }
@@ -101,14 +105,15 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     const testNode: DspGraph.Node = {
         ...nodeTestSettings.node,
         id: 'testNode',
-        sources: makeConnectionEndpointMap(
-            'fakeSourceNode',
-            Array.from(connectedInlets)
-        ),
-        sinks: makeConnectionEndpointMap(
-            'fakeSinkNode',
-            Object.keys(testNodeOutlets)
-        ),
+        sources: mapArray(Array.from(connectedInlets), (portletId) => [
+            portletId,
+            [{ nodeId: 'fakeSourceNode', portletId }],
+        ]),
+
+        sinks: mapArray(Object.keys(testNodeOutlets), (portletId) => [
+            portletId,
+            [{ nodeId: 'fakeSinkNode', portletId }],
+        ]),
         inlets: testNodeInlets,
         outlets: testNodeOutlets,
     }
@@ -118,13 +123,16 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         id: 'fakeSinkNode',
         type: 'fake_sink_node',
         args: {},
-        sources: makeConnectionEndpointMap(
-            'testNode',
-            Object.keys(testNodeOutlets)
-        ),
+        sources: mapArray(Object.keys(testNodeOutlets), (portletId) => [
+            portletId,
+            [{ nodeId: 'testNode', portletId }],
+        ]),
         sinks: {},
         inlets: testNodeOutlets,
-        outlets: makeMessagePortlets(Object.keys(testNodeOutlets)),
+        outlets: mapArray(Object.keys(testNodeOutlets), (portletId) => [
+            portletId,
+            { id: portletId, type: 'message' },
+        ]),
         isSignalSink: true,
     }
 
@@ -267,12 +275,12 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     let configured = false
     const outputFrames: Array<FrameNodeOut> = []
     const engineInput = buildEngineBlock(
-        Float32Array,
+        bitDepth,
         ENGINE_DSP_PARAMS.channelCount.in,
         blockSize
     )
     const engineOutput = buildEngineBlock(
-        Float32Array,
+        bitDepth,
         ENGINE_DSP_PARAMS.channelCount.out,
         blockSize
     )
@@ -506,8 +514,44 @@ export const assertSharedCodeFunctionOutput = async (
 }
 
 // ================================ UTILS ================================ //
+// TODO : combine with `generateFramesForNode`
+export const generateFrames = (
+    engine: Engine,
+    iterations: number = 4,
+    engineInput?: FloatArray[]
+) => {
+    const blockSize = 1
+
+    engineInput =
+        engineInput ||
+        buildEngineBlock(
+            engine.metadata.audioSettings.bitDepth,
+            engine.metadata.audioSettings.channelCount.in,
+            blockSize
+        )
+
+    const engineOutput =
+        buildEngineBlock(
+            engine.metadata.audioSettings.bitDepth,
+            engine.metadata.audioSettings.channelCount.out,
+            blockSize
+        )
+
+    engine.configure(ENGINE_DSP_PARAMS.sampleRate, blockSize)
+
+    const results: Array<Array<number>> = []
+    for (let i = 0; i < iterations; i++) {
+        engine.loop(engineInput, engineOutput)
+        // Block size 1, so we flatten the array and get just the first sample
+        results.push(
+            engineOutput.map((channelValues) => channelValues[0])
+        )
+    }
+    return results
+}
+
 /** Helper to round test results even nested in complex objects / arrays. */
-const roundNestedFloats = <T>(obj: T): T => {
+export const roundNestedFloats = <T>(obj: T): T => {
     const roundDecimal = 4
     if (typeof obj === 'number') {
         return round(obj, roundDecimal) as unknown as T
@@ -528,13 +572,14 @@ const roundNestedFloats = <T>(obj: T): T => {
 }
 
 export const buildEngineBlock = (
-    constructor: typeof Float32Array | typeof Float64Array,
+    bitDepth: AudioSettings['bitDepth'],
     channelCount: number,
     blockSize: number
 ) => {
+    const floatArrayType = getFloatArrayType(bitDepth)
     const engineOutput: Array<FloatArray> = []
     for (let channel = 0; channel < channelCount; channel++) {
-        engineOutput.push(new constructor(blockSize))
+        engineOutput.push(new floatArrayType(blockSize))
     }
     return engineOutput
 }
@@ -543,16 +588,3 @@ export const ENGINE_DSP_PARAMS = {
     sampleRate: 44100,
     channelCount: { in: 2, out: 2 },
 }
-
-const makeConnectionEndpointMap = (
-    nodeId: DspGraph.NodeId,
-    portletList: Array<DspGraph.PortletId>
-) => mapArray(portletList, (portletId) => [portletId, [{ nodeId, portletId }]])
-
-const makeMessagePortlets = (
-    portletList: Array<DspGraph.PortletId>
-): DspGraph.PortletMap =>
-    mapArray(portletList, (portletId) => [
-        portletId,
-        { id: portletId, type: 'message' },
-    ])

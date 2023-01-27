@@ -9,12 +9,13 @@
  *
  */
 
-import {
-    core_WasmExports,
-} from './core-bindings'
+import { core_WasmExports } from './core-bindings'
 import { StringPointer, FloatArrayPointer } from '../types'
 
 export interface commons_WasmExports extends core_WasmExports {
     commons_getArray: (arrayName: StringPointer) => FloatArrayPointer
-    commons_setArray: (arrayName: StringPointer, array: FloatArrayPointer) => void
+    commons_setArray: (
+        arrayName: StringPointer,
+        array: FloatArrayPointer
+    ) => void
 }

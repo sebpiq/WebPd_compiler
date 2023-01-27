@@ -8,7 +8,11 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-const _SKED_ID_NULL = -1;
+/**
+ * Skeduler id that will never be used.
+ * Can be used as a "no id", or "null" value.
+ */
+const SKED_ID_NULL = -1;
 const _SKED_WAIT_IN_PROGRESS = 0;
 const _SKED_WAIT_OVER = 1;
 const _SKED_MODE_WAIT = 0;
@@ -36,7 +40,7 @@ function sked_wait(skeduler, event, callback) {
     }
     if (skeduler.eventLog.has(event)) {
         callback(event);
-        return _SKED_ID_NULL;
+        return SKED_ID_NULL;
     }
     else {
         return _sked_createRequest(skeduler, event, callback, _SKED_MODE_WAIT);

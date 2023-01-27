@@ -1,6 +1,11 @@
 import assert from 'assert'
 import { AudioSettings } from '../../types'
-import { lowerFloatArray, lowerListOfFloatArrays, readListOfFloatArrays, readTypedArray } from './core-bindings'
+import {
+    lowerFloatArray,
+    lowerListOfFloatArrays,
+    readListOfFloatArrays,
+    readTypedArray,
+} from './core-bindings'
 import {
     getAscCode,
     initializeCoreCodeTest,

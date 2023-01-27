@@ -27,21 +27,21 @@ const TEST_PARAMETERS = [
         bitDepth: 32 as AudioSettings['bitDepth'],
         floatArrayType: Float32Array,
     },
-    // {
-    //     target: 'javascript' as CompilerTarget,
-    //     bitDepth: 64 as AudioSettings['bitDepth'],
-    //     floatArrayType: Float64Array,
-    // },
-    // {
-    //     target: 'assemblyscript' as CompilerTarget,
-    //     bitDepth: 32 as AudioSettings['bitDepth'],
-    //     floatArrayType: Float32Array,
-    // },
-    // {
-    //     target: 'assemblyscript' as CompilerTarget,
-    //     bitDepth: 64 as AudioSettings['bitDepth'],
-    //     floatArrayType: Float64Array,
-    // },
+    {
+        target: 'javascript' as CompilerTarget,
+        bitDepth: 64 as AudioSettings['bitDepth'],
+        floatArrayType: Float64Array,
+    },
+    {
+        target: 'assemblyscript' as CompilerTarget,
+        bitDepth: 32 as AudioSettings['bitDepth'],
+        floatArrayType: Float32Array,
+    },
+    {
+        target: 'assemblyscript' as CompilerTarget,
+        bitDepth: 64 as AudioSettings['bitDepth'],
+        floatArrayType: Float64Array,
+    },
 ]
 
 describe('Engine', () => {
@@ -383,32 +383,34 @@ describe('Engine', () => {
                             declare: ({ globs, state, macros: { Var } }) => `
                                 let ${Var(state.configureCalled, 'Float')} = 0
                                 commons_waitEngineConfigure(() => {
-                                    ${state.configureCalled} = ${globs.sampleRate}
+                                    ${state.configureCalled} = ${
+                                globs.sampleRate
+                            }
                                 })
                             `,
                             loop: ({ globs, state, compilation: { target } }) =>
                                 target === 'assemblyscript'
                                     ? `${globs.output}[0] = ${state.configureCalled}`
                                     : `${globs.output}[0][0] = ${state.configureCalled}`,
-    
-                            stateVariables: {'configureCalled': 1},
+
+                            stateVariables: { configureCalled: 1 },
                         },
                     }
-    
+
                     const graph = makeGraph({
                         outputNode: {
                             type: 'DUMMY',
                             isSignalSink: true,
                         },
                     })
-    
+
                     const audioSettings: AudioSettings = {
                         bitDepth,
                         channelCount: { in: 0, out: 1 },
                     }
-    
+
                     const output: Array<FloatArray> = [new floatArrayType(1)]
-    
+
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
@@ -418,10 +420,12 @@ describe('Engine', () => {
                             audioSettings,
                         },
                     })
-    
+
                     engine.configure(44100, 1)
                     engine.loop([], output)
-                    assert.deepStrictEqual(output, [new floatArrayType([44100])])
+                    assert.deepStrictEqual(output, [
+                        new floatArrayType([44100]),
+                    ])
                 }
             )
         })
@@ -493,7 +497,10 @@ describe('Engine', () => {
                         'array1',
                         new Float32Array([11.1, 22.2, 33.3])
                     )
-                    engine.commons.setArray('array2', new Float64Array([44.4, 55.5]))
+                    engine.commons.setArray(
+                        'array2',
+                        new Float64Array([44.4, 55.5])
+                    )
                     engine.commons.setArray('array3', [66.6, 77.7])
 
                     let actual: number
@@ -1033,15 +1040,22 @@ describe('Engine', () => {
                 // We only test that the outlet listeners are created and that calling them works.
                 // We don't need to actually compile any node
                 const graph = makeGraph({
-                    someNode: {
+                    someNode1: {
                         outlets: {
-                            someOutlet: { type: 'message', id: 'someOutlet' },
+                            someOutlet1: { type: 'message', id: 'someOutlet1' },
+                            someOutlet2: { type: 'message', id: 'someOutlet2' },
+                        },
+                    },
+                    someNode2: {
+                        outlets: {
+                            someOutlet1: { type: 'message', id: 'someOutlet1' },
                         },
                     },
                 })
 
                 const outletListenerSpecs: OutletListenerSpecs = {
-                    ['someNode']: ['someOutlet'],
+                    ['someNode1']: ['someOutlet1', 'someOutlet2'],
+                    ['someNode2']: ['someOutlet1'],
                 }
 
                 const testCode: Code = `
@@ -1052,8 +1066,9 @@ describe('Engine', () => {
                     msg_writeStringToken(m2, 0, 'bla')
 
                     function testCallOutletListener(): void {
-                        outletListener_someNode_someOutlet(m1)
-                        outletListener_someNode_someOutlet(m2)
+                        outletListener_someNode1_someOutlet1(m1)
+                        outletListener_someNode1_someOutlet2(m2)
+                        outletListener_someNode2_someOutlet1(m1)
                     }
                 `
 
@@ -1070,19 +1085,39 @@ describe('Engine', () => {
                     exports,
                 })
 
-                const called: Array<Message> = []
+                const called11: Array<Message> = []
+                const called12: Array<Message> = []
+                const called21: Array<Message> = []
 
                 assert.ok(
-                    engine.outletListeners.someNode.someOutlet
+                    engine.outletListeners.someNode1.someOutlet1
+                        .onMessage instanceof Function
+                )
+                assert.ok(
+                    engine.outletListeners.someNode1.someOutlet2
+                        .onMessage instanceof Function
+                )
+                assert.ok(
+                    engine.outletListeners.someNode2.someOutlet1
                         .onMessage instanceof Function
                 )
 
-                engine.outletListeners.someNode.someOutlet.onMessage = (
+                engine.outletListeners.someNode1.someOutlet1.onMessage = (
                     message: Message
-                ) => called.push(message)
+                ) => called11.push(message)
+
+                engine.outletListeners.someNode1.someOutlet2.onMessage = (
+                    message: Message
+                ) => called12.push(message)
+
+                engine.outletListeners.someNode2.someOutlet1.onMessage = (
+                    message: Message
+                ) => called21.push(message)
 
                 engine.testCallOutletListener()
-                assert.deepStrictEqual(called, [[11, 22], ['bla']])
+                assert.deepStrictEqual(called11, [[11, 22]])
+                assert.deepStrictEqual(called12, [['bla']])
+                assert.deepStrictEqual(called21, [[11, 22]])
             }
         )
     })
@@ -1092,36 +1127,58 @@ describe('Engine', () => {
             'should create the specified inlet callers %s',
             async ({ target, bitDepth }) => {
                 const graph = makeGraph({
-                    someNode: {
+                    someNode1: {
                         type: 'someNodeType',
                         inlets: {
-                            someInlet: { type: 'message', id: 'someInlet' },
+                            someInlet1: { type: 'message', id: 'someInlet1' },
+                            someInlet2: { type: 'message', id: 'someInlet2' },
                         },
-                        isSignalSink: true,
+                        isMessageSource: true,
+                    },
+                    someNode2: {
+                        type: 'someNodeType',
+                        inlets: {
+                            someInlet1: { type: 'message', id: 'someInlet1' },
+                        },
+                        isMessageSource: true,
                     },
                 })
 
                 const inletCallerSpecs: InletCallerSpecs = {
-                    someNode: ['someInlet'],
+                    someNode1: ['someInlet1', 'someInlet2'],
+                    someNode2: ['someInlet1'],
                 }
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messages: ({ globs }) => ({
-                            someInlet: `messageReceived = ${globs.m};return`,
+                        messages: ({ globs, node: { id } }) => ({
+                            someInlet1: `received.get('${id}:1').push(${globs.m});return`,
+                            someInlet2: `received.get('${id}:2').push(${globs.m});return`,
                         }),
                     },
                 }
 
                 const testCode: Code = `
-                    let messageReceived: Message = msg_create([])
+                    const received: Map<string, Array<Message>> = new Map()
+                    received.set("someNode1:1", [])
+                    received.set("someNode1:2", [])
+                    received.set("someNode2:1", [])
+
+                    function messageIsCorrect(message: Message): boolean {
+                        return msg_getLength(message) === 2
+                            && msg_isFloatToken(message, 0)
+                            && msg_isStringToken(message, 1)
+                            && msg_readFloatToken(message, 0) === 666
+                            && msg_readStringToken(message, 1) === 'n4t4s'
+                    }
 
                     function testMessageReceived(): boolean {
-                        return msg_getLength(messageReceived) === 2
-                            && msg_isFloatToken(messageReceived, 0)
-                            && msg_isStringToken(messageReceived, 1)
-                            && msg_readFloatToken(messageReceived, 0) === 666
-                            && msg_readStringToken(messageReceived, 1) === 'n4t4s'
+                        return received.get("someNode1:1").length === 1
+                            && received.get("someNode1:2").length === 1
+                            && received.get("someNode2:1").length === 1
+                            && messageIsCorrect(received.get("someNode1:1")[0])
+                            && messageIsCorrect(received.get("someNode1:2")[0])
+                            && messageIsCorrect(received.get("someNode2:1")[0])
                     }
                 `
 
@@ -1140,11 +1197,13 @@ describe('Engine', () => {
                 })
 
                 assert.ok(
-                    engine.inletCallers.someNode.someInlet instanceof Function
+                    engine.inletCallers.someNode1.someInlet1 instanceof Function
                 )
 
                 assert.ok(!engine.testMessageReceived())
-                engine.inletCallers.someNode.someInlet([666, 'n4t4s'])
+                engine.inletCallers.someNode1.someInlet1([666, 'n4t4s'])
+                engine.inletCallers.someNode1.someInlet2([666, 'n4t4s'])
+                engine.inletCallers.someNode2.someInlet1([666, 'n4t4s'])
                 assert.ok(engine.testMessageReceived())
             }
         )

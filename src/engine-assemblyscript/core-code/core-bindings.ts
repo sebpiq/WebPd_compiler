@@ -20,9 +20,7 @@ export interface core_WasmExports {
         arrays: InternalPointer,
         array: FloatArrayPointer
     ) => void
-    core_getListOfArraysLength: (
-        listOfArraysPointer: InternalPointer
-    ) => number
+    core_getListOfArraysLength: (listOfArraysPointer: InternalPointer) => number
     core_getListOfArraysElem: (
         listOfArraysPointer: InternalPointer,
         index: number

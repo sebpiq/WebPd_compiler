@@ -4,10 +4,7 @@ import { round } from '../../test-helpers'
 import { AudioSettings, SoundFileInfo } from '../../types'
 import { liftString } from './core-bindings'
 import { liftMessage } from './msg-bindings'
-import {
-    lowerListOfFloatArrays,
-    readListOfFloatArrays,
-} from './core-bindings'
+import { lowerListOfFloatArrays, readListOfFloatArrays } from './core-bindings'
 import {
     getAscCode,
     initializeCoreCodeTest,
