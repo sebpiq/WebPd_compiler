@@ -20,8 +20,6 @@ describe('buf-bindings', () => {
 
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
         getAscCode('core.asc', audioSettings) +
-        getAscCode('farray.asc', audioSettings) +
-        getAscCode('msg.asc', audioSettings) +
         getAscCode('buf.asc', audioSettings) +
         replacePlaceholdersForTesting(
             `
@@ -30,23 +28,8 @@ describe('buf-bindings', () => {
                 }
 
                 export {
-                    // FARRAY EXPORTS
-                    x_farray_createListOfArrays as farray_createListOfArrays,
-                    x_farray_pushToListOfArrays as farray_pushToListOfArrays,
-                    x_farray_getListOfArraysLength as farray_getListOfArraysLength,
-                    x_farray_getListOfArraysElem as farray_getListOfArraysElem,
-                    farray_create,
-
-                    // MSG EXPORTS
-                    x_msg_create as msg_create,
-                    x_msg_getTokenTypes as msg_getTokenTypes,
-                    x_msg_createTemplate as msg_createTemplate,
-                    msg_writeStringToken,
-                    msg_writeFloatToken,
-                    msg_readStringToken,
-                    msg_readFloatToken,
-                    MSG_FLOAT_TOKEN,
-                    MSG_STRING_TOKEN,
+                    // CORE EXPORTS
+                    createFloatArray,
 
                     // BUF EXPORTS for testing
                     buf_pushBlock,

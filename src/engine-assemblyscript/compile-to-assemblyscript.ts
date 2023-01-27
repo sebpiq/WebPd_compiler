@@ -11,7 +11,6 @@
 
 import { graphTraversalForCompile } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
-import { compileEventConfigure } from '../engine-common/compile-events'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
 import { Compilation, EngineMetadata } from '../types'
@@ -59,7 +58,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             ${globs.blockSize} = blockSize
             ${globs.input} = new ${FloatArray}(${globs.blockSize} * ${channelCount.in.toString()})
             ${globs.output} = new ${FloatArray}(${globs.blockSize} * ${channelCount.out.toString()})
-            ${compileEventConfigure(compilation, graphTraversal)}
         }
 
         export function getInput(): ${FloatArray} { return ${globs.input} }
@@ -105,7 +103,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             x_farray_getListOfArraysElem as farray_getListOfArraysElem,
             farray_set,
             farray_get, 
-            farray_create,
+
+            // CORE EXPORTS
+            createFloatArray,
 
             // INLET CALLERS
             ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 

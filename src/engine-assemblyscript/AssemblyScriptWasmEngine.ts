@@ -257,7 +257,7 @@ export class AssemblyScriptWasmEngine implements Engine {
                     infoPointer
                 ) as SoundFileInfo
                 // Called here because this call means that some sound buffers were allocated
-                // inside the wasm module. 
+                // inside the wasm module.
                 this._updateWasmInOuts()
                 this.fs.onOpenSoundReadStream(operationId, url, info)
             },

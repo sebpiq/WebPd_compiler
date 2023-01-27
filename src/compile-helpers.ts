@@ -33,7 +33,6 @@ export const getNodeImplementation = (
         declare: () => '',
         loop: () => '',
         messages: () => ({}),
-        events: () => ({}),
         sharedCode: [],
         ...nodeImplementation,
     }

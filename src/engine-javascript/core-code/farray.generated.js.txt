@@ -9,6 +9,7 @@
  *
  */
 const _farray_ARRAYS = new Map();
+const _farray_SKEDULER = sked_create(false);
 // =========================== EXPORTED API
 function x_farray_createListOfArrays() {
     const farray = [];
@@ -24,8 +25,19 @@ function x_farray_getListOfArraysElem(arrays, index) {
     return arrays[index];
 }
 // =========================== FARRAY API
-function farray_create(length) {
-    return new ${FloatArray}(length);
+/**
+ * @callback Called immediately if the array exists, and subsequently, everytime
+ * the array is set again.
+ */
+function farray_subscribeChanges(arrayName, callback) {
+    const id = sked_subscribe(_farray_SKEDULER, arrayName, callback);
+    if (_farray_ARRAYS.has(arrayName)) {
+        callback(arrayName);
+    }
+    return id;
+}
+function farray_cancelSubscription(id) {
+    sked_cancel(_farray_SKEDULER, id);
 }
 function farray_get(arrayName) {
     if (!_farray_ARRAYS.has(arrayName)) {
@@ -38,5 +50,5 @@ function farray_has(arrayName) {
 }
 function farray_set(arrayName, array) {
     _farray_ARRAYS.set(arrayName, array);
-    _events_ArraysChanged();
+    sked_emit(_farray_SKEDULER, arrayName);
 }

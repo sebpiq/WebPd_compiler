@@ -12,6 +12,7 @@ export type TypedArrayConstructor =
     | typeof Float64Array
 
 export interface core_WasmExports {
+    createFloatArray: (length: number) => FloatArrayPointer
     // Signatures of internal methods that enable to access wasm memory.
     // REF : https://www.assemblyscript.org/runtime.html#interface
     __new: (length: number, classType: number) => InternalPointer
@@ -64,7 +65,9 @@ export const lowerBuffer = (
 
 // REF : Assemblyscript ESM bindings `liftTypedArray`
 // TODO : move to other file ?
-export const readTypedArray = <_TypedArrayConstructor extends TypedArrayConstructor>(
+export const readTypedArray = <
+    _TypedArrayConstructor extends TypedArrayConstructor
+>(
     wasmExports: core_WasmExports,
     constructor: _TypedArrayConstructor,
     pointer: FloatArrayPointer

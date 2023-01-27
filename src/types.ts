@@ -55,7 +55,7 @@ export interface EngineMetadata {
     }
 }
 
-/\*\*  *  Base interface for DSP engine \*/
+;/\*\*  *  Base interface for DSP engine \*/
 export interface Engine {
     metadata: EngineMetadata
 
@@ -126,7 +126,7 @@ export interface Engine {
         /**
          * Function for the host environment to send back the response to an engine's
          * "read sound file" request.
-         * 
+         *
          * @param sound Empty array if the operation has failed.
          */
         sendReadSoundFileResponse: (
@@ -177,13 +177,12 @@ export interface NodeVariableNames {
     state: { [key: string]: CodeVariableName }
 }
 
-/** 
+/**
  * Map of all global variable names used for compilation.
- * 
- * @todo : for the sake of completeness, this should include also api functions from the core code. 
+ *
+ * @todo : for the sake of completeness, this should include also api functions from the core code.
  */
 export interface CodeVariableNames {
-
     /** Namespace for individual nodes */
     nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
@@ -265,18 +264,6 @@ export interface NodeImplementation<
         compilation: Compilation
     }) => {
         [inletId: DspGraph.PortletId]: Code
-    }
-
-    events?: (context: {
-        macros: CodeMacros
-        globs: CodeVariableNames['globs']
-        state: { [Parameter in keyof NodeState]: string }
-        snds: NodeVariableNames['snds']
-        node: DspGraph.Node<NodeArgsType>
-        compilation: Compilation
-    }) => {
-        arraysChanged?: Code
-        configure?: Code
     }
 
     sharedCode?: Array<SharedCodeGenerator>

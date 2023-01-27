@@ -49,6 +49,7 @@ describe('msg-bindings', () => {
 
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
         getAscCode('core.asc', audioSettings) +
+        getAscCode('sked.asc', audioSettings) +
         getAscCode('farray.asc', audioSettings) +
         getAscCode('msg.asc', audioSettings) +
         replacePlaceholdersForTesting(
@@ -62,7 +63,6 @@ describe('msg-bindings', () => {
                     x_farray_pushToListOfArrays as farray_pushToListOfArrays,
                     x_farray_getListOfArraysLength as farray_getListOfArraysLength,
                     x_farray_getListOfArraysElem as farray_getListOfArraysElem,
-                    farray_create,
 
                     // MSG EXPORTS
                     x_msg_create as msg_create,
@@ -74,6 +74,9 @@ describe('msg-bindings', () => {
                     msg_readFloatToken,
                     MSG_FLOAT_TOKEN,
                     MSG_STRING_TOKEN,
+
+                    // CORE EXPORTS
+                    createFloatArray,
                 }
             `,
             audioSettings

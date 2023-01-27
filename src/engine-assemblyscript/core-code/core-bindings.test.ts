@@ -1,6 +1,10 @@
 import assert from 'assert'
 import { readTypedArray } from './core-bindings'
-import { getAscCode, initializeCoreCodeTest, TEST_PARAMETERS } from './test-helpers'
+import {
+    getAscCode,
+    initializeCoreCodeTest,
+    TEST_PARAMETERS,
+} from './test-helpers'
 
 describe('core-bindings', () => {
     describe('readTypedArray', () => {

@@ -5,12 +5,14 @@ import SKED_JS from './sked.generated.js.txt'
 import FS_JS from './fs.generated.js.txt'
 import FARRAY_JS from './farray.generated.js.txt'
 
-const COMPAT = `
+const CORE = `
 const i32 = (v) => v
 const f32 = i32
 const f64 = i32
 const toInt = (v) => v
 const toFloat = (v) => v
+const createFloatArray = (length) => 
+    new \${FloatArray}(length)
 `
 
 const MSG = `
@@ -39,6 +41,6 @@ const msg_display = (m) => '[' + m
 export default (codeVariableNames: CodeVariableNames) => {
     return replaceCoreCodePlaceholders(
         codeVariableNames,
-        COMPAT + FARRAY_JS + BUF_JS + SKED_JS + MSG + FS_JS 
+        CORE + BUF_JS + SKED_JS + FARRAY_JS + MSG + FS_JS
     )
 }

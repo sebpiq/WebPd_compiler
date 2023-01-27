@@ -152,7 +152,6 @@ export const generateTestBindings = async <
         } else if (typeof obj === 'boolean') {
             return +obj
         } else if (obj instanceof Float32Array || obj instanceof Float64Array) {
-
             return lowerFloatArray(wasmExports, bitDepth, obj).arrayPointer
         } else if (Array.isArray(obj)) {
             return lowerMessage(wasmExports, obj)
@@ -186,18 +185,13 @@ export const generateTestBindings = async <
             }
         }
 
-    return mapObject(
-        exportedFunctions,
-        (returnSample, funcName) => {
-            const _liftReturn = _makeLiftAny(returnSample)
-            return (...args: Array<AscTransferrableType>) => {
-                const loweredArgs = args.map(_lowerAny)
-                return _liftReturn(
-                    (wasmExports as any)[funcName](...loweredArgs)
-                )
-            }
+    return mapObject(exportedFunctions, (returnSample, funcName) => {
+        const _liftReturn = _makeLiftAny(returnSample)
+        return (...args: Array<AscTransferrableType>) => {
+            const loweredArgs = args.map(_lowerAny)
+            return _liftReturn((wasmExports as any)[funcName](...loweredArgs))
         }
-    ) as {
+    }) as {
         [FuncName in keyof ExportedFunctions]: (
             ...args: Array<AscTransferrableType>
         ) => ExportedFunctions[FuncName]

@@ -9,11 +9,13 @@
  *
  */
 
-type FloatArray = ${FloatArray}
-type Float = ${Float}
-type Int = ${Int}
-function toInt (v: ${Float}): ${Int} { return ${Int}(v) }
-function toFloat (v: ${Int}): ${Float} { return ${Float}(v) }
-function createFloatArray (length: Int): FloatArray {
-    return new ${FloatArray}(length)
-}
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+export default readFileSync(
+    resolve(__dirname, '../sked.generated.js.txt')
+).toString()

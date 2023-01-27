@@ -13,7 +13,6 @@ import { DspGraph, traversal } from '@webpd/dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
 import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
-import { compileEventArraysChanged } from './compile-events'
 
 export default (
     compilation: Compilation,
@@ -28,19 +27,15 @@ export default (
         inletCallerSpecs,
         debug,
     } = compilation
-    const { Var, Func } = macros
+    const { Var } = macros
     const { globs } = codeVariableNames
     const sharedCode: Set<Code> = new Set()
     // prettier-ignore
     return renderCode`
-        let ${Var(globs.iterFrame, 'Int')}
-        let ${Var(globs.frame, 'Int')}
-        let ${Var(globs.blockSize, 'Int')}
-        let ${Var(globs.sampleRate, 'Float')}
-        
-        function _events_ArraysChanged ${Func([], 'void')} {
-            ${compileEventArraysChanged(compilation, graphTraversal)}
-        }
+        let ${Var(globs.iterFrame, 'Int')} = 0
+        let ${Var(globs.frame, 'Int')} = 0
+        let ${Var(globs.blockSize, 'Int')} = 0
+        let ${Var(globs.sampleRate, 'Float')} = 0
 
         ${graphTraversal.map(node => {
             // 0. De-duplicate and insert shared code required by nodes

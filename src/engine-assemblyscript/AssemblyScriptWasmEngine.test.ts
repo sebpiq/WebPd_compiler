@@ -29,7 +29,8 @@ describe('AssemblyScriptWasmEngine', () => {
                 compileToAssemblyscript(compilation) +
                     `
                     let bla: f32 = 1
-                `, 32
+                `,
+                32
             )
 
             const metadata = await readMetadata(wasmBuffer)

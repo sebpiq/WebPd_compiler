@@ -27,7 +27,10 @@ import {
 import { writeFile } from 'fs/promises'
 import { mapArray, mapObject } from './functional-helpers'
 import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
-import { AscTransferrableType, generateTestBindings as generateTestAscBindings } from './engine-assemblyscript/core-code/test-helpers'
+import {
+    AscTransferrableType,
+    generateTestBindings as generateTestAscBindings,
+} from './engine-assemblyscript/core-code/test-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 

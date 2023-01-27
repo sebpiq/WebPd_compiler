@@ -31,7 +31,7 @@ export const getAssemblyscriptCoreCode = () => {
 
 export const compileWasmModule = async (
     ascCode: Code,
-    bitDepth: AudioSettings['bitDepth'],
+    bitDepth: AudioSettings['bitDepth']
 ): Promise<ArrayBuffer> => {
     const options: any = {
         optimizeLevel: 3,

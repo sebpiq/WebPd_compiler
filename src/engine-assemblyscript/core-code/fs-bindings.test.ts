@@ -27,6 +27,7 @@ describe('fs-bindings', () => {
 
     const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
         getAscCode('core.asc', audioSettings) +
+        getAscCode('sked.asc', audioSettings) +
         getAscCode('farray.asc', audioSettings) +
         getAscCode('buf.asc', audioSettings) +
         getAscCode('msg.asc', audioSettings) +
@@ -98,7 +99,9 @@ describe('fs-bindings', () => {
                     x_farray_pushToListOfArrays as farray_pushToListOfArrays,
                     x_farray_getListOfArraysLength as farray_getListOfArraysLength,
                     x_farray_getListOfArraysElem as farray_getListOfArraysElem,
-                    farray_create,
+
+                    // CORE EXPORTS
+                    createFloatArray,
                 }
             `,
             audioSettings
@@ -148,10 +151,12 @@ describe('fs-bindings', () => {
 
     describe('read sound files', () => {
         describe('fs_readSoundFile', () => {
-            it.each(TEST_PARAMETERS)('should create the operation %s', async ({ bitDepth }) => {
-                const code =
-                    getBaseTestCode({ bitDepth }) +
-                    `
+            it.each(TEST_PARAMETERS)(
+                'should create the operation %s',
+                async ({ bitDepth }) => {
+                    const code =
+                        getBaseTestCode({ bitDepth }) +
+                        `
                         export function testStartReadFile (array: FloatArray): Int {
                             return fs_readSoundFile(
                                 '/some/url', 
@@ -168,36 +173,40 @@ describe('fs-bindings', () => {
                         }
                     `
 
-                const exports = {
-                    ...baseExports,
-                    testStartReadFile: 1,
+                    const exports = {
+                        ...baseExports,
+                        testStartReadFile: 1,
+                    }
+
+                    const { wasmExports, called } =
+                        await initializeCoreCodeTest({
+                            code,
+                            bitDepth,
+                            exports,
+                        })
+
+                    const operationId: number = wasmExports.testStartReadFile()
+                    const readCalled: Array<Array<any>> =
+                        called.get('i_fs_readSoundFile')
+                    assert.strictEqual(readCalled.length, 1)
+                    assert.strictEqual(readCalled[0].length, 3)
+                    assert.deepStrictEqual(
+                        [
+                            readCalled[0][0],
+                            liftString(wasmExports, readCalled[0][1]),
+                            liftMessage(wasmExports, readCalled[0][2]),
+                        ],
+                        [
+                            operationId,
+                            '/some/url',
+                            [4, 44100, 32, 'wave', 'b', ''] as SoundFileInfo,
+                        ]
+                    )
+                    assert.ok(
+                        wasmExports.testCheckOperationProcessing(operationId)
+                    )
                 }
-
-                const { wasmExports, called } = await initializeCoreCodeTest({
-                    code,
-                    bitDepth,
-                    exports,
-                })
-
-                const operationId: number = wasmExports.testStartReadFile()
-                const readCalled: Array<Array<any>> =
-                    called.get('i_fs_readSoundFile')
-                assert.strictEqual(readCalled.length, 1)
-                assert.strictEqual(readCalled[0].length, 3)
-                assert.deepStrictEqual(
-                    [
-                        readCalled[0][0],
-                        liftString(wasmExports, readCalled[0][1]),
-                        liftMessage(wasmExports, readCalled[0][2]),
-                    ],
-                    [
-                        operationId,
-                        '/some/url',
-                        [4, 44100, 32, 'wave', 'b', ''] as SoundFileInfo,
-                    ]
-                )
-                assert.ok(wasmExports.testCheckOperationProcessing(operationId))
-            })
+            )
         })
 
         describe('fs_sendReadSoundFileResponse', () => {
@@ -325,12 +334,13 @@ describe('fs-bindings', () => {
     })
 
     describe('read sound streams', () => {
-
         describe('fs_openSoundReadStream', () => {
-            it.each(TEST_PARAMETERS)('should create the operation %s', async ({ bitDepth }) => {
-                const code =
-                    getBaseTestCode({ bitDepth }) +
-                    `
+            it.each(TEST_PARAMETERS)(
+                'should create the operation %s',
+                async ({ bitDepth }) => {
+                    const code =
+                        getBaseTestCode({ bitDepth }) +
+                        `
                         const channelCount: Int = 22
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundReadStream(
@@ -352,46 +362,54 @@ describe('fs-bindings', () => {
                         }
                     `
 
-                const exports = {
-                    ...baseExports,
-                    testStartStream: 1,
-                    testCheckSoundBufferExists: 1,
+                    const exports = {
+                        ...baseExports,
+                        testStartStream: 1,
+                        testCheckSoundBufferExists: 1,
+                    }
+
+                    const { wasmExports, called } =
+                        await initializeCoreCodeTest({
+                            code,
+                            exports,
+                            bitDepth,
+                        })
+
+                    const operationId: number = wasmExports.testStartStream()
+                    const readCalled: Array<Array<any>> = called.get(
+                        'i_fs_openSoundReadStream'
+                    )
+                    assert.strictEqual(readCalled.length, 1)
+                    assert.strictEqual(readCalled[0].length, 3)
+                    assert.deepStrictEqual(
+                        [
+                            readCalled[0][0],
+                            liftString(wasmExports, readCalled[0][1]),
+                            liftMessage(wasmExports, readCalled[0][2]),
+                        ],
+                        [
+                            operationId,
+                            '/some/url',
+                            [22, 44100, 32, 'wave', 'b', ''] as SoundFileInfo,
+                        ]
+                    )
+                    assert.ok(
+                        wasmExports.testCheckOperationProcessing(operationId)
+                    )
+                    assert.ok(
+                        wasmExports.testCheckSoundBufferExists(operationId)
+                    )
                 }
-
-                const { wasmExports, called } = await initializeCoreCodeTest({
-                    code,
-                    exports,
-                    bitDepth,
-                })
-
-                const operationId: number = wasmExports.testStartStream()
-                const readCalled: Array<Array<any>> = called.get(
-                    'i_fs_openSoundReadStream'
-                )
-                assert.strictEqual(readCalled.length, 1)
-                assert.strictEqual(readCalled[0].length, 3)
-                assert.deepStrictEqual(
-                    [
-                        readCalled[0][0],
-                        liftString(wasmExports, readCalled[0][1]),
-                        liftMessage(wasmExports, readCalled[0][2]),
-                    ],
-                    [
-                        operationId,
-                        '/some/url',
-                        [22, 44100, 32, 'wave', 'b', ''] as SoundFileInfo,
-                    ]
-                )
-                assert.ok(wasmExports.testCheckOperationProcessing(operationId))
-                assert.ok(wasmExports.testCheckSoundBufferExists(operationId))
-            })
+            )
         })
 
         describe('fs_onSoundStreamData', () => {
-            it.each(TEST_PARAMETERS)('should push data to the buffer %s', async ({ bitDepth }) => {
-                const code =
-                    getBaseTestCode({ bitDepth }) +
-                    `
+            it.each(TEST_PARAMETERS)(
+                'should push data to the buffer %s',
+                async ({ bitDepth }) => {
+                    const code =
+                        getBaseTestCode({ bitDepth }) +
+                        `
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundReadStream(
                                 '/some/url', 
@@ -411,62 +429,63 @@ describe('fs-bindings', () => {
                         }
                     `
 
-                const exports = {
-                    ...baseExports,
-                    testStartStream: 1,
-                    testBufferPullFrame: 1,
+                    const exports = {
+                        ...baseExports,
+                        testStartStream: 1,
+                        testBufferPullFrame: 1,
+                    }
+
+                    const { wasmExports, floatArrayType } =
+                        await initializeCoreCodeTest({
+                            code,
+                            exports,
+                            bitDepth,
+                        })
+
+                    let availableFrameCount: number = 0
+
+                    // 1. Create the operation
+                    const operationId = wasmExports.testStartStream()
+
+                    // 2. Send in some sound
+                    availableFrameCount = wasmExports.fs_onSoundStreamData(
+                        operationId,
+                        lowerListOfFloatArrays(wasmExports, bitDepth, [
+                            new floatArrayType([-0.1, -0.2, -0.3]),
+                            new floatArrayType([0.1, 0.2, 0.3]),
+                        ])
+                    )
+                    assert.strictEqual(availableFrameCount, 3)
+
+                    // 3. Send in more sound
+                    availableFrameCount = wasmExports.fs_onSoundStreamData(
+                        operationId,
+                        lowerListOfFloatArrays(wasmExports, bitDepth, [
+                            new floatArrayType([0.4, 0.5, 0.6]),
+                            new floatArrayType([-0.4, -0.5, -0.6]),
+                        ])
+                    )
+                    assert.strictEqual(availableFrameCount, 6)
+
+                    // 4. Send in more sound than the buffer can hold
+                    availableFrameCount = wasmExports.fs_onSoundStreamData(
+                        operationId,
+                        lowerListOfFloatArrays(wasmExports, bitDepth, [
+                            new floatArrayType([0.7, 0.8, 0.9]),
+                            new floatArrayType([-0.7, -0.8, -0.9]),
+                        ])
+                    )
+                    assert.strictEqual(availableFrameCount, 9)
+
+                    // 5. Testing buffer contents
+                    assert.deepStrictEqual(
+                        [1, 2, 3, 4, 5, 6, 7].map((_) =>
+                            round(wasmExports.testBufferPullFrame(operationId))
+                        ),
+                        [-0.1, -0.2, -0.3, 0.4, 0.5, 0.6, 0.7]
+                    )
                 }
-
-                const { wasmExports, floatArrayType } =
-                    await initializeCoreCodeTest({
-                        code,
-                        exports,
-                        bitDepth,
-                    })
-
-                let availableFrameCount: number = 0
-
-                // 1. Create the operation
-                const operationId = wasmExports.testStartStream()
-
-                // 2. Send in some sound
-                availableFrameCount = wasmExports.fs_onSoundStreamData(
-                    operationId,
-                    lowerListOfFloatArrays(wasmExports, bitDepth, [
-                        new floatArrayType([-0.1, -0.2, -0.3]),
-                        new floatArrayType([0.1, 0.2, 0.3]),
-                    ])
-                )
-                assert.strictEqual(availableFrameCount, 3)
-
-                // 3. Send in more sound
-                availableFrameCount = wasmExports.fs_onSoundStreamData(
-                    operationId,
-                    lowerListOfFloatArrays(wasmExports, bitDepth, [
-                        new floatArrayType([0.4, 0.5, 0.6]),
-                        new floatArrayType([-0.4, -0.5, -0.6]),
-                    ])
-                )
-                assert.strictEqual(availableFrameCount, 6)
-
-                // 4. Send in more sound than the buffer can hold
-                availableFrameCount = wasmExports.fs_onSoundStreamData(
-                    operationId,
-                    lowerListOfFloatArrays(wasmExports, bitDepth, [
-                        new floatArrayType([0.7, 0.8, 0.9]),
-                        new floatArrayType([-0.7, -0.8, -0.9]),
-                    ])
-                )
-                assert.strictEqual(availableFrameCount, 9)
-
-                // 5. Testing buffer contents
-                assert.deepStrictEqual(
-                    [1, 2, 3, 4, 5, 6, 7].map((_) =>
-                        round(wasmExports.testBufferPullFrame(operationId))
-                    ),
-                    [-0.1, -0.2, -0.3, 0.4, 0.5, 0.6, 0.7]
-                )
-            })
+            )
         })
 
         describe('fs_closeSoundStream', () => {
@@ -552,10 +571,12 @@ describe('fs-bindings', () => {
 
     describe('write sound streams', () => {
         describe('fs_openSoundWriteStream', () => {
-            it.each(TEST_PARAMETERS)('should create the operation %s', async ({ bitDepth }) => {
-                const code =
-                    getBaseTestCode({ bitDepth }) +
-                    `
+            it.each(TEST_PARAMETERS)(
+                'should create the operation %s',
+                async ({ bitDepth }) => {
+                    const code =
+                        getBaseTestCode({ bitDepth }) +
+                        `
                         const channelCount: Int = 4
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundWriteStream(
@@ -573,45 +594,51 @@ describe('fs-bindings', () => {
                         }
                     `
 
-                const exports = {
-                    ...baseExports,
-                    testStartStream: 1,
+                    const exports = {
+                        ...baseExports,
+                        testStartStream: 1,
+                    }
+
+                    const { wasmExports, called } =
+                        await initializeCoreCodeTest({
+                            code,
+                            exports,
+                            bitDepth,
+                        })
+
+                    const operationId: number = wasmExports.testStartStream()
+                    const writeCalled: Array<Array<any>> = called.get(
+                        'i_fs_openSoundWriteStream'
+                    )
+                    assert.strictEqual(writeCalled.length, 1)
+                    assert.strictEqual(writeCalled[0].length, 3)
+                    assert.deepStrictEqual(
+                        [
+                            writeCalled[0][0],
+                            liftString(wasmExports, writeCalled[0][1]),
+                            liftMessage(wasmExports, writeCalled[0][2]),
+                        ],
+                        [
+                            operationId,
+                            '/some/url',
+                            [2, 44100, 24, 'wave', 'b', ''] as SoundFileInfo,
+                        ]
+                    )
+                    assert.ok(
+                        wasmExports.testCheckOperationProcessing(operationId)
+                    )
                 }
-
-                const { wasmExports, called } = await initializeCoreCodeTest({
-                    code,
-                    exports,
-                    bitDepth,
-                })
-
-                const operationId: number = wasmExports.testStartStream()
-                const writeCalled: Array<Array<any>> = called.get(
-                    'i_fs_openSoundWriteStream'
-                )
-                assert.strictEqual(writeCalled.length, 1)
-                assert.strictEqual(writeCalled[0].length, 3)
-                assert.deepStrictEqual(
-                    [
-                        writeCalled[0][0],
-                        liftString(wasmExports, writeCalled[0][1]),
-                        liftMessage(wasmExports, writeCalled[0][2]),
-                    ],
-                    [
-                        operationId,
-                        '/some/url',
-                        [2, 44100, 24, 'wave', 'b', ''] as SoundFileInfo,
-                    ]
-                )
-                assert.ok(wasmExports.testCheckOperationProcessing(operationId))
-            })
+            )
         })
 
         describe('fs_sendSoundStreamData', () => {
-            it.each(TEST_PARAMETERS)('should push data to the buffer %s', async ({ bitDepth }) => {
-                const code =
-                    getBaseTestCode({ bitDepth }) +
-                    replacePlaceholdersForTesting(
-                        `
+            it.each(TEST_PARAMETERS)(
+                'should push data to the buffer %s',
+                async ({ bitDepth }) => {
+                    const code =
+                        getBaseTestCode({ bitDepth }) +
+                        replacePlaceholdersForTesting(
+                            `
                         let counter: Float = 0
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundWriteStream(
@@ -644,68 +671,69 @@ describe('fs-bindings', () => {
                             fs_sendSoundStreamData(id, block)
                         }
                     `,
-                        { bitDepth }
+                            { bitDepth }
+                        )
+
+                    const exports = {
+                        ...baseExports,
+                        testStartStream: 1,
+                        testSendSoundStreamData: 1,
+                    }
+
+                    const { wasmExports, floatArrayType, called } =
+                        await initializeCoreCodeTest({
+                            code,
+                            exports,
+                            bitDepth,
+                        })
+
+                    // 1. Create the operation
+                    const operationId = wasmExports.testStartStream()
+
+                    // 2. Receive some sound
+                    wasmExports.testSendSoundStreamData(operationId)
+                    wasmExports.testSendSoundStreamData(operationId)
+                    const receivedCalls = called.get('i_fs_sendSoundStreamData')
+                    assert.strictEqual(receivedCalls.length, 2)
+                    assert.strictEqual(receivedCalls[0].length, 2)
+                    assert.deepStrictEqual(
+                        [
+                            receivedCalls[0][0],
+                            readListOfFloatArrays(
+                                wasmExports,
+                                bitDepth,
+                                receivedCalls[0][1]
+                            ),
+                        ],
+                        [
+                            operationId,
+                            [
+                                new floatArrayType([10, 11, 12, 13]),
+                                new floatArrayType([20, 21, 22, 23]),
+                            ],
+                        ]
                     )
 
-                const exports = {
-                    ...baseExports,
-                    testStartStream: 1,
-                    testSendSoundStreamData: 1,
+                    assert.strictEqual(receivedCalls[1].length, 2)
+                    assert.deepStrictEqual(
+                        [
+                            receivedCalls[1][0],
+                            readListOfFloatArrays(
+                                wasmExports,
+                                bitDepth,
+                                receivedCalls[1][1]
+                            ),
+                        ],
+                        [
+                            operationId,
+                            [
+                                new floatArrayType([14, 15, 16, 17]),
+                                new floatArrayType([24, 25, 26, 27]),
+                            ],
+                        ]
+                    )
                 }
-
-                const { wasmExports, floatArrayType, called } =
-                    await initializeCoreCodeTest({
-                        code,
-                        exports,
-                        bitDepth,
-                    })
-
-                // 1. Create the operation
-                const operationId = wasmExports.testStartStream()
-
-                // 2. Receive some sound
-                wasmExports.testSendSoundStreamData(operationId)
-                wasmExports.testSendSoundStreamData(operationId)
-                const receivedCalls = called.get('i_fs_sendSoundStreamData')
-                assert.strictEqual(receivedCalls.length, 2)
-                assert.strictEqual(receivedCalls[0].length, 2)
-                assert.deepStrictEqual(
-                    [
-                        receivedCalls[0][0],
-                        readListOfFloatArrays(
-                            wasmExports,
-                            bitDepth,
-                            receivedCalls[0][1]
-                        ),
-                    ],
-                    [
-                        operationId,
-                        [
-                            new floatArrayType([10, 11, 12, 13]),
-                            new floatArrayType([20, 21, 22, 23]),
-                        ],
-                    ]
-                )
-
-                assert.strictEqual(receivedCalls[1].length, 2)
-                assert.deepStrictEqual(
-                    [
-                        receivedCalls[1][0],
-                        readListOfFloatArrays(
-                            wasmExports,
-                            bitDepth,
-                            receivedCalls[1][1]
-                        ),
-                    ],
-                    [
-                        operationId,
-                        [
-                            new floatArrayType([14, 15, 16, 17]),
-                            new floatArrayType([24, 25, 26, 27]),
-                        ],
-                    ]
-                )
-            })
+            )
         })
 
         describe('fs_closeSoundStream', () => {
@@ -794,11 +822,13 @@ describe('fs-bindings', () => {
 
     describe('write sound files', () => {
         describe('fs_writeSoundFile', () => {
-            it.each(TEST_PARAMETERS)('should create the operation %s', async ({ bitDepth }) => {
-                const code =
-                    getBaseTestCode({ bitDepth }) +
-                    replacePlaceholdersForTesting(
-                        `
+            it.each(TEST_PARAMETERS)(
+                'should create the operation %s',
+                async ({ bitDepth }) => {
+                    const code =
+                        getBaseTestCode({ bitDepth }) +
+                        replacePlaceholdersForTesting(
+                            `
                         const sound: FloatArray[] = [
                             new \${FloatArray}(4),
                             new \${FloatArray}(4),
@@ -833,51 +863,54 @@ describe('fs-bindings', () => {
                             )
                         }
                     `,
-                        { bitDepth }
-                    )
+                            { bitDepth }
+                        )
 
-                const exports = {
-                    ...baseExports,
-                    testStartWriteFile: 1,
-                }
+                    const exports = {
+                        ...baseExports,
+                        testStartWriteFile: 1,
+                    }
 
-                const { wasmExports, called, floatArrayType } =
-                    await initializeCoreCodeTest({
-                        code,
-                        bitDepth,
-                        exports,
-                    })
-
-                const operationId: number = wasmExports.testStartWriteFile()
-                const writeCalled: Array<Array<any>> = called.get(
-                    'i_fs_writeSoundFile'
-                )
-                assert.strictEqual(writeCalled.length, 1)
-                assert.strictEqual(writeCalled[0].length, 4)
-                assert.deepStrictEqual(
-                    [
-                        writeCalled[0][0],
-                        readListOfFloatArrays(
-                            wasmExports,
+                    const { wasmExports, called, floatArrayType } =
+                        await initializeCoreCodeTest({
+                            code,
                             bitDepth,
-                            writeCalled[0][1]
-                        ),
-                        liftString(wasmExports, writeCalled[0][2]),
-                        liftMessage(wasmExports, writeCalled[0][3]),
-                    ],
-                    [
-                        operationId,
+                            exports,
+                        })
+
+                    const operationId: number = wasmExports.testStartWriteFile()
+                    const writeCalled: Array<Array<any>> = called.get(
+                        'i_fs_writeSoundFile'
+                    )
+                    assert.strictEqual(writeCalled.length, 1)
+                    assert.strictEqual(writeCalled[0].length, 4)
+                    assert.deepStrictEqual(
                         [
-                            new floatArrayType([11, 12, 13, 14]),
-                            new floatArrayType([21, 22, 23, 24]),
-                            new floatArrayType([31, 32, 33, 34]),
+                            writeCalled[0][0],
+                            readListOfFloatArrays(
+                                wasmExports,
+                                bitDepth,
+                                writeCalled[0][1]
+                            ),
+                            liftString(wasmExports, writeCalled[0][2]),
+                            liftMessage(wasmExports, writeCalled[0][3]),
                         ],
-                        '/some/url',
-                        [3, 44100, 24, 'wave', 'b', ''] as SoundFileInfo,
-                    ]
-                )
-                assert.ok(wasmExports.testCheckOperationProcessing(operationId))
-            })
+                        [
+                            operationId,
+                            [
+                                new floatArrayType([11, 12, 13, 14]),
+                                new floatArrayType([21, 22, 23, 24]),
+                                new floatArrayType([31, 32, 33, 34]),
+                            ],
+                            '/some/url',
+                            [3, 44100, 24, 'wave', 'b', ''] as SoundFileInfo,
+                        ]
+                    )
+                    assert.ok(
+                        wasmExports.testCheckOperationProcessing(operationId)
+                    )
+                }
+            )
         })
 
         describe('fs_sendWriteSoundFileResponse', () => {

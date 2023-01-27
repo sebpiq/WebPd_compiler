@@ -18,6 +18,7 @@ import {
     NodeImplementations,
     InletCallerSpecs,
     SoundFileInfo,
+    FloatArray,
 } from './types'
 
 const TEST_PARAMETERS = [
@@ -301,6 +302,56 @@ describe('Engine', () => {
                     new Float32Array([1, 3, 5, 7]),
                     new Float32Array([0, 0, 0, 0]),
                 ])
+            }
+        )
+
+        it.skip.each(TEST_PARAMETERS)(
+            'should trigger configure subscribers %s',
+            async ({ target, bitDepth, floatArrayType }) => {
+                const nodeImplementations: NodeImplementations = {
+                    DUMMY: {
+                        declare: ({ globs, state, macros: { Var } }) => `
+                            let ${Var(state.configureCalled, 'Float')} = 0
+                            BLABLA(() => {
+                                ${state.configureCalled} = ${globs.sampleRate}
+                            })
+                        `,
+                        loop: ({ globs, state, compilation: { target } }) =>
+                            target === 'assemblyscript'
+                                ? `${globs.output}[0] = ${state.configureCalled}`
+                                : `${globs.output}[0][0] = ${state.configureCalled}`,
+
+                        stateVariables: ['configureCalled'],
+                    },
+                }
+
+                const graph = makeGraph({
+                    outputNode: {
+                        type: 'DUMMY',
+                        isSignalSink: true,
+                    },
+                })
+
+                const audioSettings: AudioSettings = {
+                    bitDepth,
+                    channelCount: { in: 0, out: 1 },
+                }
+
+                const output: Array<FloatArray> = [new floatArrayType([])]
+
+                const engine = await initializeEngineTest({
+                    target,
+                    bitDepth,
+                    compilation: {
+                        graph,
+                        nodeImplementations,
+                        audioSettings,
+                    },
+                })
+
+                engine.configure(44100, 1)
+                engine.loop([], output)
+                assert.deepStrictEqual(output, [new floatArrayType([44100])])
             }
         )
 

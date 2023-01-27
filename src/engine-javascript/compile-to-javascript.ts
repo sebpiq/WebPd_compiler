@@ -11,7 +11,6 @@
 
 import { graphTraversalForCompile } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
-import { compileEventConfigure } from '../engine-common/compile-events'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation, EngineMetadata } from '../types'
 import { JavaScriptEngineCode } from './types'
@@ -56,7 +55,6 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${globs.blockSize} = blockSize
                 exports.metadata.audioSettings.sampleRate = sampleRate
                 exports.metadata.audioSettings.blockSize = blockSize
-                ${compileEventConfigure(compilation, graphTraversal)}
             },
             loop: (${globs.input}, ${globs.output}) => {
                 ${compileLoop(compilation, graphTraversal)}

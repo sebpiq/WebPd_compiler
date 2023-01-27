@@ -16,18 +16,11 @@ import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileDeclare from './compile-declare'
 
 describe('compileDeclare', () => {
-    const GLOBAL_VARIABLES_CODE_NO_EVENTS = `
-        let F
-        let FRAME 
-        let BLOCK_SIZE
-        let SAMPLE_RATE
-    `
-
-    const GLOBAL_VARIABLES_CODE =
-        GLOBAL_VARIABLES_CODE_NO_EVENTS +
-        `
-        function _events_ArraysChanged () {
-        }
+    const GLOBAL_VARIABLES_CODE = `
+        let F = 0
+        let FRAME = 0
+        let BLOCK_SIZE = 0
+        let SAMPLE_RATE = 0
     `
 
     it('should compile declaration for global variables', () => {
@@ -205,7 +198,7 @@ describe('compileDeclare', () => {
         })
 
         const nodeImplementations: NodeImplementations = {
-            'add': {
+            add: {
                 messages: () => ({
                     '0': '// [add] message receiver',
                 }),
@@ -478,40 +471,6 @@ describe('compileDeclare', () => {
                 ${GLOBAL_VARIABLES_CODE}
                 // blockSize
                 // sampleRate
-            `)
-        )
-    })
-
-    it('should inject arrays change event handlers', () => {
-        const graph = makeGraph({
-            someNode: {
-                type: 'float',
-            },
-        })
-
-        const nodeImplementations: NodeImplementations = {
-            float: {
-                events: () => ({
-                    arraysChanged: '// [float] arrays changed',
-                }),
-            },
-        }
-
-        const compilation = makeCompilation({
-            target: 'javascript',
-            graph,
-            nodeImplementations,
-        })
-
-        const declareCode = compileDeclare(compilation, [graph.someNode])
-
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE_NO_EVENTS}
-                function _events_ArraysChanged () {
-                    // [float] arrays changed
-                }
             `)
         )
     })

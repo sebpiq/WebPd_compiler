@@ -19,7 +19,6 @@ import { InternalPointer, StringPointer, FloatArrayPointer } from '../types'
 import { getFloatArrayType } from '../../compile-helpers'
 
 export interface farray_WasmExports extends core_WasmExports {
-    farray_create: (length: number) => FloatArrayPointer
     farray_get: (arrayName: StringPointer) => FloatArrayPointer
     farray_set: (arrayName: StringPointer, array: FloatArrayPointer) => void
     farray_createListOfArrays: () => InternalPointer
@@ -43,7 +42,7 @@ export const lowerFloatArray = (
     data: Array<number> | FloatArray
 ) => {
     const arrayType = getFloatArrayType(bitDepth)
-    const arrayPointer = wasmExports.farray_create(data.length)
+    const arrayPointer = wasmExports.createFloatArray(data.length)
     const array = readTypedArray(
         wasmExports,
         arrayType,
