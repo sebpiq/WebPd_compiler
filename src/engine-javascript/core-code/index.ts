@@ -38,6 +38,7 @@ const msg_display = (m) => '[' + m
     .join(', ') + ']'
 `
 
+// TODO : no need for the whole codeVariableNames here
 export default (codeVariableNames: CodeVariableNames) => {
     return replaceCoreCodePlaceholders(
         codeVariableNames,

@@ -11,7 +11,7 @@
 
 import assert from 'assert'
 import { DspGraph } from '@webpd/dsp-graph'
-import { executeCompilation } from './compile'
+import { executeCompilation, getMacros } from './compile'
 import { createEngine, makeCompilation, round } from './test-helpers'
 import {
     Signal,
@@ -23,10 +23,10 @@ import {
     Engine,
     AudioSettings,
     SharedCodeGenerator,
+    Code,
 } from './types'
 import { writeFile } from 'fs/promises'
 import { mapArray, mapObject } from './functional-helpers'
-import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
 import {
     AscTransferrableType,
     generateTestBindings as generateTestAscBindings,
@@ -98,7 +98,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
             { id: portletId, type: 'message' },
         ]),
         outlets: testNodeInlets,
-        isMessageSource: true,
+        isPushingMessages: true,
     }
 
     // Node to test
@@ -133,7 +133,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
             portletId,
             { id: portletId, type: 'message' },
         ]),
-        isSignalSink: true,
+        isPullingSignal: true,
     }
 
     const graph: DspGraph.Graph = {
@@ -242,12 +242,6 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         },
     })
     const code = executeCompilation(compilation)
-    // Always save latest compilation for easy inspection
-    await writeFile(
-        `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'asc'}`,
-        code
-    )
-
     const engine = await createEngine(target, bitDepth, code)
 
     if (arrays) {
@@ -444,33 +438,21 @@ interface FrameSharedCode {
 
 interface SharedCodeTestSettings {
     target: CompilerTarget
-    sharedCodeGenerator: SharedCodeGenerator
+    sharedCodeGenerators: Array<SharedCodeGenerator>
     functionName: string
     bitDepth: AudioSettings['bitDepth']
 }
 
-/** Helper to test functions defined in {@link NodeImplementation#sharedCode}. */
-export const assertSharedCodeFunctionOutput = async (
-    sharedCodeTestSettings: SharedCodeTestSettings,
-    ...frames: Array<FrameSharedCode>
+export const createTestBindings = async <
+    ExportedFunctions extends { [functionName: string]: AscTransferrableType }
+>(
+    codeToTest: Code,
+    target: CompilerTarget,
+    bitDepth: AudioSettings['bitDepth'],
+    exportedFunctions: ExportedFunctions
 ) => {
-    const { target, bitDepth, sharedCodeGenerator, functionName } =
-        sharedCodeTestSettings
-
     const compilation = makeCompilation({
-        graph: {
-            dummy: {
-                ...nodeDefaults('dummy', 'DUMMY'),
-                // Force inclusion of code
-                isMessageSource: true,
-            },
-        },
         target,
-        nodeImplementations: {
-            DUMMY: {
-                sharedCode: [sharedCodeGenerator],
-            },
-        },
         audioSettings: {
             channelCount: ENGINE_DSP_PARAMS.channelCount,
             bitDepth,
@@ -478,13 +460,22 @@ export const assertSharedCodeFunctionOutput = async (
     })
 
     let code = executeCompilation(compilation)
+
     if (target === 'javascript') {
-        code += `
-            exports.${functionName} = ${functionName}
+        code +=
+            codeToTest +
+            `
+            ${Object.keys(exportedFunctions).map(
+                (functionName) => `exports.${functionName} = ${functionName}`
+            )} 
         `
     } else {
-        code += `
-            export { ${functionName} }
+        code +=
+            codeToTest +
+            `
+            export {
+                ${Object.keys(exportedFunctions).join(', ')}
+            }
         `
     }
 
@@ -494,14 +485,40 @@ export const assertSharedCodeFunctionOutput = async (
         code
     )
 
-    let bindings: any
     if (target === 'assemblyscript') {
-        bindings = await generateTestAscBindings(code, bitDepth, {
-            [functionName]: frames[0].returns,
-        })
+        return await generateTestAscBindings(code, bitDepth, exportedFunctions)
     } else {
-        bindings = await createEngine('javascript', bitDepth, code)
+        return (await createEngine(
+            'javascript',
+            bitDepth,
+            code
+        )) as unknown as {
+            [FuncName in keyof ExportedFunctions]: (
+                ...args: Array<AscTransferrableType>
+            ) => ExportedFunctions[FuncName]
+        }
     }
+}
+
+/** Helper to test functions defined in {@link NodeImplementation#sharedCode}. */
+export const assertSharedCodeFunctionOutput = async (
+    sharedCodeTestSettings: SharedCodeTestSettings,
+    ...frames: Array<FrameSharedCode>
+) => {
+    const { target, bitDepth, sharedCodeGenerators, functionName } =
+        sharedCodeTestSettings
+
+    const codeToTest = sharedCodeGenerators
+        .map((sharedCodeGenerator) =>
+            sharedCodeGenerator({
+                macros: getMacros(target),
+            })
+        )
+        .join('\n')
+
+    let bindings: any = await createTestBindings(codeToTest, target, bitDepth, {
+        [functionName]: frames[0].returns,
+    })
 
     const actualFrames: Array<FrameSharedCode> = []
     for (let frame of frames) {
@@ -530,12 +547,11 @@ export const generateFrames = (
             blockSize
         )
 
-    const engineOutput =
-        buildEngineBlock(
-            engine.metadata.audioSettings.bitDepth,
-            engine.metadata.audioSettings.channelCount.out,
-            blockSize
-        )
+    const engineOutput = buildEngineBlock(
+        engine.metadata.audioSettings.bitDepth,
+        engine.metadata.audioSettings.channelCount.out,
+        blockSize
+    )
 
     engine.configure(ENGINE_DSP_PARAMS.sampleRate, blockSize)
 
@@ -543,9 +559,7 @@ export const generateFrames = (
     for (let i = 0; i < iterations; i++) {
         engine.loop(engineInput, engineOutput)
         // Block size 1, so we flatten the array and get just the first sample
-        results.push(
-            engineOutput.map((channelValues) => channelValues[0])
-        )
+        results.push(engineOutput.map((channelValues) => channelValues[0]))
     }
     return results
 }

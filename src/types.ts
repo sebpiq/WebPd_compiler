@@ -224,11 +224,7 @@ export interface CodeVariableNames {
     }
 }
 
-export type SharedCodeGenerator = (context: {
-    macros: CodeMacros
-    globs: CodeVariableNames['globs']
-    compilation: Compilation
-}) => Code
+export type SharedCodeGenerator = (context: { macros: CodeMacros }) => Code
 
 export interface NodeImplementation<
     NodeArgsType,

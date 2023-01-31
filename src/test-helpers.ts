@@ -23,6 +23,7 @@ import { createEngine as createAscEngine } from './engine-assemblyscript/Assembl
 import { writeFileSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { writeFile } from 'fs/promises'
 const execPromise = promisify(exec)
 
 export const normalizeCode = (rawCode: string) => {
@@ -93,6 +94,11 @@ export const createEngine = async (
     bitDepth: AudioSettings['bitDepth'],
     code: Code
 ): Promise<Engine> => {
+    // Always save latest compilation for easy inspection
+    await writeFile(
+        `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'asc'}`,
+        code
+    )
     if (target === 'javascript') {
         try {
             return new Function(`

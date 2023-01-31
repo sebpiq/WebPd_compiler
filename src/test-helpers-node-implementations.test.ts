@@ -211,7 +211,8 @@ describe('test-helpers-node-implementations', () => {
                     {
                         bitDepth: 32,
                         target,
-                        sharedCodeGenerator: ({ macros: { Var, Func } }) => `
+                        sharedCodeGenerators: [
+                            ({ macros: { Var, Func } }) => `
                         function myNumberFunction ${Func(
                             [
                                 Var('someNumber', 'Float'),
@@ -222,6 +223,7 @@ describe('test-helpers-node-implementations', () => {
                             return someNumber + someOtherNumber
                         }
                     `,
+                        ],
                         functionName: 'myNumberFunction',
                     },
                     { parameters: [123, 0.5], returns: 123.5 }
@@ -236,7 +238,8 @@ describe('test-helpers-node-implementations', () => {
                     {
                         bitDepth: 32,
                         target,
-                        sharedCodeGenerator: ({ macros: { Var, Func } }) => `
+                        sharedCodeGenerators: [
+                            ({ macros: { Var, Func } }) => `
                         function myMessageFunction ${Func(
                             [Var('someMessage', 'Message')],
                             'Message'
@@ -250,6 +253,7 @@ describe('test-helpers-node-implementations', () => {
                             return newMessage
                         }
                     `,
+                        ],
                         functionName: 'myMessageFunction',
                     },
                     { parameters: [[-10, 'bl']], returns: [-9.5, 'bla'] }
@@ -264,7 +268,8 @@ describe('test-helpers-node-implementations', () => {
                     {
                         bitDepth: 32,
                         target,
-                        sharedCodeGenerator: ({ macros: { Var, Func } }) => `
+                        sharedCodeGenerators: [
+                            ({ macros: { Var, Func } }) => `
                         function myStringFunction ${Func(
                             [Var('someString', 'string')],
                             'string'
@@ -272,6 +277,7 @@ describe('test-helpers-node-implementations', () => {
                             return someString + '666'
                         }
                     `,
+                        ],
                         functionName: 'myStringFunction',
                     },
                     { parameters: ['hello '], returns: 'hello 666' }

@@ -87,7 +87,7 @@ describe('compile-helpers', () => {
                     },
                 },
                 n2: {
-                    isMessageSource: true,
+                    isPushingMessages: true,
                     sinks: {
                         '0': [['n4', '0']],
                     },
@@ -99,7 +99,7 @@ describe('compile-helpers', () => {
                     },
                 },
                 n3: {
-                    isSignalSink: true,
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -113,7 +113,7 @@ describe('compile-helpers', () => {
             const traversal = graphTraversalForCompile(graph)
             assert.deepStrictEqual(
                 traversal.map((node) => node.id),
-                ['n1', 'n3', 'n2', 'n4']
+                ['n2', 'n4', 'n1', 'n3']
             )
         })
     })

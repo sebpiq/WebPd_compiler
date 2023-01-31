@@ -38,6 +38,7 @@ export const getNodeImplementation = (
     }
 }
 
+// TODO : no need for the whole codeVariableNames here
 export const replaceCoreCodePlaceholders = (
     codeVariableNames: CodeVariableNames,
     code: Code
@@ -54,10 +55,26 @@ export const replaceCoreCodePlaceholders = (
         .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
 }
 
+/**
+ * Build graph traversal for the compilation.
+ * We first put nodes that push messages, so they have the opportunity
+ * to change the engine state before running the loop.
+ * !!! This is not fullproof ! For example if a node is pushing messages
+ * but also writing signal outputs, it might be run too early / too late.
+ */
 export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
-    const graphTraversalSignal = traversal.signalNodes(graph)
+    const nodesPullingSignal = Object.values(graph).filter(
+        (node) => !!node.isPullingSignal
+    )
+    const nodesPushingMessages = Object.values(graph).filter(
+        (node) => !!node.isPushingMessages
+    )
+    const graphTraversalSignal = traversal.messageNodes(
+        graph,
+        nodesPushingMessages
+    )
     const combined = graphTraversalSignal
-    traversal.messageNodes(graph).forEach((node) => {
+    traversal.signalNodes(graph, nodesPullingSignal).forEach((node) => {
         if (combined.indexOf(node) === -1) {
             combined.push(node)
         }

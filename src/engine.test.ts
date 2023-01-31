@@ -193,7 +193,7 @@ describe('Engine', () => {
                 const graph = makeGraph({
                     outputNode: {
                         type: 'DUMMY',
-                        isSignalSink: true,
+                        isPullingSignal: true,
                     },
                 })
 
@@ -264,7 +264,7 @@ describe('Engine', () => {
                 const graph = makeGraph({
                     outputNode: {
                         type: 'DUMMY',
-                        isSignalSink: true,
+                        isPullingSignal: true,
                     },
                 })
 
@@ -311,7 +311,7 @@ describe('Engine', () => {
                 const graph = makeGraph({
                     bla: {
                         inlets: { blo: { type: 'message', id: 'blo' } },
-                        isMessageSource: true,
+                        isPushingMessages: true,
                     },
                     bli: {
                         outlets: { blu: { type: 'message', id: 'blu' } },
@@ -400,7 +400,7 @@ describe('Engine', () => {
                     const graph = makeGraph({
                         outputNode: {
                             type: 'DUMMY',
-                            isSignalSink: true,
+                            isPullingSignal: true,
                         },
                     })
 
@@ -1133,14 +1133,14 @@ describe('Engine', () => {
                             someInlet1: { type: 'message', id: 'someInlet1' },
                             someInlet2: { type: 'message', id: 'someInlet2' },
                         },
-                        isMessageSource: true,
+                        isPushingMessages: true,
                     },
                     someNode2: {
                         type: 'someNodeType',
                         inlets: {
                             someInlet1: { type: 'message', id: 'someInlet1' },
                         },
-                        isMessageSource: true,
+                        isPushingMessages: true,
                     },
                 })
 
@@ -1216,7 +1216,7 @@ describe('Engine', () => {
                 const graph = makeGraph({
                     node1: {
                         type: 'someNodeType',
-                        isMessageSource: true,
+                        isPushingMessages: true,
                         inlets: {
                             '0': { type: 'message', id: '0' },
                         },
@@ -1298,7 +1298,7 @@ describe('Engine', () => {
                 const graph = makeGraph({
                     someNode: {
                         type: 'someNodeType',
-                        isMessageSource: true,
+                        isPushingMessages: true,
                         inlets: {
                             someInlet: { type: 'message', id: 'someInlet' },
                         },
