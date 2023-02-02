@@ -35,18 +35,21 @@ describe('AssemblyScriptWasmEngine', () => {
 
             const metadata = await readMetadata(wasmBuffer)
 
-            assert.deepStrictEqual(metadata, {
+            assert.deepStrictEqual<EngineMetadata>(metadata, {
                 audioSettings: {
                     ...compilation.audioSettings,
                     blockSize: 0,
                     sampleRate: 0,
                 },
                 compilation: {
-                    codeVariableNames: compilation.codeVariableNames,
+                    codeVariableNames: {
+                        inletCallers: compilation.codeVariableNames.inletCallers,
+                        outletListeners: compilation.codeVariableNames.outletListeners,
+                    },
                     inletCallerSpecs: {},
                     outletListenerSpecs: {},
                 },
-            } as EngineMetadata)
+            })
         })
     })
 })

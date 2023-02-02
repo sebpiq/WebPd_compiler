@@ -9,10 +9,10 @@
  *
  */
 
-import { graphTraversalForCompile } from '../compile-helpers'
+import { buildMetadata, graphTraversalForCompile } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
-import { Compilation, EngineMetadata } from '../types'
+import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
 import generateCoreCodeJs from './core-code'
 import { renderCode } from '../functional-helpers'
@@ -22,24 +22,11 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         codeVariableNames,
         outletListenerSpecs,
         inletCallerSpecs,
-        audioSettings,
     } = compilation
     const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
-    const metadata: EngineMetadata = {
-        audioSettings: {
-            ...audioSettings,
-            // Determined at configure
-            sampleRate: 0,
-            blockSize: 0,
-        },
-        compilation: {
-            inletCallerSpecs,
-            outletListenerSpecs,
-            codeVariableNames,
-        },
-    }
+    const metadata = buildMetadata(compilation)
 
     // prettier-ignore
     return renderCode`

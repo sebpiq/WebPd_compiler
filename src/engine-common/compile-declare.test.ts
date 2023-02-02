@@ -105,13 +105,26 @@ describe('compileDeclare', () => {
         )
     })
 
-    it('should compile node message receivers for message inlets', () => {
+    it('should compile node message receivers only for connected message inlets', () => {
         const graph = makeGraph({
-            add: {
+            add1: {
                 type: '+',
                 inlets: {
+                    // this inlet is not connected so message receiver should not be compiled
                     '0': { id: '0', type: 'message' },
-                    '1': { id: '1', type: 'signal' },
+                },
+                outlets: {
+                    '0': { id: '0', type: 'message' },
+                },
+                sinks: {
+                    '0': [['add2', '0']]
+                }
+            },
+            add2: {
+                type: '+',
+                inlets: {
+                    // this inlet is connected so message receiver SHOULD be compiled
+                    '0': { id: '0', type: 'message' },
                 },
             },
         })
@@ -130,18 +143,18 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [graph.add])
+        const declareCode = compileDeclare(compilation, [graph.add1, graph.add2])
 
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
                 ${GLOBAL_VARIABLES_CODE}
                 
-                let add_INS_1 = 0
-                function add_RCVS_0 (m) {
+                function add2_RCVS_0 (m) {
                     // [+] message receiver
-                    throw new Error('[+], id "add", inlet "0", unsupported message : ' + msg_display(m))
+                    throw new Error('[+], id "add2", inlet "0", unsupported message : ' + msg_display(m))
                 }
+                const add1_SNDS_0 = add2_RCVS_0
             `)
         )
     })

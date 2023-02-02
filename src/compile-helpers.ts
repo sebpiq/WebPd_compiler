@@ -15,6 +15,8 @@ import {
     AudioSettings,
     Code,
     CodeVariableNames,
+    Compilation,
+    EngineMetadata,
     NodeImplementation,
     NodeImplementations,
 } from './types'
@@ -35,6 +37,32 @@ export const getNodeImplementation = (
         messages: () => ({}),
         sharedCode: [],
         ...nodeImplementation,
+    }
+}
+
+/** Helper to build engine metadata from compilation object */
+export const buildMetadata = (compilation: Compilation): EngineMetadata => {
+    const {
+        audioSettings,
+        inletCallerSpecs,
+        outletListenerSpecs,
+        codeVariableNames,
+    } = compilation
+    return {
+        audioSettings: {
+            ...audioSettings,
+            // Determined at configure
+            sampleRate: 0,
+            blockSize: 0,
+        },
+        compilation: {
+            inletCallerSpecs,
+            outletListenerSpecs,
+            codeVariableNames: {
+                inletCallers: codeVariableNames.inletCallers,
+                outletListeners: codeVariableNames.outletListeners,
+            },
+        },
     }
 }
 

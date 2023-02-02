@@ -27,5 +27,12 @@ ${['blo', 456.789, ['blu', ['ble', 123]]]}`
 
             assert.strictEqual(code, 'bla\nblo\n456.789\nblu\nble\n123')
         })
+
+        it('should remove empty lines', () => {
+            const code = renderCode`bla
+${['', 'bli', ['', ['', 'bly']]]}`
+
+            assert.strictEqual(code, 'bla\nbly')
+        })
     })
 })

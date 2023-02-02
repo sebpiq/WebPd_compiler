@@ -34,7 +34,9 @@ export const renderCode = (
 
 const _renderCodeRecursive = (codeLines: CodeLines | Code | number): Code => {
     if (Array.isArray(codeLines)) {
-        return codeLines.map(_renderCodeRecursive).join('\n')
+        return codeLines.map(_renderCodeRecursive)
+            .filter(line => line.length)
+            .join('\n')
     }
     return codeLines.toString()
 }

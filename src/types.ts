@@ -51,7 +51,10 @@ export interface EngineMetadata {
     compilation: {
         readonly inletCallerSpecs: Compilation['inletCallerSpecs']
         readonly outletListenerSpecs: Compilation['outletListenerSpecs']
-        readonly codeVariableNames: Compilation['codeVariableNames']
+        readonly codeVariableNames: {
+            readonly inletCallers: Compilation['codeVariableNames']['inletCallers'],
+            readonly outletListeners: Compilation['codeVariableNames']['outletListeners'],
+        }
     }
 }
 

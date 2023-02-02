@@ -9,7 +9,7 @@
  *
  */
 
-import { DspGraph, traversal } from '@webpd/dsp-graph'
+import { DspGraph, getters, traversal } from '@webpd/dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
 import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
@@ -81,6 +81,9 @@ export default (
                         }
                         return true
                     })
+                    // Keep only message receivers for connected inlets,
+                    // or for inlets that can be called from outside the engine.
+                    .filter(inlet => getters.getSources(node, inlet.id).length || nodeInletCallers.includes(inlet.id))
                     // prettier-ignore
                     .map(inlet => `
                         function ${rcvs[inlet.id]} ${macros.Func([

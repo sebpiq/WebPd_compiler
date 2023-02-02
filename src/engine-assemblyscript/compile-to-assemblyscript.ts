@@ -9,11 +9,11 @@
  *
  */
 
-import { graphTraversalForCompile } from '../compile-helpers'
+import { buildMetadata, graphTraversalForCompile } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
-import { Compilation, EngineMetadata } from '../types'
+import { Compilation } from '../types'
 import generateCoreCodeAsc from './core-code'
 import { AssemblyScriptWasmEngineCode } from './types'
 
@@ -21,26 +21,13 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
         audioSettings,
         inletCallerSpecs,
-        outletListenerSpecs,
         codeVariableNames,
     } = compilation
     const { channelCount } = audioSettings
     const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
-    const metadata: EngineMetadata = {
-        audioSettings: {
-            ...audioSettings,
-            // Determined at configure
-            sampleRate: 0,
-            blockSize: 0,
-        },
-        compilation: {
-            inletCallerSpecs,
-            outletListenerSpecs,
-            codeVariableNames,
-        },
-    }
+    const metadata = buildMetadata(compilation)
 
     // prettier-ignore
     return renderCode`
