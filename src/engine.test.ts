@@ -13,10 +13,8 @@ import {
     Compilation,
     CompilerTarget,
     Engine,
-    OutletListenerSpecs,
     Message,
     NodeImplementations,
-    InletCallerSpecs,
     SoundFileInfo,
     FloatArray,
 } from './types'
@@ -1053,7 +1051,7 @@ describe('Engine', () => {
                     },
                 })
 
-                const outletListenerSpecs: OutletListenerSpecs = {
+                const outletListenerSpecs = {
                     ['someNode1']: ['someOutlet1', 'someOutlet2'],
                     ['someNode2']: ['someOutlet1'],
                 }
@@ -1144,7 +1142,7 @@ describe('Engine', () => {
                     },
                 })
 
-                const inletCallerSpecs: InletCallerSpecs = {
+                const inletCallerSpecs = {
                     someNode1: ['someInlet1', 'someInlet2'],
                     someNode2: ['someInlet1'],
                 }
@@ -1248,11 +1246,11 @@ describe('Engine', () => {
                     },
                 })
 
-                const inletCallerSpecs: InletCallerSpecs = {
+                const inletCallerSpecs = {
                     node1: ['0'],
                 }
 
-                const outletListenerSpecs: OutletListenerSpecs = {
+                const outletListenerSpecs = {
                     node2: ['0', '1'],
                 }
 
@@ -1305,7 +1303,7 @@ describe('Engine', () => {
                     },
                 })
 
-                const inletCallerSpecs: InletCallerSpecs = {
+                const inletCallerSpecs = {
                     someNode: ['someInlet'],
                 }
 

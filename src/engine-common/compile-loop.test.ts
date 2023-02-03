@@ -30,7 +30,7 @@ describe('compileLoop', () => {
         },
     }
 
-    it('should compile the loop function and pass around signal', () => {
+    it('should compile the loop function', () => {
         const graph = makeGraph({
             osc: {
                 type: 'osc~',
@@ -84,87 +84,14 @@ describe('compileLoop', () => {
             },
         })
 
-        const loop = compileLoop(compilation, [
-            graph.osc,
-            graph.plus,
-            graph.dac,
-        ])
+        const loop = compileLoop(compilation, ['osc', 'plus', 'dac'])
 
         assert.strictEqual(
             normalizeCode(loop),
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
                 // [osc~] : frequency 440
-                plus_INS_0 = osc_OUTS_0
-                dac_INS_0 = osc_OUTS_0
-                
                 // [+~] : value 110
-                dac_INS_1 = plus_OUTS_0
-                
-                // [dac~] : channelCount 2
-                FRAME++
-            }
-        `)
-        )
-    })
-
-    it('should omit operations for nodes not connected to an end sink, even if their source is', () => {
-        const graph = makeGraph({
-            // [osc~] is connected to end sink [dac~] AND to [+~]
-            // But [+~] isn't connected to [dac~] and therefore should be entirely
-            // omited from compilation.
-            osc: {
-                type: 'osc~',
-                sinks: {
-                    '0': [
-                        ['plus', '0'],
-                        ['dac', '0'],
-                    ],
-                },
-                args: {
-                    frequency: 440,
-                },
-                outlets: { '0': { id: '0', type: 'signal' } },
-            },
-            plus: {
-                type: '+~',
-                sinks: {},
-                args: {
-                    value: 110,
-                },
-                inlets: { '0': { id: '0', type: 'signal' } },
-                outlets: { '0': { id: '0', type: 'signal' } },
-            },
-            dac: {
-                type: 'dac~',
-                args: {
-                    value: 'bla',
-                },
-                inlets: {
-                    '0': { id: '0', type: 'signal' },
-                    '1': { id: '1', type: 'signal' },
-                },
-            },
-        })
-
-        const compilation = makeCompilation({
-            target: 'javascript',
-            graph,
-            nodeImplementations: NODE_IMPLEMENTATIONS,
-            audioSettings: {
-                channelCount: { in: 2, out: 2 },
-                bitDepth: 32,
-            },
-        })
-
-        const loop = compileLoop(compilation, [graph.osc, graph.dac])
-
-        assert.strictEqual(
-            normalizeCode(loop),
-            normalizeCode(`
-            for (F = 0; F < BLOCK_SIZE; F++) {
-                // [osc~] : frequency 440
-                dac_INS_0 = osc_OUTS_0
                 // [dac~] : channelCount 2
                 FRAME++
             }
@@ -199,7 +126,7 @@ describe('compileLoop', () => {
             nodeImplementations: NODE_IMPLEMENTATIONS,
         })
 
-        const loop = compileLoop(compilation, [graph.print, graph.dac])
+        const loop = compileLoop(compilation, ['print', 'dac'])
 
         assert.strictEqual(
             normalizeCode(loop),

@@ -17,12 +17,7 @@ import {
     createNamespace,
     generate,
 } from './code-variable-names'
-import {
-    CodeVariableNames,
-    OutletListenerSpecs,
-    NodeImplementations,
-    InletCallerSpecs,
-} from '../types'
+import { CodeVariableNames, NodeImplementations } from '../types'
 
 describe('code-variable-names', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
@@ -215,10 +210,10 @@ describe('code-variable-names', () => {
                 }),
                 false
             )
-            const outletListenerSpecs: OutletListenerSpecs = {
+            const outletListenerSpecs = {
                 node1: ['outlet1'],
             }
-            const inletCallerSpecs: InletCallerSpecs = {
+            const inletCallerSpecs = {
                 node1: ['inlet1'],
             }
 

@@ -9,35 +9,51 @@
  *
  */
 
-import { DspGraph, getters, traversal } from '@webpd/dsp-graph'
-import { getNodeImplementation } from '../compile-helpers'
+import { DspGraph, getters } from '@webpd/dsp-graph'
+import { getNodeImplementation, PrecompiledPortlets } from '../compile-helpers'
 import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
 
 export default (
     compilation: Compilation,
-    graphTraversal: DspGraph.GraphTraversal
+    graphTraversal: DspGraph.GraphTraversal,
+    { precompiledInlets, precompiledOutlets }: PrecompiledPortlets
 ): Code => {
-    const traversalNodeIds = graphTraversal.map((node) => node.id)
     const {
+        graph,
         macros,
         codeVariableNames,
         nodeImplementations,
         outletListenerSpecs,
-        inletCallerSpecs,
         debug,
     } = compilation
-    const { Var } = macros
+    const graphTraversalNodes = graphTraversal.map((nodeId) =>
+        getters.getNode(graph, nodeId)
+    )
+    const { Var, Func } = macros
     const { globs } = codeVariableNames
     const sharedCode: Set<Code> = new Set()
+
+    const _isInletAlreadyHandled = (
+        nodeId: DspGraph.NodeId,
+        portletId: DspGraph.PortletId
+    ) => (precompiledInlets[nodeId] || []).includes(portletId)
+
+    const _isOutletAlreadyHandled = (
+        nodeId: DspGraph.NodeId,
+        portletId: DspGraph.PortletId
+    ) => (precompiledOutlets[nodeId] || []).includes(portletId)
+
     // prettier-ignore
     return renderCode`
         let ${Var(globs.iterFrame, 'Int')} = 0
         let ${Var(globs.frame, 'Int')} = 0
         let ${Var(globs.blockSize, 'Int')} = 0
         let ${Var(globs.sampleRate, 'Float')} = 0
+        function ${globs.nullMessageReceiver} ${Func([Var('m', 'Message')], 'void')} {}
 
-        ${graphTraversal.map(node => {
+
+        ${graphTraversalNodes.map(node => {
             // 0. De-duplicate and insert shared code required by nodes
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             return nodeImplementation.sharedCode.map(codeGenerator => codeGenerator({ macros }))
@@ -52,98 +68,76 @@ export default (
             })
         }
 
-        ${graphTraversal.map(node => {
+        ${graphTraversalNodes.map(node => {
             const { ins, outs, rcvs, snds, state } = codeVariableNames.nodes[node.id]
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             const nodeMessageReceivers = nodeImplementation.messages({
                 macros, globs, state, snds, node, compilation
             })
-            const nodeInletCallers = inletCallerSpecs[node.id] || []
 
             return [
                 // 1. Declares signal inlets and outlets
                 Object.values(node.inlets)
                     .filter(inlet => inlet.type === 'signal')
+                    .filter(inlet => !_isInletAlreadyHandled(node.id, inlet.id))
                     .map(inlet => `let ${Var(ins[inlet.id], 'Float')} = 0`),
                 
                 Object.values(node.outlets)
                     .filter(outlet => outlet.type === 'signal')
+                    .filter(outlet => !_isOutletAlreadyHandled(node.id, outlet.id))
                     .map(outlet => `let ${Var(outs[outlet.id], 'Float')} = 0`),
 
                 // 2. Declares message receivers for all message inlets.
                 Object.values(node.inlets)
-                    .filter(inlet => {
-                        if (inlet.type !== 'message') {
-                            return false
-                        }
+                    .filter(inlet => inlet.type === 'message')
+                    .filter(inlet => !_isInletAlreadyHandled(node.id, inlet.id))
+                    // prettier-ignore
+                    .map(inlet => {
                         if (typeof nodeMessageReceivers[inlet.id] !== 'string') {
                             throw new Error(`Message receiver for inlet "${inlet.id}" of node type "${node.type}" is not implemented`)
                         }
-                        return true
-                    })
-                    // Keep only message receivers for connected inlets,
-                    // or for inlets that can be called from outside the engine.
-                    .filter(inlet => getters.getSources(node, inlet.id).length || nodeInletCallers.includes(inlet.id))
-                    // prettier-ignore
-                    .map(inlet => `
-                        function ${rcvs[inlet.id]} ${macros.Func([
-                            Var(globs.m, 'Message')
-                        ], 'void')} {
-                            ${nodeMessageReceivers[inlet.id]}
-                            throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${globs.m})${
-                                debug ? " + '\\nDEBUG : remember, you must return from message receiver'": ''})
-                        }
-                    `),
-                
-                // 3. Declares inlet callers
-                // Here not possible to assign directly the receiver because otherwise assemblyscript
-                // doesn't export a function but a global instead.
-                nodeInletCallers.map(inletId => 
-                    `function ${codeVariableNames.inletCallers[node.id][inletId]} ${macros.Func([
-                        Var('m', 'Message')
-                    ], 'void')} {${rcvs[inletId]}(m)}`
-                ),
+                        return `
+                            function ${rcvs[inlet.id]} ${Func([
+                                Var(globs.m, 'Message')
+                            ], 'void')} {
+                                ${nodeMessageReceivers[inlet.id]}
+                                throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${globs.m})${
+                                    debug ? " + '\\nDEBUG : remember, you must return from message receiver'": ''})
+                            }
+                        `}),
 
-                // 4. Custom declarations for the node
+                // 3. Custom declarations for the node
                 nodeImplementation.declare({
                     macros, globs, state, node, compilation
                 }),
             ]
         })}
 
-        ${  // 6. Declares message senders for all message outlets.
+        ${  // 4. Declares message senders for all message outlets.
             // This needs to come after all message receivers are declared since we reference them here.
             // If there are outlets listeners declared we also inject the code here.
-            graphTraversal.map(node => {
+            graphTraversalNodes.map(node => {
                 const { snds } = codeVariableNames.nodes[node.id]
                 const nodeOutletListeners = outletListenerSpecs[node.id] || []
-                const nodeSinks = traversal.removeDeadSinks(node.sinks, traversalNodeIds)
                 return Object.values(node.outlets)
                     .filter(outlet => outlet.type === 'message')
+                    .filter(outlet => !_isOutletAlreadyHandled(node.id, outlet.id))
                     .map(outlet => {
                         const hasOutletListener = nodeOutletListeners.includes(outlet.id)
-                        const outletSinks = nodeSinks[outlet.id] || []
-
-                        // If we send to only a single sink, we directly assign the sink's message receiver.
-                        if (outletSinks.length === 1 && !hasOutletListener) {
-                            const {nodeId: sinkNodeId, portletId: inletId} = outletSinks[0]
-                            return `const ${snds[outlet.id]} = ${codeVariableNames.nodes[sinkNodeId].rcvs[inletId]}`
-                        
-                        // If we send to several sinks, we need to declare a proxy function that sends to all
-                        // all the sinks when called.
-                        } else {
-                            return renderCode`
-                                function ${snds[outlet.id]} ${macros.Func([
-                                    Var('m', 'Message')
-                                ], 'void')} {
-                                    ${hasOutletListener ? 
-                                        `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : ''}
-                                    ${outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
+                        const outletSinks = getters.getSinks(node, outlet.id)
+                        return renderCode`
+                            function ${snds[outlet.id]} ${Func([
+                                Var('m', 'Message')
+                            ], 'void')} {
+                                ${[
+                                    hasOutletListener ? 
+                                        `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : '',
+                                    outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
                                         `${codeVariableNames.nodes[sinkNodeId].rcvs[inletId]}(${globs.m})`
-                                    )}
-                                }
-                            `
-                        }
+                                    )
+                                ]}
+                            }
+                        `
                     })
             })}
     `

@@ -43,6 +43,10 @@ export type Code = string
 /** Name of a variable in generated code */
 export type CodeVariableName = string
 
+export type PortletsIndex = {
+    [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
+}
+
 export interface EngineMetadata {
     readonly audioSettings: Compilation['audioSettings'] & {
         sampleRate: number
@@ -52,8 +56,8 @@ export interface EngineMetadata {
         readonly inletCallerSpecs: Compilation['inletCallerSpecs']
         readonly outletListenerSpecs: Compilation['outletListenerSpecs']
         readonly codeVariableNames: {
-            readonly inletCallers: Compilation['codeVariableNames']['inletCallers'],
-            readonly outletListeners: Compilation['codeVariableNames']['outletListeners'],
+            readonly inletCallers: Compilation['codeVariableNames']['inletCallers']
+            readonly outletListeners: Compilation['codeVariableNames']['outletListeners']
         }
     }
 }
@@ -160,8 +164,8 @@ export interface Compilation {
     readonly graph: DspGraph.Graph
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
-    readonly outletListenerSpecs: OutletListenerSpecs
-    readonly inletCallerSpecs: InletCallerSpecs
+    readonly outletListenerSpecs: PortletsIndex
+    readonly inletCallerSpecs: PortletsIndex
     readonly codeVariableNames: CodeVariableNames
     readonly macros: CodeMacros
     readonly debug: boolean
@@ -199,7 +203,8 @@ export interface CodeVariableNames {
         sampleRate: string
         output: string
         input: string
-        /** Input argument for message receiver functions */
+        nullMessageReceiver: string
+        /** Input argument for message receiver functions @todo : not a glob */
         m: string
     }
 
@@ -272,14 +277,6 @@ export type NodeImplementations = {
     [nodeType: string]: NodeImplementation<any, { [name: string]: any }>
 }
 
-export type OutletListenerSpecs = {
-    [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
-}
-
-export type InletCallerSpecs = {
-    [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
-}
-
 export interface AudioSettings {
     channelCount: {
         in: number
@@ -291,7 +288,7 @@ export interface AudioSettings {
 export interface CompilerSettings {
     audioSettings: AudioSettings
     target: CompilerTarget
-    inletCallerSpecs?: InletCallerSpecs
-    outletListenerSpecs?: OutletListenerSpecs
+    inletCallerSpecs?: PortletsIndex
+    outletListenerSpecs?: PortletsIndex
     debug?: boolean
 }

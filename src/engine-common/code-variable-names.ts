@@ -15,9 +15,8 @@ import { mapArray, mapObject } from '../functional-helpers'
 import {
     NodeImplementations,
     CodeVariableNames,
-    OutletListenerSpecs,
     AudioSettings,
-    InletCallerSpecs,
+    PortletsIndex,
 } from '../types'
 
 /**
@@ -95,6 +94,7 @@ export const generate = (
         sampleRate: 'SAMPLE_RATE',
         output: 'OUTPUT',
         input: 'INPUT',
+        nullMessageReceiver: 'SND_TO_NULL',
         // TODO : not a glob
         m: 'm',
     }),
@@ -111,7 +111,7 @@ export const generate = (
  */
 export const attachOutletListeners = (
     codeVariableNames: CodeVariableNames,
-    outletListenerSpecs: OutletListenerSpecs
+    outletListenerSpecs: PortletsIndex
 ): void => {
     Object.entries(outletListenerSpecs).forEach(([nodeId, outletIds]) => {
         codeVariableNames.outletListeners[nodeId] = {}
@@ -131,7 +131,7 @@ export const attachOutletListeners = (
  */
 export const attachInletCallers = (
     codeVariableNames: CodeVariableNames,
-    inletCallerSpecs: InletCallerSpecs
+    inletCallerSpecs: PortletsIndex
 ): void => {
     Object.entries(inletCallerSpecs).forEach(([nodeId, inletIds]) => {
         codeVariableNames.inletCallers[nodeId] = {}

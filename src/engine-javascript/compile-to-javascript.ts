@@ -9,31 +9,54 @@
  *
  */
 
-import { buildMetadata, graphTraversalForCompile } from '../compile-helpers'
+import {
+    preCompileSignalAndMessageFlow,
+    buildMetadata,
+    graphTraversalForCompile,
+    trimGraph,
+} from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
 import generateCoreCodeJs from './core-code'
 import { renderCode } from '../functional-helpers'
+import {
+    compileOutletListeners,
+    compileInletCallers,
+} from '../engine-common/compile-portlet-accessors'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const {
-        codeVariableNames,
-        outletListenerSpecs,
-        inletCallerSpecs,
-    } = compilation
-    const graphTraversal = graphTraversalForCompile(compilation.graph)
+    const { codeVariableNames, outletListenerSpecs, inletCallerSpecs, graph } =
+        compilation
+    const graphTraversal = graphTraversalForCompile(graph)
     const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
     const metadata = buildMetadata(compilation)
+
+    trimGraph(compilation, graphTraversal)
+    const precompiledPortlets = preCompileSignalAndMessageFlow(
+        compilation,
+        graphTraversal
+    )
 
     // prettier-ignore
     return renderCode`
         ${generateCoreCodeJs(codeVariableNames)}
 
-        ${compileDeclare(compilation, graphTraversal)}
-        ${compileOutletListeners(compilation)}
+        ${compileDeclare(compilation, graphTraversal, precompiledPortlets)}
+
+        ${compileInletCallers(compilation)}
+
+        ${compileOutletListeners(compilation, (
+            variableName, 
+            nodeId, 
+            outletId
+        ) => `
+            const ${variableName} = (m) => {
+                exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)
+            }
+        `)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
@@ -89,22 +112,4 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         const i_fs_sendSoundStreamData = (...args) => exports.fs.onSoundStreamData(...args)
         const i_fs_closeSoundStream = (...args) => exports.fs.onCloseSoundStream(...args)
     `
-}
-
-export const compileOutletListeners = ({
-    outletListenerSpecs,
-    codeVariableNames,
-}: Compilation) => {
-    return renderCode`${Object.entries(outletListenerSpecs).map(
-        ([nodeId, outletIds]) =>
-            outletIds.map((outletId) => {
-                const listenerVariableName =
-                    codeVariableNames.outletListeners[nodeId][outletId]
-                return `
-                    const ${listenerVariableName} = (m) => {
-                        exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)
-                    }
-                `
-            })
-    )}`
 }

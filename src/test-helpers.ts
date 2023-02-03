@@ -51,11 +51,8 @@ export const round = (v: number, decimals: number = 4) => {
 export const makeCompilation = (
     compilation: Partial<Compilation>
 ): Compilation => {
-    if (!compilation.target) {
-        throw new Error(`Compilation target must be provided`)
-    }
     const debug = compilation.debug || false
-    const target: CompilerTarget = compilation.target
+    const target: CompilerTarget = compilation.target || 'javascript'
     const nodeImplementations = compilation.nodeImplementations || {
         DUMMY: { loop: () => '' },
     }

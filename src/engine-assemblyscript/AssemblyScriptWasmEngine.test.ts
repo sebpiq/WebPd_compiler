@@ -43,8 +43,10 @@ describe('AssemblyScriptWasmEngine', () => {
                 },
                 compilation: {
                     codeVariableNames: {
-                        inletCallers: compilation.codeVariableNames.inletCallers,
-                        outletListeners: compilation.codeVariableNames.outletListeners,
+                        inletCallers:
+                            compilation.codeVariableNames.inletCallers,
+                        outletListeners:
+                            compilation.codeVariableNames.outletListeners,
                     },
                     inletCallerSpecs: {},
                     outletListenerSpecs: {},

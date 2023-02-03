@@ -9,32 +9,48 @@
  *
  */
 
-import { buildMetadata, graphTraversalForCompile } from '../compile-helpers'
+import {
+    buildMetadata,
+    graphTraversalForCompile,
+    preCompileSignalAndMessageFlow,
+    trimGraph,
+} from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
 import { Compilation } from '../types'
 import generateCoreCodeAsc from './core-code'
 import { AssemblyScriptWasmEngineCode } from './types'
+import {
+    compileOutletListeners,
+    compileInletCallers,
+} from '../engine-common/compile-portlet-accessors'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const {
-        audioSettings,
-        inletCallerSpecs,
-        codeVariableNames,
-    } = compilation
+    const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
     const { channelCount } = audioSettings
     const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
     const metadata = buildMetadata(compilation)
 
+    trimGraph(compilation, graphTraversal)
+    const precompiledPortlets = preCompileSignalAndMessageFlow(
+        compilation,
+        graphTraversal
+    )
+
     // prettier-ignore
     return renderCode`
         ${generateCoreCodeAsc(codeVariableNames)}
 
-        ${compileDeclare(compilation, graphTraversal)}
-        ${compileOutletListeners(compilation)}
+        ${compileDeclare(compilation, graphTraversal, precompiledPortlets)}
+
+        ${compileInletCallers(compilation)}
+        
+        ${compileOutletListeners(compilation, (variableName) => `
+            export declare function ${variableName}(m: Message): void
+        `)}
 
         const metadata: string = '${JSON.stringify(metadata)}'
         let ${globs.input}: FloatArray = new ${FloatArray}(0)
@@ -102,22 +118,5 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
                 )
             )}
         }
-    `
-}
-
-export const compileOutletListeners = ({
-    outletListenerSpecs,
-    codeVariableNames,
-}: Compilation) => {
-    return renderCode`
-        ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
-            outletIds.map((outletId) => {
-                const outletListenerVariableName =
-                    codeVariableNames.outletListeners[nodeId][outletId]
-                return `
-                    export declare function ${outletListenerVariableName}(m: Message): void
-                `
-            })
-        )}
     `
 }

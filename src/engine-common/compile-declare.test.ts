@@ -14,6 +14,7 @@ import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileDeclare from './compile-declare'
+import { PrecompiledPortlets } from '../compile-helpers'
 
 describe('compileDeclare', () => {
     const GLOBAL_VARIABLES_CODE = `
@@ -21,7 +22,13 @@ describe('compileDeclare', () => {
         let FRAME = 0
         let BLOCK_SIZE = 0
         let SAMPLE_RATE = 0
+        function SND_TO_NULL (m) {}
     `
+
+    const REMOVED_PORTLETS: PrecompiledPortlets = {
+        precompiledInlets: {},
+        precompiledOutlets: {},
+    }
 
     it('should compile declaration for global variables', () => {
         const graph = makeGraph({})
@@ -34,7 +41,7 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [])
+        const declareCode = compileDeclare(compilation, [], REMOVED_PORTLETS)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -87,7 +94,11 @@ describe('compileDeclare', () => {
             },
         })
 
-        const declareCode = compileDeclare(compilation, [graph.osc, graph.dac])
+        const declareCode = compileDeclare(
+            compilation,
+            ['osc', 'dac'],
+            REMOVED_PORTLETS
+        )
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -105,61 +116,7 @@ describe('compileDeclare', () => {
         )
     })
 
-    it('should compile node message receivers only for connected message inlets', () => {
-        const graph = makeGraph({
-            add1: {
-                type: '+',
-                inlets: {
-                    // this inlet is not connected so message receiver should not be compiled
-                    '0': { id: '0', type: 'message' },
-                },
-                outlets: {
-                    '0': { id: '0', type: 'message' },
-                },
-                sinks: {
-                    '0': [['add2', '0']]
-                }
-            },
-            add2: {
-                type: '+',
-                inlets: {
-                    // this inlet is connected so message receiver SHOULD be compiled
-                    '0': { id: '0', type: 'message' },
-                },
-            },
-        })
-
-        const nodeImplementations: NodeImplementations = {
-            '+': {
-                messages: () => ({
-                    '0': '// [+] message receiver',
-                }),
-            },
-        }
-
-        const compilation = makeCompilation({
-            target: 'javascript',
-            graph,
-            nodeImplementations,
-        })
-
-        const declareCode = compileDeclare(compilation, [graph.add1, graph.add2])
-
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-                
-                function add2_RCVS_0 (m) {
-                    // [+] message receiver
-                    throw new Error('[+], id "add2", inlet "0", unsupported message : ' + msg_display(m))
-                }
-                const add1_SNDS_0 = add2_RCVS_0
-            `)
-        )
-    })
-
-    it('should compile inlet senders for message inlets', () => {
+    it('should compile node message receivers for message inlets', () => {
         const graph = makeGraph({
             add: {
                 type: '+',
@@ -180,11 +137,14 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            inletCallerSpecs: { add: ['0'] },
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [graph.add])
+        const declareCode = compileDeclare(
+            compilation,
+            ['add'],
+            REMOVED_PORTLETS
+        )
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -195,8 +155,43 @@ describe('compileDeclare', () => {
                     // [+] message receiver
                     throw new Error('[+], id "add", inlet "0", unsupported message : ' + msg_display(m))
                 }
-                function inletCaller_add_0 (m) {add_RCVS_0(m)}
             `)
+        )
+    })
+
+    it('should omit message receivers for removed inlets', () => {
+        const graph = makeGraph({
+            add: {
+                type: '+',
+                inlets: {
+                    '0': { id: '0', type: 'message' },
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            '+': {
+                messages: () => ({
+                    '0': '// [+] message receiver',
+                }),
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            nodeImplementations,
+        })
+
+        const declareCode = compileDeclare(compilation, ['add'], {
+            // Since no connection we declare that this should not be included in compilation
+            precompiledInlets: { add: ['0'] },
+            precompiledOutlets: {},
+        })
+
+        assert.strictEqual(
+            normalizeCode(declareCode),
+            normalizeCode(GLOBAL_VARIABLES_CODE)
         )
     })
 
@@ -221,12 +216,15 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            inletCallerSpecs: { someNode: ['0'] },
             debug: true,
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [graph.someNode])
+        const declareCode = compileDeclare(
+            compilation,
+            ['someNode'],
+            REMOVED_PORTLETS
+        )
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -237,7 +235,6 @@ describe('compileDeclare', () => {
                     // [add] message receiver
                     throw new Error('[add], id "someNode", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')
                 }
-                function inletCaller_someNode_0 (m) {add_someNode_RCVS_0(m)}
             `)
         )
     })
@@ -264,7 +261,9 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        assert.throws(() => compileDeclare(compilation, [graph.add]))
+        assert.throws(() =>
+            compileDeclare(compilation, ['add'], REMOVED_PORTLETS)
+        )
     })
 
     it('should not throw an error if message receiver is implemented but string empty', () => {
@@ -289,7 +288,9 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        assert.doesNotThrow(() => compileDeclare(compilation, [graph.add]))
+        assert.doesNotThrow(() =>
+            compileDeclare(compilation, ['add'], REMOVED_PORTLETS)
+        )
     })
 
     it('should compile node message senders for message outlets', () => {
@@ -299,8 +300,6 @@ describe('compileDeclare', () => {
                 type: 'twenty',
                 outlets: {
                     '0': { id: '0', type: 'message' },
-                    // Outlet without connection
-                    '1': { id: '1', type: 'message' },
                 },
                 sinks: {
                     '0': [
@@ -343,11 +342,11 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [
-            graph.twenty,
-            graph.aFloat,
-            graph.anotherFloat,
-        ])
+        const declareCode = compileDeclare(
+            compilation,
+            ['twenty', 'aFloat', 'anotherFloat'],
+            REMOVED_PORTLETS
+        )
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -369,11 +368,46 @@ describe('compileDeclare', () => {
                     anotherFloat_RCVS_0(m)
                 }
 
-                function twenty_SNDS_1 (m) {
+                function aFloat_SNDS_0 (m) { 
+                    anotherFloat_RCVS_0(m)
                 }
-
-                const aFloat_SNDS_0 = anotherFloat_RCVS_0
             `)
+        )
+    })
+
+    it('should omit node message senders for removed message outlets', () => {
+        const graph = makeGraph({
+            someNode: {
+                type: 'someNodeType',
+                outlets: {
+                    '0': { id: '0', type: 'message' },
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            someNodeType: {
+                messages: () => ({
+                    '0': '// [float] message receiver',
+                }),
+            },
+        }
+
+        const compilation = makeCompilation({
+            target: 'javascript',
+            graph,
+            nodeImplementations,
+        })
+
+        const declareCode = compileDeclare(compilation, ['someNode'], {
+            precompiledInlets: {},
+            // Since no connection we declare that this should not be included in compilation
+            precompiledOutlets: { someNode: ['0'] },
+        })
+
+        assert.strictEqual(
+            normalizeCode(declareCode),
+            normalizeCode(GLOBAL_VARIABLES_CODE)
         )
     })
 
@@ -412,10 +446,11 @@ describe('compileDeclare', () => {
             outletListenerSpecs: { add: ['0', '2'] },
         })
 
-        const declareCode = compileDeclare(compilation, [
-            graph.add,
-            graph.aFloat,
-        ])
+        const declareCode = compileDeclare(
+            compilation,
+            ['add', 'aFloat'],
+            REMOVED_PORTLETS
+        )
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -472,11 +507,11 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [
-            graph.node1,
-            graph.node2,
-            graph.node3,
-        ])
+        const declareCode = compileDeclare(
+            compilation,
+            ['node1', 'node2', 'node3'],
+            REMOVED_PORTLETS
+        )
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -527,7 +562,7 @@ describe('compileDeclare', () => {
         })
 
         assert.doesNotThrow(() =>
-            compileDeclare(compilation, [graph.osc, graph.dac])
+            compileDeclare(compilation, ['osc', 'dac'], REMOVED_PORTLETS)
         )
     })
 })

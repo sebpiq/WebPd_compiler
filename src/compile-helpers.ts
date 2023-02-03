@@ -9,7 +9,7 @@
  *
  */
 
-import { DspGraph, traversal } from '@webpd/dsp-graph'
+import { DspGraph, getters, traversal } from '@webpd/dsp-graph'
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
 import {
     AudioSettings,
@@ -19,7 +19,13 @@ import {
     EngineMetadata,
     NodeImplementation,
     NodeImplementations,
+    PortletsIndex,
 } from './types'
+
+export interface PrecompiledPortlets {
+    precompiledInlets: PortletsIndex
+    precompiledOutlets: PortletsIndex
+}
 
 /** Helper to get node implementation or throw an error if not implemented. */
 export const getNodeImplementation = (
@@ -66,6 +72,148 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     }
 }
 
+export const trimGraph = (
+    compilation: Compilation,
+    graphTraversal: DspGraph.GraphTraversal
+) => {
+    const { graph } = compilation
+    Object.entries(graph).forEach(([nodeId, node]) => {
+        if (!graphTraversal.includes(nodeId)) {
+            delete graph[nodeId]
+        } else {
+            graph[nodeId] = {
+                ...node,
+                sources: traversal.removeDeadSources(
+                    node.sources,
+                    graphTraversal
+                ),
+                sinks: traversal.removeDeadSinks(node.sinks, graphTraversal),
+            }
+        }
+    })
+}
+
+/**
+ * Takes the graph traversal, and for each node directly assign the
+ * inputs of its next nodes where this can be done.
+ * This allow the engine to avoid having to copy between a node's outs
+ * and its next node's ins in order to pass data around.
+ *
+ * @returns Maps that contain inlets and outlets that have been handled
+ * by precompilation and don't need to be dealt with further.
+ */
+export const preCompileSignalAndMessageFlow = (
+    compilation: Compilation,
+    graphTraversal: DspGraph.GraphTraversal
+): PrecompiledPortlets => {
+    const { graph, codeVariableNames, inletCallerSpecs, outletListenerSpecs } =
+        compilation
+    const graphTraversalNodes = graphTraversal.map((nodeId) =>
+        getters.getNode(graph, nodeId)
+    )
+    const precompiledInlets: PortletsIndex = {}
+    const precompiledOutlets: PortletsIndex = {}
+    const _pushEntry = (
+        portletsIndex: PortletsIndex,
+        nodeId: DspGraph.NodeId,
+        portletId: DspGraph.PortletId
+    ) => {
+        portletsIndex[nodeId] = portletsIndex[nodeId] || []
+        if (!portletsIndex[nodeId].includes(portletId)) {
+            portletsIndex[nodeId].push(portletId)
+        }
+    }
+
+    graphTraversalNodes.forEach((node) => {
+        const { outs, snds } = codeVariableNames.nodes[node.id]
+        Object.entries(node.outlets).forEach(([outletId, outlet]) => {
+            const outletSinks = getters.getSinks(node, outletId)
+            const nodeOutletListenerSpecs = outletListenerSpecs[node.id] || []
+
+            // Signal inlets can receive input from ONLY ONE signal.
+            // Therefore, we replace signal inlet directly with
+            // previous node's outs. e.g. instead of :
+            //
+            //      NODE1_OUT = A + B
+            //      NODE2_IN = NODE1_OUT
+            //      NODE2_OUT = NODE2_IN * 2
+            //
+            // we will have :
+            //
+            //      NODE1_OUT = A + B
+            //      NODE2_OUT = NODE1_OUT * 2
+            //
+            if (outlet.type === 'signal') {
+                outletSinks.forEach((sink) => {
+                    codeVariableNames.nodes[sink.nodeId].ins[sink.portletId] =
+                        outs[outletId]
+                    _pushEntry(precompiledInlets, sink.nodeId, sink.portletId)
+                })
+
+                // For a message outlet that sends to a single sink node
+                // its out can be directly replaced by next node's in.
+                // e.g. instead of :
+                //
+                //      const NODE1_MSG = () => {
+                //          NODE1_SND('bla')
+                //      }
+                //
+                //      const NODE1_SND = NODE2_MSG
+                //
+                // we can have :
+                //
+                //      const NODE1_MSG = () => {
+                //          NODE2_MSG('bla')
+                //      }
+                //
+            } else if (outlet.type === 'message') {
+                if (
+                    outletSinks.length === 1 &&
+                    !nodeOutletListenerSpecs.includes(outlet.id)
+                ) {
+                    snds[outletId] =
+                        codeVariableNames.nodes[outletSinks[0].nodeId].rcvs[
+                            outletSinks[0].portletId
+                        ]
+                    _pushEntry(precompiledOutlets, node.id, outletId)
+
+                    // Same thing if there's no sink, but one outlet listener
+                } else if (
+                    outletSinks.length === 0 &&
+                    nodeOutletListenerSpecs.includes(outlet.id)
+                ) {
+                    snds[outletId] =
+                        codeVariableNames.outletListeners[node.id][outletId]
+                    _pushEntry(precompiledOutlets, node.id, outletId)
+
+                    // If no sink, no message receiver, we assign the node SND
+                    // a function that does nothing
+                } else if (
+                    outletSinks.length === 0 &&
+                    !nodeOutletListenerSpecs.includes(outlet.id)
+                ) {
+                    snds[outletId] =
+                        compilation.codeVariableNames.globs.nullMessageReceiver
+                    _pushEntry(precompiledOutlets, node.id, outletId)
+                }
+            }
+        })
+
+        Object.entries(node.inlets).forEach(([inletId, inlet]) => {
+            const nodeInletCallerSpecs = inletCallerSpecs[node.id] || []
+            // If message inlet has no source, no need to compile it.
+            if (
+                inlet.type === 'message' &&
+                getters.getSources(node, inletId).length === 0 &&
+                !nodeInletCallerSpecs.includes(inlet.id)
+            ) {
+                _pushEntry(precompiledInlets, node.id, inletId)
+            }
+        })
+    })
+    return { precompiledInlets, precompiledOutlets }
+}
+
 // TODO : no need for the whole codeVariableNames here
 export const replaceCoreCodePlaceholders = (
     codeVariableNames: CodeVariableNames,
@@ -90,7 +238,9 @@ export const replaceCoreCodePlaceholders = (
  * !!! This is not fullproof ! For example if a node is pushing messages
  * but also writing signal outputs, it might be run too early / too late.
  */
-export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
+export const graphTraversalForCompile = (
+    graph: DspGraph.Graph
+): DspGraph.GraphTraversal => {
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
     )
@@ -102,9 +252,9 @@ export const graphTraversalForCompile = (graph: DspGraph.Graph) => {
         nodesPushingMessages
     )
     const combined = graphTraversalSignal
-    traversal.signalNodes(graph, nodesPullingSignal).forEach((node) => {
-        if (combined.indexOf(node) === -1) {
-            combined.push(node)
+    traversal.signalNodes(graph, nodesPullingSignal).forEach((nodeId) => {
+        if (combined.indexOf(nodeId) === -1) {
+            combined.push(nodeId)
         }
     })
     return combined

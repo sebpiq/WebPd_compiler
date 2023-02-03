@@ -32,7 +32,7 @@ ${['blo', 456.789, ['blu', ['ble', 123]]]}`
             const code = renderCode`bla
 ${['', 'bli', ['', ['', 'bly']]]}`
 
-            assert.strictEqual(code, 'bla\nbly')
+            assert.strictEqual(code, 'bla\nbli\nbly')
         })
     })
 })
