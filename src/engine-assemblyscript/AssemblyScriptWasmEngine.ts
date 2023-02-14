@@ -112,7 +112,9 @@ export class AssemblyScriptWasmEngine implements Engine {
         for (let channel = 0; channel < input.length; channel++) {
             this.wasmInput.set(input[channel], channel * this.blockSize)
         }
+        this._updateWasmInOuts()
         this.wasmExports.loop()
+        this._updateWasmInOuts()
         for (let channel = 0; channel < output.length; channel++) {
             output[channel].set(
                 this.wasmOutput.subarray(

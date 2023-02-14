@@ -23,7 +23,11 @@ import compileToAssemblyscript from './engine-assemblyscript/compile-to-assembly
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
 import * as variableNames from './engine-common/code-variable-names'
-import { DspGraph } from '@webpd/dsp-graph'
+import { DspGraph, traversal } from '@webpd/dsp-graph'
+import {
+    graphTraversalForCompile,
+    preCompileSignalAndMessageFlow,
+} from './compile-helpers'
 
 export default (
     graph: DspGraph.Graph,
@@ -43,12 +47,17 @@ export default (
         graph,
         debug
     )
-    variableNames.attachInletCallers(codeVariableNames, outletListenerSpecs)
+    variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
     variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
     variableNames.attachTypes(codeVariableNames, audioSettings.bitDepth)
+
+    const graphTraversal = graphTraversalForCompile(graph, inletCallerSpecs)
+    traversal.trimGraph(graph, graphTraversal)
+
     return executeCompilation({
         target,
         graph,
+        graphTraversal,
         nodeImplementations,
         audioSettings,
         inletCallerSpecs,
@@ -56,6 +65,10 @@ export default (
         codeVariableNames,
         macros,
         debug,
+        precompiledPortlets: {
+            precompiledInlets: {},
+            precompiledOutlets: {},
+        },
     })
 }
 
@@ -83,6 +96,7 @@ export const getMacros = (target: CompilerTarget): CodeMacros =>
 
 /** Helper to execute compilation */
 export const executeCompilation = (compilation: Compilation) => {
+    preCompileSignalAndMessageFlow(compilation)
     if (compilation.target === 'javascript') {
         return compileToJavascript(compilation)
     } else if (compilation.target === 'assemblyscript') {

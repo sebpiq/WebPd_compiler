@@ -77,6 +77,7 @@ describe('compileLoop', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['osc', 'plus', 'dac'],
             nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {
                 channelCount: { in: 2, out: 2 },
@@ -84,7 +85,7 @@ describe('compileLoop', () => {
             },
         })
 
-        const loop = compileLoop(compilation, ['osc', 'plus', 'dac'])
+        const loop = compileLoop(compilation)
 
         assert.strictEqual(
             normalizeCode(loop),
@@ -123,10 +124,11 @@ describe('compileLoop', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['print', 'dac'],
             nodeImplementations: NODE_IMPLEMENTATIONS,
         })
 
-        const loop = compileLoop(compilation, ['print', 'dac'])
+        const loop = compileLoop(compilation)
 
         assert.strictEqual(
             normalizeCode(loop),

@@ -11,10 +11,9 @@
 
 import assert from 'assert'
 import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
-import { NodeImplementations } from '../types'
+import { Compilation, NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileDeclare from './compile-declare'
-import { PrecompiledPortlets } from '../compile-helpers'
 
 describe('compileDeclare', () => {
     const GLOBAL_VARIABLES_CODE = `
@@ -24,11 +23,6 @@ describe('compileDeclare', () => {
         let SAMPLE_RATE = 0
         function SND_TO_NULL (m) {}
     `
-
-    const REMOVED_PORTLETS: PrecompiledPortlets = {
-        precompiledInlets: {},
-        precompiledOutlets: {},
-    }
 
     it('should compile declaration for global variables', () => {
         const graph = makeGraph({})
@@ -41,7 +35,7 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation, [], REMOVED_PORTLETS)
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -87,6 +81,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['osc', 'dac'],
             nodeImplementations,
             audioSettings: {
                 channelCount: { in: 2, out: 2 },
@@ -94,11 +89,7 @@ describe('compileDeclare', () => {
             },
         })
 
-        const declareCode = compileDeclare(
-            compilation,
-            ['osc', 'dac'],
-            REMOVED_PORTLETS
-        )
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -137,14 +128,11 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['add'],
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(
-            compilation,
-            ['add'],
-            REMOVED_PORTLETS
-        )
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -180,14 +168,16 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['add'],
             nodeImplementations,
+            precompiledPortlets: {
+                // Since no connection we declare that this should not be included in compilation
+                precompiledInlets: { add: ['0'] },
+                precompiledOutlets: {},
+            },
         })
 
-        const declareCode = compileDeclare(compilation, ['add'], {
-            // Since no connection we declare that this should not be included in compilation
-            precompiledInlets: { add: ['0'] },
-            precompiledOutlets: {},
-        })
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -216,15 +206,12 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['someNode'],
             debug: true,
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(
-            compilation,
-            ['someNode'],
-            REMOVED_PORTLETS
-        )
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -258,12 +245,11 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['add'],
             nodeImplementations,
         })
 
-        assert.throws(() =>
-            compileDeclare(compilation, ['add'], REMOVED_PORTLETS)
-        )
+        assert.throws(() => compileDeclare(compilation))
     })
 
     it('should not throw an error if message receiver is implemented but string empty', () => {
@@ -285,12 +271,11 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['add'],
             nodeImplementations,
         })
 
-        assert.doesNotThrow(() =>
-            compileDeclare(compilation, ['add'], REMOVED_PORTLETS)
-        )
+        assert.doesNotThrow(() => compileDeclare(compilation))
     })
 
     it('should compile node message senders for message outlets', () => {
@@ -339,14 +324,11 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['twenty', 'aFloat', 'anotherFloat'],
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(
-            compilation,
-            ['twenty', 'aFloat', 'anotherFloat'],
-            REMOVED_PORTLETS
-        )
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -396,14 +378,16 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['someNode'],
             nodeImplementations,
+            precompiledPortlets: {
+                precompiledInlets: {},
+                // Since no connection we declare that this should not be included in compilation
+                precompiledOutlets: { someNode: ['0'] },
+            },
         })
 
-        const declareCode = compileDeclare(compilation, ['someNode'], {
-            precompiledInlets: {},
-            // Since no connection we declare that this should not be included in compilation
-            precompiledOutlets: { someNode: ['0'] },
-        })
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -442,15 +426,12 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['add', 'aFloat'],
             nodeImplementations,
             outletListenerSpecs: { add: ['0', '2'] },
         })
 
-        const declareCode = compileDeclare(
-            compilation,
-            ['add', 'aFloat'],
-            REMOVED_PORTLETS
-        )
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -504,14 +485,11 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['node1', 'node2', 'node3'],
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(
-            compilation,
-            ['node1', 'node2', 'node3'],
-            REMOVED_PORTLETS
-        )
+        const declareCode = compileDeclare(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -558,11 +536,10 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
+            graphTraversal: ['osc', 'dac'],
             nodeImplementations,
         })
 
-        assert.doesNotThrow(() =>
-            compileDeclare(compilation, ['osc', 'dac'], REMOVED_PORTLETS)
-        )
+        assert.doesNotThrow(() => compileDeclare(compilation))
     })
 })

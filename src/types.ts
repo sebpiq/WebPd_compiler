@@ -162,6 +162,7 @@ export interface Engine {
 export interface Compilation {
     readonly target: CompilerTarget
     readonly graph: DspGraph.Graph
+    readonly graphTraversal: DspGraph.GraphTraversal
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
     readonly outletListenerSpecs: PortletsIndex
@@ -169,6 +170,10 @@ export interface Compilation {
     readonly codeVariableNames: CodeVariableNames
     readonly macros: CodeMacros
     readonly debug: boolean
+    precompiledPortlets: {
+        precompiledInlets: PortletsIndex
+        precompiledOutlets: PortletsIndex
+    }
 }
 
 export type CodeMacros = {

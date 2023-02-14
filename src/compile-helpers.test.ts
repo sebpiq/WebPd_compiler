@@ -16,11 +16,9 @@ import {
     getNodeImplementation,
     graphTraversalForCompile,
     preCompileSignalAndMessageFlow,
-    PrecompiledPortlets,
-    trimGraph,
 } from './compile-helpers'
 import { makeCompilation } from './test-helpers'
-import { NodeImplementation, NodeImplementations } from './types'
+import { Compilation, NodeImplementation, NodeImplementations } from './types'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
@@ -72,71 +70,6 @@ describe('compile-helpers', () => {
         })
     })
 
-    describe('trimGraph', () => {
-        it('should remove graph nodes that are not in the traversal', () => {
-            const graph = makeGraph({
-                node1: {},
-                node2: {},
-                node3: {},
-            })
-
-            const compilation = makeCompilation({
-                graph,
-            })
-
-            trimGraph(compilation, ['node1', 'node3'])
-            assert.deepStrictEqual(
-                Object.keys(compilation.graph).sort(),
-                ['node1', 'node3'].sort()
-            )
-        })
-
-        it('should remove dead sinks from nodes', () => {
-            const graph = makeGraph({
-                node1: {
-                    sinks: {
-                        '0': [
-                            ['node2', '0'],
-                            ['node3', '0'],
-                        ],
-                    },
-                },
-                node2: {},
-                node3: {},
-            })
-
-            const compilation = makeCompilation({
-                graph,
-            })
-
-            trimGraph(compilation, ['node1', 'node2'])
-            assert.deepStrictEqual(compilation.graph.node1.sinks, {
-                '0': [{ nodeId: 'node2', portletId: '0' }],
-            })
-        })
-
-        it('should remove dead sources from nodes', () => {
-            const graph = makeGraph({
-                node1: {
-                    sinks: { '0': [['node3', '0']] },
-                },
-                node2: {
-                    sinks: { '0': [['node3', '0']] },
-                },
-                node3: {},
-            })
-
-            const compilation = makeCompilation({
-                graph,
-            })
-
-            trimGraph(compilation, ['node2', 'node3'])
-            assert.deepStrictEqual(compilation.graph.node3.sources, {
-                '0': [{ nodeId: 'node2', portletId: '0' }],
-            })
-        })
-    })
-
     describe('preCompileSignalAndMessageFlow', () => {
         describe('signal INS/OUTS', () => {
             it('should substitute connected signal IN with its source OUT', () => {
@@ -159,21 +92,24 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1', 'node2'],
                 })
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1', 'node2']
-                )
+
+                preCompileSignalAndMessageFlow(compilation)
+
                 assert.strictEqual(
                     compilation.codeVariableNames.nodes.node2.ins['0'],
                     compilation.codeVariableNames.nodes.node1.outs['0']
                 )
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: {
-                        node2: ['0'],
-                    },
-                    precompiledOutlets: {},
-                })
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: {
+                            node2: ['0'],
+                        },
+                        precompiledOutlets: {},
+                    }
+                )
             })
 
             it('should leave unconnected signal IN unchanged', () => {
@@ -188,15 +124,18 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1'],
                 })
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1']
+
+                preCompileSignalAndMessageFlow(compilation)
+
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: {},
+                        precompiledOutlets: {},
+                    }
                 )
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: {},
-                    precompiledOutlets: {},
-                })
             })
         })
 
@@ -232,22 +171,24 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1', 'node2', 'node3'],
                 })
 
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1', 'node2', 'node3']
-                )
+                preCompileSignalAndMessageFlow(compilation)
+
                 assert.strictEqual(
                     compilation.codeVariableNames.nodes.node1.snds['1'],
                     compilation.codeVariableNames.nodes.node2.rcvs['1']
                 )
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: {},
-                    precompiledOutlets: {
-                        node1: ['1'],
-                    },
-                })
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: {},
+                        precompiledOutlets: {
+                            node1: ['1'],
+                        },
+                    }
+                )
             })
 
             it('should NOT substitute message SND if an outlet listener is also specified', () => {
@@ -270,20 +211,21 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1', 'node2'],
                     outletListenerSpecs: {
                         node1: ['0'],
                     },
                 })
 
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1', 'node2']
-                )
+                preCompileSignalAndMessageFlow(compilation)
 
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: {},
-                    precompiledOutlets: {},
-                })
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: {},
+                        precompiledOutlets: {},
+                    }
+                )
             })
 
             it('should substitute SND with outlet listener if no sinks', () => {
@@ -298,26 +240,27 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1'],
                     outletListenerSpecs: {
                         node1: ['0'],
                     },
                 })
 
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1']
-                )
+                preCompileSignalAndMessageFlow(compilation)
 
                 assert.strictEqual(
                     compilation.codeVariableNames.nodes.node1.snds['0'],
                     compilation.codeVariableNames.outletListeners.node1['0']
                 )
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: {},
-                    precompiledOutlets: {
-                        node1: ['0'],
-                    },
-                })
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: {},
+                        precompiledOutlets: {
+                            node1: ['0'],
+                        },
+                    }
+                )
             })
 
             it('should substitute SND with null function if no sink and not outlet listener', () => {
@@ -332,23 +275,24 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1'],
                 })
 
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1']
-                )
+                preCompileSignalAndMessageFlow(compilation)
 
                 assert.strictEqual(
                     compilation.codeVariableNames.nodes.node1.snds['0'],
                     compilation.codeVariableNames.globs.nullMessageReceiver
                 )
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: {},
-                    precompiledOutlets: {
-                        node1: ['0'],
-                    },
-                })
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: {},
+                        precompiledOutlets: {
+                            node1: ['0'],
+                        },
+                    }
+                )
             })
         })
 
@@ -365,16 +309,18 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1'],
                 })
 
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1']
+                preCompileSignalAndMessageFlow(compilation)
+
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: { node1: ['0'] },
+                        precompiledOutlets: {},
+                    }
                 )
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: { node1: ['0'] },
-                    precompiledOutlets: {},
-                })
             })
 
             it('should keep message inlet when inlet caller is declared', () => {
@@ -389,17 +335,19 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
+                    graphTraversal: ['node1'],
                     inletCallerSpecs: { node1: ['0'] },
                 })
 
-                const removedPortlets = preCompileSignalAndMessageFlow(
-                    compilation,
-                    ['node1']
+                preCompileSignalAndMessageFlow(compilation)
+
+                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
+                    compilation.precompiledPortlets,
+                    {
+                        precompiledInlets: {},
+                        precompiledOutlets: {},
+                    }
                 )
-                assert.deepStrictEqual<PrecompiledPortlets>(removedPortlets, {
-                    precompiledInlets: {},
-                    precompiledOutlets: {},
-                })
             })
         })
     })
@@ -447,13 +395,27 @@ describe('compile-helpers', () => {
                     },
                 },
             })
-            const traversal = graphTraversalForCompile(graph)
+            const traversal = graphTraversalForCompile(graph, {})
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, [
                 'n2',
                 'n4',
                 'n1',
                 'n3',
             ])
+        })
+
+        it('should add nodes that have an inlet caller declared', () => {
+            const graph = makeGraph({
+                n1: {
+                    inlets: {
+                        '0': { type: 'message', id: '0' },
+                    },
+                },
+            })
+            const traversal = graphTraversalForCompile(graph, {
+                n1: ['0'],
+            })
+            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, ['n1'])
         })
     })
 })

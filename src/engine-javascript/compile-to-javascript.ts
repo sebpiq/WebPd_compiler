@@ -9,12 +9,7 @@
  *
  */
 
-import {
-    preCompileSignalAndMessageFlow,
-    buildMetadata,
-    graphTraversalForCompile,
-    trimGraph,
-} from '../compile-helpers'
+import { buildMetadata } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
@@ -27,24 +22,17 @@ import {
 } from '../engine-common/compile-portlet-accessors'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { codeVariableNames, outletListenerSpecs, inletCallerSpecs, graph } =
+    const { codeVariableNames, outletListenerSpecs, inletCallerSpecs } =
         compilation
-    const graphTraversal = graphTraversalForCompile(graph)
     const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
     const metadata = buildMetadata(compilation)
-
-    trimGraph(compilation, graphTraversal)
-    const precompiledPortlets = preCompileSignalAndMessageFlow(
-        compilation,
-        graphTraversal
-    )
 
     // prettier-ignore
     return renderCode`
         ${generateCoreCodeJs(codeVariableNames)}
 
-        ${compileDeclare(compilation, graphTraversal, precompiledPortlets)}
+        ${compileDeclare(compilation)}
 
         ${compileInletCallers(compilation)}
 
@@ -68,7 +56,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 _commons_emitEngineConfigure()
             },
             loop: (${globs.input}, ${globs.output}) => {
-                ${compileLoop(compilation, graphTraversal)}
+                ${compileLoop(compilation)}
             },
             commons: {
                 getArray: commons_getArray,

@@ -22,11 +22,6 @@ import {
     PortletsIndex,
 } from './types'
 
-export interface PrecompiledPortlets {
-    precompiledInlets: PortletsIndex
-    precompiledOutlets: PortletsIndex
-}
-
 /** Helper to get node implementation or throw an error if not implemented. */
 export const getNodeImplementation = (
     nodeImplementations: NodeImplementations,
@@ -72,27 +67,6 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     }
 }
 
-export const trimGraph = (
-    compilation: Compilation,
-    graphTraversal: DspGraph.GraphTraversal
-) => {
-    const { graph } = compilation
-    Object.entries(graph).forEach(([nodeId, node]) => {
-        if (!graphTraversal.includes(nodeId)) {
-            delete graph[nodeId]
-        } else {
-            graph[nodeId] = {
-                ...node,
-                sources: traversal.removeDeadSources(
-                    node.sources,
-                    graphTraversal
-                ),
-                sinks: traversal.removeDeadSinks(node.sinks, graphTraversal),
-            }
-        }
-    })
-}
-
 /**
  * Takes the graph traversal, and for each node directly assign the
  * inputs of its next nodes where this can be done.
@@ -102,12 +76,14 @@ export const trimGraph = (
  * @returns Maps that contain inlets and outlets that have been handled
  * by precompilation and don't need to be dealt with further.
  */
-export const preCompileSignalAndMessageFlow = (
-    compilation: Compilation,
-    graphTraversal: DspGraph.GraphTraversal
-): PrecompiledPortlets => {
-    const { graph, codeVariableNames, inletCallerSpecs, outletListenerSpecs } =
-        compilation
+export const preCompileSignalAndMessageFlow = (compilation: Compilation) => {
+    const {
+        graph,
+        graphTraversal,
+        codeVariableNames,
+        inletCallerSpecs,
+        outletListenerSpecs,
+    } = compilation
     const graphTraversalNodes = graphTraversal.map((nodeId) =>
         getters.getNode(graph, nodeId)
     )
@@ -211,7 +187,8 @@ export const preCompileSignalAndMessageFlow = (
             }
         })
     })
-    return { precompiledInlets, precompiledOutlets }
+    compilation.precompiledPortlets.precompiledInlets = precompiledInlets
+    compilation.precompiledPortlets.precompiledOutlets = precompiledOutlets
 }
 
 // TODO : no need for the whole codeVariableNames here
@@ -237,9 +214,11 @@ export const replaceCoreCodePlaceholders = (
  * to change the engine state before running the loop.
  * !!! This is not fullproof ! For example if a node is pushing messages
  * but also writing signal outputs, it might be run too early / too late.
+ * @TODO : outletListeners should also be included ?
  */
 export const graphTraversalForCompile = (
-    graph: DspGraph.Graph
+    graph: DspGraph.Graph,
+    inletCallerSpecs: PortletsIndex
 ): DspGraph.GraphTraversal => {
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
@@ -253,6 +232,12 @@ export const graphTraversalForCompile = (
     )
     const combined = graphTraversalSignal
     traversal.signalNodes(graph, nodesPullingSignal).forEach((nodeId) => {
+        if (combined.indexOf(nodeId) === -1) {
+            combined.push(nodeId)
+        }
+    })
+
+    Object.keys(inletCallerSpecs).forEach((nodeId) => {
         if (combined.indexOf(nodeId) === -1) {
             combined.push(nodeId)
         }

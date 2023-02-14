@@ -9,12 +9,7 @@
  *
  */
 
-import {
-    buildMetadata,
-    graphTraversalForCompile,
-    preCompileSignalAndMessageFlow,
-    trimGraph,
-} from '../compile-helpers'
+import { buildMetadata } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
@@ -29,22 +24,15 @@ import {
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
     const { channelCount } = audioSettings
-    const graphTraversal = graphTraversalForCompile(compilation.graph)
     const globs = compilation.codeVariableNames.globs
     const { FloatArray } = codeVariableNames.types
     const metadata = buildMetadata(compilation)
-
-    trimGraph(compilation, graphTraversal)
-    const precompiledPortlets = preCompileSignalAndMessageFlow(
-        compilation,
-        graphTraversal
-    )
 
     // prettier-ignore
     return renderCode`
         ${generateCoreCodeAsc(codeVariableNames)}
 
-        ${compileDeclare(compilation, graphTraversal, precompiledPortlets)}
+        ${compileDeclare(compilation)}
 
         ${compileInletCallers(compilation)}
         
@@ -69,7 +57,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export function getOutput(): ${FloatArray} { return ${globs.output} }
 
         export function loop(): void {
-            ${compileLoop(compilation, graphTraversal)}
+            ${compileLoop(compilation)}
         }
 
         // FS IMPORTS

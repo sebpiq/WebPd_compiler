@@ -9,17 +9,19 @@
  *
  */
 
-import { DspGraph, getters } from '@webpd/dsp-graph'
+import { getters } from '@webpd/dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
 import { renderCode } from '../functional-helpers'
 import { Compilation } from '../types'
 
-export default (
-    compilation: Compilation,
-    graphTraversal: DspGraph.GraphTraversal
-) => {
-    const { graph, codeVariableNames, macros, nodeImplementations } =
-        compilation
+export default (compilation: Compilation) => {
+    const {
+        graph,
+        graphTraversal,
+        codeVariableNames,
+        macros,
+        nodeImplementations,
+    } = compilation
     const { globs } = codeVariableNames
     const graphTraversalNodes = graphTraversal.map((nodeId) =>
         getters.getNode(graph, nodeId)

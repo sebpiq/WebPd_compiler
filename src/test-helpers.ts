@@ -24,6 +24,7 @@ import { writeFileSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { writeFile } from 'fs/promises'
+import { graphTraversalForCompile } from './compile-helpers'
 const execPromise = promisify(exec)
 
 export const normalizeCode = (rawCode: string) => {
@@ -57,8 +58,15 @@ export const makeCompilation = (
         DUMMY: { loop: () => '' },
     }
     const graph = compilation.graph || {}
-    const outletListenerSpecs = compilation.outletListenerSpecs || {}
     const inletCallerSpecs = compilation.inletCallerSpecs || {}
+    const outletListenerSpecs = compilation.outletListenerSpecs || {}
+    const graphTraversal =
+        compilation.graphTraversal ||
+        graphTraversalForCompile(graph, inletCallerSpecs)
+    const precompiledPortlets = compilation.precompiledPortlets || {
+        precompiledInlets: {},
+        precompiledOutlets: {},
+    }
     const codeVariableNames = variableNames.generate(
         nodeImplementations,
         graph,
@@ -75,6 +83,7 @@ export const makeCompilation = (
         ...compilation,
         target,
         graph,
+        graphTraversal,
         nodeImplementations,
         audioSettings,
         outletListenerSpecs,
@@ -82,6 +91,7 @@ export const makeCompilation = (
         macros: getMacros(target),
         codeVariableNames,
         debug,
+        precompiledPortlets,
     }
 }
 
