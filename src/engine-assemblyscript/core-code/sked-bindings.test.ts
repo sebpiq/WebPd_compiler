@@ -3,7 +3,6 @@ import { AudioSettings } from '../../types'
 import {
     generateTestBindings,
     getAscCode,
-    replacePlaceholdersForTesting,
     TEST_PARAMETERS,
 } from './test-helpers'
 
@@ -19,11 +18,10 @@ describe('buf-bindings', () => {
             testCallbackResults: new Float32Array(0),
         }
 
-        const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-            getAscCode('core.asc', audioSettings) +
-            getAscCode('sked.asc', audioSettings) +
-            replacePlaceholdersForTesting(
-                `
+        const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+            getAscCode('core.asc', bitDepth) +
+            getAscCode('sked.asc', bitDepth) +
+            `
                 const DUMMY_EVENT_DATA: Map<string, Float> = new Map()
                 const cbCalls: FloatArray = createFloatArray(20)
                 let cbCallsCounter: Int = 0
@@ -64,14 +62,12 @@ describe('buf-bindings', () => {
                     testSkedResolveWait,
                     testCallbackResults,
                 }
-            `,
-                audioSettings
-            )
+            `
 
         it.each(TEST_PARAMETERS)(
             'should not have to wait if event already resolved %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -99,7 +95,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should call waits callbacks when resolving %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -151,7 +147,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should not call callbacks again when resolving several times %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -190,7 +186,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should cancel wait %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -219,11 +215,10 @@ describe('buf-bindings', () => {
             testCallbackResults: new Float32Array(0),
         }
 
-        const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-            getAscCode('core.asc', audioSettings) +
-            getAscCode('sked.asc', audioSettings) +
-            replacePlaceholdersForTesting(
-                `
+        const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+            getAscCode('core.asc', bitDepth) +
+            getAscCode('sked.asc', bitDepth) +
+            `
                 const DUMMY_EVENT_DATA: Map<string, Float> = new Map()
                 const cbCalls: FloatArray = createFloatArray(20)
                 let cbCallsCounter: Int = 0
@@ -262,14 +257,12 @@ describe('buf-bindings', () => {
                     testSkedTriggerListeners,
                     testCallbackResults,
                 }
-            `,
-                audioSettings
-            )
+            `
 
         it.each(TEST_PARAMETERS)(
             'should trigger existing listeners %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -319,7 +312,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should cancel listeners %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,

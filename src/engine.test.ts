@@ -769,7 +769,7 @@ describe('Engine', () => {
         })
 
         describe('write sound stream', () => {
-            const sharedTestingCode = (FloatArray: string) => `
+            const sharedTestingCode = `
                 let receivedId: fs_OperationId = -1
                 let receivedStatus: fs_OperationStatus = -1
                 const channelCount: Int = 3
@@ -797,9 +797,9 @@ describe('Engine', () => {
                 }
                 function testSendSoundStreamData(id: fs_OperationId): void {
                     const block: FloatArray[] = [
-                        new ${FloatArray}(blockSize),
-                        new ${FloatArray}(blockSize),
-                        new ${FloatArray}(blockSize),
+                        createFloatArray(blockSize),
+                        createFloatArray(blockSize),
+                        createFloatArray(blockSize),
                     ]
                     block[0][0] = toFloat(10 + blockSize * counter)
                     block[0][1] = toFloat(11 + blockSize * counter)
@@ -830,9 +830,7 @@ describe('Engine', () => {
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth, floatArrayType }) => {
-                    const testCode: Code = sharedTestingCode(
-                        floatArrayType.name
-                    )
+                    const testCode: Code = sharedTestingCode
 
                     const exports = {
                         testStartWriteStream: 1,
@@ -919,14 +917,14 @@ describe('Engine', () => {
         })
 
         describe('write sound file', () => {
-            const sharedTestingCode = (FloatArray: string) => `
+            const sharedTestingCode = `
                 let receivedId: fs_OperationId = -1
                 let receivedStatus: fs_OperationStatus = -1
                 const sound: FloatArray[] = [
-                    new ${FloatArray}(2),
-                    new ${FloatArray}(2),
-                    new ${FloatArray}(2),
-                    new ${FloatArray}(2),
+                    createFloatArray(2),
+                    createFloatArray(2),
+                    createFloatArray(2),
+                    createFloatArray(2),
                 ]
                 sound[0][0] = 11
                 sound[0][1] = 12
@@ -974,9 +972,7 @@ describe('Engine', () => {
             it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
                 async ({ target, bitDepth, floatArrayType }) => {
-                    const testCode: Code = sharedTestingCode(
-                        floatArrayType.name
-                    )
+                    const testCode = sharedTestingCode
 
                     const exports = {
                         testStartWriteFile: 1,

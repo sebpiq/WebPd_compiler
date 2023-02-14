@@ -191,13 +191,15 @@ export const preCompileSignalAndMessageFlow = (compilation: Compilation) => {
     compilation.precompiledPortlets.precompiledOutlets = precompiledOutlets
 }
 
-// TODO : no need for the whole codeVariableNames here
 export const replaceCoreCodePlaceholders = (
-    codeVariableNames: CodeVariableNames,
+    bitDepth: AudioSettings['bitDepth'],
     code: Code
 ) => {
-    const { Int, Float, FloatArray, getFloat, setFloat } =
-        codeVariableNames.types
+    const Int = 'i32'
+    const Float = bitDepth === 32 ? 'f32' : 'f64'
+    const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
+    const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
+    const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
     return code
         .replaceAll('${Int}', Int)
         .replaceAll('${Float}', Float)

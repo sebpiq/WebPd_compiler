@@ -20,15 +20,6 @@ import { AssemblyScriptWasmEngine } from './AssemblyScriptWasmEngine'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-export const getAssemblyscriptCoreCode = () => {
-    return readFileSync(resolve(__dirname, 'core-code.asc'))
-        .toString()
-        .replaceAll('${FloatArray}', 'Float64Array')
-        .replaceAll('${Float}', 'f64')
-        .replaceAll('${getFloat}', 'getFloat64')
-        .replaceAll('${setFloat}', 'setFloat64')
-}
-
 export const compileWasmModule = async (
     ascCode: Code,
     bitDepth: AudioSettings['bitDepth']

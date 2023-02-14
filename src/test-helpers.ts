@@ -78,7 +78,6 @@ export const makeCompilation = (
     }
     variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
     variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
-    variableNames.attachTypes(codeVariableNames, audioSettings.bitDepth)
     return {
         ...compilation,
         target,

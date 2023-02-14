@@ -3,7 +3,6 @@ import { AudioSettings } from '../../types'
 import {
     generateTestBindings,
     getAscCode,
-    replacePlaceholdersForTesting,
     TEST_PARAMETERS,
 } from './test-helpers'
 
@@ -18,39 +17,36 @@ describe('buf-bindings', () => {
         testGetPullAvailableLength: 0,
     }
 
-    const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-        getAscCode('core.asc', audioSettings) +
-        getAscCode('buf.asc', audioSettings) +
-        replacePlaceholdersForTesting(
-            `
-                function testGetPullAvailableLength (buf: buf_SoundBuffer): Int {
-                    return buf.pullAvailableLength
-                }
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+        getAscCode('core.asc', bitDepth) +
+        getAscCode('buf.asc', bitDepth) +
+        `
+            function testGetPullAvailableLength (buf: buf_SoundBuffer): Int {
+                return buf.pullAvailableLength
+            }
 
-                export {
-                    // CORE EXPORTS
-                    createFloatArray,
+            export {
+                // CORE EXPORTS
+                createFloatArray,
 
-                    // BUF EXPORTS for testing
-                    buf_pushBlock,
-                    buf_pullSample,
-                    buf_readSample,
-                    buf_writeSample,
-                    buf_clear,
-                    buf_create,
+                // BUF EXPORTS for testing
+                buf_pushBlock,
+                buf_pullSample,
+                buf_readSample,
+                buf_writeSample,
+                buf_clear,
+                buf_create,
 
-                    // TEST FUNCTIONS
-                    testGetPullAvailableLength,
-                }
-            `,
-            audioSettings
-        )
+                // TEST FUNCTIONS
+                testGetPullAvailableLength,
+            }
+        `
 
     describe('push / pull mode', () => {
         it.each(TEST_PARAMETERS)(
             'should be able to push and pull from SoundBuffer %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -93,7 +89,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should return 0 when pulling from empty buffer %s',
             async ({ bitDepth }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -110,7 +106,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should return 0 when reading from an empty buffer %s',
             async ({ bitDepth }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -124,7 +120,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should write a sample to the buffer %s',
             async ({ bitDepth }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -143,7 +139,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should not throw an error with wrong values for read offset %s',
             async ({ bitDepth }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,
@@ -170,7 +166,7 @@ describe('buf-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should clear content when calling buf_clear %s',
             async ({ bitDepth, floatArrayType }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
                     code,
                     bitDepth,

@@ -9,7 +9,7 @@
  *
  */
 
-import { buildMetadata } from '../compile-helpers'
+import { buildMetadata, getFloatArrayType } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
@@ -22,15 +22,21 @@ import {
 } from '../engine-common/compile-portlet-accessors'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { codeVariableNames, outletListenerSpecs, inletCallerSpecs } =
-        compilation
+    const {
+        codeVariableNames,
+        outletListenerSpecs,
+        inletCallerSpecs,
+        audioSettings,
+    } = compilation
     const globs = compilation.codeVariableNames.globs
-    const { FloatArray } = codeVariableNames.types
     const metadata = buildMetadata(compilation)
+
+    // When setting an array we need to make sure it is converted to the right type.
+    const floatArrayType = getFloatArrayType(audioSettings.bitDepth)
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCodeJs(codeVariableNames)}
+        ${generateCoreCodeJs(audioSettings.bitDepth)}
 
         ${compileDeclare(compilation)}
 
@@ -60,7 +66,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
             commons: {
                 getArray: commons_getArray,
-                setArray: (arrayName, array) => commons_setArray(arrayName, new ${FloatArray}(array)),
+                setArray: (arrayName, array) => commons_setArray(arrayName, new ${floatArrayType.name}(array)),
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>

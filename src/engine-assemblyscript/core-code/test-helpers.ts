@@ -42,30 +42,14 @@ export const TEST_PARAMETERS = [
 
 export const getAscCode = (
     filename: string,
-    audioSettings: Partial<AudioSettings>
+    bitDepth: AudioSettings['bitDepth']
 ) => {
-    const fullAudioSettings: AudioSettings = {
-        bitDepth: 32,
-        channelCount: { in: 2, out: 2 },
-        ...audioSettings,
-    }
     const code = readFileSync(resolve(__dirname, filename)).toString()
-    return replacePlaceholdersForTesting(code, fullAudioSettings)
-}
-
-export const replacePlaceholdersForTesting = (
-    code: Code,
-    audioSettings: Partial<AudioSettings>
-) => {
-    const { codeVariableNames } = makeCompilation({
-        target: 'assemblyscript',
-        audioSettings: {
-            channelCount: { in: 2, out: 2 },
-            bitDepth: 32,
-            ...audioSettings,
-        },
-    })
-    return replaceCoreCodePlaceholders(codeVariableNames, code)
+    if (filename === 'core.asc') {
+        return replaceCoreCodePlaceholders(bitDepth, code)
+    } else {
+        return code
+    }
 }
 
 export const getWasmExports = async <WasmExports>(

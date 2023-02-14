@@ -15,7 +15,7 @@
 class buf_SoundBuffer {
     constructor(length) {
         this.length = length;
-        this.data = new ${FloatArray}(length);
+        this.data = createFloatArray(length);
         this.writeCursor = 0;
         this.pullAvailableLength = 0;
     }

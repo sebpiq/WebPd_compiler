@@ -8,7 +8,6 @@ import { lowerListOfFloatArrays, readListOfFloatArrays } from './core-bindings'
 import {
     getAscCode,
     initializeCoreCodeTest,
-    replacePlaceholdersForTesting,
     TEST_PARAMETERS,
 } from './test-helpers'
 
@@ -22,92 +21,89 @@ describe('fs-bindings', () => {
         testOperationCleaned: 1,
     }
 
-    const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-        getAscCode('core.asc', audioSettings) +
-        getAscCode('sked.asc', audioSettings) +
-        getAscCode('commons.asc', audioSettings) +
-        getAscCode('buf.asc', audioSettings) +
-        getAscCode('msg.asc', audioSettings) +
-        getAscCode('fs.asc', audioSettings) +
-        replacePlaceholdersForTesting(
-            `
-                let callbackOperationId: Int = 0
-                let callbackOperationStatus: fs_OperationStatus = -1
-                let callbackOperationSound: FloatArray[] = []
-                function someSoundCallback(id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]): void {
-                    callbackOperationId = id
-                    callbackOperationStatus = status
-                    callbackOperationSound = sound
-                }
-                function someCallback(id: fs_OperationId, status: fs_OperationStatus): void {
-                    callbackOperationId = id
-                    callbackOperationStatus = status
-                }
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+        getAscCode('core.asc', bitDepth) +
+        getAscCode('sked.asc', bitDepth) +
+        getAscCode('commons.asc', bitDepth) +
+        getAscCode('buf.asc', bitDepth) +
+        getAscCode('msg.asc', bitDepth) +
+        getAscCode('fs.asc', bitDepth) +
+        `
+            let callbackOperationId: Int = 0
+            let callbackOperationStatus: fs_OperationStatus = -1
+            let callbackOperationSound: FloatArray[] = []
+            function someSoundCallback(id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]): void {
+                callbackOperationId = id
+                callbackOperationStatus = status
+                callbackOperationSound = sound
+            }
+            function someCallback(id: fs_OperationId, status: fs_OperationStatus): void {
+                callbackOperationId = id
+                callbackOperationStatus = status
+            }
 
-                export function testCallbackOperationId(): fs_OperationId {
-                    return callbackOperationId
-                }
-                export function testCallbackOperationSuccess(): fs_OperationId {
-                    return callbackOperationStatus === FS_OPERATION_SUCCESS
-                }
-                export function testCallbackOperationFailed(): fs_OperationId {
-                    return callbackOperationStatus === FS_OPERATION_FAILURE
-                }
-                export function testCallbackOperationSound(): FloatArray[] {
-                    return callbackOperationSound
-                }
-                export function testCheckOperationProcessing(id: fs_OperationStatus): boolean {
-                    return _FS_OPERATIONS_IDS.has(id)
-                }
-                export function testOperationCleaned(id: fs_OperationId): boolean {
-                    return !_FS_OPERATIONS_IDS.has(id)
-                        && !_FS_OPERATIONS_CALLBACKS.has(id)
-                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
-                }
+            export function testCallbackOperationId(): fs_OperationId {
+                return callbackOperationId
+            }
+            export function testCallbackOperationSuccess(): fs_OperationId {
+                return callbackOperationStatus === FS_OPERATION_SUCCESS
+            }
+            export function testCallbackOperationFailed(): fs_OperationId {
+                return callbackOperationStatus === FS_OPERATION_FAILURE
+            }
+            export function testCallbackOperationSound(): FloatArray[] {
+                return callbackOperationSound
+            }
+            export function testCheckOperationProcessing(id: fs_OperationStatus): boolean {
+                return _FS_OPERATIONS_IDS.has(id)
+            }
+            export function testOperationCleaned(id: fs_OperationId): boolean {
+                return !_FS_OPERATIONS_IDS.has(id)
+                    && !_FS_OPERATIONS_CALLBACKS.has(id)
+                    && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                    && !_FS_SOUND_STREAM_BUFFERS.has(id)
+            }
 
-                export declare function i_fs_readSoundFile (id: fs_OperationId, url: Url, info: Message): void
-                export declare function i_fs_writeSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
-                export declare function i_fs_openSoundReadStream (id: fs_OperationId, url: Url, info: Message): void
-                export declare function i_fs_openSoundWriteStream (id: fs_OperationId, url: Url, info: Message): void
-                export declare function i_fs_sendSoundStreamData (id: fs_OperationId, block: FloatArray[]): void
-                export declare function i_fs_closeSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
+            export declare function i_fs_readSoundFile (id: fs_OperationId, url: Url, info: Message): void
+            export declare function i_fs_writeSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
+            export declare function i_fs_openSoundReadStream (id: fs_OperationId, url: Url, info: Message): void
+            export declare function i_fs_openSoundWriteStream (id: fs_OperationId, url: Url, info: Message): void
+            export declare function i_fs_sendSoundStreamData (id: fs_OperationId, block: FloatArray[]): void
+            export declare function i_fs_closeSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
 
-                export {
-                    // FS EXPORTS
-                    x_fs_onReadSoundFileResponse as fs_onReadSoundFileResponse,
-                    x_fs_onWriteSoundFileResponse as fs_onWriteSoundFileResponse,
-                    x_fs_onSoundStreamData as fs_onSoundStreamData,
-                    x_fs_onCloseSoundStream as fs_onCloseSoundStream,
-        
-                    // MSG EXPORTS
-                    x_msg_create as msg_create,
-                    x_msg_getTokenTypes as msg_getTokenTypes,
-                    x_msg_createTemplate as msg_createTemplate,
-                    msg_writeStringToken,
-                    msg_writeFloatToken,
-                    msg_readStringToken,
-                    msg_readFloatToken,
-                    MSG_FLOAT_TOKEN,
-                    MSG_STRING_TOKEN,
-        
-                    // CORE EXPORTS
-                    x_core_createListOfArrays as core_createListOfArrays,
-                    x_core_pushToListOfArrays as core_pushToListOfArrays,
-                    x_core_getListOfArraysLength as core_getListOfArraysLength,
-                    x_core_getListOfArraysElem as core_getListOfArraysElem,
-                    createFloatArray,
-                }
-            `,
-            audioSettings
-        )
+            export {
+                // FS EXPORTS
+                x_fs_onReadSoundFileResponse as fs_onReadSoundFileResponse,
+                x_fs_onWriteSoundFileResponse as fs_onWriteSoundFileResponse,
+                x_fs_onSoundStreamData as fs_onSoundStreamData,
+                x_fs_onCloseSoundStream as fs_onCloseSoundStream,
+    
+                // MSG EXPORTS
+                x_msg_create as msg_create,
+                x_msg_getTokenTypes as msg_getTokenTypes,
+                x_msg_createTemplate as msg_createTemplate,
+                msg_writeStringToken,
+                msg_writeFloatToken,
+                msg_readStringToken,
+                msg_readFloatToken,
+                MSG_FLOAT_TOKEN,
+                MSG_STRING_TOKEN,
+    
+                // CORE EXPORTS
+                x_core_createListOfArrays as core_createListOfArrays,
+                x_core_pushToListOfArrays as core_pushToListOfArrays,
+                x_core_getListOfArraysLength as core_getListOfArraysLength,
+                x_core_getListOfArraysElem as core_getListOfArraysElem,
+                createFloatArray,
+            }
+        `
 
     describe('sound info', () => {
         it.each(TEST_PARAMETERS)(
             'should be able to convert fs_SoundInfo to Message %s',
             async ({ bitDepth }) => {
                 const code =
-                    getBaseTestCode({ bitDepth }) +
+                    getBaseTestCode(bitDepth) +
                     `
                     export function testSoundInfoToMessage (array: FloatArray): Message {
                         const soundInfo: fs_SoundInfo = {
@@ -150,7 +146,7 @@ describe('fs-bindings', () => {
                 'should create the operation %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
+                        getBaseTestCode(bitDepth) +
                         `
                         export function testStartReadFile (array: FloatArray): Int {
                             return fs_readSoundFile(
@@ -209,7 +205,7 @@ describe('fs-bindings', () => {
                 'should register the operation success and call the callback %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
+                        getBaseTestCode(bitDepth) +
                         `
                     export function testStartReadFile (array: FloatArray): Int {
                         return fs_readSoundFile(
@@ -283,7 +279,7 @@ describe('fs-bindings', () => {
                 'should register the operation failure %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
+                        getBaseTestCode(bitDepth) +
                         `
                     export function testStartReadFile (array: FloatArray): Int {
                         return fs_readSoundFile(
@@ -334,7 +330,7 @@ describe('fs-bindings', () => {
                 'should create the operation %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
+                        getBaseTestCode(bitDepth) +
                         `
                         const channelCount: Int = 22
                         export function testStartStream (array: FloatArray): Int {
@@ -403,7 +399,7 @@ describe('fs-bindings', () => {
                 'should push data to the buffer %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
+                        getBaseTestCode(bitDepth) +
                         `
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundReadStream(
@@ -488,7 +484,7 @@ describe('fs-bindings', () => {
                 'should create the operation and call the callback %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
+                        getBaseTestCode(bitDepth) +
                         `
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundReadStream(
@@ -570,7 +566,7 @@ describe('fs-bindings', () => {
                 'should create the operation %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
+                        getBaseTestCode(bitDepth) +
                         `
                         const channelCount: Int = 4
                         export function testStartStream (array: FloatArray): Int {
@@ -631,9 +627,8 @@ describe('fs-bindings', () => {
                 'should push data to the buffer %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
-                        replacePlaceholdersForTesting(
-                            `
+                        getBaseTestCode(bitDepth) +
+                        `
                         let counter: Float = 0
                         export function testStartStream (array: FloatArray): Int {
                             return fs_openSoundWriteStream(
@@ -651,8 +646,8 @@ describe('fs-bindings', () => {
                         }
                         export function testSendSoundStreamData(id: fs_OperationId): void {
                             const block: FloatArray[] = [
-                                new \${FloatArray}(4),
-                                new \${FloatArray}(4),
+                                createFloatArray(4),
+                                createFloatArray(4),
                             ]
                             block[0][0] = 10 + 4 * counter
                             block[0][1] = 11 + 4 * counter
@@ -665,9 +660,7 @@ describe('fs-bindings', () => {
                             counter++
                             fs_sendSoundStreamData(id, block)
                         }
-                    `,
-                            { bitDepth }
-                        )
+                    `
 
                     const exports = {
                         ...baseExports,
@@ -736,9 +729,8 @@ describe('fs-bindings', () => {
                 'should create the operation and call the callback %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
-                        replacePlaceholdersForTesting(
-                            `
+                        getBaseTestCode(bitDepth) +
+                        `
                             export function testStartStream (array: FloatArray): Int {
                                 return fs_openSoundWriteStream(
                                     '/some/url', 
@@ -755,13 +747,11 @@ describe('fs-bindings', () => {
                             }
                             export function testSendSoundStreamData(id: fs_OperationId): void {
                                 const block: FloatArray[] = [
-                                    new \${FloatArray}(2),
+                                    createFloatArray(2),
                                 ]
                                 fs_sendSoundStreamData(id, block)
                             }
-                        `,
-                            { bitDepth }
-                        )
+                        `
 
                     const exports = {
                         ...baseExports,
@@ -821,13 +811,12 @@ describe('fs-bindings', () => {
                 'should create the operation %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
-                        replacePlaceholdersForTesting(
-                            `
+                        getBaseTestCode(bitDepth) +
+                        `
                         const sound: FloatArray[] = [
-                            new \${FloatArray}(4),
-                            new \${FloatArray}(4),
-                            new \${FloatArray}(4),
+                            createFloatArray(4),
+                            createFloatArray(4),
+                            createFloatArray(4),
                         ]
                         sound[0][0] = 11
                         sound[0][1] = 12
@@ -857,9 +846,7 @@ describe('fs-bindings', () => {
                                 someCallback
                             )
                         }
-                    `,
-                            { bitDepth }
-                        )
+                    `
 
                     const exports = {
                         ...baseExports,
@@ -913,12 +900,11 @@ describe('fs-bindings', () => {
                 'should register the operation success and call the callback %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
-                        replacePlaceholdersForTesting(
-                            `
+                        getBaseTestCode(bitDepth) +
+                        `
                             const sound: FloatArray[] = [
-                                new \${FloatArray}(512),
-                                new \${FloatArray}(512),
+                                createFloatArray(512),
+                                createFloatArray(512),
                             ]
                             export function testStartWriteFile (array: FloatArray): Int {
                                 return fs_writeSoundFile(
@@ -935,9 +921,7 @@ describe('fs-bindings', () => {
                                     someCallback
                                 )
                             }
-                        `,
-                            { bitDepth }
-                        )
+                        `
 
                     const exports = {
                         ...baseExports,
@@ -974,12 +958,11 @@ describe('fs-bindings', () => {
                 'should register the operation failure %s',
                 async ({ bitDepth }) => {
                     const code =
-                        getBaseTestCode({ bitDepth }) +
-                        replacePlaceholdersForTesting(
-                            `
+                        getBaseTestCode(bitDepth) +
+                        `
                             const sound: FloatArray[] = [
-                                new \${FloatArray}(512),
-                                new \${FloatArray}(512),
+                                createFloatArray(512),
+                                createFloatArray(512),
                             ]
                             export function testStartWriteFile (array: FloatArray): Int {
                                 return fs_writeSoundFile(
@@ -996,9 +979,7 @@ describe('fs-bindings', () => {
                                     someCallback
                                 )
                             }
-                        `,
-                            { bitDepth }
-                        )
+                        `
 
                     const exports = {
                         ...baseExports,

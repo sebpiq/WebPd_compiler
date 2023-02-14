@@ -8,8 +8,6 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-const FS_OPERATION_SUCCESS = ${FS_OPERATION_SUCCESS};
-const FS_OPERATION_FAILURE = ${FS_OPERATION_FAILURE};
 const _FS_OPERATIONS_IDS = new Set();
 const _FS_OPERATIONS_CALLBACKS = new Map();
 const _FS_OPERATIONS_SOUND_CALLBACKS = new Map();
@@ -110,9 +108,9 @@ function fs_soundInfoToMessage(soundInfo) {
         MSG_STRING_TOKEN,
         soundInfo.extraOptions.length
     ]);
-    msg_writeFloatToken(info, 0, ${Float}(soundInfo.channelCount));
-    msg_writeFloatToken(info, 1, ${Float}(soundInfo.sampleRate));
-    msg_writeFloatToken(info, 2, ${Float}(soundInfo.bitDepth));
+    msg_writeFloatToken(info, 0, toFloat(soundInfo.channelCount));
+    msg_writeFloatToken(info, 1, toFloat(soundInfo.sampleRate));
+    msg_writeFloatToken(info, 2, toFloat(soundInfo.bitDepth));
     msg_writeStringToken(info, 3, soundInfo.encodingFormat);
     msg_writeStringToken(info, 4, soundInfo.endianness);
     msg_writeStringToken(info, 5, soundInfo.extraOptions);

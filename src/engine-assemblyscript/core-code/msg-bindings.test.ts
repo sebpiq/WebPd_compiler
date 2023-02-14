@@ -20,7 +20,6 @@ import {
 import {
     getAscCode,
     initializeCoreCodeTest,
-    replacePlaceholdersForTesting,
     TEST_PARAMETERS,
 } from './test-helpers'
 
@@ -47,45 +46,42 @@ describe('msg-bindings', () => {
         testReadMessageData: 1,
     }
 
-    const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-        getAscCode('core.asc', audioSettings) +
-        getAscCode('sked.asc', audioSettings) +
-        getAscCode('commons.asc', audioSettings) +
-        getAscCode('msg.asc', audioSettings) +
-        replacePlaceholdersForTesting(
-            `
-                export function testReadMessageData(message: Message, index: Int): Int {
-                    return message.dataView.getInt32(index * sizeof<Int>())
-                }
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+        getAscCode('core.asc', bitDepth) +
+        getAscCode('sked.asc', bitDepth) +
+        getAscCode('commons.asc', bitDepth) +
+        getAscCode('msg.asc', bitDepth) +
+        `
+            export function testReadMessageData(message: Message, index: Int): Int {
+                return message.dataView.getInt32(index * sizeof<Int>())
+            }
 
-                export {
-                    // MSG EXPORTS
-                    x_msg_create as msg_create,
-                    x_msg_getTokenTypes as msg_getTokenTypes,
-                    x_msg_createTemplate as msg_createTemplate,
-                    msg_writeStringToken,
-                    msg_writeFloatToken,
-                    msg_readStringToken,
-                    msg_readFloatToken,
-                    MSG_FLOAT_TOKEN,
-                    MSG_STRING_TOKEN,
+            export {
+                // MSG EXPORTS
+                x_msg_create as msg_create,
+                x_msg_getTokenTypes as msg_getTokenTypes,
+                x_msg_createTemplate as msg_createTemplate,
+                msg_writeStringToken,
+                msg_writeFloatToken,
+                msg_readStringToken,
+                msg_readFloatToken,
+                MSG_FLOAT_TOKEN,
+                MSG_STRING_TOKEN,
 
-                    // CORE EXPORTS
-                    createFloatArray,
-                    x_core_createListOfArrays as core_createListOfArrays,
-                    x_core_pushToListOfArrays as core_pushToListOfArrays,
-                    x_core_getListOfArraysLength as core_getListOfArraysLength,
-                    x_core_getListOfArraysElem as core_getListOfArraysElem,
-                }
-            `,
-            audioSettings
-        )
+                // CORE EXPORTS
+                createFloatArray,
+                x_core_createListOfArrays as core_createListOfArrays,
+                x_core_pushToListOfArrays as core_pushToListOfArrays,
+                x_core_getListOfArraysLength as core_getListOfArraysLength,
+                x_core_getListOfArraysElem as core_getListOfArraysElem,
+            }
+        `
 
     describe('lowerMessage', () => {
         it.each(TEST_PARAMETERS)(
             'should create the message with correct header and filled-in data %s',
             async ({ bitDepth }) => {
-                const code = getBaseTestCode({ bitDepth })
+                const code = getBaseTestCode(bitDepth)
 
                 const exports = baseExports
 
@@ -168,7 +164,7 @@ describe('msg-bindings', () => {
             'should read message to a JavaScript array %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const code = getBaseTestCode({bitDepth}) + `
+                const code = getBaseTestCode(bitDepth) + `
                 export function testCreateMessage(): Message {
                     const message: Message = msg_create([
                         MSG_STRING_TOKEN, 5,
@@ -205,7 +201,7 @@ describe('msg-bindings', () => {
             'should create floats message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const code = getBaseTestCode({bitDepth}) + `
+                const code = getBaseTestCode(bitDepth) + `
                 export function testCreateFloatsMessage(): Message {
                     return msg_floats([111, 222])
                 }
@@ -247,7 +243,7 @@ describe('msg-bindings', () => {
             'should create strings message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const code = getBaseTestCode({bitDepth}) + `
+                const code = getBaseTestCode(bitDepth) + `
                 export function testCreateStringsMessage(): Message {
                     return msg_strings(['', 'blabla', 'blo'])
                 }
@@ -291,7 +287,7 @@ describe('msg-bindings', () => {
             'should match given message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const code = getBaseTestCode({bitDepth}) + `
+                const code = getBaseTestCode(bitDepth) + `
                 export function testMatch1(): boolean {
                     const m: Message = msg_create([MSG_FLOAT_TOKEN])
                     return msg_isMatching(m, [MSG_FLOAT_TOKEN])
@@ -349,7 +345,7 @@ describe('msg-bindings', () => {
             'should return a display version of a message %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const code = getBaseTestCode({bitDepth}) + `
+                const code = getBaseTestCode(bitDepth) + `
                 export function testDisplay(): string {
                     const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
                     msg_writeFloatToken(m, 0, -123)

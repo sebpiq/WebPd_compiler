@@ -49,7 +49,6 @@ export default (
     )
     variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
     variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
-    variableNames.attachTypes(codeVariableNames, audioSettings.bitDepth)
 
     const graphTraversal = graphTraversalForCompile(graph, inletCallerSpecs)
     traversal.trimGraph(graph, graphTraversal)

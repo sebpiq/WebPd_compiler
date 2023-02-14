@@ -31,7 +31,7 @@ export interface core_WasmExports {
     memory: WebAssembly.Memory
 }
 
-// REF : Assemblyscript ESM bindings
+/** @copyright Assemblyscript ESM bindings */
 export const liftString = (wasmExports: core_WasmExports, pointer: number) => {
     if (!pointer) return null
     pointer = pointer >>> 0
@@ -50,7 +50,7 @@ export const liftString = (wasmExports: core_WasmExports, pointer: number) => {
     return string + String.fromCharCode(...memoryU16.subarray(start, end))
 }
 
-// REF : Assemblyscript ESM bindings
+/** @copyright Assemblyscript ESM bindings */
 export const lowerString = (wasmExports: core_WasmExports, value: string) => {
     if (value == null) return 0
     const length = value.length,
@@ -61,7 +61,7 @@ export const lowerString = (wasmExports: core_WasmExports, value: string) => {
     return pointer
 }
 
-// REF : Assemblyscript ESM bindings
+/** @copyright Assemblyscript ESM bindings */
 export const lowerBuffer = (
     wasmExports: core_WasmExports,
     value: ArrayBuffer
@@ -75,8 +75,12 @@ export const lowerBuffer = (
     return pointer
 }
 
-// REF : Assemblyscript ESM bindings `liftTypedArray`
-// TODO : move to other file ?
+/**
+ * @returns A typed array which shares buffer with the wasm module,
+ * thus allowing direct read / write between the module and the host environment.
+ *
+ * @copyright Assemblyscript ESM bindings `liftTypedArray`
+ */
 export const readTypedArray = <
     _TypedArrayConstructor extends TypedArrayConstructor
 >(

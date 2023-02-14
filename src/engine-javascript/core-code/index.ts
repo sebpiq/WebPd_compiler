@@ -1,9 +1,10 @@
 import { replaceCoreCodePlaceholders } from '../../compile-helpers'
-import { CodeVariableNames } from '../../types'
+import { AudioSettings } from '../../types'
 import BUF_JS from './buf.generated.js.txt'
 import SKED_JS from './sked.generated.js.txt'
 import FS_JS from './fs.generated.js.txt'
 import COMMONS_JS from './commons.generated.js.txt'
+import { FS_OPERATION_FAILURE, FS_OPERATION_SUCCESS } from '../../constants'
 
 const CORE = `
 const i32 = (v) => v
@@ -13,6 +14,10 @@ const toInt = (v) => v
 const toFloat = (v) => v
 const createFloatArray = (length) => 
     new \${FloatArray}(length)
+const setFloatDataView = (d, p, v) => d.\${setFloat}(p, v)
+const getFloatDataView = (d, p) => d.\${getFloat}(p)
+const FS_OPERATION_SUCCESS = ${FS_OPERATION_SUCCESS}
+const FS_OPERATION_FAILURE = ${FS_OPERATION_FAILURE}
 `
 
 const MSG = `
@@ -38,10 +43,13 @@ const msg_display = (m) => '[' + m
     .join(', ') + ']'
 `
 
-// TODO : no need for the whole codeVariableNames here
-export default (codeVariableNames: CodeVariableNames) => {
-    return replaceCoreCodePlaceholders(
-        codeVariableNames,
-        CORE + BUF_JS + SKED_JS + COMMONS_JS + MSG + FS_JS
+export default (bitDepth: AudioSettings['bitDepth']) => {
+    return (
+        replaceCoreCodePlaceholders(bitDepth, CORE) +
+        BUF_JS +
+        SKED_JS +
+        COMMONS_JS +
+        MSG +
+        FS_JS
     )
 }

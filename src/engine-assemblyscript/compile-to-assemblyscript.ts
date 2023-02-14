@@ -25,12 +25,11 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.codeVariableNames.globs
-    const { FloatArray } = codeVariableNames.types
     const metadata = buildMetadata(compilation)
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCodeAsc(codeVariableNames)}
+        ${generateCoreCodeAsc(audioSettings.bitDepth)}
 
         ${compileDeclare(compilation)}
 
@@ -41,20 +40,20 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         `)}
 
         const metadata: string = '${JSON.stringify(metadata)}'
-        let ${globs.input}: FloatArray = new ${FloatArray}(0)
-        let ${globs.output}: FloatArray = new ${FloatArray}(0)
+        let ${globs.input}: FloatArray = createFloatArray(0)
+        let ${globs.output}: FloatArray = createFloatArray(0)
         
         export function configure(sampleRate: Float, blockSize: Int): void {
-            ${globs.input} = new ${FloatArray}(blockSize * ${channelCount.in.toString()})
-            ${globs.output} = new ${FloatArray}(blockSize * ${channelCount.out.toString()})
+            ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
+            ${globs.output} = createFloatArray(blockSize * ${channelCount.out.toString()})
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
             _commons_emitEngineConfigure()
         }
 
-        export function getInput(): ${FloatArray} { return ${globs.input} }
+        export function getInput(): FloatArray { return ${globs.input} }
 
-        export function getOutput(): ${FloatArray} { return ${globs.output} }
+        export function getOutput(): FloatArray { return ${globs.output} }
 
         export function loop(): void {
             ${compileLoop(compilation)}

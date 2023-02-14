@@ -4,28 +4,24 @@ import { readTypedArray } from './core-bindings'
 import {
     getAscCode,
     initializeCoreCodeTest,
-    replacePlaceholdersForTesting,
     TEST_PARAMETERS,
 } from './test-helpers'
 
 describe('commons-bindings', () => {
-    const getBaseTestCode = (audioSettings: Partial<AudioSettings>) =>
-        getAscCode('core.asc', audioSettings) +
-        getAscCode('sked.asc', audioSettings) +
-        getAscCode('commons.asc', audioSettings) +
-        replacePlaceholdersForTesting(
-            `
-                export {
-                    // CORE EXPORTS
-                    createFloatArray,
-                    x_core_createListOfArrays as core_createListOfArrays,
-                    x_core_pushToListOfArrays as core_pushToListOfArrays,
-                    x_core_getListOfArraysLength as core_getListOfArraysLength,
-                    x_core_getListOfArraysElem as core_getListOfArraysElem,
-                }
-            `,
-            audioSettings
-        )
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+        getAscCode('core.asc', bitDepth) +
+        getAscCode('sked.asc', bitDepth) +
+        getAscCode('commons.asc', bitDepth) +
+        `
+            export {
+                // CORE EXPORTS
+                createFloatArray,
+                x_core_createListOfArrays as core_createListOfArrays,
+                x_core_pushToListOfArrays as core_pushToListOfArrays,
+                x_core_getListOfArraysLength as core_getListOfArraysLength,
+                x_core_getListOfArraysElem as core_getListOfArraysElem,
+            }
+        `
 
     describe('arrays', () => {
         describe('commons_setArray', () => {
@@ -33,7 +29,7 @@ describe('commons-bindings', () => {
                 'should set the array and notifiy the subscribers hooks %s',
                 async ({ bitDepth }) => {
                     // prettier-ignore
-                    const code = getBaseTestCode({bitDepth}) + `
+                    const code = getBaseTestCode(bitDepth) + `
                     let callbackCalled: Int = 0
                     const subscription: SkedId = commons_subscribeArrayChanges('array1', (): void => {
                         callbackCalled++

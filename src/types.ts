@@ -213,15 +213,6 @@ export interface CodeVariableNames {
         m: string
     }
 
-    /** Names of types used by the engine (e.g. especially depending on the bitdepth) */
-    types: {
-        Int?: 'i32'
-        Float?: 'f32' | 'f64'
-        FloatArray?: 'Float32Array' | 'Float64Array'
-        getFloat?: 'getFloat32' | 'getFloat64'
-        setFloat?: 'setFloat32' | 'setFloat64'
-    }
-
     /** Namespace for inlet callers */
     inletCallers: {
         [nodeId: DspGraph.NodeId]: {

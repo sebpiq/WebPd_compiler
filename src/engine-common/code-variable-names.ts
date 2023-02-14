@@ -100,7 +100,6 @@ export const generate = (
     }),
     outletListeners: createNamespace('outletListeners', {}),
     inletCallers: createNamespace('inletCallers', {}),
-    types: createNamespace('types', {}),
 })
 
 /**
@@ -141,21 +140,6 @@ export const attachInletCallers = (
             ] = `inletCaller_${nodeId}_${inletId}`
         })
     })
-}
-
-/** Helper to attach types to variable names depending on compile target and bitDepth. */
-export const attachTypes = (
-    codeVariableNames: CodeVariableNames,
-    bitDepth: AudioSettings['bitDepth']
-) => {
-    codeVariableNames.types.Int = 'i32'
-    codeVariableNames.types.Float = bitDepth === 32 ? 'f32' : 'f64'
-    codeVariableNames.types.FloatArray =
-        bitDepth === 32 ? 'Float32Array' : 'Float64Array'
-    codeVariableNames.types.getFloat =
-        bitDepth === 32 ? 'getFloat32' : 'getFloat64'
-    codeVariableNames.types.setFloat =
-        bitDepth === 32 ? 'setFloat32' : 'setFloat64'
 }
 
 /**
