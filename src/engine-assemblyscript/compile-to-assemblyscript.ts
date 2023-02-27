@@ -20,6 +20,7 @@ import {
     compileOutletListeners,
     compileInletCallers,
 } from '../engine-common/compile-portlet-accessors'
+import embedArrays from '../engine-common/embed-arrays'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
@@ -30,6 +31,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     // prettier-ignore
     return renderCode`
         ${generateCoreCodeAsc(audioSettings.bitDepth)}
+
+        ${embedArrays(compilation)}
 
         ${compileDeclare(compilation)}
 

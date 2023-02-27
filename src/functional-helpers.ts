@@ -17,6 +17,7 @@ type CodeLines = Array<CodeLines | Code | number>
  * Renders templated strings which contain nested arrays of strings.
  * This helper allows to use functions such as `.map` to generate several lines
  * of code, without having to use `.join('\n')`.
+ * @todo : should not have to check for falsy codeLine has it should be typechecked.
  */
 export const renderCode = (
     strings: TemplateStringsArray,
@@ -25,7 +26,7 @@ export const renderCode = (
     let rendered: string = ''
     for (let i = 0; i < strings.length; i++) {
         rendered += strings[i]
-        if (codeLines[i]) {
+        if (codeLines[i] || codeLines[i] === 0) {
             rendered += _renderCodeRecursive(codeLines[i])
         }
     }
@@ -42,7 +43,7 @@ const _renderCodeRecursive = (codeLines: CodeLines | Code | number): Code => {
     return codeLines.toString()
 }
 
-/** Generate an integer series from 0 to `count`. */
+/** Generate an integer series from 0 to `count` (non-inclusive). */
 export const countTo = (count: number) => {
     const results: Array<number> = []
     for (let i = 0; i < count; i++) {

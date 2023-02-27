@@ -51,7 +51,7 @@ type FrameNode = {
         >
     }
 }
-type FrameNodeIn = FrameNode & {
+export type FrameNodeIn = FrameNode & {
     commons?: {
         getArray?: Array<string>
         setArray?: { [arrayName: string]: Array<number> }

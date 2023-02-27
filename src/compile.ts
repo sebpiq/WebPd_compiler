@@ -36,6 +36,7 @@ export default (
 ): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
     const {
         audioSettings,
+        arrays,
         inletCallerSpecs,
         outletListenerSpecs,
         target,
@@ -59,6 +60,7 @@ export default (
         graphTraversal,
         nodeImplementations,
         audioSettings,
+        arrays,
         inletCallerSpecs,
         outletListenerSpecs,
         codeVariableNames,
@@ -75,6 +77,7 @@ export default (
 export const validateSettings = (
     settings: CompilerSettings
 ): CompilerSettings => {
+    const arrays = settings.arrays || {}
     const inletCallerSpecs = settings.inletCallerSpecs || {}
     const outletListenerSpecs = settings.outletListenerSpecs || {}
     const debug = settings.debug || false
@@ -83,6 +86,7 @@ export const validateSettings = (
     }
     return {
         ...settings,
+        arrays,
         outletListenerSpecs,
         inletCallerSpecs,
         debug,

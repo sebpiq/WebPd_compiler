@@ -20,6 +20,7 @@ import {
     compileOutletListeners,
     compileInletCallers,
 } from '../engine-common/compile-portlet-accessors'
+import embedArrays from '../engine-common/embed-arrays'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
@@ -37,6 +38,8 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     // prettier-ignore
     return renderCode`
         ${generateCoreCodeJs(audioSettings.bitDepth)}
+
+        ${embedArrays(compilation)}
 
         ${compileDeclare(compilation)}
 
@@ -79,6 +82,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             inletCallers: {
                 ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
                     renderCode`${nodeId}: {
+
                         ${inletIds.map(inletId => 
                             `"${inletId}": ${codeVariableNames.inletCallers[nodeId][inletId]},`)}
                     },`

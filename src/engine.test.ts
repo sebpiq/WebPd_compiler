@@ -372,7 +372,7 @@ describe('Engine', () => {
     })
 
     describe('commons', () => {
-        describe('engine configure', () => {
+        describe('wait engine configure', () => {
             it.each(TEST_PARAMETERS)(
                 'should trigger configure subscribers %s',
                 async ({ target, bitDepth, floatArrayType }) => {
@@ -509,6 +509,32 @@ describe('Engine', () => {
                     actual = engine.testReadArray3(1)
                     assert.strictEqual(round(actual), 77.7)
                     assert.doesNotThrow(() => engine.testIsFloatArray())
+                }
+            )
+        })
+
+        describe('embed arrays', () => {
+            it.each(TEST_PARAMETERS)(
+                'should embed arrays passed to the compiler %s',
+                async ({ target, bitDepth, floatArrayType }) => {
+                    const engine = await initializeEngineTest({
+                        target,
+                        bitDepth,
+                        compilation: { arrays: {
+                            'array1': new Float32Array([1, 2, 3, 4]),
+                            'array2': new Float32Array([11, 22, 33, 44, 55]),
+                            'array3': new Float32Array(0),
+                        }}
+                    })
+                    assert.deepStrictEqual(engine.commons.getArray(
+                        'array1',
+                    ), new floatArrayType([1, 2, 3, 4]))
+                    assert.deepStrictEqual(engine.commons.getArray(
+                        'array2',
+                    ), new floatArrayType([11, 22, 33, 44, 55]))
+                    assert.deepStrictEqual(engine.commons.getArray(
+                        'array3'
+                    ), new floatArrayType([]))
                 }
             )
         })

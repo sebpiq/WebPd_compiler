@@ -10,7 +10,7 @@
  */
 
 import assert from 'assert'
-import { renderCode } from './functional-helpers'
+import { countTo, renderCode } from './functional-helpers'
 
 describe('functional-helpers', () => {
     describe('renderCode', () => {
@@ -28,11 +28,23 @@ ${['blo', 456.789, ['blu', ['ble', 123]]]}`
             assert.strictEqual(code, 'bla\nblo\n456.789\nblu\nble\n123')
         })
 
+        it('should render number 0 correctly', () => {
+            const code = renderCode`bla ${0} ${[0]}`
+
+            assert.strictEqual(code, 'bla 0 0')
+        })
+
         it('should remove empty lines', () => {
             const code = renderCode`bla
 ${['', 'bli', ['', ['', 'bly']]]}`
 
             assert.strictEqual(code, 'bla\nbli\nbly')
+        })
+    })
+
+    describe('countTo', () => {
+        it('should generate a list to the count non-inclusive', () => {
+            assert.deepStrictEqual(countTo(3), [0, 1, 2])
         })
     })
 })

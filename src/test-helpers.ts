@@ -58,6 +58,7 @@ export const makeCompilation = (
         DUMMY: { loop: () => '' },
     }
     const graph = compilation.graph || {}
+    const arrays = compilation.arrays || {}
     const inletCallerSpecs = compilation.inletCallerSpecs || {}
     const outletListenerSpecs = compilation.outletListenerSpecs || {}
     const graphTraversal =
@@ -85,6 +86,7 @@ export const makeCompilation = (
         graphTraversal,
         nodeImplementations,
         audioSettings,
+        arrays,
         outletListenerSpecs,
         inletCallerSpecs,
         macros: getMacros(target),

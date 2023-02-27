@@ -165,6 +165,7 @@ export interface Compilation {
     readonly graphTraversal: DspGraph.GraphTraversal
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
+    readonly arrays: DspGraph.Arrays
     readonly outletListenerSpecs: PortletsIndex
     readonly inletCallerSpecs: PortletsIndex
     readonly codeVariableNames: CodeVariableNames
@@ -284,6 +285,7 @@ export interface AudioSettings {
 export interface CompilerSettings {
     audioSettings: AudioSettings
     target: CompilerTarget
+    arrays?: DspGraph.Arrays
     inletCallerSpecs?: PortletsIndex
     outletListenerSpecs?: PortletsIndex
     debug?: boolean
