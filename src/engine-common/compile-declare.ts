@@ -106,7 +106,7 @@ export default (compilation: Compilation): Code => {
 
                 // 3. Custom declarations for the node
                 nodeImplementation.declare({
-                    macros, globs, state, node, compilation
+                    macros, globs, state, snds, node, compilation
                 }),
             ]
         })}

@@ -91,6 +91,7 @@ describe('compileLoop', () => {
             normalizeCode(loop),
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
+                _commons_emitFrame(FRAME)
                 // [osc~] : frequency 440
                 // [+~] : value 110
                 // [dac~] : channelCount 2
@@ -134,6 +135,7 @@ describe('compileLoop', () => {
             normalizeCode(loop),
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
+                _commons_emitFrame(FRAME)
                 // [dac~] : channelCount 2
                 FRAME++
             }

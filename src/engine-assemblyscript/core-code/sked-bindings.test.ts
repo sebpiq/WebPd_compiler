@@ -6,10 +6,10 @@ import {
     TEST_PARAMETERS,
 } from './test-helpers'
 
-describe('buf-bindings', () => {
+describe('sked-bindings', () => {
     const SKED_ID_NULL = -1
 
-    describe('wait / trigger', () => {
+    describe('wait / emit', () => {
         const EXPORTED_FUNCTIONS = {
             sked_create: 0,
             sked_cancel: 0,
@@ -206,7 +206,171 @@ describe('buf-bindings', () => {
         )
     })
 
-    describe('subscribe / trigger', () => {
+    describe('wait future / emit', () => {
+        const EXPORTED_FUNCTIONS = {
+            sked_create: 0,
+            sked_cancel: 0,
+            testSkedWaitFuture: 0,
+            testSkedResolveWaitFuture: true,
+            testCallbackResults: new Float32Array(0),
+        }
+
+        const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+            getAscCode('core.asc', bitDepth) +
+            getAscCode('sked.asc', bitDepth) +
+            `
+                const DUMMY_EVENT_DATA: Map<string, Float> = new Map()
+                const cbCalls: FloatArray = createFloatArray(20)
+                let cbCallsCounter: Int = 0
+
+                function callback (event: string): void {
+                    cbCalls[cbCallsCounter] = DUMMY_EVENT_DATA.get(event)
+                    cbCallsCounter++
+                }
+
+                function testSkedWaitFuture (
+                    skeduler: Skeduler, 
+                    event: string
+                ): SkedId {
+                    return sked_wait_future(skeduler, event, callback)
+                }
+
+                function testSkedResolveWaitFuture (
+                    skeduler: Skeduler,
+                    event: string, 
+                    datum: Float
+                ): boolean {
+                    DUMMY_EVENT_DATA.set(event, datum)
+                    sked_emit(skeduler, event)
+                    return (skeduler.requests.has(event) === false || skeduler.requests.get(event).length === 0)
+                }
+
+                function testCallbackResults (): FloatArray {
+                    return cbCalls.subarray(0, cbCallsCounter)
+                }
+
+                export {
+                    sked_create,
+                    sked_cancel,
+
+                    // TEST FUNCTIONS
+                    testSkedWaitFuture,
+                    testSkedResolveWaitFuture,
+                    testCallbackResults,
+                }
+            `
+
+        it.each(TEST_PARAMETERS)(
+            'should call waits callbacks when resolving %s',
+            async ({ bitDepth, floatArrayType }) => {
+                const code = getBaseTestCode(bitDepth)
+                const bindings = await generateTestBindings(
+                    code,
+                    bitDepth,
+                    EXPORTED_FUNCTIONS
+                )
+                const skeduler = bindings.sked_create(false)
+
+                // Schedule a few waits
+                assert.strictEqual(
+                    bindings.testSkedWaitFuture(skeduler, 'some_event'),
+                    1
+                )
+                assert.strictEqual(
+                    bindings.testSkedWaitFuture(skeduler, 'some_event'),
+                    2
+                )
+                assert.strictEqual(
+                    bindings.testSkedWaitFuture(skeduler, 'some_other_event'),
+                    3
+                )
+                assert.deepStrictEqual(
+                    bindings.testCallbackResults(),
+                    new floatArrayType([])
+                )
+
+                // Resolve the waits
+                assert.ok(
+                    bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 5678)
+                )
+                assert.deepStrictEqual(
+                    bindings.testCallbackResults(),
+                    new floatArrayType([5678, 5678])
+                )
+
+                assert.ok(
+                    bindings.testSkedResolveWaitFuture(
+                        skeduler,
+                        'some_other_event',
+                        1234
+                    )
+                )
+                assert.deepStrictEqual(
+                    bindings.testCallbackResults(),
+                    new floatArrayType([5678, 5678, 1234])
+                )
+            }
+        )
+
+        it.each(TEST_PARAMETERS)(
+            'should not call callbacks again when resolving several times %s',
+            async ({ bitDepth, floatArrayType }) => {
+                const code = getBaseTestCode(bitDepth)
+                const bindings = await generateTestBindings(
+                    code,
+                    bitDepth,
+                    EXPORTED_FUNCTIONS
+                )
+                const skeduler = bindings.sked_create(false)
+
+                // Schedule and resolve a few events
+                assert.strictEqual(
+                    bindings.testSkedWaitFuture(skeduler, 'some_event'),
+                    1
+                )
+                assert.ok(
+                    bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 666)
+                )
+
+                // Check the calls recorded and resolve again
+                assert.deepStrictEqual(
+                    bindings.testCallbackResults(),
+                    new floatArrayType([666])
+                )
+                assert.ok(
+                    bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 1234)
+                )
+                assert.deepStrictEqual(
+                    bindings.testCallbackResults(),
+                    new floatArrayType([666])
+                )
+            }
+        )
+
+        it.each(TEST_PARAMETERS)(
+            'should cancel wait %s',
+            async ({ bitDepth, floatArrayType }) => {
+                const code = getBaseTestCode(bitDepth)
+                const bindings = await generateTestBindings(
+                    code,
+                    bitDepth,
+                    EXPORTED_FUNCTIONS
+                )
+                const skeduler = bindings.sked_create(false)
+
+                const requestId = bindings.testSkedWaitFuture(skeduler, 'some_event')
+                bindings.sked_cancel(skeduler, requestId)
+                bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 666)
+
+                assert.deepStrictEqual(
+                    bindings.testCallbackResults(),
+                    new floatArrayType([])
+                )
+            }
+        )
+    })
+
+    describe('subscribe / emit', () => {
         const EXPORTED_FUNCTIONS = {
             sked_create: 0,
             sked_cancel: 0,
@@ -260,7 +424,7 @@ describe('buf-bindings', () => {
             `
 
         it.each(TEST_PARAMETERS)(
-            'should trigger existing listeners %s',
+            'should emit existing listeners %s',
             async ({ bitDepth, floatArrayType }) => {
                 const code = getBaseTestCode(bitDepth)
                 const bindings = await generateTestBindings(
@@ -320,7 +484,7 @@ describe('buf-bindings', () => {
                 )
                 const skeduler = bindings.sked_create(false)
 
-                // Register a couple of listeners and trigger
+                // Register a couple of listeners and emit
                 const requestId: number = bindings.testSkedListen(
                     skeduler,
                     'some_event'
@@ -332,7 +496,7 @@ describe('buf-bindings', () => {
                     new floatArrayType([1234, 1234])
                 )
 
-                // Cancel a listener and trigger again
+                // Cancel a listener and emit again
                 bindings.sked_cancel(skeduler, requestId)
                 bindings.testSkedTriggerListeners(skeduler, 'some_event', 5678)
                 assert.deepStrictEqual(
@@ -341,5 +505,64 @@ describe('buf-bindings', () => {
                 )
             }
         )
+    })
+
+    describe('cancel', () => {
+        const EXPORTED_FUNCTIONS = {
+            sked_create: 0,
+            sked_cancel: 0,
+            testSkedListen: 0,
+        }
+
+        const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
+            getAscCode('core.asc', bitDepth) +
+            getAscCode('sked.asc', bitDepth) +
+            `
+                const DUMMY_EVENT_DATA: Map<string, Float> = new Map()
+                const cbCalls: FloatArray = createFloatArray(20)
+                let cbCallsCounter: Int = 0
+
+                function callback (event: string): void {
+                    cbCalls[cbCallsCounter] = DUMMY_EVENT_DATA.get(event)
+                    cbCallsCounter++
+                }
+
+                function testSkedListen (
+                    skeduler: Skeduler,
+                    event: string,
+                ): SkedId {
+                    return sked_subscribe(skeduler, event, callback)
+                }
+
+                export {
+                    sked_create,
+                    sked_cancel,
+
+                    // TEST FUNCTIONS
+                    testSkedListen,
+                }
+            `
+
+
+        it.each(TEST_PARAMETERS)(
+            'should not throw when cancelling an listener that is already cancelled %s',
+            async ({ bitDepth }) => {
+                const code = getBaseTestCode(bitDepth)
+                const bindings = await generateTestBindings(
+                    code,
+                    bitDepth,
+                    EXPORTED_FUNCTIONS
+                )
+                const skeduler = bindings.sked_create(false)
+                const requestId: number = bindings.testSkedListen(
+                    skeduler,
+                    'some_event'
+                )
+                bindings.sked_cancel(skeduler, requestId)
+                bindings.sked_cancel(skeduler, requestId)
+                bindings.sked_cancel(skeduler, requestId)
+            }
+        )
+
     })
 })

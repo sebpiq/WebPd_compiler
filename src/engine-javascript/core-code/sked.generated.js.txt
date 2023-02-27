@@ -13,6 +13,7 @@
  * Can be used as a "no id", or "null" value.
  */
 const SKED_ID_NULL = -1;
+const SKED_ID_COUNTER_INIT = 1;
 const _SKED_WAIT_IN_PROGRESS = 0;
 const _SKED_WAIT_OVER = 1;
 const _SKED_MODE_WAIT = 0;
@@ -21,19 +22,24 @@ const _SKED_MODE_SUBSCRIBE = 1;
 class SkedRequest {
 }
 class Skeduler {
-    constructor() {
-        this.eventLog = new Set();
-        this.requests = new Map();
-        this.callbacks = new Map();
-        this.idCounter = 1;
-        this.isLoggingEvents = false;
-    }
 }
+/** Creates a new Skeduler. */
 function sked_create(isLoggingEvents) {
-    const skeduler = new Skeduler();
-    skeduler.isLoggingEvents = isLoggingEvents;
-    return skeduler;
+    return {
+        eventLog: new Set(),
+        requests: new Map(),
+        callbacks: new Map(),
+        idCounter: SKED_ID_COUNTER_INIT,
+        isLoggingEvents,
+    };
 }
+/**
+ * Asks the skeduler to wait for an event to occur and trigger a callback.
+ * If the event has already occurred, the callback is triggered instantly
+ * when calling the function.
+ * Once triggered, the callback is forgotten.
+ * @returns an id allowing to cancel the callback with {@link sked_cancel}
+ */
 function sked_wait(skeduler, event, callback) {
     if (skeduler.isLoggingEvents === false) {
         throw new Error("Please activate skeduler's isLoggingEvents");
@@ -46,9 +52,23 @@ function sked_wait(skeduler, event, callback) {
         return _sked_createRequest(skeduler, event, callback, _SKED_MODE_WAIT);
     }
 }
+/**
+ * Asks the skeduler to wait for an event to occur and trigger a callback.
+ * If the event has already occurred, the callback is NOT triggered.
+ * Once triggered, the callback is forgotten.
+ * @returns an id allowing to cancel the callback with {@link sked_cancel}
+ */
+function sked_wait_future(skeduler, event, callback) {
+    return _sked_createRequest(skeduler, event, callback, _SKED_MODE_WAIT);
+}
+/**
+ * Asks the skeduler to trigger a callback everytime an event occurs
+ * @returns an id allowing to cancel the callback with {@link sked_cancel}
+ */
 function sked_subscribe(skeduler, event, callback) {
     return _sked_createRequest(skeduler, event, callback, _SKED_MODE_SUBSCRIBE);
 }
+/** Notifies the skeduler that an event has just occurred. */
 function sked_emit(skeduler, event) {
     if (skeduler.isLoggingEvents === true) {
         skeduler.eventLog.add(event);
@@ -71,9 +91,11 @@ function sked_emit(skeduler, event) {
         skeduler.requests.set(event, requestsStaying);
     }
 }
+/** Cancels a callback */
 function sked_cancel(skeduler, id) {
     skeduler.callbacks.delete(id);
 }
+// =========================== PRIVATE
 function _sked_createRequest(skeduler, event, callback, mode) {
     const id = _sked_nextId(skeduler);
     const request = { id, mode };

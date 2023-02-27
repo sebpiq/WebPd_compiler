@@ -30,6 +30,7 @@ export default (compilation: Compilation) => {
     // prettier-ignore
     return renderCode`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
+            _commons_emitFrame(${globs.frame})
             ${graphTraversalNodes.map((node) => {
                 const { outs, ins, snds, state } = codeVariableNames.nodes[node.id]
                 const nodeImplementation = getNodeImplementation(

@@ -241,6 +241,7 @@ export interface NodeImplementation<
         macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
+        snds: NodeVariableNames['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => Code

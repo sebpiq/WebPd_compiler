@@ -11,6 +11,7 @@
 const _commons_ARRAYS = new Map();
 const _commons_ARRAYS_SKEDULER = sked_create(false);
 const _commons_ENGINE_LOGGED_SKEDULER = sked_create(true);
+const _commons_FRAME_SKEDULER = sked_create(false);
 // =========================== COMMONS API
 /**
  * @param callback Called when the engine is configured, or immediately if the engine
@@ -18,6 +19,19 @@ const _commons_ENGINE_LOGGED_SKEDULER = sked_create(true);
  */
 function commons_waitEngineConfigure(callback) {
     sked_wait(_commons_ENGINE_LOGGED_SKEDULER, 'configure', callback);
+}
+/**
+ * Schedules a callback to be called at the given frame.
+ * If the frame already occurred, or is the current frame, the callback won't be executed.
+ */
+function commons_waitFrame(frame, callback) {
+    return sked_wait_future(_commons_FRAME_SKEDULER, frame.toString(), callback);
+}
+/**
+ * Cancels waiting for a frame to occur.
+ */
+function commons_cancelWaitFrame(id) {
+    sked_cancel(_commons_FRAME_SKEDULER, id);
 }
 /**
  * @param callback Called immediately if the array exists, and subsequently, everytime
@@ -54,4 +68,7 @@ function commons_setArray(arrayName, array) {
 // =========================== PRIVATE API
 function _commons_emitEngineConfigure() {
     sked_emit(_commons_ENGINE_LOGGED_SKEDULER, 'configure');
+}
+function _commons_emitFrame(frame) {
+    sked_emit(_commons_FRAME_SKEDULER, frame.toString());
 }
