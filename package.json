@@ -2,7 +2,7 @@
     "name": "@webpd/compiler-js",
     "version": "0.1.0",
     "description": "TODO",
-    "main": "./dist/WebPd_compiler-js/index.js",
+    "main": "./dist/index.js",
     "types": "./dist/types/index.d.ts",
     "type": "module",
     "scripts": {
@@ -40,8 +40,5 @@
         "tslib": "^2.4.1",
         "typedoc": "^0.22.17",
         "typescript": "^4.7.2"
-    },
-    "dependencies": {
-        "@webpd/dsp-graph": "file:../WebPd_dsp-graph"
     }
 }

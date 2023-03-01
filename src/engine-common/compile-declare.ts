@@ -9,8 +9,8 @@
  *
  */
 
-import { DspGraph, getters } from '@webpd/dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
+import { getters, DspGraph } from '../dsp-graph'
 import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
 

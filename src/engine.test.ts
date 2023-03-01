@@ -1,4 +1,3 @@
-import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import { writeFile } from 'fs/promises'
 import ts from 'typescript'
@@ -18,6 +17,7 @@ import {
     SoundFileInfo,
     FloatArray,
 } from './types'
+import { makeGraph } from './dsp-graph/test-helpers'
 
 const TEST_PARAMETERS = [
     {

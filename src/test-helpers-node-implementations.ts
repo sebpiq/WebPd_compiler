@@ -10,7 +10,6 @@
  */
 
 import assert from 'assert'
-import { DspGraph } from '@webpd/dsp-graph'
 import { executeCompilation, getMacros } from './compile'
 import { createEngine, makeCompilation, round } from './test-helpers'
 import {
@@ -32,6 +31,7 @@ import {
     generateTestBindings as generateTestAscBindings,
 } from './engine-assemblyscript/core-code/test-helpers'
 import { getFloatArrayType } from './compile-helpers'
+import { DspGraph } from './dsp-graph'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 

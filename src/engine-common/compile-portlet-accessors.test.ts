@@ -1,5 +1,5 @@
-import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
+import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import { NodeImplementations } from '../types'
 import { compileInletCallers } from './compile-portlet-accessors'

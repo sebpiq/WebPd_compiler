@@ -8,7 +8,6 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import assert from 'assert'
 import {
     assertValidNamePart,
@@ -18,6 +17,7 @@ import {
     generate,
 } from './code-variable-names'
 import { CodeVariableNames, NodeImplementations } from '../types'
+import { makeGraph } from '../dsp-graph/test-helpers'
 
 describe('code-variable-names', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {

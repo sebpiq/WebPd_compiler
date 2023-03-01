@@ -9,8 +9,8 @@
  *
  */
 
-import { DspGraph } from '@webpd/dsp-graph'
-import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
+import { DspGraph } from './dsp-graph/types'
+import { makeGraph } from './dsp-graph/test-helpers'
 import assert from 'assert'
 import {
     getNodeImplementation,

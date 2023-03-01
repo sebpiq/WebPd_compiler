@@ -1,6 +1,10 @@
 export { default as default, executeCompilation } from './src/compile'
-export { Code, CompilerSettings } from './src/types'
+export { Code, CompilerSettings, NodeImplementations } from './src/types'
 export { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './src/constants'
-export { Engine } from './src/types'
-export { createEngine } from './src/engine-assemblyscript/AssemblyScriptWasmEngine'
+export { Engine, AudioSettings, FloatArray } from './src/types'
+export { createEngine as createAssemblyScriptWasmEngine } from './src/engine-assemblyscript/AssemblyScriptWasmEngine'
+export { getFloatArrayType } from './src/compile-helpers'
 export * as functional from './src/functional-helpers'
+import { getters, traversal, mutation, helpers } from './src/dsp-graph'
+export const dspGraph = { getters, traversal, mutation, helpers }
+export { DspGraph } from './src/dsp-graph'

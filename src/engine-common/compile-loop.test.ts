@@ -10,10 +10,10 @@
  */
 
 import assert from 'assert'
-import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
 import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileLoop from './compile-loop'
+import { makeGraph } from '../dsp-graph/test-helpers'
 
 describe('compileLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {

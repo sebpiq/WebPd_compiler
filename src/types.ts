@@ -9,8 +9,8 @@
  *
  */
 
-import { DspGraph } from '@webpd/dsp-graph'
 import { FS_OPERATION_FAILURE, FS_OPERATION_SUCCESS } from './constants'
+import { DspGraph } from './dsp-graph'
 
 export type fs_OperationStatus =
     | typeof FS_OPERATION_SUCCESS

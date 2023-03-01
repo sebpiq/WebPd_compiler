@@ -8,13 +8,11 @@
  * See https://github.com/sebpiq/WebPd_pd-parser for documentation
  *
  */
-
-import { DspGraph, getters, traversal } from '@webpd/dsp-graph'
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
+import { DspGraph, getters, traversal } from './dsp-graph'
 import {
     AudioSettings,
     Code,
-    CodeVariableNames,
     Compilation,
     EngineMetadata,
     NodeImplementation,

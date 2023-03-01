@@ -10,10 +10,10 @@
  */
 
 import assert from 'assert'
-import { makeGraph } from '@webpd/dsp-graph/src/test-helpers'
-import { Compilation, NodeImplementations } from '../types'
+import { NodeImplementations } from '../types'
 import { makeCompilation, normalizeCode } from '../test-helpers'
 import compileDeclare from './compile-declare'
+import { makeGraph } from '../dsp-graph/test-helpers'
 
 describe('compileDeclare', () => {
     const GLOBAL_VARIABLES_CODE = `

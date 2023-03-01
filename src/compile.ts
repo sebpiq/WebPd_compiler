@@ -23,11 +23,12 @@ import compileToAssemblyscript from './engine-assemblyscript/compile-to-assembly
 import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
 import * as variableNames from './engine-common/code-variable-names'
-import { DspGraph, traversal } from '@webpd/dsp-graph'
 import {
     graphTraversalForCompile,
     preCompileSignalAndMessageFlow,
 } from './compile-helpers'
+import { DspGraph } from './dsp-graph/types'
+import { traversal } from './dsp-graph'
 
 export default (
     graph: DspGraph.Graph,

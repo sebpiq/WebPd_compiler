@@ -9,7 +9,7 @@
  *
  */
 
-import { DspGraph } from '@webpd/dsp-graph'
+import { DspGraph } from '../dsp-graph'
 import { renderCode } from '../functional-helpers'
 import { Code, CodeVariableName, Compilation } from '../types'
 

@@ -9,8 +9,8 @@
  *
  */
 
-import { DspGraph } from '@webpd/dsp-graph'
-import { nodeDefaults } from '@webpd/dsp-graph/src/test-helpers'
+import { DspGraph } from './dsp-graph'
+import { nodeDefaults } from './dsp-graph/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
 import { CompilerTarget, NodeImplementation } from './types'
 
