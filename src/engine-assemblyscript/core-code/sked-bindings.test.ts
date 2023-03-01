@@ -291,7 +291,11 @@ describe('sked-bindings', () => {
 
                 // Resolve the waits
                 assert.ok(
-                    bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 5678)
+                    bindings.testSkedResolveWaitFuture(
+                        skeduler,
+                        'some_event',
+                        5678
+                    )
                 )
                 assert.deepStrictEqual(
                     bindings.testCallbackResults(),
@@ -329,7 +333,11 @@ describe('sked-bindings', () => {
                     1
                 )
                 assert.ok(
-                    bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 666)
+                    bindings.testSkedResolveWaitFuture(
+                        skeduler,
+                        'some_event',
+                        666
+                    )
                 )
 
                 // Check the calls recorded and resolve again
@@ -338,7 +346,11 @@ describe('sked-bindings', () => {
                     new floatArrayType([666])
                 )
                 assert.ok(
-                    bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 1234)
+                    bindings.testSkedResolveWaitFuture(
+                        skeduler,
+                        'some_event',
+                        1234
+                    )
                 )
                 assert.deepStrictEqual(
                     bindings.testCallbackResults(),
@@ -358,7 +370,10 @@ describe('sked-bindings', () => {
                 )
                 const skeduler = bindings.sked_create(false)
 
-                const requestId = bindings.testSkedWaitFuture(skeduler, 'some_event')
+                const requestId = bindings.testSkedWaitFuture(
+                    skeduler,
+                    'some_event'
+                )
                 bindings.sked_cancel(skeduler, requestId)
                 bindings.testSkedResolveWaitFuture(skeduler, 'some_event', 666)
 
@@ -543,7 +558,6 @@ describe('sked-bindings', () => {
                 }
             `
 
-
         it.each(TEST_PARAMETERS)(
             'should not throw when cancelling an listener that is already cancelled %s',
             async ({ bitDepth }) => {
@@ -563,6 +577,5 @@ describe('sked-bindings', () => {
                 bindings.sked_cancel(skeduler, requestId)
             }
         )
-
     })
 })

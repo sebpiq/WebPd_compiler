@@ -520,21 +520,26 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        compilation: { arrays: {
-                            'array1': new Float32Array([1, 2, 3, 4]),
-                            'array2': new Float32Array([11, 22, 33, 44, 55]),
-                            'array3': new Float32Array(0),
-                        }}
+                        compilation: {
+                            arrays: {
+                                array1: new Float32Array([1, 2, 3, 4]),
+                                array2: new Float32Array([11, 22, 33, 44, 55]),
+                                array3: new Float32Array(0),
+                            },
+                        },
                     })
-                    assert.deepStrictEqual(engine.commons.getArray(
-                        'array1',
-                    ), new floatArrayType([1, 2, 3, 4]))
-                    assert.deepStrictEqual(engine.commons.getArray(
-                        'array2',
-                    ), new floatArrayType([11, 22, 33, 44, 55]))
-                    assert.deepStrictEqual(engine.commons.getArray(
-                        'array3'
-                    ), new floatArrayType([]))
+                    assert.deepStrictEqual(
+                        engine.commons.getArray('array1'),
+                        new floatArrayType([1, 2, 3, 4])
+                    )
+                    assert.deepStrictEqual(
+                        engine.commons.getArray('array2'),
+                        new floatArrayType([11, 22, 33, 44, 55])
+                    )
+                    assert.deepStrictEqual(
+                        engine.commons.getArray('array3'),
+                        new floatArrayType([])
+                    )
                 }
             )
         })
