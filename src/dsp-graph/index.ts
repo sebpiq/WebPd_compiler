@@ -1,4 +1,4 @@
-export { DspGraph } from './types'
+export type { DspGraph } from './types'
 export * as traversal from './graph-traversal'
 export * as getters from './graph-getters'
 export * as mutation from './graph-mutations'

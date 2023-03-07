@@ -14,7 +14,7 @@ import ascMacros from './engine-assemblyscript/macros'
 import {
     CodeMacros,
     Compilation,
-    CompilerSettings,
+    CompilationSettings,
     NodeImplementations,
     CompilerTarget,
 } from './types'
@@ -30,11 +30,22 @@ import {
 import { DspGraph } from './dsp-graph/types'
 import { traversal } from './dsp-graph'
 
+interface CompilationSuccess {
+    status: 0
+    code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
+}
+
+interface CompilationFailure {
+    status: 1
+}
+
+type CompilationResult = CompilationSuccess | CompilationFailure
+
 export default (
     graph: DspGraph.Graph,
     nodeImplementations: NodeImplementations,
-    compilerSettings: CompilerSettings
-): JavaScriptEngineCode | AssemblyScriptWasmEngineCode => {
+    settings: CompilationSettings
+): CompilationResult => {
     const {
         audioSettings,
         arrays,
@@ -42,7 +53,7 @@ export default (
         outletListenerSpecs,
         target,
         debug,
-    } = validateSettings(compilerSettings)
+    } = validateSettings(settings)
     const macros = getMacros(target)
     const codeVariableNames = variableNames.generate(
         nodeImplementations,
@@ -55,29 +66,32 @@ export default (
     const graphTraversal = graphTraversalForCompile(graph, inletCallerSpecs)
     traversal.trimGraph(graph, graphTraversal)
 
-    return executeCompilation({
-        target,
-        graph,
-        graphTraversal,
-        nodeImplementations,
-        audioSettings,
-        arrays,
-        inletCallerSpecs,
-        outletListenerSpecs,
-        codeVariableNames,
-        macros,
-        debug,
-        precompiledPortlets: {
-            precompiledInlets: {},
-            precompiledOutlets: {},
-        },
-    })
+    return {
+        status: 0,
+        code: executeCompilation({
+            target,
+            graph,
+            graphTraversal,
+            nodeImplementations,
+            audioSettings,
+            arrays,
+            inletCallerSpecs,
+            outletListenerSpecs,
+            codeVariableNames,
+            macros,
+            debug,
+            precompiledPortlets: {
+                precompiledInlets: {},
+                precompiledOutlets: {},
+            },
+        }),
+    }
 }
 
 /** Asserts settings are valid (or throws error) and sets default values. */
 export const validateSettings = (
-    settings: CompilerSettings
-): CompilerSettings => {
+    settings: CompilationSettings
+): CompilationSettings => {
     const arrays = settings.arrays || {}
     const inletCallerSpecs = settings.inletCallerSpecs || {}
     const outletListenerSpecs = settings.outletListenerSpecs || {}

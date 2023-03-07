@@ -15,7 +15,6 @@ import { mapArray, mapObject } from '../functional-helpers'
 import {
     NodeImplementations,
     CodeVariableNames,
-    AudioSettings,
     PortletsIndex,
 } from '../types'
 

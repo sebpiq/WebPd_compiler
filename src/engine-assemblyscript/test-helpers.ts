@@ -9,16 +9,10 @@
  *
  */
 
-import { readFileSync } from 'fs'
 import asc from 'assemblyscript/asc'
-import { dirname, resolve } from 'path'
-import { fileURLToPath } from 'url'
 import { AudioSettings, Code } from '../types'
 import { createEngine } from '../test-helpers'
 import { AssemblyScriptWasmEngine } from './AssemblyScriptWasmEngine'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 export const compileWasmModule = async (
     ascCode: Code,

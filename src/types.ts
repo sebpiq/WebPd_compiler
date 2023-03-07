@@ -283,7 +283,7 @@ export interface AudioSettings {
     bitDepth: 32 | 64
 }
 
-export interface CompilerSettings {
+export interface CompilationSettings {
     audioSettings: AudioSettings
     target: CompilerTarget
     arrays?: DspGraph.Arrays

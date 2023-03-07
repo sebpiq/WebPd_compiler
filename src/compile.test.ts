@@ -10,10 +10,10 @@
  */
 import assert from 'assert'
 import compile, { validateSettings } from './compile'
-import { CompilerSettings, NodeImplementations } from './types'
+import { CompilationSettings } from './types'
 
 describe('compile', () => {
-    const COMPILER_SETTINGS_AS: CompilerSettings = {
+    const COMPILER_SETTINGS_AS: CompilationSettings = {
         audioSettings: {
             channelCount: { in: 2, out: 2 },
             bitDepth: 32,
@@ -21,7 +21,7 @@ describe('compile', () => {
         target: 'assemblyscript',
     }
 
-    const COMPILER_SETTINGS_JS: CompilerSettings = {
+    const COMPILER_SETTINGS_JS: CompilationSettings = {
         audioSettings: {
             channelCount: { in: 2, out: 2 },
             bitDepth: 32,
@@ -30,13 +30,15 @@ describe('compile', () => {
     }
 
     it('should compile assemblyscript without error', () => {
-        const code = compile({}, {}, COMPILER_SETTINGS_AS)
-        assert.strictEqual(typeof code, 'string')
+        const compileResult = compile({}, {}, COMPILER_SETTINGS_AS)
+        assert.ok(compileResult.status === 0)
+        assert.strictEqual(typeof compileResult.code, 'string')
     })
 
     it('should compile javascript without error', () => {
-        const code = compile({}, {}, COMPILER_SETTINGS_JS)
-        assert.strictEqual(typeof code, 'string')
+        const compileResult = compile({}, {}, COMPILER_SETTINGS_JS)
+        assert.ok(compileResult.status === 0)
+        assert.strictEqual(typeof compileResult.code, 'string')
     })
 
     describe('validateSettings', () => {
