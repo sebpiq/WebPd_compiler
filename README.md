@@ -1,11 +1,5 @@
-## assemblyscript
+# WebPd compiler
 
-Compile a module manually
+More docs coming here soon ... 
 
-> > > npx asc loop.ts --bindings esm --exportRuntime -o loop.js
-
-## TODO
-
-Fix the audioworklet polyfill (right now it always polyfills)
-
--   run standard tests
+Meanwhile you can go back there : https://github.com/sebpiq/WebPd

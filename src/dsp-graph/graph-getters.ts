@@ -1,12 +1,21 @@
 /*
- * Copyright (c) 2012-2020 Sébastien Piquemal <sebpiq@gmail.com>
+ * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * BSD Simplified License.
- * For information on usage and redistribution, and for a DISCLAIMER OF ALL
- * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ * This file is part of WebPd 
+ * (see https://github.com/sebpiq/WebPd).
  *
- * See https://github.com/sebpiq/WebPd_pd-parser for documentation
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 import { DspGraph } from './types'
@@ -30,7 +39,7 @@ export const getInlet = (
     if (inlet) {
         return inlet
     }
-    throw new Error(`Inlet "${inletId}" not found in node ${node.id}`)
+    throw new Error(`Inlet "${inletId}" not found in node ${node.id} of type ${node.type}`)
 }
 
 export const getOutlet = (
@@ -41,7 +50,7 @@ export const getOutlet = (
     if (outlet) {
         return outlet
     }
-    throw new Error(`Outlet "${outletId}" not found in node ${node.id}`)
+    throw new Error(`Outlet "${outletId}" not found in node ${node.id} of type ${node.type}`)
 }
 
 /** Returns the list of sinks for the outlet or an empty list. */

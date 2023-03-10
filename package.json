@@ -1,9 +1,10 @@
 {
-    "name": "@webpd/compiler-js",
+    "name": "@webpd/compiler",
     "version": "0.1.0",
-    "description": "TODO",
+    "description": "WebPd compiler package",
     "main": "./dist/index.js",
     "types": "./dist/types/index.d.ts",
+    "license": "LGPL-3.0",
     "type": "module",
     "scripts": {
         "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",
@@ -16,14 +17,13 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/sebpiq/WebPd_compiler-js.git"
+        "url": "git+https://github.com/sebpiq/WebPd_compiler.git"
     },
     "author": "Sébastien Piquemal",
-    "license": "BSD-2-Clause",
     "bugs": {
-        "url": "https://github.com/sebpiq/WebPd_compiler-js/issues"
+        "url": "https://github.com/sebpiq/WebPd_compiler/issues"
     },
-    "homepage": "https://github.com/sebpiq/WebPd_compiler-js#readme",
+    "homepage": "https://github.com/sebpiq/WebPd_compiler#readme",
     "devDependencies": {
         "@rollup/plugin-commonjs": "^23.0.4",
         "@rollup/plugin-node-resolve": "^15.0.1",
