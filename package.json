@@ -4,22 +4,21 @@
     "description": "WebPd compiler package",
     "main": "./dist/index.js",
     "types": "./dist/types/index.d.ts",
-    "license": "LGPL-3.0",
     "type": "module",
+    "license": "LGPL-3.0",
+    "author": "Sébastien Piquemal",
     "scripts": {
         "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",
-        "rollup": "npx rollup --config rollup.mjs",
-        "rollup:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
-        "transpile": "node --experimental-specifier-resolution=node --loader ts-node/esm --no-warnings ./transpile-javascript.ts",
+        "build:dist": "npx rollup --config rollup.mjs",
+        "build:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
+        "build:js-engine": "node --experimental-specifier-resolution=node --loader ts-node/esm --no-warnings ./transpile-javascript.ts",
         "prettier": "npm explore @webpd/dev -- npm run prettier $(pwd)/src",
-        "eslint": "npm explore @webpd/dev -- npm run eslint $(pwd)/src",
-        "all": "npm run test-bail && npm run prettier && npm run eslint"
+        "eslint": "npm explore @webpd/dev -- npm run eslint $(pwd)/src"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/sebpiq/WebPd_compiler.git"
     },
-    "author": "Sébastien Piquemal",
     "bugs": {
         "url": "https://github.com/sebpiq/WebPd_compiler/issues"
     },
