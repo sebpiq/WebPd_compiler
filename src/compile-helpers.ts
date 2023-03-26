@@ -235,18 +235,19 @@ export const graphTraversalForCompile = (
     const nodesPushingMessages = Object.values(graph).filter(
         (node) => !!node.isPushingMessages
     )
+    Object.keys(inletCallerSpecs).forEach((nodeId) => {
+        if (nodesPushingMessages.find(node => node.id === nodeId)) {
+            return
+        }
+        nodesPushingMessages.push(getters.getNode(graph, nodeId))
+    })
+
     const graphTraversalSignal = traversal.messageNodes(
         graph,
         nodesPushingMessages
     )
     const combined = graphTraversalSignal
     traversal.signalNodes(graph, nodesPullingSignal).forEach((nodeId) => {
-        if (combined.indexOf(nodeId) === -1) {
-            combined.push(nodeId)
-        }
-    })
-
-    Object.keys(inletCallerSpecs).forEach((nodeId) => {
         if (combined.indexOf(nodeId) === -1) {
             combined.push(nodeId)
         }

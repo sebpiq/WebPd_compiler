@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { mapArray } from '../functional-helpers'
 import { getInlet, getNode, getOutlet } from './graph-getters'
 import { DspGraph } from './types'
 
@@ -159,19 +160,14 @@ export const listConnectionsOut = (
 export const trimGraph = (
     graph: DspGraph.Graph,
     graphTraversal: DspGraph.GraphTraversal
-) => {
-    Object.entries(graph).forEach(([nodeId, node]) => {
-        if (!graphTraversal.includes(nodeId)) {
-            delete graph[nodeId]
-        } else {
-            graph[nodeId] = {
-                ...node,
-                sources: removeDeadSources(node.sources, graphTraversal),
-                sinks: removeDeadSinks(node.sinks, graphTraversal),
-            }
-        }
-    })
-}
+): DspGraph.Graph => mapArray(
+        Object.values(graph).filter((node) => graphTraversal.includes(node.id)), 
+        (node) => [node.id, {
+            ...node,
+            sources: removeDeadSources(node.sources, graphTraversal),
+            sinks: removeDeadSinks(node.sinks, graphTraversal),
+        }]
+    )
 
 /**
  * When `node` has a sink node that is not connected to an end sink, that sink node won't be included

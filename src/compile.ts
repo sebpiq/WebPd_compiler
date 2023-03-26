@@ -73,13 +73,13 @@ export default (
     variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
 
     const graphTraversal = graphTraversalForCompile(graph, inletCallerSpecs)
-    traversal.trimGraph(graph, graphTraversal)
+    const trimmedGraph = traversal.trimGraph(graph, graphTraversal)
 
     return {
         status: 0,
         code: executeCompilation({
             target,
-            graph,
+            graph: trimmedGraph,
             graphTraversal,
             nodeImplementations,
             audioSettings,

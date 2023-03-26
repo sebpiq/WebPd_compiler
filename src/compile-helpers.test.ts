@@ -413,9 +413,20 @@ describe('compile-helpers', () => {
             ])
         })
 
-        it('should add nodes that have an inlet caller declared', () => {
+        it('should add nodes that have an inlet caller declared, as well as their subtrees', () => {
             const graph = makeGraph({
                 n1: {
+                    inlets: {
+                        '0': { type: 'message', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'message', id: '0' },
+                    },
+                    sinks: {
+                        '0': [['n2', '0']]
+                    }
+                },
+                n2: {
                     inlets: {
                         '0': { type: 'message', id: '0' },
                     },
@@ -424,7 +435,7 @@ describe('compile-helpers', () => {
             const traversal = graphTraversalForCompile(graph, {
                 n1: ['0'],
             })
-            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, ['n1'])
+            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, ['n1', 'n2'])
         })
     })
 })

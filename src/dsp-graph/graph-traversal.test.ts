@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -488,9 +488,9 @@ describe('graph-traversal', () => {
                 node3: {},
             })
 
-            trimGraph(graph, ['node1', 'node3'])
+            const trimmedGraph = trimGraph(graph, ['node1', 'node3'])
             assert.deepStrictEqual(
-                Object.keys(graph).sort(),
+                Object.keys(trimmedGraph).sort(),
                 ['node1', 'node3'].sort()
             )
         })
@@ -509,8 +509,8 @@ describe('graph-traversal', () => {
                 node3: {},
             })
 
-            trimGraph(graph, ['node1', 'node2'])
-            assert.deepStrictEqual(graph.node1!.sinks, {
+            const trimmedGraph = trimGraph(graph, ['node1', 'node2'])
+            assert.deepStrictEqual(trimmedGraph.node1!.sinks, {
                 '0': [{ nodeId: 'node2', portletId: '0' }],
             })
         })
@@ -526,8 +526,8 @@ describe('graph-traversal', () => {
                 node3: {},
             })
 
-            trimGraph(graph, ['node2', 'node3'])
-            assert.deepStrictEqual(graph.node3!.sources, {
+            const trimmedGraph = trimGraph(graph, ['node2', 'node3'])
+            assert.deepStrictEqual(trimmedGraph.node3!.sources, {
                 '0': [{ nodeId: 'node2', portletId: '0' }],
             })
         })
