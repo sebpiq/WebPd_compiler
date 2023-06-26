@@ -171,7 +171,8 @@ export interface Engine {
 export interface Compilation {
     readonly target: CompilerTarget
     readonly graph: DspGraph.Graph
-    readonly graphTraversal: DspGraph.GraphTraversal
+    readonly graphTraversalDeclare: DspGraph.GraphTraversal
+    readonly graphTraversalLoop: DspGraph.GraphTraversal
     readonly nodeImplementations: NodeImplementations
     readonly audioSettings: AudioSettings
     readonly arrays: DspGraph.Arrays

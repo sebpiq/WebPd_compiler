@@ -24,9 +24,9 @@ import {
     listConnectionsOut,
     listConnectionsIn,
     removeDeadSinks,
-    messageNodes,
     removeDeadSources,
     trimGraph,
+    messageNodes,
 } from './graph-traversal'
 import { getNode } from './graph-getters'
 import { DspGraph } from './types'

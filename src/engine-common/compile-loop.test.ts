@@ -86,7 +86,7 @@ describe('compileLoop', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['osc', 'plus', 'dac'],
+            graphTraversalLoop: ['osc', 'plus', 'dac'],
             nodeImplementations: NODE_IMPLEMENTATIONS,
             audioSettings: {
                 channelCount: { in: 2, out: 2 },
@@ -134,7 +134,7 @@ describe('compileLoop', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['print', 'dac'],
+            graphTraversalLoop: ['print', 'dac'],
             nodeImplementations: NODE_IMPLEMENTATIONS,
         })
 

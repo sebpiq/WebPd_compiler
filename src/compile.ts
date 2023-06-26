@@ -33,7 +33,8 @@ import { JavaScriptEngineCode } from './engine-javascript/types'
 import { AssemblyScriptWasmEngineCode } from './engine-assemblyscript/types'
 import * as variableNames from './engine-common/code-variable-names'
 import {
-    graphTraversalForCompile,
+    buildGraphTraversalDeclare,
+    buildGraphTraversalLoop,
     preCompileSignalAndMessageFlow,
 } from './compile-helpers'
 import { DspGraph } from './dsp-graph/types'
@@ -72,15 +73,17 @@ export default (
     variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
     variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
 
-    const graphTraversal = graphTraversalForCompile(graph, inletCallerSpecs)
-    const trimmedGraph = traversal.trimGraph(graph, graphTraversal)
+    const graphTraversalDeclare = buildGraphTraversalDeclare(graph, inletCallerSpecs)
+    const graphTraversalLoop = buildGraphTraversalLoop(graph)
+    const trimmedGraph = traversal.trimGraph(graph, graphTraversalDeclare)
 
     return {
         status: 0,
         code: executeCompilation({
             target,
             graph: trimmedGraph,
-            graphTraversal,
+            graphTraversalDeclare,
+            graphTraversalLoop,
             nodeImplementations,
             audioSettings,
             arrays,

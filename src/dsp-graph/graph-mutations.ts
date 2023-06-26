@@ -33,6 +33,8 @@ export const addNode = (
 ): DspGraph.Node => {
     if (!graph[node.id]) {
         graph[node.id] = node
+    } else {
+        throw new Error(`Node "${node.id}" already exists`)
     }
     return graph[node.id]!
 }

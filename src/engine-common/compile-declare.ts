@@ -26,7 +26,7 @@ import { Code, Compilation } from '../types'
 export default (compilation: Compilation): Code => {
     const {
         graph,
-        graphTraversal,
+        graphTraversalDeclare,
         macros,
         codeVariableNames,
         nodeImplementations,
@@ -34,7 +34,7 @@ export default (compilation: Compilation): Code => {
         precompiledPortlets: { precompiledInlets, precompiledOutlets },
         debug,
     } = compilation
-    const graphTraversalNodes = graphTraversal.map((nodeId) =>
+    const graphTraversalNodes = graphTraversalDeclare.map((nodeId) =>
         getters.getNode(graph, nodeId)
     )
     const { Var, Func } = macros

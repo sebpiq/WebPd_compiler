@@ -33,7 +33,7 @@ import { writeFileSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { writeFile } from 'fs/promises'
-import { graphTraversalForCompile } from './compile-helpers'
+import { buildGraphTraversalDeclare, buildGraphTraversalLoop } from './compile-helpers'
 const execPromise = promisify(exec)
 
 export const normalizeCode = (rawCode: string) => {
@@ -70,9 +70,12 @@ export const makeCompilation = (
     const arrays = compilation.arrays || {}
     const inletCallerSpecs = compilation.inletCallerSpecs || {}
     const outletListenerSpecs = compilation.outletListenerSpecs || {}
-    const graphTraversal =
-        compilation.graphTraversal ||
-        graphTraversalForCompile(graph, inletCallerSpecs)
+    const graphTraversalDeclare =
+        compilation.graphTraversalDeclare ||
+        buildGraphTraversalDeclare(graph, inletCallerSpecs)
+    const graphTraversalLoop =
+        compilation.graphTraversalLoop ||
+        buildGraphTraversalLoop(graph)
     const precompiledPortlets = compilation.precompiledPortlets || {
         precompiledInlets: {},
         precompiledOutlets: {},
@@ -92,7 +95,8 @@ export const makeCompilation = (
         ...compilation,
         target,
         graph,
-        graphTraversal,
+        graphTraversalDeclare,
+        graphTraversalLoop,
         nodeImplementations,
         audioSettings,
         arrays,

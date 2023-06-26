@@ -90,7 +90,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['osc', 'dac'],
+            graphTraversalDeclare: ['osc', 'dac'],
             nodeImplementations,
             audioSettings: {
                 channelCount: { in: 2, out: 2 },
@@ -137,7 +137,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['add'],
+            graphTraversalDeclare: ['add'],
             nodeImplementations,
         })
 
@@ -177,7 +177,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['add'],
+            graphTraversalDeclare: ['add'],
             nodeImplementations,
             precompiledPortlets: {
                 // Since no connection we declare that this should not be included in compilation
@@ -215,7 +215,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['someNode'],
+            graphTraversalDeclare: ['someNode'],
             debug: true,
             nodeImplementations,
         })
@@ -254,7 +254,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['add'],
+            graphTraversalDeclare: ['add'],
             nodeImplementations,
         })
 
@@ -280,7 +280,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['add'],
+            graphTraversalDeclare: ['add'],
             nodeImplementations,
         })
 
@@ -333,7 +333,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['twenty', 'aFloat', 'anotherFloat'],
+            graphTraversalDeclare: ['twenty', 'aFloat', 'anotherFloat'],
             nodeImplementations,
         })
 
@@ -387,7 +387,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['someNode'],
+            graphTraversalDeclare: ['someNode'],
             nodeImplementations,
             precompiledPortlets: {
                 precompiledInlets: {},
@@ -435,7 +435,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['add', 'aFloat'],
+            graphTraversalDeclare: ['add', 'aFloat'],
             nodeImplementations,
             outletListenerSpecs: { add: ['0', '2'] },
         })
@@ -494,7 +494,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['node1', 'node2', 'node3'],
+            graphTraversalDeclare: ['node1', 'node2', 'node3'],
             nodeImplementations,
         })
 
@@ -545,7 +545,7 @@ describe('compileDeclare', () => {
         const compilation = makeCompilation({
             target: 'javascript',
             graph,
-            graphTraversal: ['osc', 'dac'],
+            graphTraversalDeclare: ['osc', 'dac'],
             nodeImplementations,
         })
 

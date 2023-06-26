@@ -55,11 +55,11 @@ describe('graph-mutations', () => {
             })
         })
 
-        it('should not add the node to the graph if it already exists', () => {
+        it('should throw an error if node already exists', () => {
             const graph: DspGraph.Graph = {
                 '1': nodeDefaults('1', 'osc~'),
             }
-            addNode(graph, {
+            assert.throws(() => addNode(graph, {
                 id: '1',
                 type: 'phasor~',
                 args: { freq: 440 },
@@ -67,16 +67,7 @@ describe('graph-mutations', () => {
                 outlets: { '0': { type: 'signal', id: '0' } },
                 sources: {},
                 sinks: {},
-            })
-            assert.deepStrictEqual(graph['1'], {
-                id: '1',
-                type: 'osc~',
-                sources: {},
-                sinks: {},
-                args: {},
-                inlets: {},
-                outlets: {},
-            })
+            })) 
         })
     })
 

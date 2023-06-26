@@ -22,8 +22,9 @@ import { DspGraph } from './dsp-graph/types'
 import { makeGraph } from './dsp-graph/test-helpers'
 import assert from 'assert'
 import {
+    buildGraphTraversalDeclare,
+    buildGraphTraversalLoop,
     getNodeImplementation,
-    graphTraversalForCompile,
     preCompileSignalAndMessageFlow,
 } from './compile-helpers'
 import { makeCompilation } from './test-helpers'
@@ -101,7 +102,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1', 'node2'],
+                    graphTraversalDeclare: ['node1', 'node2'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
@@ -133,7 +134,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1'],
+                    graphTraversalDeclare: ['node1'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
@@ -180,7 +181,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1', 'node2', 'node3'],
+                    graphTraversalDeclare: ['node1', 'node2', 'node3'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
@@ -220,7 +221,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1', 'node2'],
+                    graphTraversalDeclare: ['node1', 'node2'],
                     outletListenerSpecs: {
                         node1: ['0'],
                     },
@@ -249,7 +250,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1'],
+                    graphTraversalDeclare: ['node1'],
                     outletListenerSpecs: {
                         node1: ['0'],
                     },
@@ -284,7 +285,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1'],
+                    graphTraversalDeclare: ['node1'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
@@ -318,7 +319,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1'],
+                    graphTraversalDeclare: ['node1'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
@@ -344,7 +345,7 @@ describe('compile-helpers', () => {
                 const compilation = makeCompilation({
                     target: 'javascript',
                     graph,
-                    graphTraversal: ['node1'],
+                    graphTraversalDeclare: ['node1'],
                     inletCallerSpecs: { node1: ['0'] },
                 })
 
@@ -361,9 +362,9 @@ describe('compile-helpers', () => {
         })
     })
 
-    describe('graphTraversalForCompile', () => {
+    describe('buildGraphTraversalDeclare', () => {
         it('should combine signal and message traversals and remove duplicates', () => {
-            // [  n1  ]
+            // [  n1  ]         [  n5  ]
             //    / \
             //   |  [  n2  ]
             //   |    /   \
@@ -383,13 +384,15 @@ describe('compile-helpers', () => {
                 n2: {
                     isPushingMessages: true,
                     sinks: {
-                        '0': [['n4', '0']],
+                        '0': [['n3', '0']],
+                        '1': [['n4', '0']],
                     },
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
                     outlets: {
-                        '0': { type: 'message', id: '0' },
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
                     },
                 },
                 n3: {
@@ -403,17 +406,21 @@ describe('compile-helpers', () => {
                         '0': { type: 'message', id: '0' },
                     },
                 },
+                n5: {
+                    isPushingMessages: true,
+                },
             })
-            const traversal = graphTraversalForCompile(graph, {})
-            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, [
-                'n2',
-                'n4',
+            const traversal = buildGraphTraversalDeclare(graph, {})
+            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
                 'n1',
+                'n2',
                 'n3',
+                'n4',
+                'n5',
             ])
         })
 
-        it('should add nodes that have an inlet caller declared, as well as their subtrees', () => {
+        it('should add nodes that have an inlet caller declared', () => {
             const graph = makeGraph({
                 n1: {
                     inlets: {
@@ -432,10 +439,70 @@ describe('compile-helpers', () => {
                     },
                 },
             })
-            const traversal = graphTraversalForCompile(graph, {
+            const traversal = buildGraphTraversalDeclare(graph, {
                 n1: ['0'],
             })
-            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, ['n1', 'n2'])
+            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), ['n1', 'n2'])
+        })
+    })
+
+    describe('buildGraphTraversalLoop', () => {
+        it('should combine signal and message traversals and remove duplicates', () => {
+            // [  n1  ]         [  n5  ]
+            //    / \
+            //   |  [  n2  ]
+            //   |    /   \
+            // [  n3  ]  [  n4  ]
+            const graph = makeGraph({
+                n1: {
+                    sinks: {
+                        '0': [
+                            ['n2', '0'],
+                            ['n3', '0'],
+                        ],
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n2: {
+                    isPushingMessages: true,
+                    sinks: {
+                        '0': [['n3', '0']],
+                        '1': [['n4', '0']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
+                    },
+                },
+                n3: {
+                    isPullingSignal: true,
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n4: {
+                    inlets: {
+                        '0': { type: 'message', id: '0' },
+                    },
+                },
+                n5: {
+                    isPushingMessages: true,
+                },
+            })
+            const traversal = buildGraphTraversalLoop(graph)
+            // n5 first because messages are triggered before signal
+            // n4 not included because it is not pushing messages.
+            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, [
+                'n5',
+                'n1',
+                'n2',
+                'n3',
+            ])
         })
     })
 })

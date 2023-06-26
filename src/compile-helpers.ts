@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -86,12 +86,12 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
 export const preCompileSignalAndMessageFlow = (compilation: Compilation) => {
     const {
         graph,
-        graphTraversal,
+        graphTraversalDeclare,
         codeVariableNames,
         inletCallerSpecs,
         outletListenerSpecs,
     } = compilation
-    const graphTraversalNodes = graphTraversal.map((nodeId) =>
+    const graphTraversalNodes = graphTraversalDeclare.map((nodeId) =>
         getters.getNode(graph, nodeId)
     )
     const precompiledInlets: PortletsIndex = {}
@@ -218,14 +218,13 @@ export const replaceCoreCodePlaceholders = (
 }
 
 /**
- * Build graph traversal for the compilation.
- * We first put nodes that push messages, so they have the opportunity
- * to change the engine state before running the loop.
- * !!! This is not fullproof ! For example if a node is pushing messages
- * but also writing signal outputs, it might be run too early / too late.
+ * Build graph traversal for declaring nodes.
+ * This should be exhaustive so that all nodes that are connected
+ * to an input or output of the graph are declared correctly.
+ * Order of nodes doesn't matter.
  * @TODO : outletListeners should also be included ?
  */
-export const graphTraversalForCompile = (
+export const buildGraphTraversalDeclare = (
     graph: DspGraph.Graph,
     inletCallerSpecs: PortletsIndex
 ): DspGraph.GraphTraversal => {
@@ -236,21 +235,46 @@ export const graphTraversalForCompile = (
         (node) => !!node.isPushingMessages
     )
     Object.keys(inletCallerSpecs).forEach((nodeId) => {
-        if (nodesPushingMessages.find(node => node.id === nodeId)) {
+        if (nodesPushingMessages.find((node) => node.id === nodeId)) {
             return
         }
         nodesPushingMessages.push(getters.getNode(graph, nodeId))
     })
 
-    const graphTraversalSignal = traversal.messageNodes(
-        graph,
-        nodesPushingMessages
+    return Array.from(
+        new Set([
+            ...traversal.messageNodes(graph, nodesPushingMessages),
+            ...traversal.signalNodes(graph, nodesPullingSignal),
+        ])
     )
-    const combined = graphTraversalSignal
+}
+
+/**
+ * Build graph traversal for the declaring nodes.
+ * We first put nodes that push messages, so they have the opportunity
+ * to change the engine state before running the loop.
+ * !!! If a node is pushing messages but also writing signal outputs,
+ * it will not be ran first, and stay in the signal flow.
+ */
+export const buildGraphTraversalLoop = (
+    graph: DspGraph.Graph
+): DspGraph.GraphTraversal => {
+    const nodesPullingSignal = Object.values(graph).filter(
+        (node) => !!node.isPullingSignal
+    )
+    const nodesPushingMessages = Object.values(graph).filter(
+        (node) => !!node.isPushingMessages
+    )
+
+    const combined = nodesPushingMessages.map((node) => node.id)
     traversal.signalNodes(graph, nodesPullingSignal).forEach((nodeId) => {
-        if (combined.indexOf(nodeId) === -1) {
-            combined.push(nodeId)
+        // If a node is already in the traversal, because it's puhsing messages,
+        // we prefer to remove it and put it after so that we keep the signal traversal
+        // order unchanged.
+        if (combined.includes(nodeId)) {
+            combined.splice(combined.indexOf(nodeId), 1)
         }
+        combined.push(nodeId)
     })
     return combined
 }

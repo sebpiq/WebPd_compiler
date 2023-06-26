@@ -156,6 +156,8 @@ export const listConnectionsOut = (
 
 /**
  * Remove dead sinks and sources in graph.
+ * @param graphTraversal contains all nodes that are connected to
+ * an input or output of the graph.
  */
 export const trimGraph = (
     graph: DspGraph.Graph,

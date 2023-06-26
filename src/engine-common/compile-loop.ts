@@ -26,13 +26,13 @@ import { Compilation } from '../types'
 export default (compilation: Compilation) => {
     const {
         graph,
-        graphTraversal,
+        graphTraversalLoop,
         codeVariableNames,
         macros,
         nodeImplementations,
     } = compilation
     const { globs } = codeVariableNames
-    const graphTraversalNodes = graphTraversal.map((nodeId) =>
+    const graphTraversalNodes = graphTraversalLoop.map((nodeId) =>
         getters.getNode(graph, nodeId)
     )
 
