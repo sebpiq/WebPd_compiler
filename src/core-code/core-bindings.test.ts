@@ -18,7 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { AudioSettings } from '../../types'
 import {
     lowerFloatArray,
     lowerListOfFloatArrays,
@@ -30,6 +29,7 @@ import {
     initializeCoreCodeTest,
     TEST_PARAMETERS,
 } from './test-helpers'
+import { AudioSettings } from '../types'
 
 describe('core-bindings', () => {
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>

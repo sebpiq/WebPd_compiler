@@ -5,12 +5,11 @@ import path from 'path'
 const { transpileModule } = ts
 
 const _getAscModulePath = (name: string) =>
-    path.resolve('src', 'engine-assemblyscript', 'core-code', `${name}.asc`)
+    path.resolve('src', 'core-code', `${name}.asc`)
 
 const _getJsModulePath = (name: string) =>
     path.resolve(
         'src',
-        'engine-javascript',
         'core-code',
         `${name}.generated.js.txt`
     )

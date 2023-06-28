@@ -17,22 +17,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { AudioSettings } from '../../types'
-import CORE_ASC from './core.asc'
-import BUF_ASC from './buf.asc'
-import SKED_ASC from './sked.asc'
-import MSG_ASC from './msg.asc'
-import COMMONS_ASC from './commons.asc'
-import FS_ASC from './fs.asc'
-import { replaceCoreCodePlaceholders } from '../../compile-helpers'
 
-export default (bitDepth: AudioSettings['bitDepth']) => {
-    return (
-        replaceCoreCodePlaceholders(bitDepth, CORE_ASC) +
-        BUF_ASC +
-        SKED_ASC +
-        COMMONS_ASC +
-        MSG_ASC +
-        FS_ASC
-    )
+import { StringPointer, FloatArrayPointer } from '../engine-assemblyscript/types'
+import { core_WasmExports } from './core-bindings'
+
+export interface commons_WasmExports extends core_WasmExports {
+    commons_getArray: (arrayName: StringPointer) => FloatArrayPointer
+    commons_setArray: (
+        arrayName: StringPointer,
+        array: FloatArrayPointer
+    ) => void
 }

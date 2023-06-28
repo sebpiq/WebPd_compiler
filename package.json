@@ -8,7 +8,7 @@
     "license": "LGPL-3.0",
     "author": "Sébastien Piquemal",
     "scripts": {
-        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",
+        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config jest.mjs",
         "build:dist": "npx rollup --config rollup.mjs",
         "build:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
         "build:js-engine": "node --experimental-specifier-resolution=node --loader ts-node/esm --no-warnings ./transpile-javascript.ts",

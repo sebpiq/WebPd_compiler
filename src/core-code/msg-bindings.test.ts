@@ -19,7 +19,6 @@
  */
 
 import assert from 'assert'
-import { AudioSettings } from '../../types'
 import { liftString } from './core-bindings'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
@@ -31,6 +30,7 @@ import {
     initializeCoreCodeTest,
     TEST_PARAMETERS,
 } from './test-helpers'
+import { AudioSettings } from '../types'
 
 describe('msg-bindings', () => {
     const BYTES_IN_CHAR = 4

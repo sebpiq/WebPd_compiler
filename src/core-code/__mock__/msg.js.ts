@@ -18,13 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { core_WasmExports } from './core-bindings'
-import { StringPointer, FloatArrayPointer } from '../types'
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
 
-export interface commons_WasmExports extends core_WasmExports {
-    commons_getArray: (arrayName: StringPointer) => FloatArrayPointer
-    commons_setArray: (
-        arrayName: StringPointer,
-        array: FloatArrayPointer
-    ) => void
-}
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+export default readFileSync(
+    resolve(__dirname, '../msg.js.txt')
+).toString()

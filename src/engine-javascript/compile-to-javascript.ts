@@ -23,7 +23,7 @@ import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
-import generateCoreCodeJs from './core-code'
+import { generateCoreCodeJs } from '../core-code'
 import { renderCode } from '../functional-helpers'
 import {
     compileOutletListeners,

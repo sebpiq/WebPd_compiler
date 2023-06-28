@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,21 +20,6 @@
 import { readFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import { AudioSettings, Code, FloatArray, Message } from '../../types'
-import { compileWasmModule } from '../test-helpers'
-import { makeCompilation } from '../../test-helpers'
-import { instantiateWasmModule } from '../wasm-helpers'
-import {
-    AssemblyScriptWasmExports,
-    AssemblyScriptWasmImports,
-    FloatArrayPointer,
-    MessagePointer,
-    StringPointer,
-} from '../types'
-import {
-    getFloatArrayType,
-    replaceCoreCodePlaceholders,
-} from '../../compile-helpers'
 import { liftMessage, lowerMessage } from './msg-bindings'
 import {
     liftString,
@@ -42,7 +27,21 @@ import {
     readTypedArray,
     lowerFloatArray,
 } from './core-bindings'
-import { mapObject } from '../../functional-helpers'
+import {
+    replaceCoreCodePlaceholders,
+    getFloatArrayType,
+} from '../compile-helpers'
+import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
+import {
+    AssemblyScriptWasmImports,
+    AssemblyScriptWasmExports,
+    MessagePointer,
+    StringPointer,
+    FloatArrayPointer,
+} from '../engine-assemblyscript/types'
+import { instantiateWasmModule } from '../engine-assemblyscript/wasm-helpers'
+import { mapObject } from '../functional-helpers'
+import { Message, FloatArray, AudioSettings, Code } from '../types'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

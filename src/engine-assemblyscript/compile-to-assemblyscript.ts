@@ -23,7 +23,7 @@ import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
 import { Compilation } from '../types'
-import generateCoreCodeAsc from './core-code'
+import { generateCoreCodeAsc } from '../core-code'
 import { AssemblyScriptWasmEngineCode } from './types'
 import {
     compileOutletListeners,

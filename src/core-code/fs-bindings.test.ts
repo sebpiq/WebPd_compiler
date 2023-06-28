@@ -18,9 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../../constants'
-import { round } from '../../test-helpers'
-import { AudioSettings, SoundFileInfo } from '../../types'
 import { liftString } from './core-bindings'
 import { liftMessage } from './msg-bindings'
 import { lowerListOfFloatArrays, readListOfFloatArrays } from './core-bindings'
@@ -29,6 +26,9 @@ import {
     initializeCoreCodeTest,
     TEST_PARAMETERS,
 } from './test-helpers'
+import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../constants'
+import { round } from '../test-helpers'
+import { AudioSettings, SoundFileInfo } from '../types'
 
 describe('fs-bindings', () => {
     const baseExports = {

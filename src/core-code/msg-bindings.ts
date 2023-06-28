@@ -28,16 +28,11 @@
  * @module
  */
 
-import { Message } from '../../types'
 import { liftString, lowerString } from './core-bindings'
 import { readTypedArray } from './core-bindings'
-import {
-    ArrayBufferOfIntegersPointer,
-    MessagePointer,
-    StringPointer,
-    FloatArrayPointer,
-} from '../types'
 import { commons_WasmExports } from './commons-bindings'
+import { ArrayBufferOfIntegersPointer, FloatArrayPointer, MessagePointer, StringPointer } from '../engine-assemblyscript/types'
+import { Message } from '../types'
 
 export interface msg_WasmExports extends commons_WasmExports {
     MSG_FLOAT_TOKEN: WebAssembly.Global

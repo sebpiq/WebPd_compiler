@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { getFloatArrayType } from '../../compile-helpers'
-import { AudioSettings, FloatArray } from '../../types'
-import { InternalPointer, FloatArrayPointer } from '../types'
+import { getFloatArrayType } from "../compile-helpers"
+import { FloatArrayPointer, InternalPointer } from "../engine-assemblyscript/types"
+import { AudioSettings, FloatArray } from "../types"
 
 export type TypedArrayConstructor =
     | typeof Int8Array

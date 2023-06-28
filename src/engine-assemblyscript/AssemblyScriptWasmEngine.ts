@@ -44,9 +44,9 @@ import {
     lowerListOfFloatArrays,
     lowerFloatArray,
     readListOfFloatArrays,
-} from './core-code/core-bindings'
-import { fs_WasmImports } from './core-code/fs-bindings'
-import { liftMessage, lowerMessage } from './core-code/msg-bindings'
+} from '../core-code/core-bindings'
+import { fs_WasmImports } from '../core-code/fs-bindings'
+import { liftMessage, lowerMessage } from '../core-code/msg-bindings'
 import {
     AssemblyScriptWasmExports,
     AssemblyScriptWasmImports,

@@ -38,7 +38,7 @@ import { mapArray, mapObject } from './functional-helpers'
 import {
     AscTransferrableType,
     generateTestBindings as generateTestAscBindings,
-} from './engine-assemblyscript/core-code/test-helpers'
+} from './core-code/test-helpers'
 import { getFloatArrayType } from './compile-helpers'
 import { DspGraph } from './dsp-graph'
 export { executeCompilation } from './compile'

@@ -18,12 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { AudioSettings } from '../../types'
 import {
     generateTestBindings,
     getAscCode,
     TEST_PARAMETERS,
 } from './test-helpers'
+import { AudioSettings } from '../types'
 
 describe('sked-bindings', () => {
     const SKED_ID_NULL = -1
