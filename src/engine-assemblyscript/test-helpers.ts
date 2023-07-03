@@ -19,12 +19,16 @@
  */
 
 import asc from 'assemblyscript/asc'
-import { AudioSettings, Code } from '../types'
-import { createEngine } from '../test-helpers'
-import { AssemblyScriptWasmEngine } from './AssemblyScriptWasmEngine'
+import { AudioSettings, Code, RawModule } from '../types'
+import { instantiateWasmModule } from './wasm-helpers'
 
-export const compileWasmModule = async (
-    ascCode: Code,
+export const TEST_PARAMETERS = [
+    { bitDepth: 32 as AudioSettings['bitDepth'] },
+    { bitDepth: 64 as AudioSettings['bitDepth'] },
+]
+
+export const compileAscCode = async (
+    code: Code,
     bitDepth: AudioSettings['bitDepth']
 ): Promise<ArrayBuffer> => {
     const options: any = {
@@ -35,21 +39,27 @@ export const compileWasmModule = async (
     if (bitDepth === 32) {
         options.use = ['Math=NativeMathf']
     }
-    const { error, binary, stderr } = await asc.compileString(ascCode, options)
+    const { error, binary, stderr } = await asc.compileString(code, options)
     if (error) {
         throw new Error(stderr.toString())
     }
     return binary
 }
 
-export const createAscEngine = async (
+export const instantiateWasmBuffer = async (
+    buffer: ArrayBuffer,
+    imports: any = {},
+): Promise<RawModule> => {
+    const wasmInstance = await instantiateWasmModule(buffer, imports)
+    return wasmInstance.exports as any
+}
+
+export const instantiateAscCode = async (
     code: Code,
-    bitDepth: AudioSettings['bitDepth']
-) => {
-    const engine = (await createEngine(
-        'assemblyscript',
-        bitDepth,
-        code
-    )) as unknown as AssemblyScriptWasmEngine
-    return { engine, wasmExports: engine.wasmExports as any }
+    bitDepth: AudioSettings['bitDepth'],
+    imports: any = {},
+): Promise<RawModule> => {
+    const buffer = await compileAscCode(code, bitDepth)
+    const wasmInstance = await instantiateWasmModule(buffer, imports)
+    return wasmInstance.exports as any
 }

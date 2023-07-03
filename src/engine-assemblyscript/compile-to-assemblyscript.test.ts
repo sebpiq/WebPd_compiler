@@ -21,8 +21,8 @@
 import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
 import compileToAssemblyscript from './compile-to-assemblyscript'
-import { createAscEngine } from './test-helpers'
 import { AssemblyScriptWasmExports, AssemblyScriptWasmImports } from './types'
+import { instantiateAscCode } from './test-helpers'
 
 const BIT_DEPTH = 32
 
@@ -35,13 +35,23 @@ describe('compileToAssemblyscript', () => {
             __unpin: () => void
         }
 
-        const { wasmExports } = await createAscEngine(
+        const wasmExports = await instantiateAscCode(
             compileToAssemblyscript(
                 makeCompilation({
                     target: 'assemblyscript',
                 })
             ),
-            BIT_DEPTH
+            BIT_DEPTH,
+            {
+                input: {
+                    i_fs_readSoundFile: (): void => undefined,
+                    i_fs_writeSoundFile: (): void => undefined,
+                    i_fs_openSoundReadStream: (): void => undefined,
+                    i_fs_openSoundWriteStream: (): void => undefined,
+                    i_fs_sendSoundStreamData: (): void => undefined,
+                    i_fs_closeSoundStream: (): void => undefined,
+                }
+            }
         )
 
         const expectedExports: AssemblyScriptWasmExports &

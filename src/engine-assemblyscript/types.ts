@@ -19,10 +19,10 @@
  */
 
 import { Code } from '../types'
-import { core_WasmExports } from '../core-code/core-bindings'
-import { fs_WasmExports, fs_WasmImports } from '../core-code/fs-bindings'
-import { msg_WasmExports } from '../core-code/msg-bindings'
-import { commons_WasmExports } from '../core-code/commons-bindings'
+import { core_WasmExports } from './core-bindings'
+import { fs_WasmExports, fs_WasmImports } from './fs-bindings'
+import { msg_WasmExports } from './msg-bindings'
+import { commons_WasmExports } from './commons-bindings'
 
 /** AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports` */
 export type AssemblyScriptWasmEngineCode = Code

@@ -217,6 +217,12 @@ export const replaceCoreCodePlaceholders = (
         .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
 }
 
+export const getSharedCodeGeneratorContext = (compilation: Compilation) => ({
+    macros: compilation.macros, 
+    target: compilation.target,
+    audioSettings: compilation.audioSettings,
+})
+
 /**
  * Build graph traversal for declaring nodes.
  * This should be exhaustive so that all nodes that are connected

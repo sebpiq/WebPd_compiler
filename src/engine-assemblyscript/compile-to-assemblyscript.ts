@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,12 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata } from '../compile-helpers'
+import { buildMetadata, getSharedCodeGeneratorContext } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
 import { Compilation } from '../types'
-import { generateCoreCodeAsc } from '../core-code'
+import { generateCoreCode } from '../core-code'
 import { AssemblyScriptWasmEngineCode } from './types'
 import {
     compileOutletListeners,
@@ -39,7 +39,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCodeAsc(audioSettings.bitDepth)}
+        ${generateCoreCode(getSharedCodeGeneratorContext(compilation))}
 
         ${embedArrays(compilation)}
 

@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { StringPointer, FloatArrayPointer } from '../engine-assemblyscript/types'
+import { StringPointer, FloatArrayPointer } from './types'
 import { core_WasmExports } from './core-bindings'
 
 export interface commons_WasmExports extends core_WasmExports {

@@ -18,12 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata, getFloatArrayType } from '../compile-helpers'
+import { buildMetadata, getFloatArrayType, getSharedCodeGeneratorContext } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
-import { generateCoreCodeJs } from '../core-code'
+import { generateCoreCode } from '../core-code'
 import { renderCode } from '../functional-helpers'
 import {
     compileOutletListeners,
@@ -46,7 +46,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCodeJs(audioSettings.bitDepth)}
+        ${generateCoreCode(getSharedCodeGeneratorContext(compilation))}
 
         ${embedArrays(compilation)}
 

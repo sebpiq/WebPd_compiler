@@ -24,7 +24,7 @@ const { transpileModule } = ts
 import { executeCompilation } from './compile'
 import { renderCode } from './functional-helpers'
 import { FS_OPERATION_SUCCESS } from './constants'
-import { createEngine, makeCompilation, round } from './test-helpers'
+import { createTestModule, makeCompilation, round } from './test-helpers'
 import {
     AudioSettings,
     Code,
@@ -37,6 +37,7 @@ import {
     FloatArray,
 } from './types'
 import { makeGraph } from './dsp-graph/test-helpers'
+import { createEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
 
 const TEST_PARAMETERS = [
     {
@@ -129,11 +130,12 @@ describe('Engine', () => {
             `
         }
 
-        const engine = (await createEngine(
+        const engine = (await createTestModule<TestEngine<ExportsKeys>>(
             target,
             bitDepth,
-            code
-        )) as TestEngine<ExportsKeys>
+            code,
+            {'assemblyscript': (buffer) => createEngine(buffer) as Promise<TestEngine<ExportsKeys>>}
+        ))
 
         // For asc engine, we need to expose exported test functions on the engine.
         if (target === 'assemblyscript') {

@@ -31,7 +31,7 @@
 import { liftString, lowerString } from './core-bindings'
 import { readTypedArray } from './core-bindings'
 import { commons_WasmExports } from './commons-bindings'
-import { ArrayBufferOfIntegersPointer, FloatArrayPointer, MessagePointer, StringPointer } from '../engine-assemblyscript/types'
+import { ArrayBufferOfIntegersPointer, FloatArrayPointer, MessagePointer, StringPointer } from './types'
 import { Message } from '../types'
 
 export interface msg_WasmExports extends commons_WasmExports {

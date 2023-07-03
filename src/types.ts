@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -51,6 +51,10 @@ export type Code = string
 
 /** Name of a variable in generated code */
 export type CodeVariableName = string
+
+export type Module = any
+
+export interface RawModule extends Module {}
 
 export type PortletsIndex = {
     [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
@@ -239,7 +243,11 @@ export interface CodeVariableNames {
     }
 }
 
-export type SharedCodeGenerator = (context: { macros: CodeMacros }) => Code
+export type SharedCodeGenerator = (context: {
+    macros: CodeMacros
+    target: CompilerTarget
+    audioSettings: AudioSettings
+}) => Code
 
 export interface NodeImplementation<
     NodeArgsType,

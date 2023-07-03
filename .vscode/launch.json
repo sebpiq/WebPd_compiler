@@ -18,7 +18,7 @@
                 "--watch",
                 "--coverage=false",
                 "--no-cache",
-                "--config=node_modules/@webpd/dev/configs/jest.js"
+                "--config=./jest.mjs"
             ],
             "cwd": "${workspaceRoot}",
             "console": "integratedTerminal",

@@ -17,189 +17,181 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { readFileSync } from 'fs'
-import { dirname, resolve } from 'path'
-import { fileURLToPath } from 'url'
-import { liftMessage, lowerMessage } from './msg-bindings'
-import {
-    liftString,
-    lowerString,
-    readTypedArray,
-    lowerFloatArray,
-} from './core-bindings'
-import {
-    replaceCoreCodePlaceholders,
-    getFloatArrayType,
-} from '../compile-helpers'
-import { compileWasmModule } from '../engine-assemblyscript/test-helpers'
-import {
-    AssemblyScriptWasmImports,
-    AssemblyScriptWasmExports,
-    MessagePointer,
-    StringPointer,
-    FloatArrayPointer,
-} from '../engine-assemblyscript/types'
-import { instantiateWasmModule } from '../engine-assemblyscript/wasm-helpers'
-import { mapObject } from '../functional-helpers'
-import { Message, FloatArray, AudioSettings, Code } from '../types'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+import { AudioSettings, CompilerTarget, RawModule, SharedCodeGenerator } from '../types'
+import { getMacros } from '../compile'
+import { renderCode } from '../functional-helpers'
+import { createTestModule } from '../test-helpers'
 
-export type AscTransferrableType =
-    | string
-    | number
-    | Message
-    | boolean
-    | FloatArray
+interface TestParameters {
+    bitDepth: AudioSettings['bitDepth']
+    target: CompilerTarget
+}
 
-export const TEST_PARAMETERS = [
-    { bitDepth: 32 as AudioSettings['bitDepth'], floatArrayType: Float32Array },
-    { bitDepth: 64 as AudioSettings['bitDepth'], floatArrayType: Float64Array },
+export const TEST_PARAMETERS: Array<TestParameters> = [
+    { bitDepth: 32, target: 'javascript' },
+    // { bitDepth: 64, target: 'javascript' },
+    { bitDepth: 32, target: 'assemblyscript' },
+    // { bitDepth: 64, target: 'assemblyscript' },
 ]
 
-export const getAscCode = (
-    filename: string,
-    bitDepth: AudioSettings['bitDepth']
+export const attachBindings = (
+    rawNodule: RawModule,
+    bindings: { [key: string]: any }
 ) => {
-    const code = readFileSync(resolve(__dirname, filename)).toString()
-    if (filename === 'core.asc') {
-        return replaceCoreCodePlaceholders(bitDepth, code)
-    } else {
-        return code
-    }
-}
-
-export const getWasmExports = async <WasmExports>(
-    code: Code,
-    bitDepth: AudioSettings['bitDepth'],
-    wasmImports: AssemblyScriptWasmImports = {
-        i_fs_readSoundFile: () => undefined,
-        i_fs_writeSoundFile: () => undefined,
-        i_fs_openSoundReadStream: () => undefined,
-        i_fs_openSoundWriteStream: () => undefined,
-        i_fs_sendSoundStreamData: () => undefined,
-        i_fs_closeSoundStream: () => undefined,
-    }
-) => {
-    const buffer = await compileWasmModule(code, bitDepth)
-    const wasmInstance = await instantiateWasmModule(buffer, {
-        input: wasmImports,
-    })
-    return wasmInstance.exports as unknown as WasmExports
-}
-
-type TestExportsKeys = { [name: string]: any }
-
-type TestAssemblyScriptWasmExports<ExportsKeys> = AssemblyScriptWasmExports & {
-    [Property in keyof ExportsKeys]: any
-}
-
-interface CoreCodeTestSettings<ExportsKeys extends TestExportsKeys> {
-    code: Code
-    exports?: ExportsKeys
-    bitDepth: AudioSettings['bitDepth']
-}
-
-export const initializeCoreCodeTest = async <
-    ExportsKeys extends TestExportsKeys
->({
-    code,
-    bitDepth,
-}: CoreCodeTestSettings<ExportsKeys>) => {
-    const called = new Map<keyof AssemblyScriptWasmImports, Array<any>>()
-    const floatArrayType = getFloatArrayType(bitDepth)
-    called.set('i_fs_readSoundFile', [])
-    called.set('i_fs_writeSoundFile', [])
-    called.set('i_fs_openSoundReadStream', [])
-    called.set('i_fs_closeSoundStream', [])
-    called.set('i_fs_openSoundWriteStream', [])
-    called.set('i_fs_sendSoundStreamData', [])
-    const wasmExports = await getWasmExports<
-        TestAssemblyScriptWasmExports<ExportsKeys>
-    >(code, bitDepth, {
-        i_fs_readSoundFile: (...args: any) =>
-            called.get('i_fs_readSoundFile').push(args),
-        i_fs_writeSoundFile: (...args: any) =>
-            called.get('i_fs_writeSoundFile').push(args),
-        i_fs_openSoundReadStream: (...args: any) =>
-            called.get('i_fs_openSoundReadStream').push(args),
-        i_fs_openSoundWriteStream: (...args: any) =>
-            called.get('i_fs_openSoundWriteStream').push(args),
-        i_fs_sendSoundStreamData: (...args: any) =>
-            called.get('i_fs_sendSoundStreamData').push(args),
-        i_fs_closeSoundStream: (...args: any) =>
-            called.get('i_fs_closeSoundStream').push(args),
-    })
-    return {
-        wasmExports,
-        floatArrayType,
-        called,
-    }
-}
-
-export const generateTestBindings = async <
-    ExportedFunctions extends { [functionName: string]: AscTransferrableType }
->(
-    code: Code,
-    bitDepth: AudioSettings['bitDepth'],
-    exportedFunctions: ExportedFunctions
-) => {
-    const wasmExports = await getWasmExports<AssemblyScriptWasmExports>(
-        code,
-        bitDepth
-    )
-
-    const _lowerAny = (obj: AscTransferrableType) => {
-        if (typeof obj === 'string') {
-            return lowerString(wasmExports, obj)
-        } else if (typeof obj === 'number') {
-            return obj
-        } else if (typeof obj === 'boolean') {
-            return +obj
-        } else if (obj instanceof Float32Array || obj instanceof Float64Array) {
-            return lowerFloatArray(wasmExports, bitDepth, obj).arrayPointer
-        } else if (Array.isArray(obj)) {
-            return lowerMessage(wasmExports, obj)
-        } else {
-            throw new Error(`unsupported type`)
-        }
-    }
-
-    const _makeLiftAny =
-        (liftAs: AscTransferrableType) =>
-        (obj: AscTransferrableType | MessagePointer | StringPointer) => {
-            if (typeof liftAs === 'string') {
-                return liftString(wasmExports, obj as StringPointer)
-            } else if (typeof liftAs === 'number') {
-                return obj
-            } else if (typeof liftAs === 'boolean') {
-                return !!obj
-            } else if (
-                liftAs instanceof Float32Array ||
-                liftAs instanceof Float64Array
-            ) {
-                return readTypedArray(
-                    wasmExports,
-                    getFloatArrayType(bitDepth),
-                    obj as FloatArrayPointer
-                )
-            } else if (Array.isArray(liftAs)) {
-                return liftMessage(wasmExports, obj as MessagePointer)
-            } else {
-                throw new Error(`unsupported type`)
+    return new Proxy(rawNodule, {
+        get: (target, key) => {
+            if (bindings.hasOwnProperty(key)) {
+                return bindings[key as string]
             }
-        }
+            return (target as any)[key]
+        },
+    })
+}
 
-    return mapObject(exportedFunctions, (returnSample, funcName) => {
-        const _liftReturn = _makeLiftAny(returnSample)
-        return (...args: Array<AscTransferrableType>) => {
-            const loweredArgs = args.map(_lowerAny)
-            return _liftReturn((wasmExports as any)[funcName](...loweredArgs))
+export const runTestSuite = (
+    tests: Array<{ description: string; codeGenerator: SharedCodeGenerator }>,
+    sharedCode: Array<SharedCodeGenerator> = []
+) => {
+    const testModules: Array<[TestParameters, any]> = []
+    let testCounter = 1
+    const testFunctionNames: Array<string> = []
+
+    tests.forEach(() => testFunctionNames.push(`test${testCounter++}`))
+
+    beforeAll(async () => {
+        for (let testParameters of TEST_PARAMETERS) {
+            const macros = getMacros(testParameters.target)
+            const { Var, Func } = macros
+            const codeGeneratorContext = {
+                macros,
+                target: testParameters.target,
+                audioSettings: {
+                    bitDepth: testParameters.bitDepth,
+                    channelCount: { in: 2, out: 2 },
+                },
+            }
+            let code = renderCode`
+                ${sharedCode.map((codeGenerator) =>
+                    codeGenerator(codeGeneratorContext)
+                )}
+
+                function reportTestFailure ${Func(
+                    [Var('msg', 'string')],
+                    'void'
+                )} {
+                    console.log(msg)
+                    throw new Error('test failed')
+                }                
+
+                function assert_stringsEqual ${Func(
+                    [Var('actual', 'string'), Var('expected', 'string')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got string "' + actual 
+                            + '" expected "' + expected + '"')
+                    }
+                }
+
+                function assert_booleansEqual ${Func(
+                    [Var('actual', 'boolean'), Var('expected', 'boolean')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got boolean ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                }
+
+                function assert_integersEqual ${Func(
+                    [Var('actual', 'Int'), Var('expected', 'Int')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got integer ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                }
+    
+                function assert_floatsEqual ${Func(
+                    [Var('actual', 'Float'), Var('expected', 'Float')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got float ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                }
+
+                function assert_floatArraysEqual ${Func(
+                    [
+                        Var('actual', 'FloatArray'),
+                        Var('expected', 'FloatArray'),
+                    ],
+                    'void'
+                )} {
+                    if (actual.length !== expected.length) {
+                        reportTestFailure(
+                            'Arrays of different length ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                    for (let ${Var('i', 'Int')} = 0; i < actual.length; i++) {
+                        if (actual[i] !== expected[i]) {
+                            reportTestFailure(
+                                'Arrays are not equal ' + actual.toString() 
+                                + ' expected ' + expected.toString())
+                        }
+                    }
+                }
+
+                ${tests.map(
+                    ({ codeGenerator }, i) => `
+                    function ${testFunctionNames[i]} ${Func([], 'void')} {
+                        ${codeGenerator(codeGeneratorContext)}
+                    }
+                `
+                )}
+
+                ${
+                    testParameters.target === 'assemblyscript'
+                        ? `export {${testFunctionNames.join(',')}}`
+                        : `const exports = {${testFunctionNames.join(',')}}`
+                }
+                
+            `
+
+            testModules.push([
+                testParameters,
+                await createTestModule(
+                    testParameters.target,
+                    testParameters.bitDepth,
+                    code
+                ),
+            ])
         }
-    }) as {
-        [FuncName in keyof ExportedFunctions]: (
-            ...args: Array<AscTransferrableType>
-        ) => ExportedFunctions[FuncName]
+    })
+
+    const _findTestModule = (testParameters: TestParameters) => {
+        const matched = testModules.find(([testModuleParameters]) =>
+            Object.entries(testModuleParameters).every(
+                ([key, value]) =>
+                    testParameters[key as keyof TestParameters] === value
+            )
+        )
+        if (!matched) {
+            throw new Error(`Test module for ${testParameters} not found`)
+        }
+        return matched[1]
     }
+
+    tests.forEach(({ description }, i) => {
+        it.each(TEST_PARAMETERS)(description, (testParameters) => {
+            _findTestModule(testParameters)[testFunctionNames[i]]()
+        })
+    })
 }

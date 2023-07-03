@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { InternalPointer, StringPointer, MessagePointer } from '../engine-assemblyscript/types'
+import { InternalPointer, StringPointer, MessagePointer } from './types'
 import { commons_WasmExports } from './commons-bindings'
 
 export interface fs_WasmExports extends commons_WasmExports {

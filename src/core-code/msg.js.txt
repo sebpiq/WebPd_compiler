@@ -20,7 +20,20 @@
 
 const MSG_FLOAT_TOKEN = "number"
 const MSG_STRING_TOKEN = "string"
-const msg_create = () => []
+const msg_create = (template) => {
+    const m = []
+    let i = 0
+    while (i < template.length) {
+        if (template[i] === MSG_STRING_TOKEN) {
+            m.push('')
+            i += 2
+        } else if (template[i] === MSG_FLOAT_TOKEN) {
+            m.push(0)
+            i += 1
+        }
+    }
+    return m
+}
 const msg_getLength = (m) => m.length
 const msg_getTokenType = (m, i) => typeof m[i]
 const msg_isStringToken = (m, i) => msg_getTokenType(m, i) === 'string'

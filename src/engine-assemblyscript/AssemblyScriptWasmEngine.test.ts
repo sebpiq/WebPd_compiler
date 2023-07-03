@@ -19,7 +19,7 @@
  */
 
 import assert from 'assert'
-import { compileWasmModule } from './test-helpers'
+import { compileAscCode } from './test-helpers'
 import { readMetadata } from './AssemblyScriptWasmEngine'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { makeCompilation } from '../test-helpers'
@@ -34,7 +34,7 @@ describe('AssemblyScriptWasmEngine', () => {
                 outletListenerSpecs: {},
             })
 
-            const wasmBuffer = await compileWasmModule(
+            const wasmBuffer = await compileAscCode(
                 compileToAssemblyscript(compilation) +
                     `
                     let bla: f32 = 1

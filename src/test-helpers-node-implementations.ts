@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 import assert from 'assert'
 import { executeCompilation, getMacros } from './compile'
-import { createEngine, makeCompilation, round } from './test-helpers'
+import { createTestModule, makeCompilation, round } from './test-helpers'
 import {
     Signal,
     Message,
@@ -38,9 +38,11 @@ import { mapArray, mapObject } from './functional-helpers'
 import {
     AscTransferrableType,
     generateTestBindings as generateTestAscBindings,
-} from './core-code/test-helpers'
+} from './core-code/test-helpers-old'
 import { getFloatArrayType } from './compile-helpers'
 import { DspGraph } from './dsp-graph'
+import { createEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
+import { instantiateJsCode } from './engine-javascript/test-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -251,7 +253,12 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         },
     })
     const code = executeCompilation(compilation)
-    const engine = await createEngine(target, bitDepth, code)
+    const engine = await createTestModule<Engine>(
+        target,
+        bitDepth,
+        code,
+        {'assemblyscript': (buffer) => createEngine(buffer)}
+    )
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -497,11 +504,7 @@ export const createTestBindings = async <
     if (target === 'assemblyscript') {
         return await generateTestAscBindings(code, bitDepth, exportedFunctions)
     } else {
-        return (await createEngine(
-            'javascript',
-            bitDepth,
-            code
-        )) as unknown as {
+        return (await instantiateJsCode(code)) as unknown as {
             [FuncName in keyof ExportedFunctions]: (
                 ...args: Array<AscTransferrableType>
             ) => ExportedFunctions[FuncName]
@@ -521,6 +524,10 @@ export const assertSharedCodeFunctionOutput = async (
         .map((sharedCodeGenerator) =>
             sharedCodeGenerator({
                 macros: getMacros(target),
+                target,
+                audioSettings: {
+                    bitDepth, channelCount: {in: 2, out: 2}
+                }
             })
         )
         .join('\n')

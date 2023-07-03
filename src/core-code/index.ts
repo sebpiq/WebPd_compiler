@@ -31,26 +31,88 @@ import FS_ASC from './fs.asc'
 import FS_JS from './fs.generated.js.txt'
 
 import { replaceCoreCodePlaceholders } from '../compile-helpers'
-import { AudioSettings } from '../types'
+import { SharedCodeGenerator } from '../types'
 
-export const generateCoreCodeAsc = (bitDepth: AudioSettings['bitDepth']) => {
-    return (
-        replaceCoreCodePlaceholders(bitDepth, CORE_ASC) +
-        BUF_ASC +
-        SKED_ASC +
-        COMMONS_ASC +
-        MSG_ASC +
-        FS_ASC
-    )
+/** @deprecated : should be removed when individual functions below are integrated */
+export const generateCoreCode: SharedCodeGenerator = ({ target, audioSettings }) => {
+    switch (target) {
+        case 'assemblyscript':
+            return (
+                replaceCoreCodePlaceholders(
+                    audioSettings.bitDepth,
+                    CORE_ASC
+                ) +
+                BUF_ASC +
+                SKED_ASC +
+                COMMONS_ASC +
+                MSG_ASC +
+                FS_ASC
+            )
+        case 'javascript':
+            return (
+                replaceCoreCodePlaceholders(
+                    audioSettings.bitDepth,
+                    CORE_JS
+                ) +
+                BUF_JS +
+                SKED_JS +
+                COMMONS_JS +
+                MSG_JS +
+                FS_JS
+            )
+    }
 }
 
-export const generateCoreCodeJs = (bitDepth: AudioSettings['bitDepth']) => {
-    return (
-        replaceCoreCodePlaceholders(bitDepth, CORE_JS) +
-        BUF_JS +
-        SKED_JS +
-        COMMONS_JS +
-        MSG_JS +
-        FS_JS
-    )
+export const core: SharedCodeGenerator = ({ target, audioSettings }) => {
+    switch (target) {
+        case 'assemblyscript':
+            return replaceCoreCodePlaceholders(audioSettings.bitDepth, CORE_ASC)
+        case 'javascript':
+            return replaceCoreCodePlaceholders(audioSettings.bitDepth, CORE_JS)
+    }
+}
+
+export const buf: SharedCodeGenerator = ({ target }) => {
+    switch (target) {
+        case 'assemblyscript':
+            return BUF_ASC
+        case 'javascript':
+            return BUF_JS
+    }
+}
+
+export const sked: SharedCodeGenerator = ({ target }) => {
+    switch (target) {
+        case 'assemblyscript':
+            return SKED_ASC
+        case 'javascript':
+            return SKED_JS
+    }
+}
+
+export const commons: SharedCodeGenerator = ({ target }) => {
+    switch (target) {
+        case 'assemblyscript':
+            return COMMONS_ASC
+        case 'javascript':
+            return COMMONS_JS
+    }
+}
+
+export const msg: SharedCodeGenerator = ({ target }) => {
+    switch (target) {
+        case 'assemblyscript':
+            return MSG_ASC
+        case 'javascript':
+            return MSG_JS
+    }
+}
+
+export const fs: SharedCodeGenerator = ({ target }) => {
+    switch (target) {
+        case 'assemblyscript':
+            return FS_ASC
+        case 'javascript':
+            return FS_JS
+    }
 }

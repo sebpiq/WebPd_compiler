@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getNodeImplementation } from '../compile-helpers'
+import { getNodeImplementation, getSharedCodeGeneratorContext } from '../compile-helpers'
 import { getters, DspGraph } from '../dsp-graph'
 import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
@@ -63,7 +63,8 @@ export default (compilation: Compilation): Code => {
         ${graphTraversalNodes.map(node => {
             // 0. De-duplicate and insert shared code required by nodes
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
-            return nodeImplementation.sharedCode.map(codeGenerator => codeGenerator({ macros }))
+            return nodeImplementation.sharedCode.map(codeGenerator => 
+                codeGenerator(getSharedCodeGeneratorContext(compilation)))
                 .filter(code => {
                     if (sharedCode.has(code)) {
                         return false

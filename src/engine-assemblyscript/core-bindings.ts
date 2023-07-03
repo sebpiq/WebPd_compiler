@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { getFloatArrayType } from "../compile-helpers"
-import { FloatArrayPointer, InternalPointer } from "../engine-assemblyscript/types"
+import { FloatArrayPointer, InternalPointer } from "./types"
 import { AudioSettings, FloatArray } from "../types"
 
 export type TypedArrayConstructor =

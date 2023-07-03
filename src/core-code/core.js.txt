@@ -24,8 +24,8 @@ const f64 = i32
 const toInt = (v) => v
 const toFloat = (v) => v
 const createFloatArray = (length) => 
-    new \${FloatArray}(length)
-const setFloatDataView = (d, p, v) => d.\${setFloat}(p, v)
-const getFloatDataView = (d, p) => d.\${getFloat}(p)
+    new ${FloatArray}(length)
+const setFloatDataView = (d, p, v) => d.${setFloat}(p, v)
+const getFloatDataView = (d, p) => d.${getFloat}(p)
 const FS_OPERATION_SUCCESS = ${FS_OPERATION_SUCCESS}
 const FS_OPERATION_FAILURE = ${FS_OPERATION_FAILURE}

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,18 +23,18 @@ import {
     Code,
     Compilation,
     CompilerTarget,
-    Engine,
+    Module,
+    RawModule,
 } from './types'
 import * as variableNames from './engine-common/code-variable-names'
 import { getMacros } from './compile'
-import { compileWasmModule } from './engine-assemblyscript/test-helpers'
-import { createEngine as createAscEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
-import { writeFileSync } from 'fs'
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import { writeFile } from 'fs/promises'
-import { buildGraphTraversalDeclare, buildGraphTraversalLoop } from './compile-helpers'
-const execPromise = promisify(exec)
+import {
+    buildGraphTraversalDeclare,
+    buildGraphTraversalLoop,
+} from './compile-helpers'
+import { instantiateJsCode } from './engine-javascript/test-helpers'
+import { compileAscCode, instantiateWasmBuffer } from './engine-assemblyscript/test-helpers'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -74,8 +74,7 @@ export const makeCompilation = (
         compilation.graphTraversalDeclare ||
         buildGraphTraversalDeclare(graph, inletCallerSpecs)
     const graphTraversalLoop =
-        compilation.graphTraversalLoop ||
-        buildGraphTraversalLoop(graph)
+        compilation.graphTraversalLoop || buildGraphTraversalLoop(graph)
     const precompiledPortlets = compilation.precompiledPortlets || {
         precompiledInlets: {},
         precompiledOutlets: {},
@@ -109,63 +108,35 @@ export const makeCompilation = (
     }
 }
 
-/** Helper function to create a WebPd `Engine` for running tests. */
-export const createEngine = async (
+interface CreateTestModuleApplyBindings {
+    assemblyscript?: (buffer: ArrayBuffer) => Promise<Module>
+    javascript?: (rawModule: RawModule) => Promise<Module>
+}
+
+/** Helper function to create a `Module` for running tests. */
+export const createTestModule = async <ModuleType extends Module>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
-    code: Code
-): Promise<Engine> => {
+    code: Code,
+    applyBindings: CreateTestModuleApplyBindings = {},
+): Promise<ModuleType> => {
+    const applyBindingsNonNull: Required<CreateTestModuleApplyBindings> = {
+        javascript: (rawModule) => rawModule,
+        assemblyscript: (buffer) => instantiateWasmBuffer(buffer),
+        ...applyBindings,
+    }
+
     // Always save latest compilation for easy inspection
     await writeFile(
         `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'asc'}`,
         code
     )
-    if (target === 'javascript') {
-        try {
-            return new Function(`
-                ${code}
-                return exports
-            `)() as any
-        } catch (err) {
-            const errMessage = await getJSEvalErrorSite(code)
-            throw new Error('ERROR in generated JS code ' + errMessage)
-        }
-    } else {
-        const wasmBuffer = await compileWasmModule(code, bitDepth)
-        const engine = await createAscEngine(wasmBuffer)
-        return engine as any
+    switch (target) {
+        case 'javascript':
+            const rawModule = await instantiateJsCode(code)
+            return applyBindingsNonNull.javascript(rawModule)
+        case 'assemblyscript':
+            const buffer = await compileAscCode(code, bitDepth)
+            return applyBindingsNonNull.assemblyscript(buffer)
     }
-}
-
-const getJSEvalErrorSite = async (code: string) => {
-    const filepath = '/tmp/file.mjs'
-    writeFileSync(filepath, code)
-    try {
-        await execPromise('node --experimental-vm-modules ' + filepath)
-    } catch (error) {
-        const matched = new RegExp(`${filepath}:([0-9]+)`).exec(error.stack)
-        if (matched) {
-            const lineNumber = parseInt(matched[1], 10)
-            const lineBefore = Math.max(lineNumber - 3, 0)
-            const lineAfter = lineNumber + 3
-            const codeLines = code
-                .split('\n')
-                .map((line, i) =>
-                    i + 1 === lineNumber ? '-> ' + line + ' <-' : '  ' + line
-                )
-            return (
-                `line ${lineNumber} : \n` +
-                codeLines.slice(lineBefore, lineAfter).join('\n') +
-                '\n-----\n' +
-                error.toString()
-            )
-        } else {
-            console.warn(`couldn't parse error line`)
-            return (
-                `copy/pasting node command stacktrace : \n` + error.toString()
-            )
-        }
-    }
-    console.warn(`no error found :thinking:`)
-    return ''
 }
