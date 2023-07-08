@@ -22,7 +22,7 @@ import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
 import compileToAssemblyscript from './compile-to-assemblyscript'
 import { AssemblyScriptWasmExports, AssemblyScriptWasmImports } from './types'
-import { instantiateAscCode } from './test-helpers'
+import { ascCodeToRawModule } from './test-helpers'
 
 const BIT_DEPTH = 32
 
@@ -35,7 +35,7 @@ describe('compileToAssemblyscript', () => {
             __unpin: () => void
         }
 
-        const wasmExports = await instantiateAscCode(
+        const rawModule = await ascCodeToRawModule(
             compileToAssemblyscript(
                 makeCompilation({
                     target: 'assemblyscript',
@@ -97,7 +97,7 @@ describe('compileToAssemblyscript', () => {
         }
 
         assert.deepStrictEqual(
-            Object.keys(wasmExports).sort(),
+            Object.keys(rawModule).sort(),
             Object.keys(expectedExports).sort()
         )
     })

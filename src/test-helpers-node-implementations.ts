@@ -19,8 +19,8 @@
  */
 
 import assert from 'assert'
-import { executeCompilation, getMacros } from './compile'
-import { createTestModule, makeCompilation, round } from './test-helpers'
+import { executeCompilation } from './compile'
+import { makeCompilation, round, createEngine } from './test-helpers'
 import {
     Signal,
     Message,
@@ -30,19 +30,10 @@ import {
     NodeImplementation,
     Engine,
     AudioSettings,
-    SharedCodeGenerator,
-    Code,
 } from './types'
-import { writeFile } from 'fs/promises'
 import { mapArray, mapObject } from './functional-helpers'
-import {
-    AscTransferrableType,
-    generateTestBindings as generateTestAscBindings,
-} from './core-code/test-helpers-old'
 import { getFloatArrayType } from './compile-helpers'
 import { DspGraph } from './dsp-graph'
-import { createEngine } from './engine-assemblyscript/AssemblyScriptWasmEngine'
-import { instantiateJsCode } from './engine-javascript/test-helpers'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -253,11 +244,10 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         },
     })
     const code = executeCompilation(compilation)
-    const engine = await createTestModule<Engine>(
+    const engine = await createEngine(
         target,
         bitDepth,
         code,
-        {'assemblyscript': (buffer) => createEngine(buffer)}
     )
 
     if (arrays) {
@@ -444,106 +434,6 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
         roundNestedFloats(actualOutputFrames),
         roundNestedFloats(expectedOutputFrames)
     )
-}
-
-// ================================ TESTING GLOBAL FUNCTIONS ================================ //
-interface FrameSharedCode {
-    parameters: Array<AscTransferrableType>
-    returns: AscTransferrableType
-}
-
-interface SharedCodeTestSettings {
-    target: CompilerTarget
-    sharedCodeGenerators: Array<SharedCodeGenerator>
-    functionName: string
-    bitDepth: AudioSettings['bitDepth']
-}
-
-export const createTestBindings = async <
-    ExportedFunctions extends { [functionName: string]: AscTransferrableType }
->(
-    codeToTest: Code,
-    target: CompilerTarget,
-    bitDepth: AudioSettings['bitDepth'],
-    exportedFunctions: ExportedFunctions
-) => {
-    const compilation = makeCompilation({
-        target,
-        audioSettings: {
-            channelCount: ENGINE_DSP_PARAMS.channelCount,
-            bitDepth,
-        },
-    })
-
-    let code = executeCompilation(compilation)
-
-    if (target === 'javascript') {
-        code +=
-            codeToTest +
-            `
-            ${Object.keys(exportedFunctions).map(
-                (functionName) => `exports.${functionName} = ${functionName}`
-            )} 
-        `
-    } else {
-        code +=
-            codeToTest +
-            `
-            export {
-                ${Object.keys(exportedFunctions).join(', ')}
-            }
-        `
-    }
-
-    // Always save latest compilation for easy inspection
-    await writeFile(
-        `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'asc'}`,
-        code
-    )
-
-    if (target === 'assemblyscript') {
-        return await generateTestAscBindings(code, bitDepth, exportedFunctions)
-    } else {
-        return (await instantiateJsCode(code)) as unknown as {
-            [FuncName in keyof ExportedFunctions]: (
-                ...args: Array<AscTransferrableType>
-            ) => ExportedFunctions[FuncName]
-        }
-    }
-}
-
-/** Helper to test functions defined in {@link NodeImplementation#sharedCode}. */
-export const assertSharedCodeFunctionOutput = async (
-    sharedCodeTestSettings: SharedCodeTestSettings,
-    ...frames: Array<FrameSharedCode>
-) => {
-    const { target, bitDepth, sharedCodeGenerators, functionName } =
-        sharedCodeTestSettings
-
-    const codeToTest = sharedCodeGenerators
-        .map((sharedCodeGenerator) =>
-            sharedCodeGenerator({
-                macros: getMacros(target),
-                target,
-                audioSettings: {
-                    bitDepth, channelCount: {in: 2, out: 2}
-                }
-            })
-        )
-        .join('\n')
-
-    let bindings: any = await createTestBindings(codeToTest, target, bitDepth, {
-        [functionName]: frames[0].returns,
-    })
-
-    const actualFrames: Array<FrameSharedCode> = []
-    for (let frame of frames) {
-        actualFrames.push({
-            ...frame,
-            returns: bindings[functionName](...frame.parameters),
-        })
-    }
-    assert.deepStrictEqual(actualFrames, frames)
 }
 
 // ================================ UTILS ================================ //

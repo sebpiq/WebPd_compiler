@@ -18,14 +18,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { runTestSuite } from './test-helpers'
+import { runTestSuite } from '../test-helpers'
 import { core, msg } from '.'
 
 describe('msg', () => {
     runTestSuite(
         [
             {
-                description: 'msg_floats | should create floats message %s',
+                description: 'msg_floats > should create floats message %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     const ${Var('message', 'Message')} = msg_floats([111, 222])
                     assert_integersEqual(msg_getLength(message), 2)
@@ -36,7 +36,7 @@ describe('msg', () => {
 
             {
                 description:
-                    'msg_floats | should create empty floats message %s',
+                    'msg_floats > should create empty floats message %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     const ${Var('message', 'Message')} = msg_floats([])
                     assert_integersEqual(msg_getLength(message), 0)
@@ -44,7 +44,7 @@ describe('msg', () => {
             },
 
             {
-                description: 'msg_strings | should create strings message %s',
+                description: 'msg_strings > should create strings message %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     const ${Var(
                         'message',
@@ -59,7 +59,7 @@ describe('msg', () => {
 
             {
                 description:
-                    'msg_strings | should create empty strings message %s',
+                    'msg_strings > should create empty strings message %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     const ${Var('message', 'Message')} = msg_strings([])
                     assert_integersEqual(msg_getLength(message), 0)
@@ -67,7 +67,7 @@ describe('msg', () => {
             },
 
             {
-                description: 'msg_isMatching | should match given message %s',
+                description: 'msg_isMatching > should match given message %s',
                 codeGenerator: () => `
                     assert_booleansEqual(
                         msg_isMatching(
@@ -115,7 +115,7 @@ describe('msg', () => {
             },
 
             {
-                description: 'msg_display | should return a display version of a message %s',
+                description: 'msg_display > should return a display version of a message %s',
                 codeGenerator: ({ macros: { Var }, target }) => `
                     const ${Var('message', 'Message')} = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
                     msg_writeFloatToken(message, 0, -123)
@@ -129,216 +129,4 @@ describe('msg', () => {
         ],
         [core, msg]
     )
-
-    // const baseExports = {
-    //     testReadMessageData: 1,
-    // }
-
-    // const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
-    //     getAscCode('core.asc', bitDepth) +
-    //     getAscCode('sked.asc', bitDepth) +
-    //     getAscCode('commons.asc', bitDepth) +
-    //     getAscCode('msg.asc', bitDepth) +
-    //     `
-    //         export function testReadMessageData(message: Message, index: Int): Int {
-    //             return message.dataView.getInt32(index * sizeof<Int>())
-    //         }
-
-    //         export {
-    //             // MSG EXPORTS
-    //             x_msg_create as msg_create,
-    //             x_msg_getTokenTypes as msg_getTokenTypes,
-    //             x_msg_createTemplate as msg_createTemplate,
-    //             msg_writeStringToken,
-    //             msg_writeFloatToken,
-    //             msg_readStringToken,
-    //             msg_readFloatToken,
-    //             MSG_FLOAT_TOKEN,
-    //             MSG_STRING_TOKEN,
-
-    //             // CORE EXPORTS
-    //             createFloatArray,
-    //             x_core_createListOfArrays as core_createListOfArrays,
-    //             x_core_pushToListOfArrays as core_pushToListOfArrays,
-    //             x_core_getListOfArraysLength as core_getListOfArraysLength,
-    //             x_core_getListOfArraysElem as core_getListOfArraysElem,
-    //         }
-    //     `
-
-    // describe('msg_floats / msg_strings', () => {
-    //     it.each(TEST_PARAMETERS)(
-    //         'should create floats message %s',
-    //         async ({ bitDepth }) => {
-    //             // prettier-ignore
-    //             const code = getBaseTestCode(bitDepth) + `
-    //             export function testCreateFloatsMessage(): Message {
-    //                 return msg_floats([111, 222])
-    //             }
-    //             export function testCreateEmptyFloatsMessage(): Message {
-    //                 return msg_floats([])
-    //             }
-    //         `
-
-    //             const exports = {
-    //                 ...baseExports,
-    //                 testCreateFloatsMessage: 1,
-    //                 testCreateEmptyFloatsMessage: 1,
-    //             }
-
-    //             const { wasmExports } = await initializeCoreCodeTest({
-    //                 code,
-    //                 bitDepth,
-    //                 exports,
-    //             })
-
-    //             assert.deepStrictEqual(
-    //                 liftMessage(
-    //                     wasmExports,
-    //                     wasmExports.testCreateFloatsMessage()
-    //                 ),
-    //                 [111, 222]
-    //             )
-    //             assert.deepStrictEqual(
-    //                 liftMessage(
-    //                     wasmExports,
-    //                     wasmExports.testCreateEmptyFloatsMessage()
-    //                 ),
-    //                 []
-    //             )
-    //         }
-    //     )
-
-    //     it.each(TEST_PARAMETERS)(
-    //         'should create strings message %s',
-    //         async ({ bitDepth }) => {
-    //             // prettier-ignore
-    //             const code = getBaseTestCode(bitDepth) + `
-    //             export function testCreateStringsMessage(): Message {
-    //                 return msg_strings(['', 'blabla', 'blo'])
-    //             }
-    //             export function testCreateEmptyStringsMessage(): Message {
-    //                 return msg_strings([])
-    //             }
-    //         `
-
-    //             const exports = {
-    //                 ...baseExports,
-    //                 testCreateStringsMessage: 1,
-    //                 testCreateEmptyStringsMessage: 1,
-    //             }
-
-    //             const { wasmExports } = await initializeCoreCodeTest({
-    //                 code,
-    //                 bitDepth,
-    //                 exports,
-    //             })
-
-    //             assert.deepStrictEqual(
-    //                 liftMessage(
-    //                     wasmExports,
-    //                     wasmExports.testCreateStringsMessage()
-    //                 ),
-    //                 ['', 'blabla', 'blo']
-    //             )
-    //             assert.deepStrictEqual(
-    //                 liftMessage(
-    //                     wasmExports,
-    //                     wasmExports.testCreateEmptyStringsMessage()
-    //                 ),
-    //                 []
-    //             )
-    //         }
-    //     )
-    // })
-
-    // describe('msg_isMatching', () => {
-    //     it.each(TEST_PARAMETERS)(
-    //         'should match given message %s',
-    //         async ({ bitDepth }) => {
-    //             // prettier-ignore
-    //             const code = getBaseTestCode(bitDepth) + `
-    //             export function testMatch1(): boolean {
-    //                 const m: Message = msg_create([MSG_FLOAT_TOKEN])
-    //                 return msg_isMatching(m, [MSG_FLOAT_TOKEN])
-    //             }
-    //             export function testMatch2(): boolean {
-    //                 const m: Message = msg_create([MSG_STRING_TOKEN, 1])
-    //                 return msg_isMatching(m, [MSG_STRING_TOKEN])
-    //             }
-    //             export function testMatch3(): boolean {
-    //                 const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 1, MSG_FLOAT_TOKEN])
-    //                 return msg_isMatching(m, [MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, MSG_FLOAT_TOKEN])
-    //             }
-    //             export function testMatch4(): boolean {
-    //                 const m: Message = msg_create([])
-    //                 return msg_isMatching(m, [])
-    //             }
-    //             export function testNotMatching1(): boolean {
-    //                 const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN])
-    //                 return msg_isMatching(m, [MSG_FLOAT_TOKEN])
-    //             }
-    //             export function testNotMatching2(): boolean {
-    //                 const m: Message = msg_create([MSG_STRING_TOKEN, 1])
-    //                 return msg_isMatching(m, [MSG_FLOAT_TOKEN])
-    //             }
-    //         `
-
-    //             const exports = {
-    //                 ...baseExports,
-    //                 testMatch1: 1,
-    //                 testMatch2: 1,
-    //                 testMatch3: 1,
-    //                 testMatch4: 1,
-    //                 testNotMatching1: 1,
-    //                 testNotMatching2: 1,
-    //             }
-
-    //             const { wasmExports } = await initializeCoreCodeTest({
-    //                 code,
-    //                 bitDepth,
-    //                 exports,
-    //             })
-
-    //             assert.ok(wasmExports.testMatch1())
-    //             assert.ok(wasmExports.testMatch2())
-    //             assert.ok(wasmExports.testMatch3())
-    //             assert.ok(wasmExports.testMatch4())
-    //             assert.ok(!wasmExports.testNotMatching1())
-    //             assert.ok(!wasmExports.testNotMatching2())
-    //         }
-    //     )
-    // })
-
-    // describe('msg_display', () => {
-    //     it.each(TEST_PARAMETERS)(
-    //         'should return a display version of a message %s',
-    //         async ({ bitDepth }) => {
-    //             // prettier-ignore
-    //             const code = getBaseTestCode(bitDepth) + `
-    //             export function testDisplay(): string {
-    //                 const m: Message = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
-    //                 msg_writeFloatToken(m, 0, -123)
-    //                 msg_writeStringToken(m, 1, 'bla')
-    //                 return msg_display(m)
-    //             }
-    //         `
-
-    //             const exports = {
-    //                 ...baseExports,
-    //                 testDisplay: 1,
-    //             }
-
-    //             const { wasmExports } = await initializeCoreCodeTest({
-    //                 code,
-    //                 bitDepth,
-    //                 exports,
-    //             })
-
-    //             assert.strictEqual(
-    //                 liftString(wasmExports, wasmExports.testDisplay()),
-    //                 '[-123.0, "bla"]'
-    //             )
-    //         }
-    //     )
-    // })
 })

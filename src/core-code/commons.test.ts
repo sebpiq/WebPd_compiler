@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { runTestSuite } from './test-helpers'
+import { runTestSuite } from '../test-helpers'
 import { commons, core, sked } from '.'
 
 describe('commons', () => {
@@ -25,7 +25,7 @@ describe('commons', () => {
         [
             {
                 description:
-                    'setArray | should set the array and notifiy the subscribers hooks %s',
+                    'setArray > should set the array and notifiy the subscribers hooks %s',
                 codeGenerator: ({ macros: { Var, Func } }) => `
                     callbackCallCounter = 0
 

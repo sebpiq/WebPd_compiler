@@ -23,8 +23,10 @@ import {
     Code,
     Compilation,
     CompilerTarget,
+    Engine,
     Module,
     RawModule,
+    SharedCodeGenerator,
 } from './types'
 import * as variableNames from './engine-common/code-variable-names'
 import { getMacros } from './compile'
@@ -33,8 +35,10 @@ import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
 } from './compile-helpers'
-import { instantiateJsCode } from './engine-javascript/test-helpers'
-import { compileAscCode, instantiateWasmBuffer } from './engine-assemblyscript/test-helpers'
+import { jsCodeToRawModule } from './engine-javascript/test-helpers'
+import { compileAscCode, wasmBufferToRawModule } from './engine-assemblyscript/test-helpers'
+import { renderCode } from './functional-helpers'
+import { createEngine as createAssemblyScriptWasmEngine} from './engine-assemblyscript/AssemblyScriptWasmEngine'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -108,6 +112,18 @@ export const makeCompilation = (
     }
 }
 
+interface TestParameters {
+    bitDepth: AudioSettings['bitDepth']
+    target: CompilerTarget
+}
+
+export const TEST_PARAMETERS: Array<TestParameters> = [
+    { bitDepth: 32, target: 'javascript' },
+    { bitDepth: 64, target: 'javascript' },
+    { bitDepth: 32, target: 'assemblyscript' },
+    { bitDepth: 64, target: 'assemblyscript' },
+]
+
 interface CreateTestModuleApplyBindings {
     assemblyscript?: (buffer: ArrayBuffer) => Promise<Module>
     javascript?: (rawModule: RawModule) => Promise<Module>
@@ -122,7 +138,7 @@ export const createTestModule = async <ModuleType extends Module>(
 ): Promise<ModuleType> => {
     const applyBindingsNonNull: Required<CreateTestModuleApplyBindings> = {
         javascript: (rawModule) => rawModule,
-        assemblyscript: (buffer) => instantiateWasmBuffer(buffer),
+        assemblyscript: (buffer) => wasmBufferToRawModule(buffer),
         ...applyBindings,
     }
 
@@ -133,10 +149,176 @@ export const createTestModule = async <ModuleType extends Module>(
     )
     switch (target) {
         case 'javascript':
-            const rawModule = await instantiateJsCode(code)
+            const rawModule = await jsCodeToRawModule(code)
             return applyBindingsNonNull.javascript(rawModule)
         case 'assemblyscript':
             const buffer = await compileAscCode(code, bitDepth)
             return applyBindingsNonNull.assemblyscript(buffer)
     }
+}
+
+type TestEngine<ExportsKeys> = Engine & {
+    [Property in keyof ExportsKeys]: any
+}
+
+type TestEngineExportsKeys = { [name: string]: any }
+
+export const createEngine = <ExportsKeys extends TestEngineExportsKeys>(
+    target: CompilerTarget,
+    bitDepth: AudioSettings['bitDepth'],
+    code: Code,
+) => {
+    return createTestModule<TestEngine<ExportsKeys>>(
+        target,
+        bitDepth,
+        code,
+        {'assemblyscript': (buffer) => createAssemblyScriptWasmEngine(buffer) as Promise<TestEngine<ExportsKeys>>}
+    )
+}
+
+export const runTestSuite = (
+    tests: Array<{ description: string; codeGenerator: SharedCodeGenerator }>,
+    sharedCode: Array<SharedCodeGenerator> = []
+) => {
+    const testModules: Array<[TestParameters, any]> = []
+    let testCounter = 1
+    const testFunctionNames: Array<string> = []
+
+    tests.forEach(() => testFunctionNames.push(`test${testCounter++}`))
+
+    beforeAll(async () => {
+        for (let testParameters of TEST_PARAMETERS) {
+            const macros = getMacros(testParameters.target)
+            const { Var, Func } = macros
+            const codeGeneratorContext = {
+                macros,
+                target: testParameters.target,
+                audioSettings: {
+                    bitDepth: testParameters.bitDepth,
+                    channelCount: { in: 2, out: 2 },
+                },
+            }
+            let code = renderCode`
+                ${sharedCode.map((codeGenerator) =>
+                    codeGenerator(codeGeneratorContext)
+                )}
+
+                function reportTestFailure ${Func(
+                    [Var('msg', 'string')],
+                    'void'
+                )} {
+                    console.log(msg)
+                    throw new Error('test failed')
+                }                
+
+                function assert_stringsEqual ${Func(
+                    [Var('actual', 'string'), Var('expected', 'string')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got string "' + actual 
+                            + '" expected "' + expected + '"')
+                    }
+                }
+
+                function assert_booleansEqual ${Func(
+                    [Var('actual', 'boolean'), Var('expected', 'boolean')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got boolean ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                }
+
+                function assert_integersEqual ${Func(
+                    [Var('actual', 'Int'), Var('expected', 'Int')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got integer ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                }
+    
+                function assert_floatsEqual ${Func(
+                    [Var('actual', 'Float'), Var('expected', 'Float')],
+                    'void'
+                )} {
+                    if (actual !== expected) {
+                        reportTestFailure(
+                            'Got float ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                }
+
+                function assert_floatArraysEqual ${Func(
+                    [
+                        Var('actual', 'FloatArray'),
+                        Var('expected', 'FloatArray'),
+                    ],
+                    'void'
+                )} {
+                    if (actual.length !== expected.length) {
+                        reportTestFailure(
+                            'Arrays of different length ' + actual.toString() 
+                            + ' expected ' + expected.toString())
+                    }
+                    for (let ${Var('i', 'Int')} = 0; i < actual.length; i++) {
+                        if (actual[i] !== expected[i]) {
+                            reportTestFailure(
+                                'Arrays are not equal ' + actual.toString() 
+                                + ' expected ' + expected.toString())
+                        }
+                    }
+                }
+
+                ${tests.map(
+                    ({ codeGenerator }, i) => `
+                    function ${testFunctionNames[i]} ${Func([], 'void')} {
+                        ${codeGenerator(codeGeneratorContext)}
+                    }
+                `
+                )}
+
+                ${
+                    testParameters.target === 'assemblyscript'
+                        ? `export {${testFunctionNames.join(',')}}`
+                        : `const exports = {${testFunctionNames.join(',')}}`
+                }
+                
+            `
+
+            testModules.push([
+                testParameters,
+                await createTestModule(
+                    testParameters.target,
+                    testParameters.bitDepth,
+                    code
+                ),
+            ])
+        }
+    })
+
+    const _findTestModule = (testParameters: TestParameters) => {
+        const matched = testModules.find(([testModuleParameters]) =>
+            Object.entries(testModuleParameters).every(
+                ([key, value]) =>
+                    testParameters[key as keyof TestParameters] === value
+            )
+        )
+        if (!matched) {
+            throw new Error(`Test module for ${testParameters} not found`)
+        }
+        return matched[1]
+    }
+
+    tests.forEach(({ description }, i) => {
+        it.each(TEST_PARAMETERS)(description, (testParameters) => {
+            _findTestModule(testParameters)[testFunctionNames[i]]()
+        })
+    })
 }

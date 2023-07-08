@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { runTestSuite } from './test-helpers'
+import { runTestSuite } from '../test-helpers'
 import { buf, core, fs, msg } from '.'
 
 describe('fs', () => {
@@ -25,7 +25,7 @@ describe('fs', () => {
         [
             {
                 description:
-                    'sound info | should be able to convert fs_SoundInfo to Message %s',
+                    'sound info > should be able to convert fs_SoundInfo to Message %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
                     const ${Var('soundInfo', 'fs_SoundInfo')} = {
@@ -50,7 +50,7 @@ describe('fs', () => {
             },
             {
                 description:
-                    'fs_readSoundFile | should create the operation %s',
+                    'fs_readSoundFile > should create the operation %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
                     const ${Var(
@@ -86,7 +86,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_sendReadSoundFileResponse | should register the operation success and call the callback %s',
+                    'fs_sendReadSoundFileResponse > should register the operation success and call the callback %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
                     // 1. Create the operation
@@ -135,7 +135,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_sendReadSoundFileResponse | should register the operation failure %s',
+                    'fs_sendReadSoundFileResponse > should register the operation failure %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
                     const ${Var(
@@ -169,7 +169,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_openSoundReadStream | should create the operation %s',
+                    'fs_openSoundReadStream > should create the operation %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
                     const ${Var('channelCount', 'Int')} = 22
@@ -209,7 +209,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_onSoundStreamData | should push data to the buffer %s',
+                    'fs_onSoundStreamData > should push data to the buffer %s',
                 codeGenerator: ({ macros: { Var, Func } }) => `
                     initializeTest()
                     let ${Var('availableFrameCount', 'Int')} = 0
@@ -281,7 +281,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_closeSoundStream | should close the read stream and call the callback %s',
+                    'fs_closeSoundStream > should close the read stream and call the callback %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
                     let ${Var('data', 'FloatArray[]')} = []
@@ -332,7 +332,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_openSoundWriteStream | should create the operation %s',
+                    'fs_openSoundWriteStream > should create the operation %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
                     const ${Var(
@@ -369,7 +369,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_sendSoundStreamData | should push data to the buffer %s',
+                    'fs_sendSoundStreamData > should push data to the buffer %s',
                 codeGenerator: ({ macros: { Var, Func } }) => `
                     initializeTest()
                     let ${Var('counter', 'Float')} = 0
@@ -443,7 +443,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_closeSoundStream | should close the write stream and call the callback %s',
+                    'fs_closeSoundStream > should close the write stream and call the callback %s',
                 codeGenerator: ({ macros: { Var, Func } }) => `
                     initializeTest()
                     function testSendSoundStreamData ${Func(
@@ -495,7 +495,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_writeSoundFile | should create the operation %s',
+                    'fs_writeSoundFile > should create the operation %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
 
@@ -537,7 +537,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_sendWriteSoundFileResponse | should register the operation success and call the callback %s',
+                    'fs_sendWriteSoundFileResponse > should register the operation success and call the callback %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
 
@@ -580,7 +580,7 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_sendWriteSoundFileResponse | should register the operation failure %s',
+                    'fs_sendWriteSoundFileResponse > should register the operation failure %s',
                 codeGenerator: ({ macros: { Var }}) => `
                     initializeTest()
 

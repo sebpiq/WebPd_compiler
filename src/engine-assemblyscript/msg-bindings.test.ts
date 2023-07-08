@@ -24,9 +24,8 @@ import {
     liftMessage,
     lowerMessage,
 } from './msg-bindings'
-import { TEST_PARAMETERS } from '../core-code/test-helpers-old'
 import { AudioSettings, SharedCodeGenerator } from '../types'
-import { instantiateAscCode } from './test-helpers'
+import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getFloatArrayType } from '../compile-helpers'
 import { getMacros } from '../compile'
 import { commons, core, msg, sked } from '../core-code'
@@ -97,7 +96,7 @@ describe('msg-bindings', () => {
             async ({ bitDepth }) => {
                 const code = getBaseTestCode(bitDepth)
                 const floatArrayType = getFloatArrayType(bitDepth)
-                const wasmExports = await instantiateAscCode(code, bitDepth)
+                const wasmExports = await ascCodeToRawModule(code, bitDepth)
                 const messagePointer = lowerMessage(wasmExports, ['bla', 2.3])
 
                 // Testing token count
@@ -186,7 +185,7 @@ describe('msg-bindings', () => {
                     }
                 `
 
-                const wasmExports = await instantiateAscCode(code, bitDepth)
+                const wasmExports = await ascCodeToRawModule(code, bitDepth)
 
                 const messagePointer = wasmExports.testCreateMessage()
                 assert.deepStrictEqual(

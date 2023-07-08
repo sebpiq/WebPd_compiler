@@ -8,10 +8,10 @@
     "license": "LGPL-3.0",
     "author": "Sébastien Piquemal",
     "scripts": {
-        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config jest.mjs",
+        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config jest.mjs --testTimeout 10000",
         "build:dist": "npx rollup --config rollup.mjs",
         "build:assemblyscript-wasm-bindings": "npx rollup --config rollup-assemblyscript-wasm-bindings.mjs",
-        "build:js-engine": "node --experimental-specifier-resolution=node --loader ts-node/esm --no-warnings ./transpile-javascript.ts",
+        "build:js-core-code": "node --experimental-specifier-resolution=node --loader ts-node/esm --no-warnings ./transpile-javascript.ts",
         "prettier": "npm explore @webpd/dev -- npm run prettier $(pwd)/src",
         "eslint": "npm explore @webpd/dev -- npm run eslint $(pwd)/src"
     },

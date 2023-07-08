@@ -19,14 +19,14 @@
  */
 
 import { buf, core } from '.'
-import { runTestSuite } from './test-helpers'
+import { runTestSuite } from '../test-helpers'
 
 describe('buf', () => {
     runTestSuite(
         [
             {
                 description:
-                    'common | should clear content when calling buf_clear %s',
+                    'common > should clear content when calling buf_clear %s',
                 codeGenerator: () => `
                     const soundBuffer = buf_create(5)
                     const data = createFloatArray(4)
@@ -45,7 +45,7 @@ describe('buf', () => {
 
             {
                 description:
-                    'push / pull mode | should be able to push and pull from SoundBuffer %s',
+                    'push / pull mode > should be able to push and pull from SoundBuffer %s',
                 codeGenerator: ({ macros: { Var } }) => `
                     const soundBuffer = buf_create(5)
                     let ${Var('availableLength', 'Int')} = -1
@@ -87,7 +87,7 @@ describe('buf', () => {
 
             {
                 description:
-                    'push / pull mode | should return 0 when pulling from empty buffer %s',
+                    'push / pull mode > should return 0 when pulling from empty buffer %s',
                 codeGenerator: () => `
                     const soundBuffer = buf_create(5)
                     assert_floatsEqual(buf_pullSample(soundBuffer), 0)
@@ -97,7 +97,7 @@ describe('buf', () => {
 
             {
                 description:
-                    'read / write mode | should return 0 when reading from an empty buffer %s',
+                    'read / write mode > should return 0 when reading from an empty buffer %s',
                 codeGenerator: () => `
                     const soundBuffer = buf_create(5)
                     assert_floatsEqual(buf_readSample(soundBuffer, 0), 0)
@@ -106,7 +106,7 @@ describe('buf', () => {
 
             {
                 description:
-                    'read / write mode | should write a sample to the buffer %s',
+                    'read / write mode > should write a sample to the buffer %s',
                 codeGenerator: () => `
                     const soundBuffer = buf_create(3)
                     buf_writeSample(soundBuffer, 11)
@@ -120,7 +120,7 @@ describe('buf', () => {
 
             {
                 description:
-                    'read / write mode | should not throw an error with wrong values for read offset %s',
+                    'read / write mode > should not throw an error with wrong values for read offset %s',
                 codeGenerator: () => `
                     const soundBuffer = buf_create(3)
                     buf_writeSample(soundBuffer, 11)

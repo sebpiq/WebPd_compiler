@@ -24,7 +24,7 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 const execPromise = promisify(exec)
 
-export const instantiateJsCode = async (code: Code): Promise<RawModule> => {
+export const jsCodeToRawModule = async (code: Code): Promise<RawModule> => {
     try {
         return new Function(`
             ${code}

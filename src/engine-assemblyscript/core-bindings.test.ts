@@ -25,7 +25,7 @@ import {
     readTypedArray,
 } from './core-bindings'
 import { AudioSettings } from '../types'
-import { TEST_PARAMETERS, instantiateAscCode } from './test-helpers'
+import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { core } from '../core-code'
 import { getMacros } from '../compile'
 import { getFloatArrayType } from '../compile-helpers'
@@ -53,7 +53,7 @@ describe('core-bindings', () => {
             'should read existing typed array from wasm module %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await instantiateAscCode(getBaseTestCode(bitDepth) + `
+                const wasmExports = await ascCodeToRawModule(getBaseTestCode(bitDepth) + `
                     const myArray: Float64Array = new Float64Array(3)
                     myArray[0] = 123
                     myArray[1] = 456
@@ -96,7 +96,7 @@ describe('core-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should read dynamically created typed array from wasm module %s',
             async ({ bitDepth }) => {
-                const wasmExports = await instantiateAscCode(
+                const wasmExports = await ascCodeToRawModule(
                     getBaseTestCode(bitDepth) +
                         `
                         export function testCreateNewArray(size: Int): Float64Array {
@@ -143,7 +143,7 @@ describe('core-bindings', () => {
             'should lower typed array to wasm module %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await instantiateAscCode(getBaseTestCode(bitDepth) + `
+                const wasmExports = await ascCodeToRawModule(getBaseTestCode(bitDepth) + `
                     export function testReadArrayElem (array: FloatArray, index: Int): Float {
                         return array[index]
                     }
@@ -189,7 +189,7 @@ describe('core-bindings', () => {
             'should lower a list of typed arrays %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await instantiateAscCode(getBaseTestCode(bitDepth) + `
+                const wasmExports = await ascCodeToRawModule(getBaseTestCode(bitDepth) + `
                     export function testReadArraysLength (arrays: FloatArray[], index: Int): f64 {
                         return arrays.length
                     }
@@ -264,7 +264,7 @@ describe('core-bindings', () => {
             async ({ bitDepth }) => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 // prettier-ignore
-                const wasmExports = await instantiateAscCode(getBaseTestCode(bitDepth) + `
+                const wasmExports = await ascCodeToRawModule(getBaseTestCode(bitDepth) + `
                     const arrays: FloatArray[] = [
                         createFloatArray(3),
                         createFloatArray(3),
@@ -297,7 +297,7 @@ describe('core-bindings', () => {
             'should share the same memory space %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await instantiateAscCode(getBaseTestCode(bitDepth) + `
+                const wasmExports = await ascCodeToRawModule(getBaseTestCode(bitDepth) + `
                     const arrays: FloatArray[] = [
                         createFloatArray(3),
                         createFloatArray(3),

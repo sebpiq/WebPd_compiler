@@ -17,14 +17,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { runTestSuite } from './test-helpers'
+import { runTestSuite } from '../test-helpers'
 import { core, sked } from '.'
 
 describe('sked', () => {
 
     runTestSuite([
         {
-            description: 'wait / emit | should not have to wait if event already resolved %s',
+            description: 'wait / emit > should not have to wait if event already resolved %s',
             codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(true)
@@ -43,7 +43,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'wait / emit | should call waits callbacks when resolving %s',
+            description: 'wait / emit > should call waits callbacks when resolving %s',
             codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(true)
@@ -67,7 +67,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'wait / emit | should not call callbacks again when resolving several times %s',
+            description: 'wait / emit > should not call callbacks again when resolving several times %s',
             codeGenerator: ({ macros: {Var} }) => `
                 initializeTests()
                 const skeduler = sked_create(true)
@@ -92,7 +92,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'wait / emit | should cancel wait %s',
+            description: 'wait / emit > should cancel wait %s',
             codeGenerator: ({ macros: { Var }}) => `
                 initializeTests()
                 const skeduler = sked_create(true)
@@ -104,7 +104,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'wait future / emit | should call waits callbacks when resolving %s',
+            description: 'wait future / emit > should call waits callbacks when resolving %s',
             codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(false)
@@ -127,7 +127,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'wait future / emit | should not call callbacks again when resolving several times %s',
+            description: 'wait future / emit > should not call callbacks again when resolving several times %s',
             codeGenerator: () => `            
                 initializeTests()
                 const skeduler = sked_create(false)
@@ -146,7 +146,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'wait future / emit | should cancel wait %s',
+            description: 'wait future / emit > should cancel wait %s',
             codeGenerator: ({ macros: { Var }}) => `
                 initializeTests()
                 const skeduler = sked_create(false)
@@ -162,7 +162,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'subscribe / emit | emit should trigger existing listeners %s',
+            description: 'subscribe / emit > emit should trigger existing listeners %s',
             codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(false)
@@ -191,7 +191,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'subscribe / emit | should cancel listeners %s',
+            description: 'subscribe / emit > should cancel listeners %s',
             codeGenerator: ({ macros: { Var }}) => `
                 initializeTests()
                 const skeduler = sked_create(false)
@@ -217,7 +217,7 @@ describe('sked', () => {
         },
 
         {
-            description: 'cancel | should not throw when cancelling an listener that is already cancelled %s',
+            description: 'cancel > should not throw when cancelling an listener that is already cancelled %s',
             codeGenerator: ({ macros: { Var }}) => `
                 initializeTests()
                 const skeduler = sked_create(false)
