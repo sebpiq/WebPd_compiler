@@ -18,9 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata, getFloatArrayType, getSharedCodeGeneratorContext } from '../compile-helpers'
+import { buildMetadata, getFloatArrayType, getGlobalCodeGeneratorContext } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
+import compileGlobalCode from '../engine-common/compile-global-code'
 import { Compilation } from '../types'
 import { JavaScriptEngineCode } from './types'
 import { generateCoreCode } from '../core-code'
@@ -30,6 +31,7 @@ import {
     compileInletCallers,
 } from '../engine-common/compile-portlet-accessors'
 import embedArrays from '../engine-common/embed-arrays'
+import { fsCore, fsReadSoundFile, fsReadSoundStream, fsSoundStreamCore, fsWriteSoundFile, fsWriteSoundStream } from '../core-code/fs'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
@@ -40,13 +42,14 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     } = compilation
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
+    const sharedCodeContext = getGlobalCodeGeneratorContext(compilation)
 
     // When setting an array we need to make sure it is converted to the right type.
     const floatArrayType = getFloatArrayType(audioSettings.bitDepth)
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCode(getSharedCodeGeneratorContext(compilation))}
+        ${generateCoreCode(sharedCodeContext)}
 
         ${embedArrays(compilation)}
 
@@ -98,25 +101,11 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 )}
             },
             fs: {
-                onReadSoundFile: () => undefined,
-                onWriteSoundFile: () => undefined,
-                onOpenSoundReadStream: () => undefined,
                 onOpenSoundWriteStream: () => undefined,
                 onSoundStreamData: () => undefined,
-                onCloseSoundStream: () => undefined,
-                sendReadSoundFileResponse: x_fs_onReadSoundFileResponse,
-                sendWriteSoundFileResponse: x_fs_onWriteSoundFileResponse,
-                sendSoundStreamData: x_fs_onSoundStreamData,
-                closeSoundStream: x_fs_onCloseSoundStream,
             },
         }
 
-        // FS IMPORTS
-        const i_fs_readSoundFile = (...args) => exports.fs.onReadSoundFile(...args)
-        const i_fs_writeSoundFile = (...args) => exports.fs.onWriteSoundFile(...args)
-        const i_fs_openSoundReadStream = (...args) => exports.fs.onOpenSoundReadStream(...args)
-        const i_fs_openSoundWriteStream = (...args) => exports.fs.onOpenSoundWriteStream(...args)
-        const i_fs_sendSoundStreamData = (...args) => exports.fs.onSoundStreamData(...args)
-        const i_fs_closeSoundStream = (...args) => exports.fs.onCloseSoundStream(...args)
+        ${compileGlobalCode(compilation, [ fsCore, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
     `
 }

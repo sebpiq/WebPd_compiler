@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata, getSharedCodeGeneratorContext } from '../compile-helpers'
+import { buildMetadata, getGlobalCodeGeneratorContext } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
@@ -30,16 +30,19 @@ import {
     compileInletCallers,
 } from '../engine-common/compile-portlet-accessors'
 import embedArrays from '../engine-common/embed-arrays'
+import compileGlobalCode from '../engine-common/compile-global-code'
+import { fsCore, fsReadSoundFile, fsReadSoundStream, fsSoundStreamCore, fsWriteSoundFile, fsWriteSoundStream } from '../core-code/fs'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
+    const globalCodeContext = getGlobalCodeGeneratorContext(compilation)
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCode(getSharedCodeGeneratorContext(compilation))}
+        ${generateCoreCode(globalCodeContext)}
 
         ${embedArrays(compilation)}
 
@@ -71,22 +74,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             ${compileLoop(compilation)}
         }
 
-        // FS IMPORTS
-        export declare function i_fs_readSoundFile (id: fs_OperationId, url: Url, info: Message): void
-        export declare function i_fs_writeSoundFile (id: fs_OperationId, sound: FloatArray[], url: Url, info: Message): void
-        export declare function i_fs_openSoundReadStream (id: fs_OperationId, url: Url, info: Message): void
-        export declare function i_fs_openSoundWriteStream (id: fs_OperationId, url: Url, info: Message): void
-        export declare function i_fs_sendSoundStreamData (id: fs_OperationId, block: FloatArray[]): void
-        export declare function i_fs_closeSoundStream (id: fs_OperationId, status: fs_OperationStatus): void
-
         export {
             metadata,
-
-            // FS EXPORTS
-            x_fs_onReadSoundFileResponse as fs_onReadSoundFileResponse,
-            x_fs_onWriteSoundFileResponse as fs_onWriteSoundFileResponse,
-            x_fs_onSoundStreamData as fs_onSoundStreamData,
-            x_fs_onCloseSoundStream as fs_onCloseSoundStream,
 
             // MSG EXPORTS
             x_msg_create as msg_create,
@@ -117,5 +106,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
                 )
             )}
         }
+
+        ${compileGlobalCode(compilation, [ fsCore, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
     `
 }

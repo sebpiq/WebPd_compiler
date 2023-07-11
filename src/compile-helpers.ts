@@ -217,7 +217,7 @@ export const replaceCoreCodePlaceholders = (
         .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
 }
 
-export const getSharedCodeGeneratorContext = (compilation: Compilation) => ({
+export const getGlobalCodeGeneratorContext = (compilation: Compilation) => ({
     macros: compilation.macros, 
     target: compilation.target,
     audioSettings: compilation.audioSettings,

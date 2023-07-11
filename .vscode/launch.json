@@ -18,7 +18,8 @@
                 "--watch",
                 "--coverage=false",
                 "--no-cache",
-                "--config=./jest.mjs"
+                "--config=./jest.mjs",
+                "--testTimeout=10000",
             ],
             "cwd": "${workspaceRoot}",
             "console": "integratedTerminal",

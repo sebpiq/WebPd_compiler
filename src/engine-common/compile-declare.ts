@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getNodeImplementation, getSharedCodeGeneratorContext } from '../compile-helpers'
+import {
+    getNodeImplementation,
+    getGlobalCodeGeneratorContext,
+} from '../compile-helpers'
 import { getters, DspGraph } from '../dsp-graph'
 import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
@@ -64,7 +67,7 @@ export default (compilation: Compilation): Code => {
             // 0. De-duplicate and insert shared code required by nodes
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             return nodeImplementation.sharedCode.map(codeGenerator => 
-                codeGenerator(getSharedCodeGeneratorContext(compilation)))
+                codeGenerator(getGlobalCodeGeneratorContext(compilation)))
                 .filter(code => {
                     if (sharedCode.has(code)) {
                         return false

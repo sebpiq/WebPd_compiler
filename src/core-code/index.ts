@@ -27,38 +27,31 @@ import MSG_ASC from './msg.asc'
 import MSG_JS from './msg.js.txt'
 import COMMONS_ASC from './commons.asc'
 import COMMONS_JS from './commons.generated.js.txt'
-import FS_ASC from './fs.asc'
-import FS_JS from './fs.generated.js.txt'
 
 import { replaceCoreCodePlaceholders } from '../compile-helpers'
 import { SharedCodeGenerator } from '../types'
 
 /** @deprecated : should be removed when individual functions below are integrated */
-export const generateCoreCode: SharedCodeGenerator = ({ target, audioSettings }) => {
+export const generateCoreCode: SharedCodeGenerator = ({
+    target,
+    audioSettings,
+}) => {
     switch (target) {
         case 'assemblyscript':
             return (
-                replaceCoreCodePlaceholders(
-                    audioSettings.bitDepth,
-                    CORE_ASC
-                ) +
+                replaceCoreCodePlaceholders(audioSettings.bitDepth, CORE_ASC) +
                 BUF_ASC +
                 SKED_ASC +
                 COMMONS_ASC +
-                MSG_ASC +
-                FS_ASC
+                MSG_ASC
             )
         case 'javascript':
             return (
-                replaceCoreCodePlaceholders(
-                    audioSettings.bitDepth,
-                    CORE_JS
-                ) +
+                replaceCoreCodePlaceholders(audioSettings.bitDepth, CORE_JS) +
                 BUF_JS +
                 SKED_JS +
                 COMMONS_JS +
-                MSG_JS +
-                FS_JS
+                MSG_JS
             )
     }
 }
@@ -105,14 +98,5 @@ export const msg: SharedCodeGenerator = ({ target }) => {
             return MSG_ASC
         case 'javascript':
             return MSG_JS
-    }
-}
-
-export const fs: SharedCodeGenerator = ({ target }) => {
-    switch (target) {
-        case 'assemblyscript':
-            return FS_ASC
-        case 'javascript':
-            return FS_JS
     }
 }

@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { runTestSuite } from '../test-helpers'
-import { buf, core, fs, msg } from '.'
+import { buf, core, msg } from '.'
+import { fsCore, fsReadSoundFile, fsReadSoundStream, fsSoundStreamCore, fsWriteSoundFile, fsWriteSoundStream } from './fs'
 
 describe('fs', () => {
     runTestSuite(
@@ -616,13 +617,18 @@ describe('fs', () => {
             core,
             msg,
             buf,
-            fs,
+            fsCore,
+            fsReadSoundFile.codeGenerator,
+            fsWriteSoundFile.codeGenerator,
+            fsSoundStreamCore.codeGenerator,
+            fsReadSoundStream.codeGenerator,
+            fsWriteSoundStream.codeGenerator,
             ({ macros: { Var, Func } }) => `
             // Global test variables
             let ${Var('calls', 'Array<string>')} = []
             let ${Var('id_received', 'Array<fs_OperationId>')} = []
             let ${Var('sound_received', 'FloatArray[][]')} = []
-            let ${Var('url_received', 'Array<Url>')} = []
+            let ${Var('url_received', 'Array<fs_Url>')} = []
             let ${Var('info_received', 'Array<Message>')} = []
             let ${Var('status_received', 'fs_OperationStatus')} = -1
             let ${Var('callbackOperationId', 'Int')} = 0
@@ -646,7 +652,7 @@ describe('fs', () => {
             function i_fs_readSoundFile ${Func(
                 [
                     Var('id', 'fs_OperationId'),
-                    Var('url', 'Url'),
+                    Var('url', 'fs_Url'),
                     Var('info', 'Message'),
                 ],
                 'void'
@@ -660,7 +666,7 @@ describe('fs', () => {
             function i_fs_openSoundReadStream ${Func(
                 [
                     Var('id', 'fs_OperationId'),
-                    Var('url', 'Url'),
+                    Var('url', 'fs_Url'),
                     Var('info', 'Message'),
                 ],
                 'void'
@@ -674,7 +680,7 @@ describe('fs', () => {
             function i_fs_openSoundWriteStream ${Func(
                 [
                     Var('id', 'fs_OperationId'),
-                    Var('url', 'Url'),
+                    Var('url', 'fs_Url'),
                     Var('info', 'Message'),
                 ],
                 'void'
@@ -689,7 +695,7 @@ describe('fs', () => {
                 [
                     Var('id', 'fs_OperationId'),
                     Var('sound', 'FloatArray[]'),
-                    Var('url', 'Url'),
+                    Var('url', 'fs_Url'),
                     Var('info', 'Message'),
                 ],
                 'void'

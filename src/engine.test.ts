@@ -41,7 +41,7 @@ import {
 import { makeGraph } from './dsp-graph/test-helpers'
 import {
     getFloatArrayType,
-    getSharedCodeGeneratorContext,
+    getGlobalCodeGeneratorContext,
 } from './compile-helpers'
 
 describe('Engine', () => {
@@ -73,7 +73,7 @@ describe('Engine', () => {
             ...extraCompilation,
         })
 
-        const testCodeGenContext = getSharedCodeGeneratorContext(compilation)
+        const testCodeGenContext = getGlobalCodeGeneratorContext(compilation)
         let code =
             executeCompilation(compilation) + '\n' + 
             (sharedCode

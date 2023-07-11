@@ -31,7 +31,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
     for (let [filepath, ascCode] of [
         [_getJsModulePath('buf'), BUF_ASC],
-        [_getJsModulePath('fs'), FS_ASC],
         [_getJsModulePath('commons'), COMMONS_ASC],
         [_getJsModulePath('sked'), SKED_ASC],
     ]) {

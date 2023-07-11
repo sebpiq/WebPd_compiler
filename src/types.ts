@@ -243,11 +243,26 @@ export interface CodeVariableNames {
     }
 }
 
+/** @deprecated */
 export type SharedCodeGenerator = (context: {
     macros: CodeMacros
     target: CompilerTarget
     audioSettings: AudioSettings
 }) => Code
+
+export type GlobalCodeGenerator = (context: {
+    macros: CodeMacros
+    target: CompilerTarget
+    audioSettings: AudioSettings
+}) => Code
+
+export interface GlobalCodeGeneratorWithSettings {
+    codeGenerator: GlobalCodeGenerator
+    exports?: Array<{ name: string, codeGenerator: GlobalCodeGenerator }>
+    imports?: Array<{ name: string, codeGenerator: GlobalCodeGenerator }>
+}
+
+export type GlobalCodeDefinition = GlobalCodeGenerator | GlobalCodeGeneratorWithSettings
 
 export interface NodeImplementation<
     NodeArgsType,
@@ -286,6 +301,7 @@ export interface NodeImplementation<
         [inletId: DspGraph.PortletId]: Code
     }
 
+    /** @deprecated */
     sharedCode?: Array<SharedCodeGenerator>
 }
 
