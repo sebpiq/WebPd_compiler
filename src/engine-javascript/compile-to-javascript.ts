@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,38 +18,68 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata, getFloatArrayType, getGlobalCodeGeneratorContext } from '../compile-helpers'
+import {
+    buildMetadata,
+} from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import compileGlobalCode from '../engine-common/compile-global-code'
-import { Compilation } from '../types'
+import { Compilation, GlobalCodeGeneratorWithSettings } from '../types'
 import { JavaScriptEngineCode } from './types'
-import { generateCoreCode } from '../core-code'
 import { renderCode } from '../functional-helpers'
 import {
     compileOutletListeners,
     compileInletCallers,
 } from '../engine-common/compile-portlet-accessors'
 import embedArrays from '../engine-common/embed-arrays'
-import { fsCore, fsReadSoundFile, fsReadSoundStream, fsSoundStreamCore, fsWriteSoundFile, fsWriteSoundStream } from '../core-code/fs'
+import {
+    fsCore,
+    fsReadSoundFile,
+    fsReadSoundStream,
+    fsSoundStreamCore,
+    fsWriteSoundFile,
+    fsWriteSoundStream,
+} from '../core-code/fs'
+import {
+    commonsCore,
+    commonsArrays,
+    commonsWaitEngineConfigure,
+    commonsWaitFrame,
+} from '../core-code/commons'
+import { core } from '../core-code/core'
+import { bufCore, bufPushPull } from '../core-code/buf'
+import { msg } from '../core-code/msg'
+import { sked } from '../core-code/sked'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
         codeVariableNames,
         outletListenerSpecs,
         inletCallerSpecs,
-        audioSettings,
     } = compilation
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
-    const sharedCodeContext = getGlobalCodeGeneratorContext(compilation)
-
-    // When setting an array we need to make sure it is converted to the right type.
-    const floatArrayType = getFloatArrayType(audioSettings.bitDepth)
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCode(sharedCodeContext)}
+
+        ${compileGlobalCode(compilation, [ 
+            core,
+            msg,
+            sked,
+            bufCore,
+            bufPushPull,
+            fsCore, 
+            fsReadSoundFile, 
+            fsWriteSoundFile, 
+            fsSoundStreamCore, 
+            fsReadSoundStream, 
+            fsWriteSoundStream,
+            commonsCore,
+            commonsArrays,
+            commonsWaitEngineConfigure,
+            commonsWaitFrame,
+         ])}
 
         ${embedArrays(compilation)}
 
@@ -79,10 +109,6 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             loop: (${globs.input}, ${globs.output}) => {
                 ${compileLoop(compilation)}
             },
-            commons: {
-                getArray: commons_getArray,
-                setArray: (arrayName, array) => commons_setArray(arrayName, new ${floatArrayType.name}(array)),
-            },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
                     renderCode`${nodeId}: {
@@ -100,12 +126,34 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                     },`
                 )}
             },
-            fs: {
-                onOpenSoundWriteStream: () => undefined,
-                onSoundStreamData: () => undefined,
-            },
         }
 
-        ${compileGlobalCode(compilation, [ fsCore, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
+        ${compileImports([ fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
+        ${compileExports([ core, msg, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, commonsArrays ])}
     `
 }
+
+const compileImports = (
+    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
+) => renderCode`
+    ${globalCodeDefinitions.map((globalCodeDefinition) =>
+        globalCodeDefinition.imports.map(
+            ({ name }) => `
+                    exports.${name} = () => { throw new Error('import for ${name} not provided') }
+                    const ${name} = (...args) => exports.${name}(...args)
+                `
+        )
+    )}
+`
+
+const compileExports = (
+    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
+) => renderCode`
+    ${globalCodeDefinitions.map((globalCodeDefinition) =>
+        globalCodeDefinition.exports
+            .filter(
+                (xprt) => !xprt.targets || xprt.targets.includes('javascript')
+            )
+            .map(({ name }) => `exports.${name} = ${name}`)
+    )}
+`

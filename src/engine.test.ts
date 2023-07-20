@@ -20,7 +20,6 @@
 import assert from 'assert'
 import { executeCompilation } from './compile'
 import { renderCode } from './functional-helpers'
-import { FS_OPERATION_SUCCESS } from './constants'
 import {
     TEST_PARAMETERS,
     createEngine,
@@ -43,6 +42,7 @@ import {
     getFloatArrayType,
     getGlobalCodeGeneratorContext,
 } from './compile-helpers'
+import { FS_OPERATION_SUCCESS } from './core-code/fs'
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
@@ -55,6 +55,7 @@ describe('Engine', () => {
         compilation?: Partial<Compilation>
     }
 
+    /** @TODO refactor */
     const initializeEngineTest = async <
         ExportsKeys extends TestEngineExportsKeys
     >({
@@ -95,12 +96,12 @@ describe('Engine', () => {
             `
                 : ''
         } else {
-            code += `
+            code += renderCode`
                 export {${exportKeys.join(', ')}}
             `
         }
 
-        const engine = await createEngine<ExportsKeys>(target, bitDepth, code)
+        const engine = await createEngine<ExportsKeys>(target, bitDepth, code, exportKeys)
 
         // For asc engine, we need to expose exported test functions on the engine.
         if (target === 'assemblyscript') {
@@ -734,8 +735,7 @@ describe('Engine', () => {
                 async ({ target, bitDepth }) => {
                     const testCode: SharedCodeGenerator = ({
                         macros: { Func, Var },
-                    }) =>
-                        `
+                    }) => `
                         function testReceivedSound ${Func(
                             [Var('id', 'fs_OperationId')],
                             'boolean'

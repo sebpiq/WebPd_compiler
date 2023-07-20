@@ -22,14 +22,12 @@ import { writeFileSync } from "fs"
 import { Code, RawModule } from "../types"
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { createRawModule } from "./JavaScriptEngine"
 const execPromise = promisify(exec)
 
 export const jsCodeToRawModule = async (code: Code): Promise<RawModule> => {
     try {
-        return new Function(`
-            ${code}
-            return exports
-        `)() as any
+        return createRawModule(code) as any
     } catch (err) {
         const errMessage = await getJSEvalErrorSite(code)
         throw new Error('ERROR in generated JS code ' + errMessage)

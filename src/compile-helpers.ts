@@ -17,11 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './constants'
 import { DspGraph, getters, traversal } from './dsp-graph'
 import {
     AudioSettings,
-    Code,
     Compilation,
     EngineMetadata,
     NodeImplementation,
@@ -196,25 +194,6 @@ export const preCompileSignalAndMessageFlow = (compilation: Compilation) => {
     })
     compilation.precompiledPortlets.precompiledInlets = precompiledInlets
     compilation.precompiledPortlets.precompiledOutlets = precompiledOutlets
-}
-
-export const replaceCoreCodePlaceholders = (
-    bitDepth: AudioSettings['bitDepth'],
-    code: Code
-) => {
-    const Int = 'i32'
-    const Float = bitDepth === 32 ? 'f32' : 'f64'
-    const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
-    const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
-    const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
-    return code
-        .replaceAll('${Int}', Int)
-        .replaceAll('${Float}', Float)
-        .replaceAll('${FloatArray}', FloatArray)
-        .replaceAll('${getFloat}', getFloat)
-        .replaceAll('${setFloat}', setFloat)
-        .replaceAll('${FS_OPERATION_SUCCESS}', FS_OPERATION_SUCCESS.toString())
-        .replaceAll('${FS_OPERATION_FAILURE}', FS_OPERATION_FAILURE.toString())
 }
 
 export const getGlobalCodeGeneratorContext = (compilation: Compilation) => ({

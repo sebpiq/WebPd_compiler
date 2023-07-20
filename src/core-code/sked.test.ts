@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { runTestSuite } from '../test-helpers'
-import { core, sked } from '.'
+import { core } from './core'
+import { sked } from './sked'
 
 describe('sked', () => {
 
@@ -232,7 +233,7 @@ describe('sked', () => {
             `
         }
     ], [
-        core,
+        core.codeGenerator,
         sked,
         ({ macros: { Var, Func }}) => `
             let ${Var('received', 'Array<Int>')} = []

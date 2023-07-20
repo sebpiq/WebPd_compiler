@@ -18,7 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { runTestSuite } from '../test-helpers'
-import { commons, core, sked } from '.'
+import { commonsCore, commonsArrays, commonsWaitEngineConfigure, commonsWaitFrame } from './commons'
+import { core } from './core'
+import { sked } from './sked'
 
 describe('commons', () => {
     runTestSuite(
@@ -62,9 +64,12 @@ describe('commons', () => {
             },
         ],
         [
-            core,
+            core.codeGenerator,
             sked,
-            commons,
+            commonsCore,
+            commonsArrays.codeGenerator,
+            commonsWaitEngineConfigure,
+            commonsWaitFrame,
             ({ macros: { Var } }) =>
                 `let ${Var('callbackCallCounter', 'Int')} = 0`,
         ]

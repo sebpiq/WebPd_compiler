@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { FS_OPERATION_FAILURE, FS_OPERATION_SUCCESS } from './constants'
+import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './core-code/fs'
 import { DspGraph } from './dsp-graph'
 
 export type fs_OperationStatus =
@@ -52,9 +52,9 @@ export type Code = string
 /** Name of a variable in generated code */
 export type CodeVariableName = string
 
-export type Module = any
+export type Module = { [key: string]: any }
 
-export interface RawModule extends Module {}
+export type RawModule = any
 
 export type PortletsIndex = {
     [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
@@ -258,8 +258,8 @@ export type GlobalCodeGenerator = (context: {
 
 export interface GlobalCodeGeneratorWithSettings {
     codeGenerator: GlobalCodeGenerator
-    exports?: Array<{ name: string, codeGenerator: GlobalCodeGenerator }>
-    imports?: Array<{ name: string, codeGenerator: GlobalCodeGenerator }>
+    exports?: Array<{ name: string, targets?: Array<CompilerTarget> }>
+    imports?: Array<{ name: string, args: Array<[CodeVariableName, CodeVariableName]>, returns: CodeVariableName }>
 }
 
 export type GlobalCodeDefinition = GlobalCodeGenerator | GlobalCodeGeneratorWithSettings

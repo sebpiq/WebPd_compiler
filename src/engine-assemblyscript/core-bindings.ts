@@ -19,7 +19,7 @@
  */
 import { getFloatArrayType } from "../compile-helpers"
 import { FloatArrayPointer, InternalPointer } from "./types"
-import { AudioSettings, FloatArray } from "../types"
+import { AudioSettings, FloatArray, FloatArrayConstructor } from "../types"
 
 export type TypedArrayConstructor =
     | typeof Int8Array
@@ -34,13 +34,13 @@ export type TypedArrayConstructor =
 
 export interface core_WasmExports {
     createFloatArray: (length: number) => FloatArrayPointer
-    core_createListOfArrays: () => InternalPointer
-    core_pushToListOfArrays: (
+    x_core_createListOfArrays: () => InternalPointer
+    x_core_pushToListOfArrays: (
         arrays: InternalPointer,
         array: FloatArrayPointer
     ) => void
-    core_getListOfArraysLength: (listOfArraysPointer: InternalPointer) => number
-    core_getListOfArraysElem: (
+    x_core_getListOfArraysLength: (listOfArraysPointer: InternalPointer) => number
+    x_core_getListOfArraysElem: (
         listOfArraysPointer: InternalPointer,
         index: number
     ) => number
@@ -48,6 +48,13 @@ export interface core_WasmExports {
     // REF : https://www.assemblyscript.org/runtime.html#interface
     __new: (length: number, classType: number) => InternalPointer
     memory: WebAssembly.Memory
+}
+
+/** @todo : clarify */
+export interface AssemblyScriptWasmCoreModule {
+    bitDepth: AudioSettings['bitDepth']
+    _updateWasmInOuts: () => void
+    arrayType: FloatArrayConstructor
 }
 
 /** @copyright Assemblyscript ESM bindings */
@@ -139,10 +146,10 @@ export const lowerListOfFloatArrays = (
     bitDepth: AudioSettings['bitDepth'],
     data: Array<Array<number> | FloatArray>
 ): InternalPointer => {
-    const arraysPointer = wasmExports.core_createListOfArrays()
+    const arraysPointer = wasmExports.x_core_createListOfArrays()
     data.forEach((array) => {
         const { arrayPointer } = lowerFloatArray(wasmExports, bitDepth, array)
-        wasmExports.core_pushToListOfArrays(arraysPointer, arrayPointer)
+        wasmExports.x_core_pushToListOfArrays(arraysPointer, arrayPointer)
     })
     return arraysPointer
 }
@@ -154,11 +161,11 @@ export const readListOfFloatArrays = (
     listOfArraysPointer: InternalPointer
 ) => {
     const listLength =
-        wasmExports.core_getListOfArraysLength(listOfArraysPointer)
+        wasmExports.x_core_getListOfArraysLength(listOfArraysPointer)
     const arrays: Array<InstanceType<TypedArrayConstructor>> = []
     const arrayType = getFloatArrayType(bitDepth)
     for (let i = 0; i < listLength; i++) {
-        const arrayPointer = wasmExports.core_getListOfArraysElem(
+        const arrayPointer = wasmExports.x_core_getListOfArraysElem(
             listOfArraysPointer,
             i
         )

@@ -18,12 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { renderIf, renderSwitch } from '../functional-helpers'
-import {
-    GlobalCodeGeneratorWithSettings,
-    GlobalCodeGenerator,
-    SharedCodeGenerator,
-} from '../types'
+import { renderIf } from '../functional-helpers'
+import { GlobalCodeGeneratorWithSettings, GlobalCodeGenerator } from '../types'
+
+export const FS_OPERATION_SUCCESS = 0
+export const FS_OPERATION_FAILURE = 1
 
 export const fsCore: GlobalCodeGenerator = ({
     macros: { Var, Func },
@@ -40,6 +39,9 @@ export const fsCore: GlobalCodeGenerator = ({
     `
     )}
 
+    const ${Var('FS_OPERATION_SUCCESS', 'Int')} = ${FS_OPERATION_SUCCESS}
+    const ${Var('FS_OPERATION_FAILURE', 'Int')} = ${FS_OPERATION_FAILURE}
+    
     const ${Var('_FS_OPERATIONS_IDS', 'Set<fs_OperationId>')} = new Set()
     const ${Var(
         '_FS_OPERATIONS_CALLBACKS',
@@ -145,37 +147,18 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
     exports: [
         {
             name: 'x_fs_onReadSoundFileResponse',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        'export { x_fs_onReadSoundFileResponse as fs_onReadSoundFileResponse }',
-                    ],
-                    [
-                        target === 'javascript',
-                        `exports.fs.sendReadSoundFileResponse = x_fs_onReadSoundFileResponse`,
-                    ]
-                ),
         },
     ],
 
     imports: [
         {
             name: 'i_fs_readSoundFile',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        'export declare function i_fs_readSoundFile(id: fs_OperationId, url: fs_Url, info: Message): void',
-                    ],
-                    [
-                        target === 'javascript',
-                        `
-                            const i_fs_readSoundFile = (...args) => exports.fs.onReadSoundFile(...args)
-                            exports.fs.onReadSoundFile = () => undefined
-                        `,
-                    ]
-                ),
+            args: [
+                ['id', 'fs_OperationId'],
+                ['url', 'fs_Url'],
+                ['info', 'Message'],
+            ],
+            returns: 'void',
         },
     ],
 }
@@ -213,37 +196,19 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
     exports: [
         {
             name: 'x_fs_onWriteSoundFileResponse',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        'export { x_fs_onWriteSoundFileResponse as fs_onWriteSoundFileResponse }',
-                    ],
-                    [
-                        target === 'javascript',
-                        'exports.fs.sendWriteSoundFileResponse = x_fs_onWriteSoundFileResponse',
-                    ]
-                ),
         },
     ],
 
     imports: [
         {
             name: 'i_fs_writeSoundFile',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        'export declare function i_fs_writeSoundFile (id: fs_OperationId, sound: FloatArray[], url: fs_Url, info: Message): void',
-                    ],
-                    [
-                        target === 'javascript',
-                        `
-                            const i_fs_writeSoundFile = (...args) => exports.fs.onWriteSoundFile(...args)
-                            exports.fs.onWriteSoundFile = () => undefined
-                        `,
-                    ]
-                ),
+            args: [
+                ['id', 'fs_OperationId'],
+                ['sound', 'FloatArray[]'],
+                ['url', 'fs_Url'],
+                ['info', 'Message'],
+            ],
+            returns: 'void',
         },
     ],
 }
@@ -280,37 +245,17 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
     exports: [
         {
             name: 'x_fs_onCloseSoundStream',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        `export { x_fs_onCloseSoundStream as fs_onCloseSoundStream }`,
-                    ],
-                    [
-                        target === 'javascript',
-                        'exports.fs.closeSoundStream = x_fs_onCloseSoundStream',
-                    ]
-                ),
         },
     ],
 
     imports: [
         {
             name: 'i_fs_closeSoundStream',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        'export declare function i_fs_closeSoundStream (id: fs_OperationId, status: fs_OperationStatus): void',
-                    ],
-                    [
-                        target === 'javascript',
-                        `
-                            const i_fs_closeSoundStream = (...args) => exports.fs.onCloseSoundStream(...args)
-                            exports.fs.onCloseSoundStream = () => undefined
-                        `,
-                    ]
-                ),
+            args: [
+                ['id', 'fs_OperationId'],
+                ['status', 'fs_OperationStatus'],
+            ],
+            returns: 'void',
         },
     ],
 }
@@ -352,37 +297,18 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
     exports: [
         {
             name: 'x_fs_onSoundStreamData',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        `export { x_fs_onSoundStreamData as fs_onSoundStreamData }`,
-                    ],
-                    [
-                        target === 'javascript',
-                        'exports.fs.sendSoundStreamData = x_fs_onSoundStreamData',
-                    ]
-                ),
         },
     ],
 
     imports: [
         {
             name: 'i_fs_openSoundReadStream',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        'export declare function i_fs_openSoundReadStream (id: fs_OperationId, url: fs_Url, info: Message): void',
-                    ],
-                    [
-                        target === 'javascript',
-                        `
-                            const i_fs_openSoundReadStream = (...args) => exports.fs.onOpenSoundReadStream(...args)
-                            exports.fs.onOpenSoundReadStream = () => undefined
-                        `,
-                    ]
-                ),
+            args: [
+                ['id', 'fs_OperationId'],
+                ['url', 'fs_Url'],
+                ['info', 'Message'],
+            ],
+            returns: 'void',
         },
     ],
 }
@@ -415,26 +341,21 @@ export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
 
     imports: [
         {
-            name: 'i_fs_openSoundReadStream',
-            codeGenerator: ({ target }) =>
-                renderSwitch(
-                    [
-                        target === 'assemblyscript',
-                        `
-                            export declare function i_fs_openSoundWriteStream (id: fs_OperationId, url: fs_Url, info: Message): void
-                            export declare function i_fs_sendSoundStreamData (id: fs_OperationId, block: FloatArray[]): void
-                        `,
-                    ],
-                    [
-                        target === 'javascript',
-                        `
-                            const i_fs_openSoundWriteStream = (...args) => exports.fs.onOpenSoundWriteStream(...args)
-                            const i_fs_sendSoundStreamData = (...args) => exports.fs.onSoundStreamData(...args)
-                            exports.fs.onOpenSoundWriteStream = () => undefined
-                            exports.fs.onSoundStreamData = () => undefined
-                        `,
-                    ]
-                ),
+            name: 'i_fs_openSoundWriteStream',
+            args: [
+                ['id', 'fs_OperationId'],
+                ['url', 'fs_Url'],
+                ['info', 'Message'],
+            ],
+            returns: 'void',
+        },
+        {
+            name: 'i_fs_sendSoundStreamData',
+            args: [
+                ['id', 'fs_OperationId'],
+                ['block', 'FloatArray[]'],
+            ],
+            returns: 'void',
         },
     ],
 }

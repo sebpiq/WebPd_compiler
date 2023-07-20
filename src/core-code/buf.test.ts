@@ -18,8 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buf, core } from '.'
 import { runTestSuite } from '../test-helpers'
+import { bufCore, bufPushPull, bufWriteRead } from './buf'
+import { core } from './core'
 
 describe('buf', () => {
     runTestSuite(
@@ -135,6 +136,6 @@ describe('buf', () => {
                 `,
             },
         ],
-        [core, buf]
+        [core.codeGenerator, bufCore, bufPushPull, bufWriteRead]
     )
 })

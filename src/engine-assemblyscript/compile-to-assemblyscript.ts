@@ -18,12 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata, getGlobalCodeGeneratorContext } from '../compile-helpers'
+import { buildMetadata } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
-import { Compilation } from '../types'
-import { generateCoreCode } from '../core-code'
+import { Compilation, GlobalCodeGeneratorWithSettings } from '../types'
+import macros from './macros'
 import { AssemblyScriptWasmEngineCode } from './types'
 import {
     compileOutletListeners,
@@ -31,18 +31,50 @@ import {
 } from '../engine-common/compile-portlet-accessors'
 import embedArrays from '../engine-common/embed-arrays'
 import compileGlobalCode from '../engine-common/compile-global-code'
-import { fsCore, fsReadSoundFile, fsReadSoundStream, fsSoundStreamCore, fsWriteSoundFile, fsWriteSoundStream } from '../core-code/fs'
+import {
+    fsCore,
+    fsReadSoundFile,
+    fsReadSoundStream,
+    fsSoundStreamCore,
+    fsWriteSoundFile,
+    fsWriteSoundStream,
+} from '../core-code/fs'
+import {
+    commonsCore,
+    commonsArrays,
+    commonsWaitEngineConfigure,
+    commonsWaitFrame,
+} from '../core-code/commons'
+import { core } from '../core-code/core'
+import { bufCore, bufPushPull } from '../core-code/buf'
+import { msg } from '../core-code/msg'
+import { sked } from '../core-code/sked'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
-    const globalCodeContext = getGlobalCodeGeneratorContext(compilation)
 
     // prettier-ignore
     return renderCode`
-        ${generateCoreCode(globalCodeContext)}
+        ${compileGlobalCode(compilation, [ 
+            core,
+            msg,
+            sked,
+            bufCore,
+            bufPushPull,
+            fsCore, 
+            fsReadSoundFile, 
+            fsWriteSoundFile, 
+            fsSoundStreamCore, 
+            fsReadSoundStream, 
+            fsWriteSoundStream,
+            commonsCore,
+            commonsArrays,
+            commonsWaitEngineConfigure,
+            commonsWaitFrame,
+        ])}
 
         ${embedArrays(compilation)}
 
@@ -76,30 +108,6 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
         export {
             metadata,
-
-            // MSG EXPORTS
-            x_msg_create as msg_create,
-            x_msg_getTokenTypes as msg_getTokenTypes,
-            x_msg_createTemplate as msg_createTemplate,
-            msg_writeStringToken,
-            msg_writeFloatToken,
-            msg_readStringToken,
-            msg_readFloatToken,
-            MSG_FLOAT_TOKEN,
-            MSG_STRING_TOKEN,
-
-            // COMMONS EXPORTS
-            commons_setArray,
-            commons_getArray, 
-
-            // CORE EXPORTS
-            createFloatArray,
-            x_core_createListOfArrays as core_createListOfArrays,
-            x_core_pushToListOfArrays as core_pushToListOfArrays,
-            x_core_getListOfArraysLength as core_getListOfArraysLength,
-            x_core_getListOfArraysElem as core_getListOfArraysElem,
-
-            // INLET CALLERS
             ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 
                 inletIds.map(inletId => 
                     codeVariableNames.inletCallers[nodeId][inletId] + ','
@@ -107,6 +115,34 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             )}
         }
 
-        ${compileGlobalCode(compilation, [ fsCore, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
+        ${compileImports([ fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
+        ${compileExports([ core, msg, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, commonsArrays ])}
     `
 }
+
+const compileImports = (
+    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
+) => renderCode`
+    ${globalCodeDefinitions.map((globalCodeDefinition) =>
+        globalCodeDefinition.imports.map(
+            ({ name, args, returns }) =>
+                `export declare function ${name} ${macros.Func(
+                    args.map((a) => macros.Var(a[0], a[1])),
+                    returns
+                )}`
+        )
+    )}
+`
+
+export const compileExports = (
+    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
+) => renderCode`
+    ${globalCodeDefinitions.map((globalCodeDefinition) =>
+        globalCodeDefinition.exports
+            .filter(
+                (xprt) =>
+                    !xprt.targets || xprt.targets.includes('assemblyscript')
+            )
+            .map(({ name }) => `export { ${name} }`)
+    )}
+`

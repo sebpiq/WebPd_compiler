@@ -38,11 +38,11 @@ export interface msg_WasmExports extends commons_WasmExports {
     MSG_FLOAT_TOKEN: WebAssembly.Global
     MSG_STRING_TOKEN: WebAssembly.Global
 
-    msg_create: (
+    x_msg_create: (
         templatePointer: ArrayBufferOfIntegersPointer
     ) => MessagePointer
-    msg_getTokenTypes: (messagePointer: MessagePointer) => FloatArrayPointer
-    msg_createTemplate: (length: number) => FloatArrayPointer
+    x_msg_getTokenTypes: (messagePointer: MessagePointer) => FloatArrayPointer
+    x_msg_createTemplate: (length: number) => FloatArrayPointer
     msg_writeStringToken: (
         messagePointer: MessagePointer,
         tokenIndex: number,
@@ -70,7 +70,7 @@ export const liftMessage = (
     messagePointer: MessagePointer
 ): Message => {
     const messageTokenTypesPointer =
-        wasmExports.msg_getTokenTypes(messagePointer)
+        wasmExports.x_msg_getTokenTypes(messagePointer)
     const messageTokenTypes = readTypedArray(
         wasmExports,
         Int32Array,
@@ -111,14 +111,14 @@ export const lowerMessage = (
 
     // Here we should ideally pass an array of Int, but I am not sure how
     // to lower a typed array in a generic manner, so using the available bindings from `commons`.
-    const templateArrayPointer = wasmExports.msg_createTemplate(template.length)
+    const templateArrayPointer = wasmExports.x_msg_createTemplate(template.length)
     const loweredTemplateArray = readTypedArray(
         wasmExports,
         Int32Array,
         templateArrayPointer
     )
     loweredTemplateArray.set(template)
-    const messagePointer = wasmExports.msg_create(templateArrayPointer)
+    const messagePointer = wasmExports.x_msg_create(templateArrayPointer)
 
     message.forEach((value, index) => {
         if (typeof value === 'number') {

@@ -9,11 +9,27 @@ export default [
             file: './dist/assemblyscript-wasm-bindings.iife.js',
             sourcemap: true,
             format: 'iife',
-            name: 'AssemblyscriptWasmBindings',
+            name: 'AssemblyScriptWasmBindings',
         },
         plugins: [
             typescript({
-                tsconfig: 'tsconfig-assemblyscript-wasm-bindings.json',
+                tsconfig: 'tsconfig-bindings.json',
+            }),
+            nodeResolve(),
+            commonjs(),
+        ],
+    },
+    {
+        input: './src/engine-javascript/JavaScriptEngine.ts',
+        output: {
+            file: './dist/javascript-bindings.iife.js',
+            sourcemap: true,
+            format: 'iife',
+            name: 'JavaScriptBindings',
+        },
+        plugins: [
+            typescript({
+                tsconfig: 'tsconfig-bindings.json',
             }),
             nodeResolve(),
             commonjs(),

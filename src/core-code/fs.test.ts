@@ -18,8 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { runTestSuite } from '../test-helpers'
-import { buf, core, msg } from '.'
 import { fsCore, fsReadSoundFile, fsReadSoundStream, fsSoundStreamCore, fsWriteSoundFile, fsWriteSoundStream } from './fs'
+import { bufCore, bufPushPull } from './buf'
+import { core } from './core'
+import { msg } from './msg'
 
 describe('fs', () => {
     runTestSuite(
@@ -614,9 +616,10 @@ describe('fs', () => {
             },
         ],
         [
-            core,
-            msg,
-            buf,
+            core.codeGenerator,
+            msg.codeGenerator,
+            bufCore,
+            bufPushPull,
             fsCore,
             fsReadSoundFile.codeGenerator,
             fsWriteSoundFile.codeGenerator,

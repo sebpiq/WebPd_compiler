@@ -28,7 +28,10 @@ import { AudioSettings, SharedCodeGenerator } from '../types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getFloatArrayType } from '../compile-helpers'
 import { getMacros } from '../compile'
-import { commons, core, msg, sked } from '../core-code'
+import { core } from '../core-code/core'
+import { sked } from '../core-code/sked'
+import { msg } from '../core-code/msg'
+import { compileExports } from './compile-to-assemblyscript'
 
 describe('msg-bindings', () => {
     const BYTES_IN_CHAR = 4
@@ -58,34 +61,15 @@ describe('msg-bindings', () => {
             }
         }
         return (
-            core(context) +
+            core.codeGenerator(context) +
             sked(context) +
-            commons(context) +
-            msg(context) +
+            msg.codeGenerator(context) +
             `
             export function testReadMessageData(message: Message, index: Int): Int {
                 return message.dataView.getInt32(index * sizeof<Int>())
             }
 
-            export {
-                // MSG EXPORTS
-                x_msg_create as msg_create,
-                x_msg_getTokenTypes as msg_getTokenTypes,
-                x_msg_createTemplate as msg_createTemplate,
-                msg_writeStringToken,
-                msg_writeFloatToken,
-                msg_readStringToken,
-                msg_readFloatToken,
-                MSG_FLOAT_TOKEN,
-                MSG_STRING_TOKEN,
-
-                // CORE EXPORTS
-                createFloatArray,
-                x_core_createListOfArrays as core_createListOfArrays,
-                x_core_pushToListOfArrays as core_pushToListOfArrays,
-                x_core_getListOfArraysLength as core_getListOfArraysLength,
-                x_core_getListOfArraysElem as core_getListOfArraysElem,
-            }
+            ${compileExports([core, msg])}
         `
         )
     }

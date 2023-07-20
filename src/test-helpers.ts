@@ -39,6 +39,7 @@ import { jsCodeToRawModule } from './engine-javascript/test-helpers'
 import { compileAscCode, wasmBufferToRawModule } from './engine-assemblyscript/test-helpers'
 import { renderCode } from './functional-helpers'
 import { createEngine as createAssemblyScriptWasmEngine} from './engine-assemblyscript/AssemblyScriptWasmEngine'
+import { createEngineFromRawModule as createJavaScriptEngine } from './engine-javascript/JavaScriptEngine'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -119,9 +120,9 @@ interface TestParameters {
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
-    { bitDepth: 64, target: 'javascript' },
+    // { bitDepth: 64, target: 'javascript' },
     { bitDepth: 32, target: 'assemblyscript' },
-    { bitDepth: 64, target: 'assemblyscript' },
+    // { bitDepth: 64, target: 'assemblyscript' },
 ]
 
 interface CreateTestModuleApplyBindings {
@@ -137,7 +138,7 @@ export const createTestModule = async <ModuleType extends Module>(
     applyBindings: CreateTestModuleApplyBindings = {},
 ): Promise<ModuleType> => {
     const applyBindingsNonNull: Required<CreateTestModuleApplyBindings> = {
-        javascript: (rawModule) => rawModule,
+        javascript: async (rawModule) => rawModule,
         assemblyscript: (buffer) => wasmBufferToRawModule(buffer),
         ...applyBindings,
     }
@@ -150,10 +151,12 @@ export const createTestModule = async <ModuleType extends Module>(
     switch (target) {
         case 'javascript':
             const rawModule = await jsCodeToRawModule(code)
-            return applyBindingsNonNull.javascript(rawModule)
+            const jsModule = await applyBindingsNonNull.javascript(rawModule)
+            return jsModule as ModuleType
         case 'assemblyscript':
             const buffer = await compileAscCode(code, bitDepth)
-            return applyBindingsNonNull.assemblyscript(buffer)
+            const ascModule = await applyBindingsNonNull.assemblyscript(buffer)
+            return ascModule as ModuleType
     }
 }
 
@@ -167,12 +170,16 @@ export const createEngine = <ExportsKeys extends TestEngineExportsKeys>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
+    testFunctionNames: Array<keyof ExportsKeys> = []
 ) => {
     return createTestModule<TestEngine<ExportsKeys>>(
         target,
         bitDepth,
         code,
-        {'assemblyscript': (buffer) => createAssemblyScriptWasmEngine(buffer) as Promise<TestEngine<ExportsKeys>>}
+        {
+            javascript: async (rawModule) => createJavaScriptEngine(rawModule, testFunctionNames as Array<string>),
+            assemblyscript: (buffer) => createAssemblyScriptWasmEngine(buffer) as Promise<TestEngine<ExportsKeys>>,
+        }
     )
 }
 

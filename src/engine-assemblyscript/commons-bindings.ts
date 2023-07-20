@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,9 @@
  */
 
 import { StringPointer, FloatArrayPointer } from './types'
-import { core_WasmExports } from './core-bindings'
+import { AssemblyScriptWasmCoreModule, core_WasmExports, lowerFloatArray, lowerString, readTypedArray } from './core-bindings'
+import { Engine, FloatArray } from '../types'
+import { createModule } from '../engine-common/modules'
 
 export interface commons_WasmExports extends core_WasmExports {
     commons_getArray: (arrayName: StringPointer) => FloatArrayPointer
@@ -28,3 +30,36 @@ export interface commons_WasmExports extends core_WasmExports {
         array: FloatArrayPointer
     ) => void
 }
+
+export const createCommons = (
+    rawModule: commons_WasmExports,
+    coreModule: AssemblyScriptWasmCoreModule,
+): Engine['commons'] =>
+    createModule<Engine['commons']>(rawModule, {
+        getArray: {
+            type: 'proxy',
+            value: (arrayName) => {
+                const arrayNamePointer = lowerString(rawModule, arrayName)
+                const arrayPointer =
+                    rawModule.commons_getArray(arrayNamePointer)
+                return readTypedArray(
+                    rawModule,
+                    coreModule.arrayType,
+                    arrayPointer
+                ) as FloatArray
+            },
+        },
+        setArray: {
+            type: 'proxy',
+            value: (arrayName, array) => {
+                const stringPointer = lowerString(rawModule, arrayName)
+                const { arrayPointer } = lowerFloatArray(
+                    rawModule,
+                    coreModule.bitDepth,
+                    array
+                )
+                rawModule.commons_setArray(stringPointer, arrayPointer)
+                coreModule._updateWasmInOuts()
+            },
+        }
+    })

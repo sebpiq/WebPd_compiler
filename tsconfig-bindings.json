@@ -13,5 +13,8 @@
         "moduleResolution": "node"
     },
     "typeRoots": ["./node_modules/@types"],
-    "files": ["./src/engine-assemblyscript/AssemblyScriptWasmEngine.ts"]
+    "files": [
+        "./src/engine-assemblyscript/AssemblyScriptWasmEngine.ts", 
+        "./src/engine-javascript/JavaScriptEngine.ts",
+    ]
 }

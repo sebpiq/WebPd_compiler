@@ -42,21 +42,5 @@ export default (
                 return globalCodeDefinition.codeGenerator(context)
             }
         })}
-
-        ${globalCodeGeneratorsWithSettings
-            .filter((globalCodeDefinition) => globalCodeDefinition.exports)
-            .map((globalCodeDefinition) =>
-                globalCodeDefinition.exports.map((exprt) =>
-                    exprt.codeGenerator(context)
-                )
-            )}
-
-        ${globalCodeGeneratorsWithSettings
-            .filter((globalCodeDefinition) => globalCodeDefinition.imports)
-            .map((globalCodeDefinition) =>
-                globalCodeDefinition.imports.map((imprt) =>
-                    imprt.codeGenerator(context)
-                )
-            )}
     `
 }

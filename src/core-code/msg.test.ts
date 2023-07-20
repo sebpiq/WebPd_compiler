@@ -19,7 +19,8 @@
  */
 
 import { runTestSuite } from '../test-helpers'
-import { core, msg } from '.'
+import { core } from './core'
+import { msg } from './msg'
 
 describe('msg', () => {
     runTestSuite(
@@ -127,6 +128,6 @@ describe('msg', () => {
                 `
             }
         ],
-        [core, msg]
+        [core.codeGenerator, msg.codeGenerator]
     )
 })

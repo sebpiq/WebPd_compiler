@@ -21,7 +21,7 @@
 import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
 import compileToJavascript from './compile-to-javascript'
-import { JavaScriptEngine } from './types'
+import { RawJavaScriptEngine, createRawModule } from './JavaScriptEngine'
 
 describe('compileToJavascript', () => {
     it('should be a JavaScript engine when evaled', () => {
@@ -30,31 +30,9 @@ describe('compileToJavascript', () => {
         })
 
         const code = compileToJavascript(compilation)
+        const rawJavaScriptEngine = createRawModule(code)
 
-        const engine = new Function(`
-            ${code}
-            return exports
-        `)()
-
-        const modelFs: JavaScriptEngine['fs'] = {
-            sendReadSoundFileResponse: () => undefined,
-            sendWriteSoundFileResponse: () => undefined,
-            sendSoundStreamData: () => undefined,
-            closeSoundStream: () => undefined,
-            onReadSoundFile: () => undefined,
-            onWriteSoundFile: () => undefined,
-            onOpenSoundReadStream: () => undefined,
-            onOpenSoundWriteStream: () => undefined,
-            onSoundStreamData: () => undefined,
-            onCloseSoundStream: () => undefined,
-        }
-
-        const modelTarray: JavaScriptEngine['commons'] = {
-            getArray: () => undefined,
-            setArray: () => undefined,
-        }
-
-        const modelEngine: JavaScriptEngine = {
+        const modelRawEngine: RawJavaScriptEngine = {
             metadata: {
                 audioSettings: {
                     bitDepth: 32,
@@ -70,23 +48,27 @@ describe('compileToJavascript', () => {
             },
             configure: (_: number) => {},
             loop: () => new Float32Array(),
-            commons: modelTarray,
-            fs: modelFs,
             inletCallers: {},
             outletListeners: {},
+
+            commons_getArray: () => undefined,
+            commons_setArray: () => undefined,
+
+            x_fs_onReadSoundFileResponse: () => undefined,
+            x_fs_onWriteSoundFileResponse: () => undefined,
+            x_fs_onCloseSoundStream: () => undefined,
+            x_fs_onSoundStreamData: () => undefined,
+            i_fs_openSoundWriteStream: () => undefined,
+            i_fs_sendSoundStreamData: () => undefined,
+            i_fs_openSoundReadStream: () => undefined,
+            i_fs_closeSoundStream: () => undefined,
+            i_fs_writeSoundFile: () => undefined,
+            i_fs_readSoundFile: () => undefined,
         }
 
         assert.deepStrictEqual(
-            Object.keys(engine).sort(),
-            Object.keys(modelEngine).sort()
-        )
-        assert.deepStrictEqual(
-            Object.keys(engine.commons).sort(),
-            Object.keys(modelTarray).sort()
-        )
-        assert.deepStrictEqual(
-            Object.keys(engine.fs).sort(),
-            Object.keys(modelFs).sort()
+            Object.keys(rawJavaScriptEngine).sort(),
+            Object.keys(modelRawEngine).sort()
         )
     })
 })
