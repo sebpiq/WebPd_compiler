@@ -19,13 +19,13 @@
  */
 
 import assert from 'assert'
-import { compileAscCode } from './test-helpers'
-import { readMetadata } from './AssemblyScriptWasmEngine'
-import compileToAssemblyscript from './compile-to-assemblyscript'
-import { makeCompilation } from '../test-helpers'
-import { EngineMetadata } from '../types'
+import { compileAscCode } from '../test-helpers'
+import compileToAssemblyscript from '../compile-to-assemblyscript'
+import { makeCompilation } from '../../test-helpers'
+import { EngineMetadata } from '../../types'
+import { readMetadata } from './engine-core-bindings'
 
-describe('AssemblyScriptWasmEngine', () => {
+describe('engine-core-bindings', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
             const compilation = makeCompilation({

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Code } from '../types'
+interface BindingSpecRaw {
+    type: 'raw'
+}
+interface BindingSpecBinding<ValueType> {
+    type: 'proxy'
+    value: ValueType
+}
+interface BindingSpecCallback<ValueType> {
+    type: 'callback'
+    value: ValueType
+}
 
-/** JavaScript Code that allows to create a JavaScriptEngine when evaled */
-export type JavaScriptEngineCode = Code
+type BindingSpec<ValueType> =
+    | BindingSpecRaw
+    | BindingSpecBinding<ValueType>
+    | BindingSpecCallback<ValueType>
+
+export type Bindings<ModuleType> = {
+    [Property in keyof ModuleType]: BindingSpec<ModuleType[Property]>
+}

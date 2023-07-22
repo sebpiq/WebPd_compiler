@@ -1,35 +1,42 @@
-interface BindingSpecRaw {
-    type: 'raw'
-}
-interface BindingSpecBinding<ValueType> {
-    type: 'proxy'
-    value: ValueType
-}
-interface BindingSpecCallback<ValueType> {
-    type: 'callback'
-    value: ValueType
-}
+/*
+ * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
+ *
+ * This file is part of WebPd
+ * (see https://github.com/sebpiq/WebPd).
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-type BindingSpec<ValueType> =
-    | BindingSpecRaw
-    | BindingSpecBinding<ValueType>
-    | BindingSpecCallback<ValueType>
+import { Bindings } from "./types"
 
 /** @TODO : TEST */
 export const createModule = <ModuleType extends { [key: string]: any }>(
     rawModule: { [key: string]: any },
-    bindings: {
-        [Property in keyof ModuleType]: BindingSpec<ModuleType[Property]>
-    },
+    bindings: Bindings<ModuleType>,
 ): ModuleType =>
-    new Proxy(rawModule, {
+    // Use empty object on proxy cause proxy cannot redefine access of member of its target, 
+    // which causes issues for example for WebAssembly exports. 
+    // See : https://stackoverflow.com/questions/75148897/get-on-proxy-property-items-is-a-read-only-and-non-configurable-data-proper
+    new Proxy({}, {
         get: (_, k) => {
-            if (bindings.hasOwnProperty(String(k))) {
+            if (bindings.hasOwnProperty(k)) {
                 const key = String(k) as keyof ModuleType
                 const bindingSpec = bindings[key]
                 switch (bindingSpec.type) {
                     case 'raw':
-                        if (rawModule.hasOwnProperty(String(k))) {
+                        // Cannot use hasOwnProperty here cause not defined in wasm exports object
+                        if (k in rawModule) {
                             return (rawModule as any)[key]
                         } else {
                             throw new Error(

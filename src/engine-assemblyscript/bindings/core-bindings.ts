@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { getFloatArrayType } from "../compile-helpers"
-import { FloatArrayPointer, InternalPointer } from "./types"
-import { AudioSettings, FloatArray, FloatArrayConstructor } from "../types"
+import { getFloatArrayType } from "../../compile-helpers"
+import { FloatArrayPointer, InternalPointer } from "../types"
+import { AudioSettings, FloatArray } from "../../types"
 
 export type TypedArrayConstructor =
     | typeof Int8Array
@@ -32,7 +32,7 @@ export type TypedArrayConstructor =
     | typeof Float32Array
     | typeof Float64Array
 
-export interface core_WasmExports {
+export interface CoreRawModule {
     createFloatArray: (length: number) => FloatArrayPointer
     x_core_createListOfArrays: () => InternalPointer
     x_core_pushToListOfArrays: (
@@ -50,15 +50,8 @@ export interface core_WasmExports {
     memory: WebAssembly.Memory
 }
 
-/** @todo : clarify */
-export interface AssemblyScriptWasmCoreModule {
-    bitDepth: AudioSettings['bitDepth']
-    _updateWasmInOuts: () => void
-    arrayType: FloatArrayConstructor
-}
-
 /** @copyright Assemblyscript ESM bindings */
-export const liftString = (wasmExports: core_WasmExports, pointer: number) => {
+export const liftString = (wasmExports: CoreRawModule, pointer: number) => {
     if (!pointer) return null
     pointer = pointer >>> 0
     const end =
@@ -77,7 +70,7 @@ export const liftString = (wasmExports: core_WasmExports, pointer: number) => {
 }
 
 /** @copyright Assemblyscript ESM bindings */
-export const lowerString = (wasmExports: core_WasmExports, value: string) => {
+export const lowerString = (wasmExports: CoreRawModule, value: string) => {
     if (value == null) return 0
     const length = value.length,
         pointer = wasmExports.__new(length << 1, 1) >>> 0,
@@ -89,7 +82,7 @@ export const lowerString = (wasmExports: core_WasmExports, value: string) => {
 
 /** @copyright Assemblyscript ESM bindings */
 export const lowerBuffer = (
-    wasmExports: core_WasmExports,
+    wasmExports: CoreRawModule,
     value: ArrayBuffer
 ) => {
     if (value == null) return 0
@@ -110,7 +103,7 @@ export const lowerBuffer = (
 export const readTypedArray = <
     _TypedArrayConstructor extends TypedArrayConstructor
 >(
-    wasmExports: core_WasmExports,
+    wasmExports: CoreRawModule,
     constructor: _TypedArrayConstructor,
     pointer: FloatArrayPointer
 ) => {
@@ -125,7 +118,7 @@ export const readTypedArray = <
 
 /** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const lowerFloatArray = (
-    wasmExports: core_WasmExports,
+    wasmExports: CoreRawModule,
     bitDepth: AudioSettings['bitDepth'],
     data: Array<number> | FloatArray
 ) => {
@@ -142,7 +135,7 @@ export const lowerFloatArray = (
 
 /** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const lowerListOfFloatArrays = (
-    wasmExports: core_WasmExports,
+    wasmExports: CoreRawModule,
     bitDepth: AudioSettings['bitDepth'],
     data: Array<Array<number> | FloatArray>
 ): InternalPointer => {
@@ -156,7 +149,7 @@ export const lowerListOfFloatArrays = (
 
 /** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const readListOfFloatArrays = (
-    wasmExports: core_WasmExports,
+    wasmExports: CoreRawModule,
     bitDepth: AudioSettings['bitDepth'],
     listOfArraysPointer: InternalPointer
 ) => {

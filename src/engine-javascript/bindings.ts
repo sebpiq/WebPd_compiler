@@ -1,7 +1,7 @@
 import { getFloatArrayType } from '../compile-helpers'
-import { createModule } from '../engine-common/modules'
-import { mapArray } from '../functional-helpers'
-import { AudioSettings, Code, Engine, FloatArray, RawModule } from '../types'
+import { createModule } from '../engine-common/modules-helpers'
+import { Bindings } from '../engine-common/types'
+import { AudioSettings, Code, Engine, FloatArray } from '../types'
 
 interface CommonsRawModule {
     commons_getArray: Engine['commons']['getArray']
@@ -21,13 +21,14 @@ interface FsRawModule {
     i_fs_readSoundFile: Engine['fs']['onReadSoundFile']
 }
 
-export type RawJavaScriptEngine = CommonsRawModule & FsRawModule & {
-    metadata: Engine['metadata']
-    configure: Engine['configure']
-    loop: Engine['loop']
-    outletListeners: Engine['outletListeners']
-    inletCallers: Engine['inletCallers']
-}
+export type RawJavaScriptEngine = CommonsRawModule &
+    FsRawModule & {
+        metadata: Engine['metadata']
+        configure: Engine['configure']
+        loop: Engine['loop']
+        outletListeners: Engine['outletListeners']
+        inletCallers: Engine['inletCallers']
+    }
 
 export const createRawModule = (code: Code): RawJavaScriptEngine =>
     new Function(`
@@ -35,25 +36,30 @@ export const createRawModule = (code: Code): RawJavaScriptEngine =>
     return exports
 `)()
 
-export const createEngineFromRawModule = (rawModule: RawJavaScriptEngine, extraExports: Array<string> = []) => {
-    return createModule<Engine>(rawModule, {
-        fs: { type: 'proxy', value: createFs(rawModule) },
-        metadata: { type: 'raw' },
-        configure: { type: 'raw' },
-        loop: { type: 'raw' },
-        inletCallers: { type: 'raw' },
-        outletListeners: { type: 'raw' },
-        commons: { type: 'proxy', value: createCommons(rawModule, rawModule.metadata.audioSettings.bitDepth) },
-        ...mapArray(extraExports, (name) => [name, { type: 'raw' }])
-    })
-}
+export const createBindings = (
+    rawModule: RawJavaScriptEngine
+): Bindings<Engine> => ({
+    fs: { type: 'proxy', value: createFsModule(rawModule) },
+    metadata: { type: 'raw' },
+    configure: { type: 'raw' },
+    loop: { type: 'raw' },
+    inletCallers: { type: 'raw' },
+    outletListeners: { type: 'raw' },
+    commons: {
+        type: 'proxy',
+        value: createCommonsModule(
+            rawModule,
+            rawModule.metadata.audioSettings.bitDepth
+        ),
+    },
+})
 
-export const createEngine = (code: Code, extraExports?: Array<string>) => {
+export const createEngine = (code: Code) => {
     const rawModule = createRawModule(code)
-    return createEngineFromRawModule(rawModule, extraExports)
+    return createModule(rawModule, createBindings(rawModule))
 }
 
-export const createFs = (rawModule: FsRawModule): Engine['fs'] => {
+const createFsModule = (rawModule: FsRawModule): Engine['fs'] => {
     const fs = createModule<Engine['fs']>(rawModule, {
         onReadSoundFile: { type: 'callback', value: () => undefined },
         onWriteSoundFile: { type: 'callback', value: () => undefined },
@@ -100,7 +106,7 @@ export const createFs = (rawModule: FsRawModule): Engine['fs'] => {
     return fs
 }
 
-export const createCommons = (
+const createCommonsModule = (
     rawModule: CommonsRawModule,
     bitDepth: AudioSettings['bitDepth']
 ): Engine['commons'] => {

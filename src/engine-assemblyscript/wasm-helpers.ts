@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { liftString } from './core-bindings'
-import { StringPointer, AssemblyScriptWasmExports } from './types'
+import { liftString } from './bindings/core-bindings'
+import { StringPointer, EngineRawModule } from './types'
 
 // REF : Assemblyscript ESM bindings
 export const instantiateWasmModule = async (
@@ -55,6 +55,6 @@ export const instantiateWasmModule = async (
         ...wasmImports,
     })
     const wasmExports = instanceAndModule.instance
-        .exports as unknown as AssemblyScriptWasmExports
+        .exports as unknown as EngineRawModule
     return instanceAndModule.instance
 }

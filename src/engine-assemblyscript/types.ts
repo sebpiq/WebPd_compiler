@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,11 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Code } from '../types'
-import { core_WasmExports } from './core-bindings'
-import { fs_WasmExports, fs_WasmImports } from './fs-bindings'
-import { msg_WasmExports } from './msg-bindings'
-import { commons_WasmExports } from './commons-bindings'
+import { AudioSettings, Code, Engine, EngineMetadata, FloatArray } from '../types'
+import { CoreRawModule } from './bindings/core-bindings'
+import { FsRawModule, FsImports } from './bindings/fs-bindings'
+import { MsgRawModule } from './bindings/msg-bindings'
+import { CommonsRawModule } from './bindings/commons-bindings'
+import { EngineCoreRawModule } from './bindings/engine-core-bindings'
 
 /** AssemblyScript Code that allows to create a wasm module with exports `AssemblyScriptWasmExports` */
 export type AssemblyScriptWasmEngineCode = Code
@@ -49,19 +50,35 @@ export type ArrayBufferOfIntegersPointer = number
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
-export type AssemblyScriptWasmExports = commons_WasmExports &
-    core_WasmExports &
-    msg_WasmExports &
-    fs_WasmExports & {
-        configure: (sampleRate: number, blockSize: number) => void
-        loop: () => void
+export type EngineRawModule = CommonsRawModule &
+    CoreRawModule &
+    MsgRawModule &
+    FsRawModule &
+    EngineCoreRawModule
 
-        // Pointers to input and output buffers
-        getOutput: () => FloatArrayPointer
-        getInput: () => FloatArrayPointer
+export type AssemblyScriptWasmImports = FsImports
 
-        // Pointer to a JSON string representation of `EngineMetadata`
-        metadata: WebAssembly.Global
+export interface EngineData {
+    metadata: Engine['metadata']
+    wasmOutput: FloatArray
+    wasmInput: FloatArray
+    arrayType: typeof Float32Array | typeof Float64Array
+    // We use these two values only for caching, to avoid frequent nested access
+    bitDepth: AudioSettings['bitDepth']
+    blockSize: EngineMetadata['audioSettings']['blockSize']
+}
+
+/**
+ * When declaring imported functions, we use objects that will be only available
+ * once compilation done. 
+ * Therefore we use these forward references in imported functions, and fill them up 
+ * once compilation is done. 
+ */
+export interface ForwardReferences<RawModuleType, > {
+    rawModule?: RawModuleType
+    engineData?: EngineData
+    modules: {
+        fs?: Engine['fs']
+        outletListeners?: Engine['outletListeners']
     }
-
-export type AssemblyScriptWasmImports = fs_WasmImports
+}

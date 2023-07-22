@@ -22,7 +22,7 @@ import { writeFileSync } from "fs"
 import { Code, RawModule } from "../types"
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { createRawModule } from "./JavaScriptEngine"
+import { createRawModule } from "./bindings"
 const execPromise = promisify(exec)
 
 export const jsCodeToRawModule = async (code: Code): Promise<RawModule> => {

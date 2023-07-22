@@ -20,7 +20,7 @@
 
 import assert from 'assert'
 import { executeCompilation } from './compile'
-import { makeCompilation, round, createEngine } from './test-helpers'
+import { makeCompilation, round, createTestEngine } from './test-helpers'
 import {
     Signal,
     Message,
@@ -244,7 +244,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         },
     })
     const code = executeCompilation(compilation)
-    const engine = await createEngine(
+    const engine = await createTestEngine(
         target,
         bitDepth,
         code,

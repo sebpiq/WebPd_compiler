@@ -21,7 +21,7 @@
 import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
 import compileToAssemblyscript from './compile-to-assemblyscript'
-import { AssemblyScriptWasmExports, AssemblyScriptWasmImports } from './types'
+import { EngineRawModule, AssemblyScriptWasmImports } from './types'
 import { ascCodeToRawModule } from './test-helpers'
 
 const BIT_DEPTH = 32
@@ -54,7 +54,7 @@ describe('compileToAssemblyscript', () => {
             }
         )
 
-        const expectedExports: AssemblyScriptWasmExports &
+        const expectedExports: EngineRawModule &
             AssemblyScriptWasmImports &
             AscRuntimeExports = {
             configure: () => undefined,

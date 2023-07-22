@@ -21,7 +21,7 @@
 import assert from 'assert'
 import { makeCompilation } from '../test-helpers'
 import compileToJavascript from './compile-to-javascript'
-import { RawJavaScriptEngine, createRawModule } from './JavaScriptEngine'
+import { RawJavaScriptEngine, createRawModule } from './bindings'
 
 describe('compileToJavascript', () => {
     it('should be a JavaScript engine when evaled', () => {

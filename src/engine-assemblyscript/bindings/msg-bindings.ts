@@ -28,13 +28,12 @@
  * @module
  */
 
-import { liftString, lowerString } from './core-bindings'
+import { CoreRawModule, liftString, lowerString } from './core-bindings'
 import { readTypedArray } from './core-bindings'
-import { commons_WasmExports } from './commons-bindings'
-import { ArrayBufferOfIntegersPointer, FloatArrayPointer, MessagePointer, StringPointer } from './types'
-import { Message } from '../types'
+import { ArrayBufferOfIntegersPointer, FloatArrayPointer, MessagePointer, StringPointer } from '../types'
+import { Message } from '../../types'
 
-export interface msg_WasmExports extends commons_WasmExports {
+export interface MsgRawModule {
     MSG_FLOAT_TOKEN: WebAssembly.Global
     MSG_STRING_TOKEN: WebAssembly.Global
 
@@ -63,10 +62,12 @@ export interface msg_WasmExports extends commons_WasmExports {
     ) => number
 }
 
+export type MsgWithDependenciesRawModule = CoreRawModule & MsgRawModule
+
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
 export const liftMessage = (
-    wasmExports: msg_WasmExports,
+    wasmExports: MsgWithDependenciesRawModule,
     messagePointer: MessagePointer
 ): Message => {
     const messageTokenTypesPointer =
@@ -94,7 +95,7 @@ export const liftMessage = (
 }
 
 export const lowerMessage = (
-    wasmExports: msg_WasmExports,
+    wasmExports: MsgWithDependenciesRawModule,
     message: Message
 ): MessagePointer => {
     const template: Array<number> = message.reduce((template, value) => {

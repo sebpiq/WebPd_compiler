@@ -21,6 +21,7 @@
 import {
     AudioSettings,
     Code,
+    CodeVariableName,
     Compilation,
     CompilerTarget,
     Engine,
@@ -36,10 +37,17 @@ import {
     buildGraphTraversalLoop,
 } from './compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/test-helpers'
-import { compileAscCode, wasmBufferToRawModule } from './engine-assemblyscript/test-helpers'
-import { renderCode } from './functional-helpers'
-import { createEngine as createAssemblyScriptWasmEngine} from './engine-assemblyscript/AssemblyScriptWasmEngine'
-import { createEngineFromRawModule as createJavaScriptEngine } from './engine-javascript/JavaScriptEngine'
+import {
+    compileAscCode,
+    wasmBufferToRawModule,
+} from './engine-assemblyscript/test-helpers'
+import { mapArray, renderCode, renderIf, renderSwitch } from './functional-helpers'
+import {
+    createRawModule as createAssemblyScriptWasmRawModule,
+    createBindings as createAssemblyScriptWasmEngineBindings,
+} from './engine-assemblyscript/bindings'
+import { createBindings as createJavaScriptEngineBindings } from './engine-javascript/bindings'
+import { createModule } from './engine-common/modules-helpers'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -135,7 +143,7 @@ export const createTestModule = async <ModuleType extends Module>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    applyBindings: CreateTestModuleApplyBindings = {},
+    applyBindings: CreateTestModuleApplyBindings = {}
 ): Promise<ModuleType> => {
     const applyBindingsNonNull: Required<CreateTestModuleApplyBindings> = {
         javascript: async (rawModule) => rawModule,
@@ -166,21 +174,42 @@ type TestEngine<ExportsKeys> = Engine & {
 
 type TestEngineExportsKeys = { [name: string]: any }
 
-export const createEngine = <ExportsKeys extends TestEngineExportsKeys>(
+export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
     testFunctionNames: Array<keyof ExportsKeys> = []
 ) => {
-    return createTestModule<TestEngine<ExportsKeys>>(
-        target,
-        bitDepth,
-        code,
-        {
-            javascript: async (rawModule) => createJavaScriptEngine(rawModule, testFunctionNames as Array<string>),
-            assemblyscript: (buffer) => createAssemblyScriptWasmEngine(buffer) as Promise<TestEngine<ExportsKeys>>,
-        }
-    )
+    return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
+        javascript: async (rawModule) => {
+            return createModule(rawModule, {
+                ...mapArray(testFunctionNames, (name) => [
+                    String(name),
+                    { type: 'raw' },
+                ]),
+                ...createJavaScriptEngineBindings(rawModule),
+            })
+        },
+        assemblyscript: async (buffer) => {
+            const {
+                rawModule,
+                engineData,
+                forwardReferences,
+            } = await createAssemblyScriptWasmRawModule(buffer)
+            const engineBindings = await createAssemblyScriptWasmEngineBindings(
+                rawModule,
+                engineData,
+                forwardReferences,
+            )
+            return createModule(rawModule, {
+                ...mapArray(testFunctionNames, (name) => [
+                    String(name),
+                    { type: 'raw' },
+                ]),
+                ...engineBindings,
+            })
+        },
+    })
 }
 
 export const runTestSuite = (
@@ -291,12 +320,8 @@ export const runTestSuite = (
                 `
                 )}
 
-                ${
-                    testParameters.target === 'assemblyscript'
-                        ? `export {${testFunctionNames.join(',')}}`
-                        : `const exports = {${testFunctionNames.join(',')}}`
-                }
-                
+                ${renderIf(testParameters.target === 'javascript', 'const exports = {}')}
+                ${compileTestExports(testParameters.target, testFunctionNames)}
             `
 
             testModules.push([
@@ -329,3 +354,21 @@ export const runTestSuite = (
         })
     })
 }
+
+export const compileTestExports = (
+    target: CompilerTarget,
+    exportNames: Array<CodeVariableName>
+): Code =>
+    renderSwitch(
+        [target === 'assemblyscript', `\nexport {${exportNames.join(',')}}`],
+        [
+            target === 'javascript',
+            '\n' +
+                exportNames
+                    .map(
+                        (name) =>
+                            `exports.${name.toString()} = ${name.toString()}`
+                    )
+                    .join('\n'),
+        ]
+    )

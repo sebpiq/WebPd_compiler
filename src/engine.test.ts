@@ -22,7 +22,8 @@ import { executeCompilation } from './compile'
 import { renderCode } from './functional-helpers'
 import {
     TEST_PARAMETERS,
-    createEngine,
+    compileTestExports,
+    createTestEngine,
     makeCompilation,
     round,
 } from './test-helpers'
@@ -76,7 +77,8 @@ describe('Engine', () => {
 
         const testCodeGenContext = getGlobalCodeGeneratorContext(compilation)
         let code =
-            executeCompilation(compilation) + '\n' + 
+            executeCompilation(compilation) +
+            '\n' +
             (sharedCode
                 ? sharedCode
                       .map((testCodeGen) => testCodeGen(testCodeGenContext))
@@ -87,71 +89,34 @@ describe('Engine', () => {
         const exportKeys = Object.keys(exports || {}) as Array<
             keyof ExportsKeys
         >
-        if (target === 'javascript') {
-            code += exportKeys.length
-                ? renderCode`
-                {${exportKeys.map(
-                    (name) => `exports.${name.toString()} = ${name.toString()}`
-                )}}
-            `
-                : ''
-        } else {
-            code += renderCode`
-                export {${exportKeys.join(', ')}}
-            `
-        }
+        code += compileTestExports(target, exportKeys.map(k => String(k)))
 
-        const engine = await createEngine<ExportsKeys>(target, bitDepth, code, exportKeys)
-
-        // For asc engine, we need to expose exported test functions on the engine.
-        if (target === 'assemblyscript') {
-            exportKeys.forEach((name) => {
-                engine[name] = (engine as any).wasmExports[name]
-            })
-        }
+        const engine = await createTestEngine<ExportsKeys>(
+            target,
+            bitDepth,
+            code,
+            exportKeys
+        )
 
         return engine
     }
 
     describe('configure/loop', () => {
-        it.each([
-            {
-                target: 'javascript' as CompilerTarget,
-                outputChannels: 2,
-                blockSize: 4,
-                bitDepth: 32 as AudioSettings['bitDepth'],
-                floatArrayType: Float32Array,
-            },
-            {
-                target: 'javascript' as CompilerTarget,
-                outputChannels: 3,
-                blockSize: 5,
-                bitDepth: 64 as AudioSettings['bitDepth'],
-                floatArrayType: Float64Array,
-            },
-            {
-                target: 'assemblyscript' as CompilerTarget,
-                outputChannels: 2,
-                blockSize: 4,
-                bitDepth: 32 as AudioSettings['bitDepth'],
-                floatArrayType: Float32Array,
-            },
-            {
-                target: 'assemblyscript' as CompilerTarget,
-                outputChannels: 3,
-                blockSize: 5,
-                bitDepth: 64 as AudioSettings['bitDepth'],
-                floatArrayType: Float64Array,
-            },
-        ])(
+        it.each(
+            TEST_PARAMETERS.map((params, i) => ({
+                ...params,
+                outputChannels: i % 2 === 0 ? 2 : 3,
+                blockSize: i % 2 === 0 ? 4 : 5,
+            }))
+        )(
             'should configure and return an output block of the right size %s',
             async ({
                 target,
                 outputChannels,
                 blockSize,
                 bitDepth,
-                floatArrayType,
             }) => {
+                const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
                         loop: ({
@@ -567,11 +532,14 @@ describe('Engine', () => {
                             encodingFormat: 'aiff', 
                             endianness: 'l',
                             extraOptions: '',
-                        }, function ${Func([
-                            Var('id', 'fs_OperationId'),
-                            Var('status', 'fs_OperationStatus'),
-                            Var('sound', 'FloatArray[]'),
-                        ], 'void')} {
+                        }, function ${Func(
+                            [
+                                Var('id', 'fs_OperationId'),
+                                Var('status', 'fs_OperationStatus'),
+                                Var('sound', 'FloatArray[]'),
+                            ],
+                            'void'
+                        )} {
                             receivedId = id
                             receivedStatus = status
                             receivedSound = sound

@@ -24,14 +24,14 @@ import {
     liftMessage,
     lowerMessage,
 } from './msg-bindings'
-import { AudioSettings, SharedCodeGenerator } from '../types'
-import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { getFloatArrayType } from '../compile-helpers'
-import { getMacros } from '../compile'
-import { core } from '../core-code/core'
-import { sked } from '../core-code/sked'
-import { msg } from '../core-code/msg'
-import { compileExports } from './compile-to-assemblyscript'
+import { AudioSettings, SharedCodeGenerator } from '../../types'
+import { TEST_PARAMETERS, ascCodeToRawModule } from '../test-helpers'
+import { getFloatArrayType } from '../../compile-helpers'
+import { getMacros } from '../../compile'
+import { core } from '../../core-code/core'
+import { sked } from '../../core-code/sked'
+import { msg } from '../../core-code/msg'
+import { compileExports } from '../compile-to-assemblyscript'
 
 describe('msg-bindings', () => {
     const BYTES_IN_CHAR = 4

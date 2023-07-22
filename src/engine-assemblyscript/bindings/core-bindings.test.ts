@@ -24,12 +24,12 @@ import {
     readListOfFloatArrays,
     readTypedArray,
 } from './core-bindings'
-import { AudioSettings } from '../types'
-import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { getMacros } from '../compile'
-import { getFloatArrayType } from '../compile-helpers'
-import { core } from '../core-code/core'
-import { compileExports } from './compile-to-assemblyscript'
+import { AudioSettings } from '../../types'
+import { TEST_PARAMETERS, ascCodeToRawModule } from '../test-helpers'
+import { getMacros } from '../../compile'
+import { getFloatArrayType } from '../../compile-helpers'
+import { core } from '../../core-code/core'
+import { compileExports } from '../compile-to-assemblyscript'
 
 describe('core-bindings', () => {
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
