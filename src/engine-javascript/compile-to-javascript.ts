@@ -20,11 +20,20 @@
 
 import {
     buildMetadata,
+    collectGlobalCodeDefinitionsFromTraversal,
+    engineMinimalCodeDefinitions,
 } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
-import compileGlobalCode from '../engine-common/compile-global-code'
-import { Compilation, GlobalCodeGeneratorWithSettings } from '../types'
+import compileGlobalCode, {
+    collectExports,
+    collectImports,
+} from '../engine-common/compile-global-code'
+import {
+    Compilation,
+    GlobalCodeDefinitionExport,
+    GlobalCodeDefinitionImport,
+} from '../types'
 import { JavaScriptEngineCode } from './types'
 import { renderCode } from '../functional-helpers'
 import {
@@ -32,54 +41,20 @@ import {
     compileInletCallers,
 } from '../engine-common/compile-portlet-accessors'
 import embedArrays from '../engine-common/embed-arrays'
-import {
-    fsCore,
-    fsReadSoundFile,
-    fsReadSoundStream,
-    fsSoundStreamCore,
-    fsWriteSoundFile,
-    fsWriteSoundStream,
-} from '../core-code/fs'
-import {
-    commonsCore,
-    commonsArrays,
-    commonsWaitEngineConfigure,
-    commonsWaitFrame,
-} from '../core-code/commons'
-import { core } from '../core-code/core'
-import { bufCore, bufPushPull } from '../core-code/buf'
-import { msg } from '../core-code/msg'
-import { sked } from '../core-code/sked'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const {
-        codeVariableNames,
-        outletListenerSpecs,
-        inletCallerSpecs,
-    } = compilation
+    const { codeVariableNames, outletListenerSpecs, inletCallerSpecs } =
+        compilation
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
+    const globalCodeDefinitions = [
+        ...engineMinimalCodeDefinitions(),
+        ...collectGlobalCodeDefinitionsFromTraversal(compilation),
+    ]
 
     // prettier-ignore
     return renderCode`
-
-        ${compileGlobalCode(compilation, [ 
-            core,
-            msg,
-            sked,
-            bufCore,
-            bufPushPull,
-            fsCore, 
-            fsReadSoundFile, 
-            fsWriteSoundFile, 
-            fsSoundStreamCore, 
-            fsReadSoundStream, 
-            fsWriteSoundStream,
-            commonsCore,
-            commonsArrays,
-            commonsWaitEngineConfigure,
-            commonsWaitFrame,
-         ])}
+        ${compileGlobalCode(compilation, globalCodeDefinitions)}
 
         ${embedArrays(compilation)}
 
@@ -128,32 +103,16 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
         }
 
-        ${compileImports([ fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
-        ${compileExports([ core, msg, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, commonsArrays ])}
+        ${collectImports(globalCodeDefinitions).map(compileImport)}
+        ${collectExports('javascript', globalCodeDefinitions).map(compileExport)}
     `
 }
 
-const compileImports = (
-    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
-) => renderCode`
-    ${globalCodeDefinitions.map((globalCodeDefinition) =>
-        globalCodeDefinition.imports.map(
-            ({ name }) => `
-                    exports.${name} = () => { throw new Error('import for ${name} not provided') }
-                    const ${name} = (...args) => exports.${name}(...args)
-                `
-        )
-    )}
+const compileImport = ({ name }: GlobalCodeDefinitionImport) => `
+    exports.${name} = () => { throw new Error('import for ${name} not provided') }
+    const ${name} = (...args) => exports.${name}(...args)
 `
 
-const compileExports = (
-    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
-) => renderCode`
-    ${globalCodeDefinitions.map((globalCodeDefinition) =>
-        globalCodeDefinition.exports
-            .filter(
-                (xprt) => !xprt.targets || xprt.targets.includes('javascript')
-            )
-            .map(({ name }) => `exports.${name} = ${name}`)
-    )}
+export const compileExport = ({ name }: GlobalCodeDefinitionExport) => `
+    exports.${name} = ${name}
 `

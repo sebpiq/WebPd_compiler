@@ -112,7 +112,12 @@ export interface Engine {
             info: SoundFileInfo
         ) => void
 
-        /** Callback which the host environment must set to receive "write sound file" requests. */
+        /** 
+         * Callback which the host environment must set to receive "write sound file" requests. 
+         * 
+         * @param sound - this data needs to be copied or handled immediately, 
+         * as the engine might reuse or garbage collect the original array. 
+         */
         onWriteSoundFile: (
             operationId: number,
             sound: Array<FloatArray>,
@@ -134,7 +139,12 @@ export interface Engine {
             info: SoundFileInfo
         ) => void
 
-        /** Callback which the host environment must set to receive sound stream data for an ongoing write stream. */
+        /** 
+         * Callback which the host environment must set to receive sound stream data for an ongoing write stream. 
+         * 
+         * @param sound - this data needs to be copied or handled immediately, 
+         * as the engine might reuse or garbage collect the original array. 
+         */
         onSoundStreamData: (
             operationId: number,
             sound: Array<FloatArray>
@@ -243,26 +253,32 @@ export interface CodeVariableNames {
     }
 }
 
-/** @deprecated */
-export type SharedCodeGenerator = (context: {
+export interface GlobalCodeGeneratorContext {
     macros: CodeMacros
     target: CompilerTarget
     audioSettings: AudioSettings
-}) => Code
+}
 
-export type GlobalCodeGenerator = (context: {
-    macros: CodeMacros
-    target: CompilerTarget
-    audioSettings: AudioSettings
-}) => Code
+export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => Code
+
+export interface GlobalCodeDefinitionImport {
+    name: string
+    args: Array<[CodeVariableName, CodeVariableName]>
+    returns: CodeVariableName
+}
+
+export interface GlobalCodeDefinitionExport { name: string; targets?: Array<CompilerTarget> }
 
 export interface GlobalCodeGeneratorWithSettings {
     codeGenerator: GlobalCodeGenerator
-    exports?: Array<{ name: string, targets?: Array<CompilerTarget> }>
-    imports?: Array<{ name: string, args: Array<[CodeVariableName, CodeVariableName]>, returns: CodeVariableName }>
+    exports?: Array<GlobalCodeDefinitionExport>
+    imports?: Array<GlobalCodeDefinitionImport>
+    dependencies?: Array<GlobalCodeDefinition>
 }
 
-export type GlobalCodeDefinition = GlobalCodeGenerator | GlobalCodeGeneratorWithSettings
+export type GlobalCodeDefinition =
+    | GlobalCodeGenerator
+    | GlobalCodeGeneratorWithSettings
 
 export interface NodeImplementation<
     NodeArgsType,
@@ -301,8 +317,7 @@ export interface NodeImplementation<
         [inletId: DspGraph.PortletId]: Code
     }
 
-    /** @deprecated */
-    sharedCode?: Array<SharedCodeGenerator>
+    globalCode?: Array<GlobalCodeDefinition>
 }
 
 export type NodeImplementations = {

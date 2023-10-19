@@ -18,29 +18,113 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getGlobalCodeGeneratorContext } from '../compile-helpers'
-import { renderCode } from '../functional-helpers'
 import {
-    Compilation,
-    GlobalCodeGeneratorWithSettings,
     GlobalCodeDefinition,
+    GlobalCodeGeneratorContext,
+    Code,
+    GlobalCodeGeneratorWithSettings,
+    GlobalCodeDefinitionExport,
+    GlobalCodeDefinitionImport,
+    CompilerTarget,
 } from '../types'
 
 export default (
-    compilation: Compilation,
+    context: GlobalCodeGeneratorContext,
     globalCodeDefinitions: Array<GlobalCodeDefinition>
-) => {
-    const context = getGlobalCodeGeneratorContext(compilation)
-    const globalCodeGeneratorsWithSettings: Array<GlobalCodeGeneratorWithSettings> =
+) =>
+    // De-duplicate code
+    _renderCodeDefinitionsRecursive(context, globalCodeDefinitions)
+        .reduce<Array<Code>>(
+            (codes, code) => (!codes.includes(code) ? [...codes, code] : codes),
+            []
+        )
+        .join('\n')
+
+export const _renderCodeDefinitionsRecursive = (
+    context: GlobalCodeGeneratorContext,
+    globalCodeDefinitions: Array<GlobalCodeDefinition>
+): Array<Code> =>
+    globalCodeDefinitions.flatMap(
+        (globalCodeDefinition): Array<Code> =>
+            _isGlobalDefinitionWithSettings(globalCodeDefinition)
+                ? [
+                      ...(globalCodeDefinition.dependencies
+                          ? _renderCodeDefinitionsRecursive(
+                                context,
+                                globalCodeDefinition.dependencies
+                            )
+                          : []),
+                      globalCodeDefinition.codeGenerator(context),
+                  ]
+                : [globalCodeDefinition(context)]
+    )
+
+export const collectExports = (
+    target: CompilerTarget,
+    globalCodeDefinitions: Array<GlobalCodeDefinition>
+): Array<GlobalCodeDefinitionExport> =>
+    _collectExportsRecursive(globalCodeDefinitions)
+        .filter((xprt) => !xprt.targets || xprt.targets.includes(target))
+        .reduce<Array<GlobalCodeDefinitionExport>>(
+            // De-duplicate exports
+            (exports, xprt) =>
+                exports.some((otherExport) => xprt.name === otherExport.name)
+                    ? exports
+                    : [...exports, xprt],
+            []
+        )
+
+export const collectImports = (
+    globalCodeDefinitions: Array<GlobalCodeDefinition>
+): Array<GlobalCodeDefinitionImport> =>
+    _collectImportsRecursive(globalCodeDefinitions).reduce<
+        Array<GlobalCodeDefinitionImport>
+    >(
+        // De-duplicate imports
+        (imports, imprt) =>
+            imports.some((otherImport) => imprt.name === otherImport.name)
+                ? imports
+                : [...imports, imprt],
         []
-    return renderCode`
-        ${globalCodeDefinitions.map((globalCodeDefinition) => {
-            if (typeof globalCodeDefinition === 'function') {
-                return globalCodeDefinition(context)
-            } else {
-                globalCodeGeneratorsWithSettings.push(globalCodeDefinition)
-                return globalCodeDefinition.codeGenerator(context)
-            }
-        })}
-    `
-}
+    )
+
+const _collectExportsRecursive = (
+    globalCodeDefinitions: Array<GlobalCodeDefinition>
+) =>
+    globalCodeDefinitions
+        .filter(_isGlobalDefinitionWithSettings)
+        .flatMap(
+            (
+                globalCodeDefinition: GlobalCodeGeneratorWithSettings
+            ): Array<GlobalCodeDefinitionExport> => [
+                ...(globalCodeDefinition.dependencies
+                    ? _collectExportsRecursive(
+                          globalCodeDefinition.dependencies
+                      )
+                    : []),
+                ...(globalCodeDefinition.exports || []),
+            ]
+        )
+
+const _collectImportsRecursive = (
+    globalCodeDefinitions: Array<GlobalCodeDefinition>
+) =>
+    globalCodeDefinitions
+        .filter(_isGlobalDefinitionWithSettings)
+        .flatMap(
+            (
+                globalCodeDefinition: GlobalCodeGeneratorWithSettings
+            ): Array<GlobalCodeDefinitionImport> => [
+                ...(globalCodeDefinition.dependencies
+                    ? _collectImportsRecursive(
+                          globalCodeDefinition.dependencies
+                      )
+                    : []),
+                ...(globalCodeDefinition.imports || []),
+            ]
+        )
+
+const _isGlobalDefinitionWithSettings = (
+    globalCodeDefinition: GlobalCodeDefinition
+): globalCodeDefinition is GlobalCodeGeneratorWithSettings =>
+    !(typeof globalCodeDefinition === 'function')

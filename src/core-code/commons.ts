@@ -18,25 +18,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalCodeGenerator, GlobalCodeGeneratorWithSettings } from '../types'
+import { GlobalCodeGeneratorWithSettings } from '../types'
+import { sked } from './sked'
 
-export const commonsCore: GlobalCodeGenerator = ({ macros: { Var, Func } }) => `
-    const _commons_ENGINE_LOGGED_SKEDULER = sked_create(true)
-    const _commons_FRAME_SKEDULER = sked_create(false)
+export const commonsCore: GlobalCodeGeneratorWithSettings = {
+    codeGenerator: ({ macros: { Var, Func } }) => `
+        const _commons_ENGINE_LOGGED_SKEDULER = sked_create(true)
+        const _commons_FRAME_SKEDULER = sked_create(false)
 
-    function _commons_emitEngineConfigure ${Func([], 'void')} {
-        sked_emit(_commons_ENGINE_LOGGED_SKEDULER, 'configure')
-    }
-    
-    function _commons_emitFrame ${Func([Var('frame', 'Int')], 'void')} {
-        sked_emit(_commons_FRAME_SKEDULER, frame.toString())
-    }
-`
+        function _commons_emitEngineConfigure ${Func([], 'void')} {
+            sked_emit(_commons_ENGINE_LOGGED_SKEDULER, 'configure')
+        }
+        
+        function _commons_emitFrame ${Func([Var('frame', 'Int')], 'void')} {
+            sked_emit(_commons_FRAME_SKEDULER, frame.toString())
+        }
+    `,
+    dependencies: [sked],
+}
 
 export const commonsArrays: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ macros: { Var, Func } }) => `
         const ${Var('_commons_ARRAYS', 'Map<string, FloatArray>')} = new Map()
-        const ${Var('_commons_ARRAYS_SKEDULER', 'Skeduler')} = sked_create(false)
+        const ${Var(
+            '_commons_ARRAYS_SKEDULER',
+            'Skeduler'
+        )} = sked_create(false)
 
         /** Gets an named array, throwing an error if the array doesn't exist. */
         function commons_getArray ${Func(
@@ -49,7 +56,10 @@ export const commonsArrays: GlobalCodeGeneratorWithSettings = {
             return _commons_ARRAYS.get(arrayName)
         }
 
-        function commons_hasArray ${Func([Var('arrayName', 'string')], 'boolean')} {
+        function commons_hasArray ${Func(
+            [Var('arrayName', 'string')],
+            'boolean'
+        )} {
             return _commons_ARRAYS.has(arrayName)
         }
 
@@ -88,46 +98,48 @@ export const commonsArrays: GlobalCodeGeneratorWithSettings = {
         }
     `,
 
-    exports: [
-        { name: 'commons_getArray' },
-        { name: 'commons_setArray' },
-    ]
+    exports: [{ name: 'commons_getArray' }, { name: 'commons_setArray' }],
 }
 
-export const commonsWaitEngineConfigure: GlobalCodeGenerator = ({
-    macros: { Var, Func },
-}) => `
-    /** 
-     * @param callback Called when the engine is configured, or immediately if the engine
-     * was already configured.
-     */
-    function commons_waitEngineConfigure ${Func(
-        [Var('callback', 'SkedCallback')],
-        'void'
-    )} {
-        sked_wait(_commons_ENGINE_LOGGED_SKEDULER, 'configure', callback)
-    }
-`
+export const commonsWaitEngineConfigure: GlobalCodeGeneratorWithSettings = {
+    codeGenerator: ({ macros: { Var, Func } }) => `
+        /** 
+         * @param callback Called when the engine is configured, or immediately if the engine
+         * was already configured.
+         */
+        function commons_waitEngineConfigure ${Func(
+            [Var('callback', 'SkedCallback')],
+            'void'
+        )} {
+            sked_wait(_commons_ENGINE_LOGGED_SKEDULER, 'configure', callback)
+        }
+    `,
+    dependencies: [commonsCore],
+}
 
-export const commonsWaitFrame: GlobalCodeGenerator = ({
-    macros: { Var, Func },
-}) => `
-    /** 
-     * Schedules a callback to be called at the given frame.
-     * If the frame already occurred, or is the current frame, the callback won't be executed.
-     */
-    function commons_waitFrame ${Func(
-        [Var('frame', 'Int'), Var('callback', 'SkedCallback')],
-        'SkedId'
-    )} {
-        return sked_wait_future(_commons_FRAME_SKEDULER, frame.toString(), callback)
-    }
+export const commonsWaitFrame: GlobalCodeGeneratorWithSettings = {
+    codeGenerator: ({ macros: { Var, Func } }) => `
+        /** 
+         * Schedules a callback to be called at the given frame.
+         * If the frame already occurred, or is the current frame, the callback won't be executed.
+         */
+        function commons_waitFrame ${Func(
+            [Var('frame', 'Int'), Var('callback', 'SkedCallback')],
+            'SkedId'
+        )} {
+            return sked_wait_future(_commons_FRAME_SKEDULER, frame.toString(), callback)
+        }
 
-    /** 
-     * Cancels waiting for a frame to occur.
-     */
-    function commons_cancelWaitFrame ${Func([Var('id', 'SkedId')], 'void')} {
-        sked_cancel(_commons_FRAME_SKEDULER, id)
-    }
+        /** 
+         * Cancels waiting for a frame to occur.
+         */
+        function commons_cancelWaitFrame ${Func(
+            [Var('id', 'SkedId')],
+            'void'
+        )} {
+            sked_cancel(_commons_FRAME_SKEDULER, id)
+        }
 
-`
+    `,
+    dependencies: [commonsCore],
+}

@@ -21,13 +21,15 @@
 import {
     AudioSettings,
     Code,
-    CodeVariableName,
     Compilation,
     CompilerTarget,
     Engine,
+    GlobalCodeDefinition,
+    GlobalCodeDefinitionExport,
+    GlobalCodeGenerator,
+    GlobalCodeGeneratorWithSettings,
     Module,
     RawModule,
-    SharedCodeGenerator,
 } from './types'
 import * as variableNames from './engine-common/code-variable-names'
 import { getMacros } from './compile'
@@ -41,13 +43,23 @@ import {
     compileAscCode,
     wasmBufferToRawModule,
 } from './engine-assemblyscript/test-helpers'
-import { mapArray, renderCode, renderIf, renderSwitch } from './functional-helpers'
+import {
+    mapArray,
+    renderCode,
+    renderIf,
+    renderSwitch,
+} from './functional-helpers'
 import {
     createRawModule as createAssemblyScriptWasmRawModule,
     createBindings as createAssemblyScriptWasmEngineBindings,
 } from './engine-assemblyscript/bindings'
 import { createBindings as createJavaScriptEngineBindings } from './engine-javascript/bindings'
 import { createModule } from './engine-common/modules-helpers'
+import { compileExport as compileAssemblyScriptExport } from './engine-assemblyscript/compile-to-assemblyscript'
+import { compileExport as compileJavaScriptExport } from './engine-javascript/compile-to-javascript'
+import compileGlobalCode, {
+    collectExports,
+} from './engine-common/compile-global-code'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -178,12 +190,15 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    testFunctionNames: Array<keyof ExportsKeys> = []
+    globalCodeDefinitions: Array<GlobalCodeDefinition> = []
 ) => {
+    const exports = collectExports(target, globalCodeDefinitions)
+    // Create modules with bindings containing not only the basic bindings but also raw bindings
+    // for all functions exported in `globalCodeDefinitions`
     return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
         javascript: async (rawModule) => {
             return createModule(rawModule, {
-                ...mapArray(testFunctionNames, (name) => [
+                ...mapArray(exports, ({ name }) => [
                     String(name),
                     { type: 'raw' },
                 ]),
@@ -191,18 +206,15 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
             })
         },
         assemblyscript: async (buffer) => {
-            const {
-                rawModule,
-                engineData,
-                forwardReferences,
-            } = await createAssemblyScriptWasmRawModule(buffer)
+            const { rawModule, engineData, forwardReferences } =
+                await createAssemblyScriptWasmRawModule(buffer)
             const engineBindings = await createAssemblyScriptWasmEngineBindings(
                 rawModule,
                 engineData,
-                forwardReferences,
+                forwardReferences
             )
             return createModule(rawModule, {
-                ...mapArray(testFunctionNames, (name) => [
+                ...mapArray(exports, ({ name }) => [
                     String(name),
                     { type: 'raw' },
                 ]),
@@ -213,32 +225,38 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
 }
 
 export const runTestSuite = (
-    tests: Array<{ description: string; codeGenerator: SharedCodeGenerator }>,
-    sharedCode: Array<SharedCodeGenerator> = []
+    tests: Array<{ description: string; codeGenerator: GlobalCodeGenerator }>,
+    globalCodeDefinitions: Array<GlobalCodeDefinition> = []
 ) => {
-    const testModules: Array<[TestParameters, any]> = []
+    const testModules: Array<[TestParameters, Module]> = []
     let testCounter = 1
-    const testFunctionNames: Array<string> = []
-
-    tests.forEach(() => testFunctionNames.push(`test${testCounter++}`))
+    const testFunctionNames = tests.map(() => `test${testCounter++}`)
 
     beforeAll(async () => {
         for (let testParameters of TEST_PARAMETERS) {
-            const macros = getMacros(testParameters.target)
+            const { target, bitDepth } = testParameters
+            const macros = getMacros(target)
             const { Var, Func } = macros
             const codeGeneratorContext = {
                 macros,
-                target: testParameters.target,
+                target,
                 audioSettings: {
-                    bitDepth: testParameters.bitDepth,
+                    bitDepth,
                     channelCount: { in: 2, out: 2 },
                 },
             }
-            let code = renderCode`
-                ${sharedCode.map((codeGenerator) =>
-                    codeGenerator(codeGeneratorContext)
-                )}
 
+            const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
+                tests.map(({ codeGenerator }, i) => ({
+                    codeGenerator: () => `function ${
+                        testFunctionNames[i]
+                    } ${Func([], 'void')} {
+                        ${codeGenerator(codeGeneratorContext)}
+                    }`,
+                    exports: [{ name: testFunctionNames[i] }],
+                }))
+
+            let code = renderCode`
                 function reportTestFailure ${Func(
                     [Var('msg', 'string')],
                     'void'
@@ -312,23 +330,27 @@ export const runTestSuite = (
                     }
                 }
 
-                ${tests.map(
-                    ({ codeGenerator }, i) => `
-                    function ${testFunctionNames[i]} ${Func([], 'void')} {
-                        ${codeGenerator(codeGeneratorContext)}
-                    }
-                `
+                ${compileGlobalCode(
+                    codeGeneratorContext,
+                    [...globalCodeDefinitions, ...testsCodeDefinitions]
                 )}
 
-                ${renderIf(testParameters.target === 'javascript', 'const exports = {}')}
-                ${compileTestExports(testParameters.target, testFunctionNames)}
+                ${renderIf(
+                    target === 'javascript',
+                    'const exports = {}'
+                )}
+
+                ${compileTestExports(
+                    target,
+                    collectExports(target, [...globalCodeDefinitions, ...testsCodeDefinitions])
+                )}
             `
 
             testModules.push([
                 testParameters,
                 await createTestModule(
-                    testParameters.target,
-                    testParameters.bitDepth,
+                    target,
+                    bitDepth,
                     code
                 ),
             ])
@@ -357,18 +379,15 @@ export const runTestSuite = (
 
 export const compileTestExports = (
     target: CompilerTarget,
-    exportNames: Array<CodeVariableName>
+    exports: Array<GlobalCodeDefinitionExport>
 ): Code =>
     renderSwitch(
-        [target === 'assemblyscript', `\nexport {${exportNames.join(',')}}`],
+        [
+            target === 'assemblyscript',
+            exports.map(compileAssemblyScriptExport).join('\n'),
+        ],
         [
             target === 'javascript',
-            '\n' +
-                exportNames
-                    .map(
-                        (name) =>
-                            `exports.${name.toString()} = ${name.toString()}`
-                    )
-                    .join('\n'),
+            '\n' + exports.map(compileJavaScriptExport).join('\n'),
         ]
     )

@@ -32,9 +32,9 @@ export type RawJavaScriptEngine = CommonsRawModule &
 
 export const createRawModule = (code: Code): RawJavaScriptEngine =>
     new Function(`
-    ${code}
-    return exports
-`)()
+        ${code}
+        return exports
+    `)()
 
 export const createBindings = (
     rawModule: RawJavaScriptEngine

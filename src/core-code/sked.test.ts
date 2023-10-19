@@ -231,6 +231,15 @@ describe('sked', () => {
                 sked_cancel(skeduler, skedId)
                 sked_cancel(skeduler, skedId)
             `
+        },
+
+        {
+            description: 'cancel > should not throw when cancelling an listener with id NULL %s',
+            codeGenerator: () => `
+                initializeTests()
+                const skeduler = sked_create(false)
+                sked_cancel(skeduler, SKED_ID_NULL)
+            `
         }
     ], [
         core.codeGenerator,

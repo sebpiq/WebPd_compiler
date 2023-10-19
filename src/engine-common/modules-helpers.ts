@@ -47,6 +47,9 @@ export const createModule = <ModuleType extends { [key: string]: any }>(
                     case 'callback':
                         return bindingSpec.value
                 }
+            
+            // We need to return undefined here for compatibility with various APIs 
+            // which inspect object's attributes.
             } else {
                 return undefined
             }

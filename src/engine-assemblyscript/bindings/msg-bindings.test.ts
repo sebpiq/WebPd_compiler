@@ -24,14 +24,15 @@ import {
     liftMessage,
     lowerMessage,
 } from './msg-bindings'
-import { AudioSettings, SharedCodeGenerator } from '../../types'
+import { AudioSettings, GlobalCodeGeneratorContext } from '../../types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from '../test-helpers'
 import { getFloatArrayType } from '../../compile-helpers'
 import { getMacros } from '../../compile'
 import { core } from '../../core-code/core'
 import { sked } from '../../core-code/sked'
 import { msg } from '../../core-code/msg'
-import { compileExports } from '../compile-to-assemblyscript'
+import { compileExport } from '../compile-to-assemblyscript'
+import { renderCode } from '../../functional-helpers'
 
 describe('msg-bindings', () => {
     const BYTES_IN_CHAR = 4
@@ -53,25 +54,23 @@ describe('msg-bindings', () => {
     }
 
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => {
-        const context: Parameters<SharedCodeGenerator>[0] = {
+        const context: GlobalCodeGeneratorContext = {
             target: 'assemblyscript',
             macros: getMacros('assemblyscript'),
             audioSettings: {
                 bitDepth, channelCount: { in: 2, out: 2 }
             }
         }
-        return (
-            core.codeGenerator(context) +
-            sked(context) +
-            msg.codeGenerator(context) +
-            `
+        return renderCode`
+            ${core.codeGenerator(context)}
+            ${sked(context) }
+            ${msg.codeGenerator(context)}
             export function testReadMessageData(message: Message, index: Int): Int {
                 return message.dataView.getInt32(index * sizeof<Int>())
             }
-
-            ${compileExports([core, msg])}
+            ${core.exports.map(compileExport)}
+            ${msg.exports.map(compileExport)}
         `
-        )
     }
 
     describe('lowerMessage', () => {

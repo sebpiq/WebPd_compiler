@@ -465,51 +465,6 @@ describe('compileDeclare', () => {
         )
     })
 
-    it('should inject shared code from nodes avoiding duplicates', () => {
-        const graph = makeGraph({
-            node1: {
-                type: 'nodeType1',
-            },
-            node2: {
-                type: 'nodeType1',
-            },
-            node3: {
-                type: 'nodeType2',
-            },
-        })
-
-        const nodeImplementations: NodeImplementations = {
-            nodeType1: {
-                sharedCode: [() => `// blockSize`],
-            },
-            nodeType2: {
-                sharedCode: [
-                    // Put same shared code as nodeType1
-                    () => `// blockSize`,
-                    () => `// sampleRate`,
-                ],
-            },
-        }
-
-        const compilation = makeCompilation({
-            target: 'javascript',
-            graph,
-            graphTraversalDeclare: ['node1', 'node2', 'node3'],
-            nodeImplementations,
-        })
-
-        const declareCode = compileDeclare(compilation)
-
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-                // blockSize
-                // sampleRate
-            `)
-        )
-    })
-
     it('should not fail when node implementation has no "declare" hook', () => {
         const graph = makeGraph({
             osc: {

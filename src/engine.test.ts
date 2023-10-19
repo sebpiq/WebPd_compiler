@@ -19,10 +19,8 @@
  */
 import assert from 'assert'
 import { executeCompilation } from './compile'
-import { renderCode } from './functional-helpers'
 import {
     TEST_PARAMETERS,
-    compileTestExports,
     createTestEngine,
     makeCompilation,
     round,
@@ -36,36 +34,44 @@ import {
     NodeImplementations,
     SoundFileInfo,
     FloatArray,
-    SharedCodeGenerator,
+    GlobalCodeDefinition,
+    GlobalCodeGeneratorWithSettings,
 } from './types'
-import { makeGraph } from './dsp-graph/test-helpers'
+import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
 import {
     getFloatArrayType,
-    getGlobalCodeGeneratorContext,
 } from './compile-helpers'
-import { FS_OPERATION_SUCCESS } from './core-code/fs'
+import { FS_OPERATION_SUCCESS, fsReadSoundFile, fsReadSoundStream, fsWriteSoundFile, fsWriteSoundStream } from './core-code/fs'
+import { commonsArrays, commonsWaitEngineConfigure } from './core-code/commons'
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
 
-    interface EngineTestSettings<ExportsKeys extends TestEngineExportsKeys> {
+    interface EngineTestSettings {
         target: CompilerTarget
         bitDepth: AudioSettings['bitDepth']
-        sharedCode?: Array<SharedCodeGenerator>
-        exports?: ExportsKeys
+        globalCodeDefinitions?: Array<GlobalCodeDefinition>
         compilation?: Partial<Compilation>
     }
 
-    /** @TODO refactor */
     const initializeEngineTest = async <
         ExportsKeys extends TestEngineExportsKeys
     >({
         target,
         bitDepth,
-        sharedCode,
-        exports,
+        globalCodeDefinitions = [],
         compilation: extraCompilation = {},
-    }: EngineTestSettings<ExportsKeys>) => {
+    }: EngineTestSettings) => {
+        // Add a dummy node with a dummy node type that is only used to inject specified `globalCodeDefinitions`
+        const nodeGlobalCodeInjectorType = 'GLOBAL_CODE_INJECTOR'
+        const nodeGlobalCodeInjectorId = 'globalCodeInjector'
+        if (
+            extraCompilation.graph &&
+            extraCompilation.graph[nodeGlobalCodeInjectorId]
+        ) {
+            throw new Error(`Unexpected, node with same id already in graph.`)
+        }
+
         const compilation = makeCompilation({
             target,
             audioSettings: {
@@ -73,29 +79,28 @@ describe('Engine', () => {
                 bitDepth,
             },
             ...extraCompilation,
+            graph: {
+                ...(extraCompilation.graph || {}),
+                [nodeGlobalCodeInjectorId]: {
+                    ...nodeDefaults(nodeGlobalCodeInjectorId),
+                    type: nodeGlobalCodeInjectorType,
+                    isPullingSignal: true,
+                },
+            },
+            nodeImplementations: {
+                DUMMY: { loop: () => '' },
+                ...(extraCompilation.nodeImplementations || {}),
+                [nodeGlobalCodeInjectorType]: {
+                    globalCode: globalCodeDefinitions,
+                },
+            },
         })
-
-        const testCodeGenContext = getGlobalCodeGeneratorContext(compilation)
-        let code =
-            executeCompilation(compilation) +
-            '\n' +
-            (sharedCode
-                ? sharedCode
-                      .map((testCodeGen) => testCodeGen(testCodeGenContext))
-                      .join('\n')
-                : '')
-
-        // Generate export statement for test functions
-        const exportKeys = Object.keys(exports || {}) as Array<
-            keyof ExportsKeys
-        >
-        code += compileTestExports(target, exportKeys.map(k => String(k)))
 
         const engine = await createTestEngine<ExportsKeys>(
             target,
             bitDepth,
-            code,
-            exportKeys
+            executeCompilation(compilation),
+            globalCodeDefinitions,
         )
 
         return engine
@@ -110,12 +115,7 @@ describe('Engine', () => {
             }))
         )(
             'should configure and return an output block of the right size %s',
-            async ({
-                target,
-                outputChannels,
-                blockSize,
-                bitDepth,
-            }) => {
+            async ({ target, outputChannels, blockSize, bitDepth }) => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
@@ -370,6 +370,7 @@ describe('Engine', () => {
                             nodeImplementations,
                             audioSettings,
                         },
+                        globalCodeDefinitions: [commonsWaitEngineConfigure],
                     })
 
                     engine.configure(44100, 1)
@@ -386,7 +387,7 @@ describe('Engine', () => {
                 'should get the array %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: SharedCodeGenerator = () => `
+                    const testCode: GlobalCodeDefinition = () => `
                         const array = createFloatArray(4)
                         array[0] = 123
                         array[1] = 456
@@ -395,13 +396,10 @@ describe('Engine', () => {
                         _commons_ARRAYS.set('array1', array)
                     `
 
-                    const exports = {}
-
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        sharedCode: [testCode],
-                        exports,
+                        globalCodeDefinitions: [commonsArrays, testCode],
                     })
 
                     assert.deepStrictEqual(
@@ -416,9 +414,8 @@ describe('Engine', () => {
             it.each(TEST_PARAMETERS)(
                 'should set the array %s',
                 async ({ target, bitDepth }) => {
-                    const testCode: SharedCodeGenerator = ({
-                        macros: { Func, Var },
-                    }) => `
+                    const testCode: GlobalCodeGeneratorWithSettings = {
+                        codeGenerator: ({ macros: { Func, Var } }) => `
                         function testReadArray1 ${Func(
                             [Var('index', 'Int')],
                             'Float'
@@ -443,20 +440,19 @@ describe('Engine', () => {
                         )} {
                             return _commons_ARRAYS.get('array3').set([111, 222])
                         }
-                    `
-
-                    const exports = {
-                        testReadArray1: 1,
-                        testReadArray2: 1,
-                        testReadArray3: 1,
-                        testIsFloatArray: 1,
+                    `,
+                        exports: [
+                            { name: 'testReadArray1' },
+                            { name: 'testReadArray2' },
+                            { name: 'testReadArray3' },
+                            { name: 'testIsFloatArray' },
+                        ],
                     }
 
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        sharedCode: [testCode],
-                        exports,
+                        globalCodeDefinitions: [commonsArrays, testCode],
                     })
 
                     engine.commons.setArray(
@@ -496,6 +492,7 @@ describe('Engine', () => {
                                 array3: new Float32Array(0),
                             },
                         },
+                        globalCodeDefinitions: [commonsArrays]
                     })
                     assert.deepStrictEqual(
                         engine.commons.getArray('array1'),
@@ -516,9 +513,8 @@ describe('Engine', () => {
 
     describe('fs', () => {
         describe('read sound file', () => {
-            const sharedTestingCode: SharedCodeGenerator = ({
-                macros: { Var, Func },
-            }) => `
+            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
+                codeGenerator: ({ macros: { Var, Func } }) => `
                 let ${Var('receivedId', 'fs_OperationId')} = -1
                 let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
                 let ${Var('receivedSound', 'FloatArray[]')} = []
@@ -562,18 +558,24 @@ describe('Engine', () => {
                     return !_FS_OPERATIONS_IDS.has(id)
                         && !_FS_OPERATIONS_CALLBACKS.has(id)
                         && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
                 }
-            `
+            `,
+                exports: [
+                    { name: 'testStartReadFile' },
+                    { name: 'testOperationId' },
+                    { name: 'testOperationStatus' },
+                    { name: 'testSoundLength' },
+                    { name: 'testOperationCleaned' },
+                ],
+            }
 
             it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: SharedCodeGenerator = ({
-                        macros: { Func },
-                    }) =>
-                        `
+                    const testCode: GlobalCodeGeneratorWithSettings = {
+                        codeGenerator: ({ macros: { Func } }) =>
+                            `
                             function testReceivedSound ${Func([], 'boolean')} {
                                 return receivedSound[0][0] === -1
                                     && receivedSound[0][1] === -2
@@ -585,22 +587,14 @@ describe('Engine', () => {
                                     && receivedSound[2][1] === -8
                                     && receivedSound[2][2] === -9
                             }
-                        `
-
-                    const exports = {
-                        testStartReadFile: 1,
-                        testOperationId: 1,
-                        testOperationStatus: 1,
-                        testSoundLength: 1,
-                        testReceivedSound: 1,
-                        testOperationCleaned: 1,
+                        `,
+                        exports: [{ name: 'testReceivedSound' }],
                     }
 
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        sharedCode: [sharedTestingCode, testCode],
-                        exports,
+                        globalCodeDefinitions: [fsReadSoundFile, sharedTestingCode, testCode],
                     })
 
                     // 1. Some function in the engine requests a read file operation.
@@ -643,9 +637,8 @@ describe('Engine', () => {
         })
 
         describe('read sound stream', () => {
-            const sharedTestingCode: SharedCodeGenerator = ({
-                macros: { Var, Func },
-            }) => `
+            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
+                codeGenerator: ({ macros: { Var, Func } }) => `
                 let ${Var('receivedId', 'fs_OperationId')} = -1
                 let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
                 const ${Var('channelCount', 'Int')} = 3
@@ -696,14 +689,21 @@ describe('Engine', () => {
                         && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
                         && !_FS_SOUND_STREAM_BUFFERS.has(id)
                 }
-            `
+            `,
+                exports: [
+                    { name: 'testStartReadStream' },
+                    { name: 'testOperationId' },
+                    { name: 'testOperationStatus' },
+                    { name: 'testOperationChannelCount' },
+                    { name: 'testOperationCleaned' },
+                ],
+            }
 
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
-                    const testCode: SharedCodeGenerator = ({
-                        macros: { Func, Var },
-                    }) => `
+                    const testCode: GlobalCodeGeneratorWithSettings = {
+                        codeGenerator: ({ macros: { Func, Var } }) => `
                         function testReceivedSound ${Func(
                             [Var('id', 'fs_OperationId')],
                             'boolean'
@@ -713,22 +713,14 @@ describe('Engine', () => {
                                 && buf_pullSample(buffers[0]) === -2
                                 && buf_pullSample(buffers[0]) === -3
                         }
-                    `
-
-                    const exports = {
-                        testStartReadStream: 1,
-                        testOperationId: 1,
-                        testOperationStatus: 1,
-                        testReceivedSound: 1,
-                        testOperationCleaned: 1,
-                        testOperationChannelCount: 1,
+                    `,
+                        exports: [{ name: 'testReceivedSound' }],
                     }
 
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        sharedCode: [sharedTestingCode, testCode],
-                        exports,
+                        globalCodeDefinitions: [fsReadSoundStream, sharedTestingCode, testCode],
                     })
 
                     // 1. Some function in the engine requests a read stream operation.
@@ -796,9 +788,8 @@ describe('Engine', () => {
         })
 
         describe('write sound stream', () => {
-            const sharedTestingCode: SharedCodeGenerator = ({
-                macros: { Var, Func },
-            }) => `
+            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
+                codeGenerator: ({ macros: { Var, Func } }) => `
                 let ${Var('receivedId', 'fs_OperationId')} = -1
                 let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
                 const ${Var('channelCount', 'Int')} = 3
@@ -863,26 +854,25 @@ describe('Engine', () => {
                         && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
                         && !_FS_SOUND_STREAM_BUFFERS.has(id)
                 }
-            `
+            `,
+                exports: [
+                    { name: 'testStartWriteStream' },
+                    { name: 'testSendSoundStreamData' },
+                    { name: 'testOperationId' },
+                    { name: 'testOperationStatus' },
+                    { name: 'testOperationCleaned' },
+                ],
+            }
 
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const exports = {
-                        testStartWriteStream: 1,
-                        testOperationId: 1,
-                        testOperationStatus: 1,
-                        testSendSoundStreamData: 1,
-                        testOperationCleaned: 1,
-                    }
-
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        sharedCode: [sharedTestingCode],
-                        exports,
+                        globalCodeDefinitions: [fsWriteSoundStream, sharedTestingCode],
                     })
 
                     // 1. Some function in the engine requests a write stream operation.
@@ -955,9 +945,8 @@ describe('Engine', () => {
         })
 
         describe('write sound file', () => {
-            const sharedTestingCode: SharedCodeGenerator = ({
-                macros: { Var, Func },
-            }) => `
+            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
+                codeGenerator: ({ macros: { Var, Func } }) => `
                 let ${Var('receivedId', 'fs_OperationId')} = -1
                 let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
                 const ${Var('sound', 'FloatArray[]')} = [
@@ -1011,27 +1000,25 @@ describe('Engine', () => {
                     return !_FS_OPERATIONS_IDS.has(id)
                         && !_FS_OPERATIONS_CALLBACKS.has(id)
                         && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
                 }
-            `
+            `,
+                exports: [
+                    { name: 'testStartWriteFile' },
+                    { name: 'testOperationId' },
+                    { name: 'testOperationStatus' },
+                    { name: 'testOperationCleaned' },
+                ],
+            }
 
             it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const exports = {
-                        testStartWriteFile: 1,
-                        testOperationId: 1,
-                        testOperationStatus: 1,
-                        testOperationCleaned: 1,
-                    }
-
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        sharedCode: [sharedTestingCode],
-                        exports,
+                        globalCodeDefinitions: [fsWriteSoundFile, sharedTestingCode],
                     })
 
                     // 1. Some function in the engine requests a write file operation.
@@ -1098,9 +1085,8 @@ describe('Engine', () => {
                     ['someNode2']: ['someOutlet1'],
                 }
 
-                const testCode: SharedCodeGenerator = ({
-                    macros: { Var, Func },
-                }) => `
+                const testCode: GlobalCodeGeneratorWithSettings = {
+                    codeGenerator: ({ macros: { Var, Func } }) => `
                     const ${Var(
                         'm1',
                         'Message'
@@ -1118,19 +1104,18 @@ describe('Engine', () => {
                         outletListener_someNode1_someOutlet2(m2)
                         outletListener_someNode2_someOutlet1(m1)
                     }
-                `
-
-                const exports = { testCallOutletListener: 1 }
+                `,
+                    exports: [{ name: 'testCallOutletListener' }],
+                }
 
                 const engine = await initializeEngineTest({
                     target,
                     bitDepth,
-                    sharedCode: [testCode],
+                    globalCodeDefinitions: [testCode],
                     compilation: {
                         outletListenerSpecs,
                         graph,
                     },
-                    exports,
                 })
 
                 const called11: Array<Message> = []
@@ -1206,9 +1191,8 @@ describe('Engine', () => {
                     },
                 }
 
-                const testCode: SharedCodeGenerator = ({
-                    macros: { Var, Func },
-                }) => `
+                const testCode: GlobalCodeGeneratorWithSettings = {
+                    codeGenerator: ({ macros: { Var, Func } }) => `
                     const ${Var(
                         'received',
                         'Map<string, Array<Message>>'
@@ -1236,20 +1220,21 @@ describe('Engine', () => {
                             && messageIsCorrect(received.get("someNode1:2")[0])
                             && messageIsCorrect(received.get("someNode2:1")[0])
                     }
-                `
+                `,
+                    exports: [{ name: 'testMessageReceived' }],
+                }
 
                 const exports = { testMessageReceived: 1 }
 
                 const engine = await initializeEngineTest({
                     target,
                     bitDepth,
-                    sharedCode: [testCode],
+                    globalCodeDefinitions: [testCode],
                     compilation: {
                         inletCallerSpecs,
                         graph,
                         nodeImplementations,
                     },
-                    exports,
                 })
 
                 assert.ok(
@@ -1321,8 +1306,6 @@ describe('Engine', () => {
                     },
                 }
 
-                const exports = {}
-
                 const engine = await initializeEngineTest({
                     target,
                     bitDepth,
@@ -1332,7 +1315,6 @@ describe('Engine', () => {
                         graph,
                         nodeImplementations,
                     },
-                    exports,
                 })
 
                 const calledOutlet0: Array<Message> = []
@@ -1374,8 +1356,6 @@ describe('Engine', () => {
                     },
                 }
 
-                const exports = {}
-
                 const engine = await initializeEngineTest({
                     target,
                     bitDepth,
@@ -1384,7 +1364,6 @@ describe('Engine', () => {
                         graph,
                         nodeImplementations,
                     },
-                    exports,
                 })
 
                 await expect(() =>

@@ -18,6 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { commonsArrays } from './core-code/commons'
+import { fsReadSoundFile } from './core-code/fs'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
@@ -144,6 +146,7 @@ describe('test-helpers-node-implementations', () => {
                         return
                     `,
                     }),
+                    globalCode: [fsReadSoundFile]
                 }
 
                 const node: DspGraph.Node = {
@@ -185,6 +188,7 @@ describe('test-helpers-node-implementations', () => {
                         return
                     `,
                     }),
+                    globalCode: [commonsArrays]
                 }
 
                 const node: DspGraph.Node = {

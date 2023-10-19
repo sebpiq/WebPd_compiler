@@ -17,11 +17,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import { commonsCore } from './core-code/commons'
+import { core } from './core-code/core'
+import { msg } from './core-code/msg'
 import { DspGraph, getters, traversal } from './dsp-graph'
 import {
     AudioSettings,
     Compilation,
     EngineMetadata,
+    GlobalCodeDefinition,
+    GlobalCodeGeneratorContext,
     NodeImplementation,
     NodeImplementations,
     PortletsIndex,
@@ -41,7 +46,7 @@ export const getNodeImplementation = (
         declare: () => '',
         loop: () => '',
         messages: () => ({}),
-        sharedCode: [],
+        globalCode: [],
         ...nodeImplementation,
     }
 }
@@ -196,8 +201,10 @@ export const preCompileSignalAndMessageFlow = (compilation: Compilation) => {
     compilation.precompiledPortlets.precompiledOutlets = precompiledOutlets
 }
 
-export const getGlobalCodeGeneratorContext = (compilation: Compilation) => ({
-    macros: compilation.macros, 
+export const getGlobalCodeGeneratorContext = (
+    compilation: Compilation
+): GlobalCodeGeneratorContext => ({
+    macros: compilation.macros,
     target: compilation.target,
     audioSettings: compilation.audioSettings,
 })
@@ -266,3 +273,21 @@ export const buildGraphTraversalLoop = (
 
 export const getFloatArrayType = (bitDepth: AudioSettings['bitDepth']) =>
     bitDepth === 64 ? Float64Array : Float32Array
+
+export const engineMinimalCodeDefinitions = () => [core, commonsCore, msg] as Array<GlobalCodeDefinition>
+
+export const collectGlobalCodeDefinitionsFromTraversal = (
+    compilation: Compilation
+) => {
+    const { graphTraversalDeclare, graph, nodeImplementations } = compilation
+    return graphTraversalDeclare.reduce<Array<GlobalCodeDefinition>>(
+        (definitions, nodeId) => [
+            ...definitions,
+            ...getNodeImplementation(
+                nodeImplementations,
+                getters.getNode(graph, nodeId).type
+            ).globalCode,
+        ],
+        []
+    )
+}

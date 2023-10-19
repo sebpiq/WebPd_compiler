@@ -15,3 +15,4 @@ export * as functional from './src/functional-helpers'
 import { getters, traversal, mutation, helpers } from './src/dsp-graph'
 export const dspGraph = { getters, traversal, mutation, helpers }
 export { DspGraph } from './src/dsp-graph'
+export * as coreCode from './src/core-code'

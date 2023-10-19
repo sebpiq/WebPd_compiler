@@ -18,11 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata } from '../compile-helpers'
+import { buildMetadata, collectGlobalCodeDefinitionsFromTraversal, engineMinimalCodeDefinitions } from '../compile-helpers'
 import compileDeclare from '../engine-common/compile-declare'
 import compileLoop from '../engine-common/compile-loop'
 import { renderCode } from '../functional-helpers'
-import { Compilation, GlobalCodeGeneratorWithSettings } from '../types'
+import { Compilation, GlobalCodeDefinitionExport, GlobalCodeDefinitionImport } from '../types'
 import macros from './macros'
 import { AssemblyScriptWasmEngineCode } from './types'
 import {
@@ -30,51 +30,21 @@ import {
     compileInletCallers,
 } from '../engine-common/compile-portlet-accessors'
 import embedArrays from '../engine-common/embed-arrays'
-import compileGlobalCode from '../engine-common/compile-global-code'
-import {
-    fsCore,
-    fsReadSoundFile,
-    fsReadSoundStream,
-    fsSoundStreamCore,
-    fsWriteSoundFile,
-    fsWriteSoundStream,
-} from '../core-code/fs'
-import {
-    commonsCore,
-    commonsArrays,
-    commonsWaitEngineConfigure,
-    commonsWaitFrame,
-} from '../core-code/commons'
-import { core } from '../core-code/core'
-import { bufCore, bufPushPull } from '../core-code/buf'
-import { msg } from '../core-code/msg'
-import { sked } from '../core-code/sked'
+import compileGlobalCode, { collectExports, collectImports } from '../engine-common/compile-global-code'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
+    const globalCodeDefinitions = [
+        ...engineMinimalCodeDefinitions(),
+        ...collectGlobalCodeDefinitionsFromTraversal(compilation),
+    ]
 
     // prettier-ignore
     return renderCode`
-        ${compileGlobalCode(compilation, [ 
-            core,
-            msg,
-            sked,
-            bufCore,
-            bufPushPull,
-            fsCore, 
-            fsReadSoundFile, 
-            fsWriteSoundFile, 
-            fsSoundStreamCore, 
-            fsReadSoundStream, 
-            fsWriteSoundStream,
-            commonsCore,
-            commonsArrays,
-            commonsWaitEngineConfigure,
-            commonsWaitFrame,
-        ])}
+        ${compileGlobalCode(compilation, globalCodeDefinitions)}
 
         ${embedArrays(compilation)}
 
@@ -115,34 +85,18 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             )}
         }
 
-        ${compileImports([ fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, fsWriteSoundStream ])}
-        ${compileExports([ core, msg, fsReadSoundFile, fsWriteSoundFile, fsSoundStreamCore, fsReadSoundStream, commonsArrays ])}
+        ${collectImports(globalCodeDefinitions).map(compileImport)}
+        ${collectExports('assemblyscript', globalCodeDefinitions).map(compileExport)}
     `
 }
 
-const compileImports = (
-    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
-) => renderCode`
-    ${globalCodeDefinitions.map((globalCodeDefinition) =>
-        globalCodeDefinition.imports.map(
-            ({ name, args, returns }) =>
-                `export declare function ${name} ${macros.Func(
-                    args.map((a) => macros.Var(a[0], a[1])),
-                    returns
-                )}`
-        )
-    )}
-`
+const compileImport = (
+    { name, args, returns }: GlobalCodeDefinitionImport
+) => `export declare function ${name} ${macros.Func(
+        args.map((a) => macros.Var(a[0], a[1])),
+        returns
+    )}`
 
-export const compileExports = (
-    globalCodeDefinitions: Array<GlobalCodeGeneratorWithSettings>
-) => renderCode`
-    ${globalCodeDefinitions.map((globalCodeDefinition) =>
-        globalCodeDefinition.exports
-            .filter(
-                (xprt) =>
-                    !xprt.targets || xprt.targets.includes('assemblyscript')
-            )
-            .map(({ name }) => `export { ${name} }`)
-    )}
-`
+export const compileExport = (
+    { name }: GlobalCodeDefinitionExport
+) => `export { ${name} }`

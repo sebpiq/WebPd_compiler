@@ -34,6 +34,8 @@ import {
 import { mapArray, mapObject } from './functional-helpers'
 import { getFloatArrayType } from './compile-helpers'
 import { DspGraph } from './dsp-graph'
+import { nodeDefaults } from './dsp-graph/test-helpers'
+import { commonsArrays } from './core-code'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
@@ -43,6 +45,7 @@ interface NodeTestSettings<NodeArguments, NodeState> {
     node: DspGraph.Node
     nodeImplementation: NodeImplementation<NodeArguments, NodeState>
     bitDepth: AudioSettings['bitDepth']
+    sampleRate?: number
     arrays?: { [arrayName: string]: Array<number> }
 }
 
@@ -72,6 +75,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     inputFrames: Array<FrameNodeIn>
 ): Promise<Array<FrameNodeOut>> => {
+    nodeTestSettings.sampleRate = nodeTestSettings.sampleRate || ENGINE_DSP_PARAMS.sampleRate
     const { target, arrays, bitDepth } = nodeTestSettings
     const connectedInlets = new Set<DspGraph.PortletId>([])
     inputFrames.forEach((frame) =>
@@ -87,10 +91,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
     // Node to send inputs to testNode
     const fakeSourceNode: DspGraph.Node = {
-        id: 'fakeSourceNode',
-        type: 'fake_source_node',
-        args: {},
-        sources: {},
+        ...nodeDefaults('fakeSourceNode', 'fake_source_node'),
         sinks: mapArray(Array.from(connectedInlets), (portletId) => [
             portletId,
             [{ nodeId: 'testNode', portletId }],
@@ -122,14 +123,11 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
     // Node to record output of testNode
     const fakeSinkNode: DspGraph.Node = {
-        id: 'fakeSinkNode',
-        type: 'fake_sink_node',
-        args: {},
+        ...nodeDefaults('fakeSinkNode', 'fake_sink_node'),
         sources: mapArray(Object.keys(testNodeOutlets), (portletId) => [
             portletId,
             [{ nodeId: 'testNode', portletId }],
         ]),
-        sinks: {},
         inlets: testNodeOutlets,
         outlets: mapArray(Object.keys(testNodeOutlets), (portletId) => [
             portletId,
@@ -248,6 +246,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         target,
         bitDepth,
         code,
+        [commonsArrays]
     )
 
     if (arrays) {
@@ -301,7 +300,17 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         ) => {
             outputFrame.fs = outputFrame.fs || {}
             outputFrame.sequence.push(funcName)
-            outputFrame.fs[funcName] = args
+            // When receiving FloatArrays we need to make copies immediately
+            // because they might be garbage collected or reused afterwards by the engine. 
+            if (['onWriteSoundFile', 'onSoundStreamData'].includes(funcName)) {
+                outputFrame.fs[funcName] = [
+                    args[0], 
+                    args[1].map((array: FloatArray) => array.slice(0)),
+                    ...args.slice(2),
+                ] as any
+            } else {
+                outputFrame.fs[funcName] = args
+            }
         }
         engine.fs.onCloseSoundStream = (...args) =>
             _fsCallback('onCloseSoundStream', args)
@@ -340,7 +349,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         // We make sure we configure AFTER assigning the outletListeners,
         // so we can receive messages sent during configure.
         if (configured === false) {
-            engine.configure(ENGINE_DSP_PARAMS.sampleRate, blockSize)
+            engine.configure(nodeTestSettings.sampleRate, blockSize)
             configured = true
         }
 
@@ -414,6 +423,7 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     ...frames: Array<[FrameNodeIn, FrameNodeOut]>
 ): Promise<void> => {
+    nodeTestSettings.sampleRate = nodeTestSettings.sampleRate || ENGINE_DSP_PARAMS.sampleRate
     const inputFrames: Array<FrameNodeIn> = frames.map(([frameIn]) => frameIn)
     const expectedOutputFrames: Array<FrameNodeOut> = frames.map(
         ([_, frameOut]) => frameOut
@@ -437,7 +447,6 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
 }
 
 // ================================ UTILS ================================ //
-// TODO : combine with `generateFramesForNode`
 export const generateFrames = (
     engine: Engine,
     iterations: number = 4,
@@ -459,7 +468,7 @@ export const generateFrames = (
         blockSize
     )
 
-    engine.configure(ENGINE_DSP_PARAMS.sampleRate, blockSize)
+    engine.configure(engine.metadata.audioSettings.sampleRate, blockSize)
 
     const results: Array<Array<number>> = []
     for (let i = 0; i < iterations; i++) {

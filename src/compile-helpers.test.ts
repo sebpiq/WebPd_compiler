@@ -51,7 +51,7 @@ describe('compile-helpers', () => {
                 declare: () => '',
                 loop: () => '',
                 messages: () => ({}),
-                sharedCode: [],
+                globalCode: [],
             }
             const defaultImplementation = getNodeImplementation(
                 NODE_IMPLEMENTATIONS,

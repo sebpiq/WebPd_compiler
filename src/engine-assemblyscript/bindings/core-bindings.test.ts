@@ -29,15 +29,18 @@ import { TEST_PARAMETERS, ascCodeToRawModule } from '../test-helpers'
 import { getMacros } from '../../compile'
 import { getFloatArrayType } from '../../compile-helpers'
 import { core } from '../../core-code/core'
-import { compileExports } from '../compile-to-assemblyscript'
+import { compileExport } from '../compile-to-assemblyscript'
+import { renderCode } from '../../functional-helpers'
 
 describe('core-bindings', () => {
-    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) =>
-        core.codeGenerator({
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => renderCode`
+        ${core.codeGenerator({
             target: 'assemblyscript',
             macros: getMacros('assemblyscript'),
             audioSettings: { bitDepth, channelCount: { in: 2, out: 2 } },
-        }) + compileExports([ core ])
+        })}
+        ${core.exports.map(compileExport)}
+    `
 
     describe('readTypedArray', () => {
         it.each(TEST_PARAMETERS)(

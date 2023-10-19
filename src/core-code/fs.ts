@@ -20,96 +20,93 @@
 
 import { renderIf } from '../functional-helpers'
 import { GlobalCodeGeneratorWithSettings, GlobalCodeGenerator } from '../types'
+import { bufCore, bufPushPull } from './buf'
+import { msg } from './msg'
 
 export const FS_OPERATION_SUCCESS = 0
 export const FS_OPERATION_FAILURE = 1
 
-export const fsCore: GlobalCodeGenerator = ({
-    macros: { Var, Func },
-    target,
-}) => `
-    ${renderIf(
-        target === 'assemblyscript',
-        `
-        type fs_OperationId = Int
-        type fs_OperationStatus = Int
-        type fs_OperationCallback = (id: fs_OperationId, status: fs_OperationStatus) => void
-        type fs_OperationSoundCallback = (id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]) => void
-        type fs_Url = string
-    `
-    )}
+export const fsCore: GlobalCodeGeneratorWithSettings = {
+    codeGenerator: ({ macros: { Var, Func }, target }) => `
+        ${renderIf(
+            target === 'assemblyscript',
+            `
+                type fs_OperationId = Int
+                type fs_OperationStatus = Int
+                type fs_OperationCallback = (id: fs_OperationId, status: fs_OperationStatus) => void
+                type fs_OperationSoundCallback = (id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]) => void
+                type fs_Url = string
+            `
+        )}
 
-    const ${Var('FS_OPERATION_SUCCESS', 'Int')} = ${FS_OPERATION_SUCCESS}
-    const ${Var('FS_OPERATION_FAILURE', 'Int')} = ${FS_OPERATION_FAILURE}
-    
-    const ${Var('_FS_OPERATIONS_IDS', 'Set<fs_OperationId>')} = new Set()
-    const ${Var(
-        '_FS_OPERATIONS_CALLBACKS',
-        'Map<fs_OperationId, fs_OperationCallback>'
-    )} = new Map()
-    const ${Var(
-        '_FS_OPERATIONS_SOUND_CALLBACKS',
-        'Map<fs_OperationId, fs_OperationSoundCallback>'
-    )} = new Map()
-    const ${Var(
-        '_FS_SOUND_STREAM_BUFFERS',
-        'Map<fs_OperationId, Array<buf_SoundBuffer>>'
-    )} = new Map()
+        const ${Var('FS_OPERATION_SUCCESS', 'Int')} = ${FS_OPERATION_SUCCESS}
+        const ${Var('FS_OPERATION_FAILURE', 'Int')} = ${FS_OPERATION_FAILURE}
+        
+        const ${Var('_FS_OPERATIONS_IDS', 'Set<fs_OperationId>')} = new Set()
+        const ${Var(
+            '_FS_OPERATIONS_CALLBACKS',
+            'Map<fs_OperationId, fs_OperationCallback>'
+        )} = new Map()
+        const ${Var(
+            '_FS_OPERATIONS_SOUND_CALLBACKS',
+            'Map<fs_OperationId, fs_OperationSoundCallback>'
+        )} = new Map()
 
-    // We start at 1, because 0 is what ASC uses when host forgets to pass an arg to 
-    // a function. Therefore we can get false negatives when a test happens to expect a 0.
-    let ${Var('_FS_OPERATION_COUNTER', 'Int')} = 1
+        // We start at 1, because 0 is what ASC uses when host forgets to pass an arg to 
+        // a function. Therefore we can get false negatives when a test happens to expect a 0.
+        let ${Var('_FS_OPERATION_COUNTER', 'Int')} = 1
 
-    const ${Var('_FS_SOUND_BUFFER_LENGTH', 'Int')} = 20 * 44100
-
-    class fs_SoundInfo {
-        ${Var('channelCount', 'Int')}
-        ${Var('sampleRate', 'Int')}
-        ${Var('bitDepth', 'Int')}
-        ${Var('encodingFormat', 'string')}
-        ${Var('endianness', 'string')}
-        ${Var('extraOptions', 'string')}
-    }
-
-    function fs_soundInfoToMessage ${Func(
-        [Var('soundInfo', 'fs_SoundInfo')],
-        'Message'
-    )} {
-        const ${Var('info', 'Message')} = msg_create([
-            MSG_FLOAT_TOKEN,
-            MSG_FLOAT_TOKEN,
-            MSG_FLOAT_TOKEN,
-            MSG_STRING_TOKEN,
-            soundInfo.encodingFormat.length,
-            MSG_STRING_TOKEN,
-            soundInfo.endianness.length,
-            MSG_STRING_TOKEN,
-            soundInfo.extraOptions.length
-        ])
-        msg_writeFloatToken(info, 0, toFloat(soundInfo.channelCount))
-        msg_writeFloatToken(info, 1, toFloat(soundInfo.sampleRate))
-        msg_writeFloatToken(info, 2, toFloat(soundInfo.bitDepth))
-        msg_writeStringToken(info, 3, soundInfo.encodingFormat)
-        msg_writeStringToken(info, 4, soundInfo.endianness)
-        msg_writeStringToken(info, 5, soundInfo.extraOptions)
-        return info
-    }
-
-    function _fs_assertOperationExists ${Func(
-        [Var('id', 'fs_OperationId'), Var('operationName', 'string')],
-        'void'
-    )} {
-        if (!_FS_OPERATIONS_IDS.has(id)) {
-            throw new Error(operationName + ' operation unknown : ' + id.toString())
+        class fs_SoundInfo {
+            ${Var('channelCount', 'Int')}
+            ${Var('sampleRate', 'Int')}
+            ${Var('bitDepth', 'Int')}
+            ${Var('encodingFormat', 'string')}
+            ${Var('endianness', 'string')}
+            ${Var('extraOptions', 'string')}
         }
-    }
 
-    function _fs_createOperationId ${Func([], 'fs_OperationId')} {
-        const ${Var('id', 'fs_OperationId')} = _FS_OPERATION_COUNTER++
-        _FS_OPERATIONS_IDS.add(id)
-        return id
-    }   
-`
+        function fs_soundInfoToMessage ${Func(
+            [Var('soundInfo', 'fs_SoundInfo')],
+            'Message'
+        )} {
+            const ${Var('info', 'Message')} = msg_create([
+                MSG_FLOAT_TOKEN,
+                MSG_FLOAT_TOKEN,
+                MSG_FLOAT_TOKEN,
+                MSG_STRING_TOKEN,
+                soundInfo.encodingFormat.length,
+                MSG_STRING_TOKEN,
+                soundInfo.endianness.length,
+                MSG_STRING_TOKEN,
+                soundInfo.extraOptions.length
+            ])
+            msg_writeFloatToken(info, 0, toFloat(soundInfo.channelCount))
+            msg_writeFloatToken(info, 1, toFloat(soundInfo.sampleRate))
+            msg_writeFloatToken(info, 2, toFloat(soundInfo.bitDepth))
+            msg_writeStringToken(info, 3, soundInfo.encodingFormat)
+            msg_writeStringToken(info, 4, soundInfo.endianness)
+            msg_writeStringToken(info, 5, soundInfo.extraOptions)
+            return info
+        }
+
+        function _fs_assertOperationExists ${Func(
+            [Var('id', 'fs_OperationId'), Var('operationName', 'string')],
+            'void'
+        )} {
+            if (!_FS_OPERATIONS_IDS.has(id)) {
+                throw new Error(operationName + ' operation unknown : ' + id.toString())
+            }
+        }
+
+        function _fs_createOperationId ${Func([], 'fs_OperationId')} {
+            const ${Var('id', 'fs_OperationId')} = _FS_OPERATION_COUNTER++
+            _FS_OPERATIONS_IDS.add(id)
+            return id
+        }   
+    `,
+
+    dependencies: [msg],
+}
 
 export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ macros: { Func, Var } }) => `
@@ -161,6 +158,8 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
             returns: 'void',
         },
     ],
+
+    dependencies: [fsCore],
 }
 
 export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
@@ -211,10 +210,19 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
             returns: 'void',
         },
     ],
+
+    dependencies: [fsCore],
 }
 
 export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ macros: { Func, Var } }) => `
+        const ${Var(
+            '_FS_SOUND_STREAM_BUFFERS',
+            'Map<fs_OperationId, Array<buf_SoundBuffer>>'
+        )} = new Map()
+
+        const ${Var('_FS_SOUND_BUFFER_LENGTH', 'Int')} = 20 * 44100
+
         function fs_closeSoundStream ${Func(
             [Var('id', 'fs_OperationId'), Var('status', 'fs_OperationStatus')],
             'void'
@@ -258,6 +266,8 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
             returns: 'void',
         },
     ],
+
+    dependencies: [bufCore, fsCore],
 }
 
 export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
@@ -311,6 +321,8 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
             returns: 'void',
         },
     ],
+
+    dependencies: [fsSoundStreamCore, bufPushPull],
 }
 
 export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
@@ -358,4 +370,6 @@ export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
             returns: 'void',
         },
     ],
+
+    dependencies: [fsSoundStreamCore],
 }

@@ -18,10 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    getNodeImplementation,
-    getGlobalCodeGeneratorContext,
-} from '../compile-helpers'
+import { getNodeImplementation } from '../compile-helpers'
 import { getters, DspGraph } from '../dsp-graph'
 import { renderCode } from '../functional-helpers'
 import { Code, Compilation } from '../types'
@@ -42,7 +39,6 @@ export default (compilation: Compilation): Code => {
     )
     const { Var, Func } = macros
     const { globs } = codeVariableNames
-    const sharedCode: Set<Code> = new Set()
 
     const _isInletAlreadyHandled = (
         nodeId: DspGraph.NodeId,
@@ -61,23 +57,6 @@ export default (compilation: Compilation): Code => {
         let ${Var(globs.blockSize, 'Int')} = 0
         let ${Var(globs.sampleRate, 'Float')} = 0
         function ${globs.nullMessageReceiver} ${Func([Var('m', 'Message')], 'void')} {}
-
-
-        ${graphTraversalNodes.map(node => {
-            // 0. De-duplicate and insert shared code required by nodes
-            const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
-            return nodeImplementation.sharedCode.map(codeGenerator => 
-                codeGenerator(getGlobalCodeGeneratorContext(compilation)))
-                .filter(code => {
-                    if (sharedCode.has(code)) {
-                        return false
-                    } else {
-                        sharedCode.add(code)
-                        return true
-                    }
-                })
-            })
-        }
 
         ${graphTraversalNodes.map(node => {
             const { ins, outs, rcvs, snds, state } = codeVariableNames.nodes[node.id]
