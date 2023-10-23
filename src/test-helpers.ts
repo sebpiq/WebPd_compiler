@@ -31,18 +31,18 @@ import {
     Module,
     RawModule,
 } from './types'
-import * as variableNames from './engine-common/code-variable-names'
+import * as variableNames from './compile/code-variable-names'
 import { getMacros } from './compile'
 import { writeFile } from 'fs/promises'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
-} from './compile-helpers'
-import { jsCodeToRawModule } from './engine-javascript/test-helpers'
+} from './compile/compile-helpers'
+import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
     compileAscCode,
     wasmBufferToRawModule,
-} from './engine-assemblyscript/test-helpers'
+} from './engine-assemblyscript/run/test-helpers'
 import {
     mapArray,
     renderCode,
@@ -52,14 +52,14 @@ import {
 import {
     createRawModule as createAssemblyScriptWasmRawModule,
     createBindings as createAssemblyScriptWasmEngineBindings,
-} from './engine-assemblyscript/bindings'
-import { createBindings as createJavaScriptEngineBindings } from './engine-javascript/bindings'
-import { createModule } from './engine-common/modules-helpers'
-import { compileExport as compileAssemblyScriptExport } from './engine-assemblyscript/compile-to-assemblyscript'
-import { compileExport as compileJavaScriptExport } from './engine-javascript/compile-to-javascript'
+} from './engine-assemblyscript/run'
+import { RawJavaScriptEngine, createBindings as createJavaScriptEngineBindings } from './engine-javascript/run'
+import { createModule } from './compile/modules-helpers'
+import { compileExport as compileAssemblyScriptExport } from './engine-assemblyscript/compile/compile-import-export'
+import { compileExport as compileJavaScriptExport } from './engine-javascript/compile/compile-import-export'
 import compileGlobalCode, {
     collectExports,
-} from './engine-common/compile-global-code'
+} from './compile/compile-global-code'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -140,9 +140,9 @@ interface TestParameters {
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
-    // { bitDepth: 64, target: 'javascript' },
+    { bitDepth: 64, target: 'javascript' },
     { bitDepth: 32, target: 'assemblyscript' },
-    // { bitDepth: 64, target: 'assemblyscript' },
+    { bitDepth: 64, target: 'assemblyscript' },
 ]
 
 interface CreateTestModuleApplyBindings {
@@ -196,7 +196,7 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `globalCodeDefinitions`
     return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
-        javascript: async (rawModule) => {
+        javascript: async (rawModule: RawJavaScriptEngine) => {
             return createModule(rawModule, {
                 ...mapArray(exports, ({ name }) => [
                     String(name),
@@ -372,12 +372,12 @@ export const runTestSuite = (
 
     tests.forEach(({ description }, i) => {
         it.each(TEST_PARAMETERS)(description, (testParameters) => {
-            _findTestModule(testParameters)[testFunctionNames[i]]()
+            (_findTestModule(testParameters) as any)[testFunctionNames[i]]()
         })
     })
 }
 
-export const compileTestExports = (
+const compileTestExports = (
     target: CompilerTarget,
     exports: Array<GlobalCodeDefinitionExport>
 ): Code =>

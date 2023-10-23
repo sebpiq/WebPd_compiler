@@ -40,9 +40,9 @@ import {
 import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
 import {
     getFloatArrayType,
-} from './compile-helpers'
-import { FS_OPERATION_SUCCESS, fsReadSoundFile, fsReadSoundStream, fsWriteSoundFile, fsWriteSoundStream } from './core-code/fs'
-import { commonsArrays, commonsWaitEngineConfigure } from './core-code/commons'
+} from './compile/compile-helpers'
+import { FS_OPERATION_SUCCESS, fsReadSoundFile, fsReadSoundStream, fsWriteSoundFile, fsWriteSoundStream } from './stdlib/fs'
+import { commonsArrays, commonsWaitEngineConfigure } from './stdlib/commons'
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
@@ -91,7 +91,7 @@ describe('Engine', () => {
                 DUMMY: { loop: () => '' },
                 ...(extraCompilation.nodeImplementations || {}),
                 [nodeGlobalCodeInjectorType]: {
-                    globalCode: globalCodeDefinitions,
+                    dependencies: globalCodeDefinitions,
                 },
             },
         })

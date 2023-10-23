@@ -32,10 +32,10 @@ import {
     AudioSettings,
 } from './types'
 import { mapArray, mapObject } from './functional-helpers'
-import { getFloatArrayType } from './compile-helpers'
+import { getFloatArrayType } from './compile/compile-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
-import { commonsArrays } from './core-code'
+import { commonsArrays } from './stdlib'
 export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
