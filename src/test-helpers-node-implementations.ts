@@ -22,21 +22,20 @@ import assert from 'assert'
 import { executeCompilation } from './compile'
 import { makeCompilation, round, createTestEngine } from './test-helpers'
 import {
-    Signal,
-    Message,
     NodeImplementations,
     CompilerTarget,
-    FloatArray,
     NodeImplementation,
-    Engine,
     AudioSettings,
-} from './types'
+} from './compile/types'
+import {
+    Signal,
+    Message, FloatArray, Engine
+} from './run/types'
 import { mapArray, mapObject } from './functional-helpers'
 import { getFloatArrayType } from './compile/compile-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import { commonsArrays } from './stdlib'
-export { executeCompilation } from './compile'
 export { makeCompilation } from './test-helpers'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //

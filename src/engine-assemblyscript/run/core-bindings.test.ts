@@ -25,12 +25,11 @@ import {
     readListOfFloatArrays,
     readTypedArray,
 } from './core-bindings'
-import { AudioSettings } from '../../types'
+import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getMacros } from '../../compile'
 import { getFloatArrayType } from '../../compile/compile-helpers'
 import { core } from '../../stdlib/core'
-import { compileExport } from '../compile/compile-import-export'
 import { renderCode } from '../../functional-helpers'
 import { FloatArrayPointer, InternalPointer } from './types'
 
@@ -53,7 +52,7 @@ describe('core-bindings', () => {
             macros: getMacros('assemblyscript'),
             audioSettings: { bitDepth, channelCount: { in: 2, out: 2 } },
         })}
-        ${core.exports.map(compileExport)}
+        ${core.exports.map(({ name }) => `export { ${name} }`)}
     `
 
     describe('readTypedArray', () => {

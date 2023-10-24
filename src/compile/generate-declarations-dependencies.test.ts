@@ -24,15 +24,17 @@ import {
     GlobalCodeDefinition,
     GlobalCodeGeneratorContext,
     GlobalCodeGeneratorWithSettings,
-} from '../types'
-import compileGlobalCode, {
-    _renderCodeDefinitionsRecursive,
+} from './types'
+import generateDeclarationsDependencies, {
+    _generateDependenciesDeclarationsRecursive,
+} from './generate-declarations-dependencies'
+import {
     collectExports,
-    collectImports,
-} from './compile-global-code'
+    collectImports
+} from './compile-helpers'
 import { makeCompilation } from '../test-helpers'
 
-describe('compile-global-code', () => {
+describe('generate-declarations-dependencies', () => {
     const CONTEXT: GlobalCodeGeneratorContext = {
         target: 'javascript',
         audioSettings: {
@@ -47,7 +49,7 @@ describe('compile-global-code', () => {
     describe('default', () => {
         it('should compile the global code, removing duplicates', () => {
             assert.strictEqual(
-                compileGlobalCode(COMPILATION, [
+                generateDeclarationsDependencies(COMPILATION, [
                     () => 'blo',
                     {
                         codeGenerator: () => 'bli',
@@ -59,7 +61,7 @@ describe('compile-global-code', () => {
         })
     })
 
-    describe('_renderCodeDefinitionsRecursive', () => {
+    describe('_generateDependenciesDeclarationsRecursive', () => {
         it('should render code and dependencies recursively, dependencies should coem first', () => {
             const codeGenerator1 = () => 'bla'
             const codeGenerator2 = () => 'bli'
@@ -76,13 +78,13 @@ describe('compile-global-code', () => {
                 codeGenerator: codeGenerator4,
                 dependencies: [codeGenerator5, codeGenerator3, codeDefinition1],
             }
-            const globalCodeDefinitions: Array<GlobalCodeDefinition> = [
+            const dependencies: Array<GlobalCodeDefinition> = [
                 codeGenerator1,
                 codeDefinition2,
             ]
 
             assert.deepStrictEqual(
-                _renderCodeDefinitionsRecursive(CONTEXT, globalCodeDefinitions),
+                _generateDependenciesDeclarationsRecursive(CONTEXT, dependencies),
                 ['bla', 'bly', 'blo', 'bla', 'ble', 'bli', 'blu']
             )
         })
@@ -104,13 +106,13 @@ describe('compile-global-code', () => {
                 exports: [{ name: 'ex4' }],
                 dependencies: [codeDefinition2],
             }
-            const globalCodeDefinitions: Array<GlobalCodeDefinition> = [
+            const dependencies: Array<GlobalCodeDefinition> = [
                 () => ``,
                 codeDefinition3,
             ]
 
             assert.deepStrictEqual(
-                collectExports('javascript', globalCodeDefinitions),
+                collectExports('javascript', dependencies),
                 [{ name: 'ex1' }, { name: 'ex3' }, { name: 'ex4' }]
             )
         })
@@ -136,13 +138,13 @@ describe('compile-global-code', () => {
                 ],
                 dependencies: [codeGenerator3, codeDefinition1],
             }
-            const globalCodeDefinitions: Array<GlobalCodeDefinition> = [
+            const dependencies: Array<GlobalCodeDefinition> = [
                 codeGenerator1,
                 codeDefinition2,
             ]
 
             assert.deepStrictEqual(
-                collectExports('assemblyscript', globalCodeDefinitions),
+                collectExports('assemblyscript', dependencies),
                 [
                     { name: 'ex1' },
                     { name: 'ex4', targets: ['assemblyscript'] },
@@ -171,12 +173,12 @@ describe('compile-global-code', () => {
                 imports: [{ name: 'ex4', args: [], returns: 'void' }],
                 dependencies: [codeDefinition2],
             }
-            const globalCodeDefinitions: Array<GlobalCodeDefinition> = [
+            const dependencies: Array<GlobalCodeDefinition> = [
                 () => ``,
                 codeDefinition3,
             ]
 
-            assert.deepStrictEqual(collectImports(globalCodeDefinitions), [
+            assert.deepStrictEqual(collectImports(dependencies), [
                 { name: 'ex1', args: [], returns: 'void' },
                 { name: 'ex3', args: [], returns: 'void' },
                 { name: 'ex4', args: [], returns: 'void' },

@@ -25,7 +25,7 @@ import {
     createNamespace,
     generate,
 } from './code-variable-names'
-import { CodeVariableNames, NodeImplementations } from '../types'
+import { CodeVariableNames, NodeImplementations } from '../compile/types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 
 describe('code-variable-names', () => {

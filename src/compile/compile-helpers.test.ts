@@ -28,7 +28,7 @@ import {
     preCompileSignalAndMessageFlow,
 } from './compile-helpers'
 import { makeCompilation } from '../test-helpers'
-import { Compilation, NodeImplementation, NodeImplementations } from '../types'
+import { Compilation, NodeImplementation, NodeImplementations } from './types'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {

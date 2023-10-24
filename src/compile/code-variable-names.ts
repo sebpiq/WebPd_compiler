@@ -25,7 +25,7 @@ import {
     NodeImplementations,
     CodeVariableNames,
     PortletsIndex,
-} from '../types'
+} from '../compile/types'
 
 /**
  * Generates the whole set of variable names for a compilation for a given graph.

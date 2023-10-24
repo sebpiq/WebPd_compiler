@@ -20,48 +20,43 @@
 
 import {
     buildMetadata,
-    collectGlobalCodeDefinitionsFromTraversal,
-    engineMinimalCodeDefinitions,
+    collectDependenciesFromTraversal,
+    engineMinimalDependencies,
 } from '../../compile/compile-helpers'
-import compileDeclare from '../../compile/compile-declare'
-import compileLoop from '../../compile/compile-loop'
-import compileGlobalCode, {
-    collectExports,
-    collectImports,
-} from '../../compile/compile-global-code'
+import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
+import generateDeclarationsGraph from '../../compile/generate-declarations-graph'
+import generateLoop from '../../compile/generate-loop'
+import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
 import {
     Compilation,
-} from '../../types'
+} from '../../compile/types'
 import { JavaScriptEngineCode } from './types'
 import { renderCode } from '../../functional-helpers'
-import {
-    compileOutletListeners,
-    compileInletCallers,
-} from '../../compile/compile-portlet-accessors'
-import embedArrays from '../../compile/embed-arrays'
-import { compileImport, compileExport } from './compile-import-export'
+import generateInletCallers from '../../compile/generate-inlet-callers'
+import generateOutletListeners from '../../compile/generate-outlet-listeners'
+import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
+import generateImportsExports from '../../compile/generate-imports-exports'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const { codeVariableNames, outletListenerSpecs, inletCallerSpecs } =
         compilation
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
-    const globalCodeDefinitions = [
-        ...engineMinimalCodeDefinitions(),
-        ...collectGlobalCodeDefinitionsFromTraversal(compilation),
+    const dependencies = [
+        ...engineMinimalDependencies(),
+        ...collectDependenciesFromTraversal(compilation),
     ]
 
     // prettier-ignore
     return renderCode`
-        ${compileGlobalCode(compilation, globalCodeDefinitions)}
+        ${generateDeclarationsGlobals(compilation)}
+        ${generateDeclarationsDependencies(compilation, dependencies)}
+        ${generateDeclarationsGraph(compilation)}
 
-        ${embedArrays(compilation)}
+        ${generateEmbeddedArrays(compilation)}
 
-        ${compileDeclare(compilation)}
-
-        ${compileInletCallers(compilation)}
-
-        ${compileOutletListeners(compilation, (
+        ${generateInletCallers(compilation)}
+        ${generateOutletListeners(compilation, (
             variableName, 
             nodeId, 
             outletId
@@ -81,7 +76,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 _commons_emitEngineConfigure()
             },
             loop: (${globs.input}, ${globs.output}) => {
-                ${compileLoop(compilation)}
+                ${generateLoop(compilation)}
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
@@ -102,8 +97,15 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
         }
 
-        ${collectImports(globalCodeDefinitions).map(compileImport)}
-        ${collectExports('javascript', globalCodeDefinitions).map(compileExport)}
+        ${generateImportsExports(
+            'javascript',
+            dependencies,
+            ({ name }) => `
+                exports.${name} = () => { throw new Error('import for ${name} not provided') }
+                const ${name} = (...args) => exports.${name}(...args)
+            `, 
+            ({ name }) => `exports.${name} = ${name}`
+        )}
     `
 }
 

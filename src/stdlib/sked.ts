@@ -19,7 +19,7 @@
  */
 
 import { renderIf } from "../functional-helpers";
-import { GlobalCodeGenerator } from "../types";
+import { GlobalCodeGenerator } from "../compile/types";
 
 export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => `
     ${renderIf(

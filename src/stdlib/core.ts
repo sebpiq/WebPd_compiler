@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { renderSwitch } from '../functional-helpers'
-import { GlobalCodeGeneratorWithSettings } from '../types'
+import { renderCode, renderSwitch } from '../functional-helpers'
+import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 
 export const core: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ target, audioSettings: { bitDepth } }) => {
@@ -28,7 +28,7 @@ export const core: GlobalCodeGeneratorWithSettings = {
         const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
         const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
         const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
-        return renderSwitch(
+        return renderCode`${renderSwitch(
             [
                 target === 'assemblyscript',
                 `
@@ -85,7 +85,7 @@ export const core: GlobalCodeGeneratorWithSettings = {
                     const getFloatDataView = (d, p) => d.${getFloat}(p)
                 `,
             ]
-        )
+        )}`
     },
 
     exports: [

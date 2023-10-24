@@ -25,14 +25,13 @@ import {
     liftMessage,
     lowerMessage,
 } from './msg-bindings'
-import { AudioSettings, GlobalCodeGeneratorContext } from '../../types'
+import { AudioSettings, GlobalCodeGeneratorContext } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getFloatArrayType } from '../../compile/compile-helpers'
 import { getMacros } from '../../compile'
 import { core } from '../../stdlib/core'
 import { sked } from '../../stdlib/sked'
 import { msg } from '../../stdlib/msg'
-import { compileExport } from '../compile/compile-import-export'
 import { renderCode } from '../../functional-helpers'
 import { MessagePointer } from './types'
 
@@ -75,8 +74,8 @@ describe('msg-bindings', () => {
             export function testReadMessageData(message: Message, index: Int): Int {
                 return message.dataView.getInt32(index * sizeof<Int>())
             }
-            ${core.exports.map(compileExport)}
-            ${msg.exports.map(compileExport)}
+            ${core.exports.map(({ name }) => `export { ${name} }`)}
+            ${msg.exports.map(({ name }) => `export { ${name} }`)}
         `
     }
 

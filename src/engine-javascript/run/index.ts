@@ -1,7 +1,8 @@
 import { getFloatArrayType } from '../../compile/compile-helpers'
-import { createModule } from '../../compile/modules-helpers'
-import { Bindings } from '../../compile/types'
-import { AudioSettings, Code, Engine, FloatArray, RawModule } from '../../types'
+import { createModule } from '../../run/modules-helpers'
+import { Bindings } from "../../run/types"
+import { AudioSettings, Code } from '../../compile/types'
+import { Engine, FloatArray, RawModule } from '../../run/types'
 
 interface CommonsRawModule extends RawModule {
     commons_getArray: Engine['commons']['getArray']

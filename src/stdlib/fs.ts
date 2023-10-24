@@ -19,7 +19,7 @@
  */
 
 import { renderIf } from '../functional-helpers'
-import { GlobalCodeGeneratorWithSettings, GlobalCodeGenerator } from '../types'
+import { GlobalCodeGeneratorWithSettings, GlobalCodeGenerator } from '../compile/types'
 import { bufCore, bufPushPull } from './buf'
 import { msg } from './msg'
 

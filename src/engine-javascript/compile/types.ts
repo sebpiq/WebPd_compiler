@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Code } from '../../types'
+import { Code } from '../../compile/types'
 
 /** JavaScript Code that allows to create a JavaScriptEngine when evaled */
 export type JavaScriptEngineCode = Code

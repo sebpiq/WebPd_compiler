@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AudioSettings, Engine, EngineMetadata, FloatArray } from '../../types'
+import { AudioSettings } from '../../compile/types'
+import { Engine, EngineMetadata, FloatArray } from '../../run/types'
 import { CoreRawModule } from './core-bindings'
 import { FsRawModule, FsImports } from './fs-bindings'
 import { MsgRawModule } from './msg-bindings'

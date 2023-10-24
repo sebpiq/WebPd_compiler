@@ -19,13 +19,13 @@
  */
 
 import assert from 'assert'
-import { NodeImplementations } from '../types'
+import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
 import { normalizeCode } from "../test-helpers"
-import compileLoop from './compile-loop'
+import generateLoop from './generate-loop'
 import { makeGraph } from '../dsp-graph/test-helpers'
 
-describe('compileLoop', () => {
+describe('generateLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         print: {},
         'osc~': {
@@ -95,7 +95,7 @@ describe('compileLoop', () => {
             },
         })
 
-        const loop = compileLoop(compilation)
+        const loop = generateLoop(compilation)
 
         assert.strictEqual(
             normalizeCode(loop),
@@ -139,7 +139,7 @@ describe('compileLoop', () => {
             nodeImplementations: NODE_IMPLEMENTATIONS,
         })
 
-        const loop = compileLoop(compilation)
+        const loop = generateLoop(compilation)
 
         assert.strictEqual(
             normalizeCode(loop),

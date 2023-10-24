@@ -26,7 +26,7 @@ import {
     ForwardReferences,
 } from './types'
 import { CommonsRawModule } from './commons-bindings'
-import { Engine, FloatArray, RawModule, SoundFileInfo } from '../../types'
+import { Engine, FloatArray, RawModule, SoundFileInfo } from '../../run/types'
 import {
     CoreRawModule,
     liftString,
@@ -34,7 +34,7 @@ import {
     readListOfFloatArrays,
 } from './core-bindings'
 import { liftMessage, MsgRawModule } from './msg-bindings'
-import { Bindings } from '../../compile/types'
+import { Bindings } from "../../run/types"
 import {
     EngineLifecycleRawModule,
     updateWasmInOuts,

@@ -17,18 +17,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import { getFloatArrayType } from './compile-helpers'
+import { renderCode } from '../functional-helpers'
+import { Compilation } from './types'
 
-import { Code, CodeMacros, CodeVariableName } from '../../compile/types'
-
-const Var = (name: CodeVariableName, typeString: Code) =>
-    `${name}: ${typeString}`
-
-const Func = (args: Array<Code>, returnType: Code) =>
-    `(${args.join(', ')}): ${returnType}`
-
-const macros: CodeMacros = {
-    Var,
-    Func,
-}
-
-export default macros
+/**
+ * Embed arrays passed to the compiler in the compiled module.
+ */
+export default (compilation: Compilation) => renderCode`
+    ${Object.entries(compilation.arrays).map(
+        ([arrayName, array]) => `
+        commons_setArray("${arrayName}", new ${
+            getFloatArrayType(compilation.audioSettings.bitDepth).name
+        }(${array.length}))
+        commons_getArray("${arrayName}").set(${JSON.stringify(
+            Array.from(array)
+        )})
+    `
+    )}
+`

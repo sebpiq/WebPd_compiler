@@ -19,7 +19,7 @@
  */
 
 import { mapArray } from '../functional-helpers'
-import { getInlet, getNode, getOutlet } from './graph-getters'
+import { getInlet, getNode, getOutlet } from './getters'
 import { DspGraph } from './types'
 
 type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]

@@ -27,8 +27,8 @@ import {
     removeDeadSources,
     trimGraph,
     messageNodes,
-} from './graph-traversal'
-import { getNode } from './graph-getters'
+} from './traversal'
+import { getNode } from './getters'
 import { DspGraph } from './types'
 import { makeGraph, nodeDefaults } from './test-helpers'
 

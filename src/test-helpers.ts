@@ -23,14 +23,15 @@ import {
     Code,
     Compilation,
     CompilerTarget,
-    Engine,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
     GlobalCodeGenerator,
     GlobalCodeGeneratorWithSettings,
-    Module,
-    RawModule,
-} from './types'
+} from './compile/types'
+import {
+    Engine, Module,
+    RawModule
+} from './run/types'
 import * as variableNames from './compile/code-variable-names'
 import { getMacros } from './compile'
 import { writeFile } from 'fs/promises'
@@ -54,12 +55,9 @@ import {
     createBindings as createAssemblyScriptWasmEngineBindings,
 } from './engine-assemblyscript/run'
 import { RawJavaScriptEngine, createBindings as createJavaScriptEngineBindings } from './engine-javascript/run'
-import { createModule } from './compile/modules-helpers'
-import { compileExport as compileAssemblyScriptExport } from './engine-assemblyscript/compile/compile-import-export'
-import { compileExport as compileJavaScriptExport } from './engine-javascript/compile/compile-import-export'
-import compileGlobalCode, {
-    collectExports,
-} from './compile/compile-global-code'
+import { createModule } from './run/modules-helpers'
+import generateDeclarationsDependencies from './compile/generate-declarations-dependencies'
+import { collectExports } from './compile/compile-helpers'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -190,11 +188,11 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    globalCodeDefinitions: Array<GlobalCodeDefinition> = []
+    dependencies: Array<GlobalCodeDefinition> = []
 ) => {
-    const exports = collectExports(target, globalCodeDefinitions)
+    const exports = collectExports(target, dependencies)
     // Create modules with bindings containing not only the basic bindings but also raw bindings
-    // for all functions exported in `globalCodeDefinitions`
+    // for all functions exported in `dependencies`
     return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
         javascript: async (rawModule: RawJavaScriptEngine) => {
             return createModule(rawModule, {
@@ -226,7 +224,7 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
 
 export const runTestSuite = (
     tests: Array<{ description: string; codeGenerator: GlobalCodeGenerator }>,
-    globalCodeDefinitions: Array<GlobalCodeDefinition> = []
+    dependencies: Array<GlobalCodeDefinition> = []
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
     let testCounter = 1
@@ -330,9 +328,9 @@ export const runTestSuite = (
                     }
                 }
 
-                ${compileGlobalCode(
+                ${generateDeclarationsDependencies(
                     codeGeneratorContext,
-                    [...globalCodeDefinitions, ...testsCodeDefinitions]
+                    [...dependencies, ...testsCodeDefinitions]
                 )}
 
                 ${renderIf(
@@ -340,9 +338,9 @@ export const runTestSuite = (
                     'const exports = {}'
                 )}
 
-                ${compileTestExports(
+                ${generateTestExports(
                     target,
-                    collectExports(target, [...globalCodeDefinitions, ...testsCodeDefinitions])
+                    collectExports(target, [...dependencies, ...testsCodeDefinitions])
                 )}
             `
 
@@ -377,17 +375,17 @@ export const runTestSuite = (
     })
 }
 
-const compileTestExports = (
+const generateTestExports = (
     target: CompilerTarget,
     exports: Array<GlobalCodeDefinitionExport>
-): Code =>
+): Code => renderCode`${
     renderSwitch(
         [
             target === 'assemblyscript',
-            exports.map(compileAssemblyScriptExport).join('\n'),
+            exports.map(({ name }) => `export { ${name} }`),
         ],
         [
             target === 'javascript',
-            '\n' + exports.map(compileJavaScriptExport).join('\n'),
+            exports.map(({ name }) => `exports.${name} = ${name}`),
         ]
-    )
+    )}`

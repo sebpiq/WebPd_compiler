@@ -23,7 +23,7 @@ import {
     getSinks,
     getOutlet,
     getInlet,
-} from './graph-getters'
+} from './getters'
 import { endpointsEqual } from './graph-helpers'
 import { DspGraph } from './types'
 

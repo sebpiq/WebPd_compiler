@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,17 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Code, CodeMacros, CodeVariableName } from '../../compile/types'
+import { Code, Compilation } from './types'
 
-const Var = (name: CodeVariableName, typeString: Code) =>
-    `${name}: ${typeString}`
-
-const Func = (args: Array<Code>, returnType: Code) =>
-    `(${args.join(', ')}): ${returnType}`
-
-const macros: CodeMacros = {
-    Var,
-    Func,
-}
-
-export default macros
+export default ({
+    macros: { Var, Func },
+    codeVariableNames: { globs },
+}: Compilation): Code =>
+    // prettier-ignore
+    `
+        let ${Var(globs.iterFrame, 'Int')} = 0
+        let ${Var(globs.frame, 'Int')} = 0
+        let ${Var(globs.blockSize, 'Int')} = 0
+        let ${Var(globs.sampleRate, 'Float')} = 0
+        function ${globs.nullMessageReceiver} ${Func([Var('m', 'Message')], 'void')} {}
+    `

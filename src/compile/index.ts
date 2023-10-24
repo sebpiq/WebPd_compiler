@@ -26,7 +26,7 @@ import {
     CompilationSettings,
     NodeImplementations,
     CompilerTarget,
-} from '../types'
+} from './types'
 import compileToJavascript from '../engine-javascript/compile'
 import compileToAssemblyscript from '../engine-assemblyscript/compile'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'

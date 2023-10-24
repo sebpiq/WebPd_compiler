@@ -28,7 +28,7 @@
  * @module
  */
 
-import { Engine } from '../../types'
+import { Engine } from '../../run/types'
 import {
     createFsBindings,
     createFsImports,
@@ -43,7 +43,7 @@ import {
 import { instantiateWasmModule } from './wasm-helpers'
 import { getFloatArrayType } from '../../compile/compile-helpers'
 import { createCommonsBindings } from './commons-bindings'
-import { createModule } from '../../compile/modules-helpers'
+import { createModule } from '../../run/modules-helpers'
 import {
     createEngineLifecycleBindings,
     createInletCallersBindings,
@@ -52,7 +52,7 @@ import {
     outletListenersImports,
     readMetadata,
 } from './engine-lifecycle-bindings'
-import { Bindings } from '../../compile/types'
+import { Bindings } from "../../run/types"
 
 export const createEngine = async (
     wasmBuffer: ArrayBuffer

@@ -29,14 +29,15 @@ import {
     AudioSettings,
     Compilation,
     CompilerTarget,
-    Engine,
-    Message,
     NodeImplementations,
-    SoundFileInfo,
-    FloatArray,
     GlobalCodeDefinition,
     GlobalCodeGeneratorWithSettings,
-} from './types'
+} from './compile/types'
+import {
+    Engine,
+    Message, SoundFileInfo,
+    FloatArray
+} from './run/types'
 import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
 import {
     getFloatArrayType,
@@ -50,7 +51,7 @@ describe('Engine', () => {
     interface EngineTestSettings {
         target: CompilerTarget
         bitDepth: AudioSettings['bitDepth']
-        globalCodeDefinitions?: Array<GlobalCodeDefinition>
+        dependencies?: Array<GlobalCodeDefinition>
         compilation?: Partial<Compilation>
     }
 
@@ -59,15 +60,15 @@ describe('Engine', () => {
     >({
         target,
         bitDepth,
-        globalCodeDefinitions = [],
+        dependencies = [],
         compilation: extraCompilation = {},
     }: EngineTestSettings) => {
-        // Add a dummy node with a dummy node type that is only used to inject specified `globalCodeDefinitions`
-        const nodeGlobalCodeInjectorType = 'GLOBAL_CODE_INJECTOR'
-        const nodeGlobalCodeInjectorId = 'globalCodeInjector'
+        // Add a dummy node with a dummy node type that is only used to inject specified `dependencies`
+        const dependenciesInjectorType = 'DEPENDENCIES_INJECTOR'
+        const dependenciesInjectorId = 'dependenciesInjector'
         if (
             extraCompilation.graph &&
-            extraCompilation.graph[nodeGlobalCodeInjectorId]
+            extraCompilation.graph[dependenciesInjectorId]
         ) {
             throw new Error(`Unexpected, node with same id already in graph.`)
         }
@@ -81,17 +82,17 @@ describe('Engine', () => {
             ...extraCompilation,
             graph: {
                 ...(extraCompilation.graph || {}),
-                [nodeGlobalCodeInjectorId]: {
-                    ...nodeDefaults(nodeGlobalCodeInjectorId),
-                    type: nodeGlobalCodeInjectorType,
+                [dependenciesInjectorId]: {
+                    ...nodeDefaults(dependenciesInjectorId),
+                    type: dependenciesInjectorType,
                     isPullingSignal: true,
                 },
             },
             nodeImplementations: {
                 DUMMY: { loop: () => '' },
                 ...(extraCompilation.nodeImplementations || {}),
-                [nodeGlobalCodeInjectorType]: {
-                    dependencies: globalCodeDefinitions,
+                [dependenciesInjectorType]: {
+                    dependencies: dependencies,
                 },
             },
         })
@@ -100,7 +101,7 @@ describe('Engine', () => {
             target,
             bitDepth,
             executeCompilation(compilation),
-            globalCodeDefinitions,
+            dependencies,
         )
 
         return engine
@@ -370,7 +371,7 @@ describe('Engine', () => {
                             nodeImplementations,
                             audioSettings,
                         },
-                        globalCodeDefinitions: [commonsWaitEngineConfigure],
+                        dependencies: [commonsWaitEngineConfigure],
                     })
 
                     engine.configure(44100, 1)
@@ -399,7 +400,7 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        globalCodeDefinitions: [commonsArrays, testCode],
+                        dependencies: [commonsArrays, testCode],
                     })
 
                     assert.deepStrictEqual(
@@ -452,7 +453,7 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        globalCodeDefinitions: [commonsArrays, testCode],
+                        dependencies: [commonsArrays, testCode],
                     })
 
                     engine.commons.setArray(
@@ -492,7 +493,7 @@ describe('Engine', () => {
                                 array3: new Float32Array(0),
                             },
                         },
-                        globalCodeDefinitions: [commonsArrays]
+                        dependencies: [commonsArrays]
                     })
                     assert.deepStrictEqual(
                         engine.commons.getArray('array1'),
@@ -594,7 +595,7 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        globalCodeDefinitions: [fsReadSoundFile, sharedTestingCode, testCode],
+                        dependencies: [fsReadSoundFile, sharedTestingCode, testCode],
                     })
 
                     // 1. Some function in the engine requests a read file operation.
@@ -720,7 +721,7 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        globalCodeDefinitions: [fsReadSoundStream, sharedTestingCode, testCode],
+                        dependencies: [fsReadSoundStream, sharedTestingCode, testCode],
                     })
 
                     // 1. Some function in the engine requests a read stream operation.
@@ -872,7 +873,7 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        globalCodeDefinitions: [fsWriteSoundStream, sharedTestingCode],
+                        dependencies: [fsWriteSoundStream, sharedTestingCode],
                     })
 
                     // 1. Some function in the engine requests a write stream operation.
@@ -1018,7 +1019,7 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        globalCodeDefinitions: [fsWriteSoundFile, sharedTestingCode],
+                        dependencies: [fsWriteSoundFile, sharedTestingCode],
                     })
 
                     // 1. Some function in the engine requests a write file operation.
@@ -1111,7 +1112,7 @@ describe('Engine', () => {
                 const engine = await initializeEngineTest({
                     target,
                     bitDepth,
-                    globalCodeDefinitions: [testCode],
+                    dependencies: [testCode],
                     compilation: {
                         outletListenerSpecs,
                         graph,
@@ -1229,7 +1230,7 @@ describe('Engine', () => {
                 const engine = await initializeEngineTest({
                     target,
                     bitDepth,
-                    globalCodeDefinitions: [testCode],
+                    dependencies: [testCode],
                     compilation: {
                         inletCallerSpecs,
                         graph,

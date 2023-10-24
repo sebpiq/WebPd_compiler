@@ -18,17 +18,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Code, CodeMacros, CodeVariableName } from '../../compile/types'
+import { DspGraph } from '../dsp-graph';
+import { renderCode } from '../functional-helpers';
+import { Code, CodeVariableName, Compilation } from './types';
 
-const Var = (name: CodeVariableName, typeString: Code) =>
-    `${name}: ${typeString}`
-
-const Func = (args: Array<Code>, returnType: Code) =>
-    `(${args.join(', ')}): ${returnType}`
-
-const macros: CodeMacros = {
-    Var,
-    Func,
-}
-
-export default macros
+export default (
+    { outletListenerSpecs, codeVariableNames }: Compilation,
+    generateCode: (
+        variableName: CodeVariableName,
+        nodeId: DspGraph.NodeId,
+        outletId: DspGraph.PortletId
+    ) => Code
+) => renderCode`${Object.entries(outletListenerSpecs).map(
+    ([nodeId, outletIds]) => outletIds.map((outletId) => {
+        const listenerVariableName = codeVariableNames.outletListeners[nodeId][outletId];
+        return generateCode(listenerVariableName, nodeId, outletId);
+    })
+)}`;

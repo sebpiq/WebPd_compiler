@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getNode, getSinks, getSources } from './graph-getters'
-import { listConnectionsOut, listConnectionsIn } from './graph-traversal'
+import { getNode, getSinks, getSources } from './getters'
+import { listConnectionsOut, listConnectionsIn } from './traversal'
 import { DspGraph } from './types'
 
 type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]

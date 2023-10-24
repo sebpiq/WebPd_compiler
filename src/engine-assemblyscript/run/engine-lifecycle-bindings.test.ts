@@ -22,7 +22,7 @@ import assert from 'assert'
 import { compileAscCode } from './test-helpers'
 import compileToAssemblyscript from '../compile'
 import { makeCompilation } from '../../test-helpers'
-import { EngineMetadata } from '../../types'
+import { EngineMetadata } from '../../run/types'
 import { readMetadata } from './engine-lifecycle-bindings'
 
 describe('engine-lifecycle-bindings', () => {

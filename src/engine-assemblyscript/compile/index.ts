@@ -18,41 +18,39 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata, collectGlobalCodeDefinitionsFromTraversal, engineMinimalCodeDefinitions } from '../../compile/compile-helpers'
-import compileDeclare from '../../compile/compile-declare'
-import compileLoop from '../../compile/compile-loop'
+import { buildMetadata, collectDependenciesFromTraversal, engineMinimalDependencies } from '../../compile/compile-helpers'
+import generateDeclarationsGraph from '../../compile/generate-declarations-graph'
+import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
+import generateLoop from '../../compile/generate-loop'
 import { renderCode } from '../../functional-helpers'
-import { Compilation } from '../../types'
+import { Compilation } from '../../compile/types'
 import { AssemblyScriptWasmEngineCode } from './types'
-import {
-    compileOutletListeners,
-    compileInletCallers,
-} from '../../compile/compile-portlet-accessors'
-import embedArrays from '../../compile/embed-arrays'
-import compileGlobalCode, { collectExports, collectImports } from '../../compile/compile-global-code'
-import { compileImport, compileExport } from './compile-import-export'
+import generateInletCallers from '../../compile/generate-inlet-callers'
+import generateOutletListeners from '../../compile/generate-outlet-listeners'
+import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
+import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
+import generateImportsExports from '../../compile/generate-imports-exports'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
+    const { audioSettings, inletCallerSpecs, codeVariableNames, macros: { Func, Var } } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
-    const globalCodeDefinitions = [
-        ...engineMinimalCodeDefinitions(),
-        ...collectGlobalCodeDefinitionsFromTraversal(compilation),
+    const dependencies = [
+        ...engineMinimalDependencies(),
+        ...collectDependenciesFromTraversal(compilation),
     ]
 
     // prettier-ignore
     return renderCode`
-        ${compileGlobalCode(compilation, globalCodeDefinitions)}
+        ${generateDeclarationsGlobals(compilation)}
+        ${generateDeclarationsDependencies(compilation, dependencies)}
+        ${generateDeclarationsGraph(compilation)}
 
-        ${embedArrays(compilation)}
+        ${generateEmbeddedArrays(compilation)}
 
-        ${compileDeclare(compilation)}
-
-        ${compileInletCallers(compilation)}
-        
-        ${compileOutletListeners(compilation, (variableName) => `
+        ${generateInletCallers(compilation)}        
+        ${generateOutletListeners(compilation, (variableName) => `
             export declare function ${variableName}(m: Message): void
         `)}
 
@@ -73,7 +71,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export function getOutput(): FloatArray { return ${globs.output} }
 
         export function loop(): void {
-            ${compileLoop(compilation)}
+            ${generateLoop(compilation)}
         }
 
         export {
@@ -85,8 +83,12 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             )}
         }
 
-        ${collectImports(globalCodeDefinitions).map(compileImport)}
-        ${collectExports('assemblyscript', globalCodeDefinitions).map(compileExport)}
+        ${generateImportsExports(
+            'assemblyscript',
+            dependencies,
+            ({ name, args, returns }) => `export declare function ${name} ${Func(args.map((a) => Var(a[0], a[1])), returns)}`, 
+            ({ name }) => `export { ${name} }`
+        )}
     `
 }
 

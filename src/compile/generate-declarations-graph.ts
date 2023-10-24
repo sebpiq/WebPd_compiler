@@ -21,7 +21,7 @@
 import { getNodeImplementation } from './compile-helpers'
 import { getters, DspGraph } from '../dsp-graph'
 import { renderCode } from '../functional-helpers'
-import { Code, Compilation } from '../types'
+import { Code, Compilation } from './types'
 
 export default (compilation: Compilation): Code => {
     const {
@@ -52,12 +52,6 @@ export default (compilation: Compilation): Code => {
 
     // prettier-ignore
     return renderCode`
-        let ${Var(globs.iterFrame, 'Int')} = 0
-        let ${Var(globs.frame, 'Int')} = 0
-        let ${Var(globs.blockSize, 'Int')} = 0
-        let ${Var(globs.sampleRate, 'Float')} = 0
-        function ${globs.nullMessageReceiver} ${Func([Var('m', 'Message')], 'void')} {}
-
         ${graphTraversalNodes.map(node => {
             const { ins, outs, rcvs, snds, state } = codeVariableNames.nodes[node.id]
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)

@@ -18,12 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { renderSwitch } from '../functional-helpers'
-import { GlobalCodeGeneratorWithSettings } from '../types'
+import { renderCode, renderSwitch } from '../functional-helpers'
+import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 
 export const msg: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ target }) =>
-        renderSwitch(
+        renderCode`${renderSwitch(
             [
                 target === 'assemblyscript',
                 `
@@ -318,7 +318,7 @@ export const msg: GlobalCodeGeneratorWithSettings = {
                         .join(', ') + ']'
             `,
             ]
-        ),
+        )}`,
 
     exports: [
         { name: 'x_msg_create', targets: ['assemblyscript'] },

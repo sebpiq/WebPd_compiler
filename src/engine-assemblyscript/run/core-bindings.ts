@@ -19,7 +19,8 @@
  */
 import { getFloatArrayType } from "../../compile/compile-helpers"
 import { FloatArrayPointer, InternalPointer } from "./types"
-import { AudioSettings, FloatArray } from "../../types"
+import { AudioSettings } from "../../compile/types"
+import { FloatArray } from '../../run/types'
 
 export type TypedArrayConstructor =
     | typeof Int8Array

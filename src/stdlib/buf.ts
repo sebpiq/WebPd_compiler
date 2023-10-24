@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalCodeGenerator, GlobalCodeGeneratorWithSettings } from '../types'
+import { GlobalCodeGenerator, GlobalCodeGeneratorWithSettings } from '../compile/types'
 
 export const bufCore: GlobalCodeGenerator = ({ macros: { Var, Func } }) => `
     /**

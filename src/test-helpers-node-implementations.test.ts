@@ -23,7 +23,7 @@ import { fsReadSoundFile } from './stdlib/fs'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
-import { CompilerTarget, NodeImplementation } from './types'
+import { CompilerTarget, NodeImplementation } from './compile/types'
 
 const TEST_PARAMETERS: Array<{ target: CompilerTarget }> = [
     { target: 'javascript' },

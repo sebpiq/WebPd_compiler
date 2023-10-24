@@ -19,7 +19,8 @@
  */
 
 import asc from 'assemblyscript/asc'
-import { AudioSettings, Code, RawModule } from '../../types'
+import { AudioSettings, Code } from '../../compile/types'
+import { RawModule } from '../../run/types'
 import { instantiateWasmModule } from './wasm-helpers'
 
 export const TEST_PARAMETERS = [

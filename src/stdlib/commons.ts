@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalCodeGeneratorWithSettings } from '../types'
+import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 import { sked } from './sked'
 
 export const commonsCore: GlobalCodeGeneratorWithSettings = {

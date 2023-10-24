@@ -25,8 +25,8 @@ import {
     lowerString,
     readTypedArray,
 } from './core-bindings'
-import { Engine, FloatArray, RawModule } from '../../types'
-import { Bindings } from '../../compile/types'
+import { Engine, FloatArray, RawModule } from '../../run/types'
+import { Bindings } from "../../run/types"
 import {
     EngineLifecycleRawModule,
     updateWasmInOuts,

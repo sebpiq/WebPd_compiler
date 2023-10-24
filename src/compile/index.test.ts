@@ -19,7 +19,7 @@
  */
 import assert from 'assert'
 import compile, { validateSettings } from '.'
-import { CompilationSettings } from '../types'
+import { CompilationSettings } from './types'
 
 describe('compile', () => {
     const COMPILER_SETTINGS_AS: CompilationSettings = {

@@ -19,40 +19,13 @@
  */
 
 import assert from 'assert'
-import { NodeImplementations } from '../types'
+import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
 import { normalizeCode } from "../test-helpers"
-import compileDeclare from './compile-declare'
+import generateDeclarationsGraph from './generate-declarations-graph'
 import { makeGraph } from '../dsp-graph/test-helpers'
 
-describe('compileDeclare', () => {
-    const GLOBAL_VARIABLES_CODE = `
-        let F = 0
-        let FRAME = 0
-        let BLOCK_SIZE = 0
-        let SAMPLE_RATE = 0
-        function SND_TO_NULL (m) {}
-    `
-
-    it('should compile declaration for global variables', () => {
-        const graph = makeGraph({})
-
-        const nodeImplementations: NodeImplementations = {}
-
-        const compilation = makeCompilation({
-            target: 'javascript',
-            graph,
-            nodeImplementations,
-        })
-
-        const declareCode = compileDeclare(compilation)
-
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(GLOBAL_VARIABLES_CODE)
-        )
-    })
-
+describe('generateDeclarationsGraph', () => {
     it('should compile declarations for signal inlets, outlets and node custom declarations', () => {
         const graph = makeGraph({
             osc: {
@@ -99,13 +72,11 @@ describe('compileDeclare', () => {
             },
         })
 
-        const declareCode = compileDeclare(compilation)
+        const declareCode = generateDeclarationsGraph(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-                
                 let osc_INS_0_signal = 0
                 let osc_OUTS_0 = 0
                 // [osc~] frequency 440
@@ -142,13 +113,11 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation)
+        const declareCode = generateDeclarationsGraph(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-                
                 function add_RCVS_0 (m) {
                     // [+] message receiver
                     throw new Error('[+], id "add", inlet "0", unsupported message : ' + msg_display(m))
@@ -187,11 +156,11 @@ describe('compileDeclare', () => {
             },
         })
 
-        const declareCode = compileDeclare(compilation)
+        const declareCode = generateDeclarationsGraph(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
-            normalizeCode(GLOBAL_VARIABLES_CODE)
+            ''
         )
     })
 
@@ -221,13 +190,11 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation)
+        const declareCode = generateDeclarationsGraph(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
-            normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-                
+            normalizeCode(`   
                 function add_someNode_RCVS_0 (m) {
                     // [add] message receiver
                     throw new Error('[add], id "someNode", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')
@@ -259,7 +226,7 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        assert.throws(() => compileDeclare(compilation))
+        assert.throws(() => generateDeclarationsGraph(compilation))
     })
 
     it('should not throw an error if message receiver is implemented but string empty', () => {
@@ -285,7 +252,7 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        assert.doesNotThrow(() => compileDeclare(compilation))
+        assert.doesNotThrow(() => generateDeclarationsGraph(compilation))
     })
 
     it('should compile node message senders for message outlets', () => {
@@ -338,13 +305,11 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        const declareCode = compileDeclare(compilation)
+        const declareCode = generateDeclarationsGraph(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-
                 function aFloat_RCVS_0 (m) {
                     // [float] message receiver
                     throw new Error('[float], id "aFloat", inlet "0", unsupported message : ' + msg_display(m))
@@ -397,11 +362,11 @@ describe('compileDeclare', () => {
             },
         })
 
-        const declareCode = compileDeclare(compilation)
+        const declareCode = generateDeclarationsGraph(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
-            normalizeCode(GLOBAL_VARIABLES_CODE)
+            ''
         )
     })
 
@@ -441,13 +406,11 @@ describe('compileDeclare', () => {
             outletListenerSpecs: { add: ['0', '2'] },
         })
 
-        const declareCode = compileDeclare(compilation)
+        const declareCode = generateDeclarationsGraph(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
-                ${GLOBAL_VARIABLES_CODE}
-
                 let add_OUTS_1 = 0
 
                 function aFloat_RCVS_0 (m) {
@@ -505,6 +468,6 @@ describe('compileDeclare', () => {
             nodeImplementations,
         })
 
-        assert.doesNotThrow(() => compileDeclare(compilation))
+        assert.doesNotThrow(() => generateDeclarationsGraph(compilation))
     })
 })

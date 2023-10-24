@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,22 +17,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { getFloatArrayType } from './compile-helpers'
-import { renderCode } from '../functional-helpers'
-import { Compilation } from '../types'
 
-/**
- * Embed arrays passed to the compiler in the compiled module.
- */
-export default (compilation: Compilation) => renderCode`
-    ${Object.entries(compilation.arrays).map(
-        ([arrayName, array]) => `
-        commons_setArray("${arrayName}", new ${
-            getFloatArrayType(compilation.audioSettings.bitDepth).name
-        }(${array.length}))
-        commons_getArray("${arrayName}").set(${JSON.stringify(
-            Array.from(array)
-        )})
-    `
-    )}
-`
+import { renderCode } from '../functional-helpers';
+import { Compilation } from './types';
+
+export default ({
+    inletCallerSpecs, codeVariableNames, macros: { Var, Func },
+}: Compilation) =>
+    // Here not possible to assign directly the receiver because otherwise assemblyscript
+    // doesn't export a function but a global instead.
+    renderCode`${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => inletIds.map(
+        (inletId) => `function ${codeVariableNames.inletCallers[nodeId][inletId]} ${Func([Var('m', 'Message')], 'void')} {${codeVariableNames.nodes[nodeId].rcvs[inletId]}(m)}`
+    )
+    )}`;

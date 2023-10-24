@@ -18,16 +18,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Bindings } from '../../compile/types'
+import { Bindings } from "../../run/types"
 import { mapArray, mapObject } from '../../functional-helpers'
 import {
     CodeVariableName,
+} from '../../compile/types'
+import {
     Engine,
     EngineMetadata,
     FloatArray,
     Message,
-    RawModule,
-} from '../../types'
+    RawModule
+} from '../../run/types'
 import { CoreRawModule, liftString, readTypedArray } from './core-bindings'
 import { liftMessage, lowerMessage, MsgRawModule } from './msg-bindings'
 import {

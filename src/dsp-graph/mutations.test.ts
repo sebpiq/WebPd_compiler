@@ -25,7 +25,7 @@ import {
     disconnectNodes,
     deleteNode,
     disconnect,
-} from './graph-mutations'
+} from './mutations'
 import { assertGraphConnections, makeGraph, nodeDefaults } from './test-helpers'
 import { DspGraph } from './types'
 

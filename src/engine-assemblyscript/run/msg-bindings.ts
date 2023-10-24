@@ -31,7 +31,7 @@
 import { CoreRawModule, liftString, lowerString } from './core-bindings'
 import { readTypedArray } from './core-bindings'
 import { ArrayBufferOfIntegersPointer, FloatArrayPointer, MessagePointer, StringPointer } from './types'
-import { Message, RawModule } from '../../types'
+import { Message, RawModule } from '../../run/types'
 
 export interface MsgRawModule extends RawModule {
     MSG_FLOAT_TOKEN: WebAssembly.Global
