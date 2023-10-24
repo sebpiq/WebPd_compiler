@@ -18,12 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { writeFileSync } from "fs"
-import { Code } from "../../compile/types"
+import { writeFileSync } from 'fs'
+import { Code } from '../../compile/types'
 import { RawModule } from '../../run/types'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { createRawModule } from "."
+import { createRawModule } from '.'
 const execPromise = promisify(exec)
 
 export const jsCodeToRawModule = async (code: Code): Promise<RawModule> => {

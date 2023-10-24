@@ -430,8 +430,8 @@ describe('compile-helpers', () => {
                         '0': { type: 'message', id: '0' },
                     },
                     sinks: {
-                        '0': [['n2', '0']]
-                    }
+                        '0': [['n2', '0']],
+                    },
                 },
                 n2: {
                     inlets: {
@@ -442,7 +442,10 @@ describe('compile-helpers', () => {
             const traversal = buildGraphTraversalDeclare(graph, {
                 n1: ['0'],
             })
-            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), ['n1', 'n2'])
+            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
+                'n1',
+                'n2',
+            ])
         })
     })
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,17 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Bindings } from "../../run/types"
+import { Bindings } from '../../run/types'
 import { mapArray, mapObject } from '../../functional-helpers'
-import {
-    CodeVariableName,
-} from '../../compile/types'
+import { CodeVariableName } from '../../compile/types'
 import {
     Engine,
     EngineMetadata,
     FloatArray,
     Message,
-    RawModule
+    RawModule,
 } from '../../run/types'
 import { CoreRawModule, liftString, readTypedArray } from './core-bindings'
 import { liftMessage, lowerMessage, MsgRawModule } from './msg-bindings'
@@ -213,8 +211,7 @@ export const readMetadata = async (
     })
 
     // Finally, once the module instantiated, we read the metadata
-    const wasmExports =
-        wasmInstance.exports as unknown as EngineRawModule
+    const wasmExports = wasmInstance.exports as unknown as EngineRawModule
     const stringPointer = wasmExports.metadata.valueOf()
     const metadataJSON = liftString(wasmExports, stringPointer)
     return JSON.parse(metadataJSON)

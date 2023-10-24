@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,10 +28,7 @@ import {
     NodeImplementation,
     AudioSettings,
 } from './compile/types'
-import {
-    Signal,
-    Message, FloatArray, Engine
-} from './run/types'
+import { Signal, Message, FloatArray, Engine } from './run/types'
 import { mapArray, mapObject } from './functional-helpers'
 import { getFloatArrayType } from './compile/compile-helpers'
 import { DspGraph } from './dsp-graph'
@@ -75,7 +72,8 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     inputFrames: Array<FrameNodeIn>
 ): Promise<Array<FrameNodeOut>> => {
-    nodeTestSettings.sampleRate = nodeTestSettings.sampleRate || ENGINE_DSP_PARAMS.sampleRate
+    nodeTestSettings.sampleRate =
+        nodeTestSettings.sampleRate || ENGINE_DSP_PARAMS.sampleRate
     const { target, arrays, bitDepth } = nodeTestSettings
     const connectedInlets = new Set<DspGraph.PortletId>([])
     inputFrames.forEach((frame) =>
@@ -242,12 +240,9 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         },
     })
     const code = executeCompilation(compilation)
-    const engine = await createTestEngine(
-        target,
-        bitDepth,
-        code,
-        [commonsArrays]
-    )
+    const engine = await createTestEngine(target, bitDepth, code, [
+        commonsArrays,
+    ])
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -301,10 +296,10 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
             outputFrame.fs = outputFrame.fs || {}
             outputFrame.sequence.push(funcName)
             // When receiving FloatArrays we need to make copies immediately
-            // because they might be garbage collected or reused afterwards by the engine. 
+            // because they might be garbage collected or reused afterwards by the engine.
             if (['onWriteSoundFile', 'onSoundStreamData'].includes(funcName)) {
                 outputFrame.fs[funcName] = [
-                    args[0], 
+                    args[0],
                     args[1].map((array: FloatArray) => array.slice(0)),
                     ...args.slice(2),
                 ] as any
@@ -423,7 +418,8 @@ export const assertNodeOutput = async <NodeArguments, NodeState>(
     nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
     ...frames: Array<[FrameNodeIn, FrameNodeOut]>
 ): Promise<void> => {
-    nodeTestSettings.sampleRate = nodeTestSettings.sampleRate || ENGINE_DSP_PARAMS.sampleRate
+    nodeTestSettings.sampleRate =
+        nodeTestSettings.sampleRate || ENGINE_DSP_PARAMS.sampleRate
     const inputFrames: Array<FrameNodeIn> = frames.map(([frameIn]) => frameIn)
     const expectedOutputFrames: Array<FrameNodeOut> = frames.map(
         ([_, frameOut]) => frameOut

@@ -18,9 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { DspGraph } from '../dsp-graph';
-import { renderCode } from '../functional-helpers';
-import { Code, CodeVariableName, Compilation } from './types';
+import { DspGraph } from '../dsp-graph'
+import { renderCode } from '../functional-helpers'
+import { Code, CodeVariableName, Compilation } from './types'
 
 export default (
     { outletListenerSpecs, codeVariableNames }: Compilation,
@@ -29,9 +29,12 @@ export default (
         nodeId: DspGraph.NodeId,
         outletId: DspGraph.PortletId
     ) => Code
-) => renderCode`${Object.entries(outletListenerSpecs).map(
-    ([nodeId, outletIds]) => outletIds.map((outletId) => {
-        const listenerVariableName = codeVariableNames.outletListeners[nodeId][outletId];
-        return generateCode(listenerVariableName, nodeId, outletId);
-    })
-)}`;
+) =>
+    renderCode`${Object.entries(outletListenerSpecs).map(
+        ([nodeId, outletIds]) =>
+            outletIds.map((outletId) => {
+                const listenerVariableName =
+                    codeVariableNames.outletListeners[nodeId][outletId]
+                return generateCode(listenerVariableName, nodeId, outletId)
+            })
+    )}`

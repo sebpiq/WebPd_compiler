@@ -101,7 +101,9 @@ export const mapArray = <SrcType, DestType>(
  * @param routes A list of alternatives `[<test>, <code>]`
  * @returns The first `code` whose `test` evaluated to true.
  */
-export const renderSwitch = (...routes: Array<[boolean, Code | Array<Code>]>) => {
+export const renderSwitch = (
+    ...routes: Array<[boolean, Code | Array<Code>]>
+) => {
     const route = routes.find(([test]) => test)
     if (!route) {
         throw new Error(`no route found`)

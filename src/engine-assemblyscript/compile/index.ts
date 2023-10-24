@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata, collectDependenciesFromTraversal, engineMinimalDependencies } from '../../compile/compile-helpers'
+import {
+    buildMetadata,
+    collectDependenciesFromTraversal,
+    engineMinimalDependencies,
+} from '../../compile/compile-helpers'
 import generateDeclarationsGraph from '../../compile/generate-declarations-graph'
 import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
 import generateLoop from '../../compile/generate-loop'
@@ -32,7 +36,12 @@ import generateDeclarationsDependencies from '../../compile/generate-declaration
 import generateImportsExports from '../../compile/generate-imports-exports'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletCallerSpecs, codeVariableNames, macros: { Func, Var } } = compilation
+    const {
+        audioSettings,
+        inletCallerSpecs,
+        codeVariableNames,
+        macros: { Func, Var },
+    } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
@@ -91,4 +100,3 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         )}
     `
 }
-

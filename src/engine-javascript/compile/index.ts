@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,9 +27,7 @@ import generateDeclarationsGlobals from '../../compile/generate-declarations-glo
 import generateDeclarationsGraph from '../../compile/generate-declarations-graph'
 import generateLoop from '../../compile/generate-loop'
 import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
-import {
-    Compilation,
-} from '../../compile/types'
+import { Compilation } from '../../compile/types'
 import { JavaScriptEngineCode } from './types'
 import { renderCode } from '../../functional-helpers'
 import generateInletCallers from '../../compile/generate-inlet-callers'
@@ -108,4 +106,3 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         )}
     `
 }
-

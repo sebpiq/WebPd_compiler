@@ -49,7 +49,7 @@ export const compileAscCode = async (
 
 export const wasmBufferToRawModule = async (
     buffer: ArrayBuffer,
-    imports: any = {},
+    imports: any = {}
 ): Promise<RawModule> => {
     const wasmInstance = await instantiateWasmModule(buffer, imports)
     return wasmInstance.exports as any
@@ -58,7 +58,7 @@ export const wasmBufferToRawModule = async (
 export const ascCodeToRawModule = async <M extends RawModule>(
     code: Code,
     bitDepth: AudioSettings['bitDepth'],
-    imports: any = {},
+    imports: any = {}
 ): Promise<M> => {
     const buffer = await compileAscCode(code, bitDepth)
     const wasmInstance = await instantiateWasmModule(buffer, imports)

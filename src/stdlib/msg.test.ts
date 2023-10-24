@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -116,17 +116,25 @@ describe('msg', () => {
             },
 
             {
-                description: 'msg_display > should return a display version of a message %s',
+                description:
+                    'msg_display > should return a display version of a message %s',
                 codeGenerator: ({ macros: { Var }, target }) => `
-                    const ${Var('message', 'Message')} = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
+                    const ${Var(
+                        'message',
+                        'Message'
+                    )} = msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])
                     msg_writeFloatToken(message, 0, -123)
                     msg_writeStringToken(message, 1, 'bla')
                     assert_stringsEqual(
                         msg_display(message),
-                        ${target === 'assemblyscript' ? "'[-123.0, \"bla\"]'": "'[-123, \"bla\"]'"}
+                        ${
+                            target === 'assemblyscript'
+                                ? '\'[-123.0, "bla"]\''
+                                : '\'[-123, "bla"]\''
+                        }
                     )
-                `
-            }
+                `,
+            },
         ],
         [core.codeGenerator, msg.codeGenerator]
     )

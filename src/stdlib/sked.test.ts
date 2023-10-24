@@ -22,11 +22,12 @@ import { core } from './core'
 import { sked } from './sked'
 
 describe('sked', () => {
-
-    runTestSuite([
-        {
-            description: 'wait / emit > should not have to wait if event already resolved %s',
-            codeGenerator: () => `
+    runTestSuite(
+        [
+            {
+                description:
+                    'wait / emit > should not have to wait if event already resolved %s',
+                codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(true)
 
@@ -40,12 +41,13 @@ describe('sked', () => {
                 assert_integersEqual(skedId, SKED_ID_NULL)
                 assert_integersEqual(received.length, 1)
                 assert_integersEqual(received[0], 1234)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'wait / emit > should call waits callbacks when resolving %s',
-            codeGenerator: () => `
+            {
+                description:
+                    'wait / emit > should call waits callbacks when resolving %s',
+                codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(true)
 
@@ -64,12 +66,13 @@ describe('sked', () => {
                 sked_emit(skeduler, 'some_other_event')
                 assert_integersEqual(received.length, 3)
                 assert_integersEqual(received[2], 789)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'wait / emit > should not call callbacks again when resolving several times %s',
-            codeGenerator: ({ macros: {Var} }) => `
+            {
+                description:
+                    'wait / emit > should not call callbacks again when resolving several times %s',
+                codeGenerator: ({ macros: { Var } }) => `
                 initializeTests()
                 const skeduler = sked_create(true)
                 let ${Var('skedId', 'SkedId')} = SKED_ID_NULL
@@ -89,24 +92,28 @@ describe('sked', () => {
                 // Resolve again, callback not called
                 sked_emit(skeduler, 'some_event')
                 assert_integersEqual(received.length, 2)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'wait / emit > should cancel wait %s',
-            codeGenerator: ({ macros: { Var }}) => `
+            {
+                description: 'wait / emit > should cancel wait %s',
+                codeGenerator: ({ macros: { Var } }) => `
                 initializeTests()
                 const skeduler = sked_create(true)
-                const ${Var('skedId', 'SkedId')} = sked_wait(skeduler, 'some_event', () => received.push(123))
+                const ${Var(
+                    'skedId',
+                    'SkedId'
+                )} = sked_wait(skeduler, 'some_event', () => received.push(123))
                 sked_cancel(skeduler, skedId)
                 sked_emit(skeduler, 'some_event')
                 assert_integersEqual(received.length, 0)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'wait future / emit > should call waits callbacks when resolving %s',
-            codeGenerator: () => `
+            {
+                description:
+                    'wait future / emit > should call waits callbacks when resolving %s',
+                codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(false)
 
@@ -124,12 +131,13 @@ describe('sked', () => {
                 sked_emit(skeduler, 'some_other_event')
                 assert_integersEqual(received.length, 3)
                 assert_integersEqual(received[2], 789)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'wait future / emit > should not call callbacks again when resolving several times %s',
-            codeGenerator: () => `            
+            {
+                description:
+                    'wait future / emit > should not call callbacks again when resolving several times %s',
+                codeGenerator: () => `            
                 initializeTests()
                 const skeduler = sked_create(false)
 
@@ -143,12 +151,12 @@ describe('sked', () => {
                 sked_emit(skeduler, 'some_event')
                 assert_integersEqual(received.length, 1)
                 assert_integersEqual(received[0], 123)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'wait future / emit > should cancel wait %s',
-            codeGenerator: ({ macros: { Var }}) => `
+            {
+                description: 'wait future / emit > should cancel wait %s',
+                codeGenerator: ({ macros: { Var } }) => `
                 initializeTests()
                 const skeduler = sked_create(false)
                 let ${Var('skedId', 'SkedId')} = sked_wait_future(
@@ -159,12 +167,13 @@ describe('sked', () => {
                 sked_cancel(skeduler, skedId)
                 sked_emit(skeduler, 'some_event')
                 assert_integersEqual(received.length, 0)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'subscribe / emit > emit should trigger existing listeners %s',
-            codeGenerator: () => `
+            {
+                description:
+                    'subscribe / emit > emit should trigger existing listeners %s',
+                codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(false)
 
@@ -188,12 +197,12 @@ describe('sked', () => {
                 assert_integersEqual(received[2], 456)
                 assert_integersEqual(received[3], 789)
                 assert_integersEqual(received[4], 666)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'subscribe / emit > should cancel listeners %s',
-            codeGenerator: ({ macros: { Var }}) => `
+            {
+                description: 'subscribe / emit > should cancel listeners %s',
+                codeGenerator: ({ macros: { Var } }) => `
                 initializeTests()
                 const skeduler = sked_create(false)
 
@@ -214,12 +223,13 @@ describe('sked', () => {
                 sked_emit(skeduler, 'some_event')
                 assert_integersEqual(received.length, 3)
                 assert_integersEqual(received[2], 456)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'cancel > should not throw when cancelling an listener that is already cancelled %s',
-            codeGenerator: ({ macros: { Var }}) => `
+            {
+                description:
+                    'cancel > should not throw when cancelling an listener that is already cancelled %s',
+                codeGenerator: ({ macros: { Var } }) => `
                 initializeTests()
                 const skeduler = sked_create(false)
                 const ${Var('skedId', 'SkedId')} = sked_subscribe(
@@ -230,25 +240,28 @@ describe('sked', () => {
                 sked_cancel(skeduler, skedId)
                 sked_cancel(skeduler, skedId)
                 sked_cancel(skeduler, skedId)
-            `
-        },
+            `,
+            },
 
-        {
-            description: 'cancel > should not throw when cancelling an listener with id NULL %s',
-            codeGenerator: () => `
+            {
+                description:
+                    'cancel > should not throw when cancelling an listener with id NULL %s',
+                codeGenerator: () => `
                 initializeTests()
                 const skeduler = sked_create(false)
                 sked_cancel(skeduler, SKED_ID_NULL)
-            `
-        }
-    ], [
-        core.codeGenerator,
-        sked,
-        ({ macros: { Var, Func }}) => `
+            `,
+            },
+        ],
+        [
+            core.codeGenerator,
+            sked,
+            ({ macros: { Var, Func } }) => `
             let ${Var('received', 'Array<Int>')} = []
             function initializeTests ${Func([], 'void')} {
                 received = []
             }
-        `
-    ])
+        `,
+        ]
+    )
 })

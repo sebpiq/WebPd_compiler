@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -52,17 +52,18 @@ import {
     outletListenersImports,
     readMetadata,
 } from './engine-lifecycle-bindings'
-import { Bindings } from "../../run/types"
+import { Bindings } from '../../run/types'
 
 export const createEngine = async (
     wasmBuffer: ArrayBuffer
 ): Promise<Engine> => {
-    const { rawModule, engineData, forwardReferences } =
-        await createRawModule(wasmBuffer)
+    const { rawModule, engineData, forwardReferences } = await createRawModule(
+        wasmBuffer
+    )
     const engineBindings = await createBindings(
         rawModule,
         engineData,
-        forwardReferences,
+        forwardReferences
     )
     return createModule(rawModule, engineBindings)
 }
@@ -94,8 +95,7 @@ export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
     const wasmInstance = await instantiateWasmModule(wasmBuffer, {
         input: wasmImports,
     })
-    const rawModule =
-        wasmInstance.exports as unknown as EngineRawModule
+    const rawModule = wasmInstance.exports as unknown as EngineRawModule
     return { rawModule, engineData, forwardReferences }
 }
 

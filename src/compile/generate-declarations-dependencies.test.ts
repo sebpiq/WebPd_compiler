@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,10 +28,7 @@ import {
 import generateDeclarationsDependencies, {
     _generateDependenciesDeclarationsRecursive,
 } from './generate-declarations-dependencies'
-import {
-    collectExports,
-    collectImports
-} from './compile-helpers'
+import { collectExports, collectImports } from './compile-helpers'
 import { makeCompilation } from '../test-helpers'
 
 describe('generate-declarations-dependencies', () => {
@@ -84,7 +81,10 @@ describe('generate-declarations-dependencies', () => {
             ]
 
             assert.deepStrictEqual(
-                _generateDependenciesDeclarationsRecursive(CONTEXT, dependencies),
+                _generateDependenciesDeclarationsRecursive(
+                    CONTEXT,
+                    dependencies
+                ),
                 ['bla', 'bly', 'blo', 'bla', 'ble', 'bli', 'blu']
             )
         })
@@ -111,10 +111,11 @@ describe('generate-declarations-dependencies', () => {
                 codeDefinition3,
             ]
 
-            assert.deepStrictEqual(
-                collectExports('javascript', dependencies),
-                [{ name: 'ex1' }, { name: 'ex3' }, { name: 'ex4' }]
-            )
+            assert.deepStrictEqual(collectExports('javascript', dependencies), [
+                { name: 'ex1' },
+                { name: 'ex3' },
+                { name: 'ex4' },
+            ])
         })
 
         it('should keep only exports for specified target', () => {

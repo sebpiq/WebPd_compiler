@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { renderIf } from "../functional-helpers";
-import { GlobalCodeGenerator } from "../compile/types";
+import { renderIf } from '../functional-helpers'
+import { GlobalCodeGenerator } from '../compile/types'
 
-export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => `
+export const sked: GlobalCodeGenerator = ({
+    macros: { Var, Func },
+    target,
+}) => `
     ${renderIf(
         target === 'assemblyscript',
         `
@@ -61,7 +64,7 @@ export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => 
 
     /** Creates a new Skeduler. */
     function sked_create ${Func(
-        [Var('isLoggingEvents', 'boolean')], 
+        [Var('isLoggingEvents', 'boolean')],
         'Skeduler'
     )} {
         return {
@@ -80,11 +83,14 @@ export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => 
      * Once triggered, the callback is forgotten.
      * @returns an id allowing to cancel the callback with {@link sked_cancel}
      */
-    function sked_wait ${Func([
-        Var('skeduler', 'Skeduler'),
-        Var('event', 'SkedEvent'),
-        Var('callback', 'SkedCallback'),
-    ], 'SkedId')} {
+    function sked_wait ${Func(
+        [
+            Var('skeduler', 'Skeduler'),
+            Var('event', 'SkedEvent'),
+            Var('callback', 'SkedCallback'),
+        ],
+        'SkedId'
+    )} {
         if (skeduler.isLoggingEvents === false) {
             throw new Error("Please activate skeduler's isLoggingEvents")
         }
@@ -103,11 +109,14 @@ export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => 
      * Once triggered, the callback is forgotten.
      * @returns an id allowing to cancel the callback with {@link sked_cancel}
      */
-    function sked_wait_future ${Func([
-        Var('skeduler', 'Skeduler'),
-        Var('event', 'SkedEvent'),
-        Var('callback', 'SkedCallback'),
-    ], 'SkedId')} {
+    function sked_wait_future ${Func(
+        [
+            Var('skeduler', 'Skeduler'),
+            Var('event', 'SkedEvent'),
+            Var('callback', 'SkedCallback'),
+        ],
+        'SkedId'
+    )} {
         return _sked_createRequest(skeduler, event, callback, _SKED_MODE_WAIT)
     }
 
@@ -115,24 +124,30 @@ export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => 
      * Asks the skeduler to trigger a callback everytime an event occurs 
      * @returns an id allowing to cancel the callback with {@link sked_cancel}
      */
-    function sked_subscribe ${Func([
-        Var('skeduler', 'Skeduler'),
-        Var('event', 'SkedEvent'),
-        Var('callback', 'SkedCallback'),
-    ], 'SkedId')} {
+    function sked_subscribe ${Func(
+        [
+            Var('skeduler', 'Skeduler'),
+            Var('event', 'SkedEvent'),
+            Var('callback', 'SkedCallback'),
+        ],
+        'SkedId'
+    )} {
         return _sked_createRequest(skeduler, event, callback, _SKED_MODE_SUBSCRIBE)
     }
 
     /** Notifies the skeduler that an event has just occurred. */
-    function sked_emit ${Func([
-        Var('skeduler', 'Skeduler'),
-        Var('event', 'SkedEvent'),
-    ], 'void')} {
+    function sked_emit ${Func(
+        [Var('skeduler', 'Skeduler'), Var('event', 'SkedEvent')],
+        'void'
+    )} {
         if (skeduler.isLoggingEvents === true) {
             skeduler.eventLog.add(event)
         }
         if (skeduler.requests.has(event)) {
-            const ${Var('requests', 'Array<SkedRequest>')} = skeduler.requests.get(event)
+            const ${Var(
+                'requests',
+                'Array<SkedRequest>'
+            )} = skeduler.requests.get(event)
             const ${Var('requestsStaying', 'Array<SkedRequest>')} = []
             for (let ${Var('i', 'Int')} = 0; i < requests.length; i++) {
                 const ${Var('request', 'SkedRequest')} = requests[i]
@@ -150,20 +165,23 @@ export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => 
     }
 
     /** Cancels a callback */
-    function sked_cancel ${Func([
-        Var('skeduler', 'Skeduler'),
-        Var('id', 'SkedId'),
-    ], 'void')} {
+    function sked_cancel ${Func(
+        [Var('skeduler', 'Skeduler'), Var('id', 'SkedId')],
+        'void'
+    )} {
         skeduler.callbacks.delete(id)
     }
 
     // =========================== PRIVATE
-    function _sked_createRequest ${Func([
-        Var('skeduler', 'Skeduler'),
-        Var('event', 'SkedEvent'),
-        Var('callback', 'SkedCallback'),
-        Var('mode', 'SkedMode'),
-    ], 'SkedId')} {
+    function _sked_createRequest ${Func(
+        [
+            Var('skeduler', 'Skeduler'),
+            Var('event', 'SkedEvent'),
+            Var('callback', 'SkedCallback'),
+            Var('mode', 'SkedMode'),
+        ],
+        'SkedId'
+    )} {
         const ${Var('id', 'SkedId')} = _sked_nextId(skeduler)
         const ${Var('request', 'SkedRequest')} = {id, mode}
         skeduler.callbacks.set(id, callback)
@@ -175,9 +193,7 @@ export const sked: GlobalCodeGenerator = ({ macros: { Var, Func }, target }) => 
         return id
     }
 
-    function _sked_nextId ${Func([
-        Var('skeduler', 'Skeduler')
-    ], 'SkedId')} {
+    function _sked_nextId ${Func([Var('skeduler', 'Skeduler')], 'SkedId')} {
         return skeduler.idCounter++
     }
 `

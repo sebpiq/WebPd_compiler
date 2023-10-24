@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,16 +33,16 @@ import {
     GlobalCodeDefinition,
     GlobalCodeGeneratorWithSettings,
 } from './compile/types'
-import {
-    Engine,
-    Message, SoundFileInfo,
-    FloatArray
-} from './run/types'
+import { Engine, Message, SoundFileInfo, FloatArray } from './run/types'
 import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
+import { getFloatArrayType } from './compile/compile-helpers'
 import {
-    getFloatArrayType,
-} from './compile/compile-helpers'
-import { FS_OPERATION_SUCCESS, fsReadSoundFile, fsReadSoundStream, fsWriteSoundFile, fsWriteSoundStream } from './stdlib/fs'
+    FS_OPERATION_SUCCESS,
+    fsReadSoundFile,
+    fsReadSoundStream,
+    fsWriteSoundFile,
+    fsWriteSoundStream,
+} from './stdlib/fs'
 import { commonsArrays, commonsWaitEngineConfigure } from './stdlib/commons'
 
 describe('Engine', () => {
@@ -101,7 +101,7 @@ describe('Engine', () => {
             target,
             bitDepth,
             executeCompilation(compilation),
-            dependencies,
+            dependencies
         )
 
         return engine
@@ -332,7 +332,11 @@ describe('Engine', () => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const nodeImplementations: NodeImplementations = {
                         DUMMY: {
-                            generateDeclarations: ({ globs, state, macros: { Var } }) => `
+                            generateDeclarations: ({
+                                globs,
+                                state,
+                                macros: { Var },
+                            }) => `
                                 let ${Var(state.configureCalled, 'Float')} = 0
                                 commons_waitEngineConfigure(() => {
                                     ${state.configureCalled} = ${
@@ -340,7 +344,11 @@ describe('Engine', () => {
                             }
                                 })
                             `,
-                            generateLoop: ({ globs, state, compilation: { target } }) =>
+                            generateLoop: ({
+                                globs,
+                                state,
+                                compilation: { target },
+                            }) =>
                                 target === 'assemblyscript'
                                     ? `${globs.output}[0] = ${state.configureCalled}`
                                     : `${globs.output}[0][0] = ${state.configureCalled}`,
@@ -493,7 +501,7 @@ describe('Engine', () => {
                                 array3: new Float32Array(0),
                             },
                         },
-                        dependencies: [commonsArrays]
+                        dependencies: [commonsArrays],
                     })
                     assert.deepStrictEqual(
                         engine.commons.getArray('array1'),
@@ -595,7 +603,11 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        dependencies: [fsReadSoundFile, sharedTestingCode, testCode],
+                        dependencies: [
+                            fsReadSoundFile,
+                            sharedTestingCode,
+                            testCode,
+                        ],
                     })
 
                     // 1. Some function in the engine requests a read file operation.
@@ -721,7 +733,11 @@ describe('Engine', () => {
                     const engine = await initializeEngineTest({
                         target,
                         bitDepth,
-                        dependencies: [fsReadSoundStream, sharedTestingCode, testCode],
+                        dependencies: [
+                            fsReadSoundStream,
+                            sharedTestingCode,
+                            testCode,
+                        ],
                     })
 
                     // 1. Some function in the engine requests a read stream operation.
@@ -1185,7 +1201,10 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        generateMessageReceivers: ({ globs, node: { id } }) => ({
+                        generateMessageReceivers: ({
+                            globs,
+                            node: { id },
+                        }) => ({
                             someInlet1: `received.get('${id}:1').push(${globs.m});return`,
                             someInlet2: `received.get('${id}:2').push(${globs.m});return`,
                         }),

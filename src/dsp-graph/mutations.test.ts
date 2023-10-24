@@ -59,15 +59,17 @@ describe('graph-mutations', () => {
             const graph: DspGraph.Graph = {
                 '1': nodeDefaults('1', 'osc~'),
             }
-            assert.throws(() => addNode(graph, {
-                id: '1',
-                type: 'phasor~',
-                args: { freq: 440 },
-                inlets: { '0': { type: 'message', id: '0' } },
-                outlets: { '0': { type: 'signal', id: '0' } },
-                sources: {},
-                sinks: {},
-            })) 
+            assert.throws(() =>
+                addNode(graph, {
+                    id: '1',
+                    type: 'phasor~',
+                    args: { freq: 440 },
+                    inlets: { '0': { type: 'message', id: '0' } },
+                    outlets: { '0': { type: 'signal', id: '0' } },
+                    sources: {},
+                    sinks: {},
+                })
+            )
         })
     })
 

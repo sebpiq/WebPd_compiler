@@ -17,13 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import {
-    getNode,
-    getSources,
-    getSinks,
-    getOutlet,
-    getInlet,
-} from './getters'
+import { getNode, getSources, getSinks, getOutlet, getInlet } from './getters'
 import { endpointsEqual } from './graph-helpers'
 import { DspGraph } from './types'
 

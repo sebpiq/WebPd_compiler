@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -64,12 +64,13 @@ describe('msg-bindings', () => {
             target: 'assemblyscript',
             macros: getMacros('assemblyscript'),
             audioSettings: {
-                bitDepth, channelCount: { in: 2, out: 2 }
-            }
+                bitDepth,
+                channelCount: { in: 2, out: 2 },
+            },
         }
         return renderCode`
             ${core.codeGenerator(context)}
-            ${sked(context) }
+            ${sked(context)}
             ${msg.codeGenerator(context)}
             export function testReadMessageData(message: Message, index: Int): Int {
                 return message.dataView.getInt32(index * sizeof<Int>())
@@ -85,7 +86,10 @@ describe('msg-bindings', () => {
             async ({ bitDepth }) => {
                 const code = getBaseTestCode(bitDepth)
                 const floatArrayType = getFloatArrayType(bitDepth)
-                const wasmExports = await ascCodeToRawModule<MsgTestRawModule>(code, bitDepth)
+                const wasmExports = await ascCodeToRawModule<MsgTestRawModule>(
+                    code,
+                    bitDepth
+                )
                 const messagePointer = lowerMessage(wasmExports, ['bla', 2.3])
 
                 // Testing token count
@@ -174,7 +178,10 @@ describe('msg-bindings', () => {
                     }
                 `
 
-                const wasmExports = await ascCodeToRawModule<MsgTestRawModule>(code, bitDepth)
+                const wasmExports = await ascCodeToRawModule<MsgTestRawModule>(
+                    code,
+                    bitDepth
+                )
 
                 const messagePointer = wasmExports.testCreateMessage()
                 assert.deepStrictEqual(

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { runTestSuite } from '../test-helpers'
-import { fsCore, fsReadSoundFile, fsReadSoundStream, fsSoundStreamCore, fsWriteSoundFile, fsWriteSoundStream } from './fs'
+import {
+    fsCore,
+    fsReadSoundFile,
+    fsReadSoundStream,
+    fsSoundStreamCore,
+    fsWriteSoundFile,
+    fsWriteSoundStream,
+} from './fs'
 import { bufCore, bufPushPull } from './buf'
 import { core } from './core'
 import { msg } from './msg'
@@ -584,7 +591,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendWriteSoundFileResponse > should register the operation failure %s',
-                codeGenerator: ({ macros: { Var }}) => `
+                codeGenerator: ({ macros: { Var } }) => `
                     initializeTest()
 
                     const ${Var('sound', 'FloatArray[]')} = [

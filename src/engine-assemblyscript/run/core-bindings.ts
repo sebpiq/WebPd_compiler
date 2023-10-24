@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { getFloatArrayType } from "../../compile/compile-helpers"
-import { FloatArrayPointer, InternalPointer } from "./types"
-import { AudioSettings } from "../../compile/types"
+import { getFloatArrayType } from '../../compile/compile-helpers'
+import { FloatArrayPointer, InternalPointer } from './types'
+import { AudioSettings } from '../../compile/types'
 import { FloatArray } from '../../run/types'
 
 export type TypedArrayConstructor =
@@ -40,7 +40,9 @@ export interface CoreRawModule {
         arrays: InternalPointer,
         array: FloatArrayPointer
     ) => void
-    x_core_getListOfArraysLength: (listOfArraysPointer: InternalPointer) => number
+    x_core_getListOfArraysLength: (
+        listOfArraysPointer: InternalPointer
+    ) => number
     x_core_getListOfArraysElem: (
         listOfArraysPointer: InternalPointer,
         index: number
@@ -82,10 +84,7 @@ export const lowerString = (wasmExports: CoreRawModule, value: string) => {
 }
 
 /** @copyright Assemblyscript ESM bindings */
-export const lowerBuffer = (
-    wasmExports: CoreRawModule,
-    value: ArrayBuffer
-) => {
+export const lowerBuffer = (wasmExports: CoreRawModule, value: ArrayBuffer) => {
     if (value == null) return 0
     const pointer = wasmExports.__new(value.byteLength, 0) >>> 0
     new Uint8Array(wasmExports.memory.buffer).set(

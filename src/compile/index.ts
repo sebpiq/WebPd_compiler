@@ -73,7 +73,10 @@ export default (
     variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
     variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
 
-    const graphTraversalDeclare = buildGraphTraversalDeclare(graph, inletCallerSpecs)
+    const graphTraversalDeclare = buildGraphTraversalDeclare(
+        graph,
+        inletCallerSpecs
+    )
     const graphTraversalLoop = buildGraphTraversalLoop(graph)
     const trimmedGraph = traversal.trimGraph(graph, graphTraversalDeclare)
 

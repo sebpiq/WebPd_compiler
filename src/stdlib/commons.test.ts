@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { runTestSuite } from '../test-helpers'
-import { commonsCore, commonsArrays, commonsWaitEngineConfigure, commonsWaitFrame } from './commons'
+import {
+    commonsCore,
+    commonsArrays,
+    commonsWaitEngineConfigure,
+    commonsWaitFrame,
+} from './commons'
 import { core } from './core'
 import { sked } from './sked'
 
@@ -31,7 +36,10 @@ describe('commons', () => {
                 codeGenerator: ({ macros: { Var, Func } }) => `
                     callbackCallCounter = 0
 
-                    const ${Var('subscription', 'SkedId')} = commons_subscribeArrayChanges(
+                    const ${Var(
+                        'subscription',
+                        'SkedId'
+                    )} = commons_subscribeArrayChanges(
                         'array1', 
                         ${Func([], 'void')} => {
                             callbackCallCounter++

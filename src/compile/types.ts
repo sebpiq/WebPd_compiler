@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
  */
 
 import { DspGraph } from '../dsp-graph'
-
 
 // -------------------------------- COMPILATION -------------------------------- //
 export type PortletsIndex = {
@@ -64,7 +63,6 @@ export interface Compilation {
     }
 }
 
-
 // -------------------------------- CODE GENERATION -------------------------------- //
 /** Code stored in string variable for later evaluation. */
 export type Code = string
@@ -72,8 +70,8 @@ export type Code = string
 /** Name of a variable in generated code */
 export type CodeVariableName = string
 
-/** 
- * Macros injected in code generators so that they can be written in a generic manner. 
+/**
+ * Macros injected in code generators so that they can be written in a generic manner.
  * Each target language supported must implement the full set of macros.
  */
 export type CodeMacros = {
@@ -143,7 +141,10 @@ export interface GlobalCodeDefinitionImport {
     returns: CodeVariableName
 }
 
-export interface GlobalCodeDefinitionExport { name: string; targets?: Array<CompilerTarget> }
+export interface GlobalCodeDefinitionExport {
+    name: string
+    targets?: Array<CompilerTarget>
+}
 
 /** Generator for global code that specifies also extra settings */
 export interface GlobalCodeGeneratorWithSettings {
@@ -162,15 +163,15 @@ export interface NodeImplementation<
     NodeArgsType,
     NodeState = { [name: string]: string }
 > {
-    /** 
-     * A map of state variables for the node type. 
+    /**
+     * A map of state variables for the node type.
      * Each state variable will be stored into a global variable
      * which is assigned a unique name.
      */
     stateVariables?: NodeState
 
     /**
-     * Generates code for variables declaration for a given node instance. 
+     * Generates code for variables declaration for a given node instance.
      * This is typically used to declare and initialize state variables.
      */
     generateDeclarations?: (context: {

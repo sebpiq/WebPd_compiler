@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,8 +41,15 @@ describe('core-bindings', () => {
         testReadArrayLength: (array: FloatArrayPointer) => number
         testGetListOfArrays: () => InternalPointer
         testReadFloatArraysLength: (arrays: InternalPointer) => number
-        testReadFloatArraysArrayElem: (arrays: InternalPointer, arrIndex: number, index: number) => number
-        testReadFloatArraysArrayLength: (arrays: InternalPointer, arrIndex: number) => number
+        testReadFloatArraysArrayElem: (
+            arrays: InternalPointer,
+            arrIndex: number,
+            index: number
+        ) => number
+        testReadFloatArraysArrayLength: (
+            arrays: InternalPointer,
+            arrIndex: number
+        ) => number
         testReadSomeValueFromFloatArrays: () => number
     }
 
@@ -224,41 +231,73 @@ describe('core-bindings', () => {
                 )
 
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(arraysPointer, 0),
+                    wasmExports.testReadFloatArraysArrayLength(
+                        arraysPointer,
+                        0
+                    ),
                     3
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(arraysPointer, 1),
+                    wasmExports.testReadFloatArraysArrayLength(
+                        arraysPointer,
+                        1
+                    ),
                     3
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(arraysPointer, 2),
+                    wasmExports.testReadFloatArraysArrayLength(
+                        arraysPointer,
+                        2
+                    ),
                     2
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(arraysPointer, 3),
+                    wasmExports.testReadFloatArraysArrayLength(
+                        arraysPointer,
+                        3
+                    ),
                     1
                 )
 
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(arraysPointer, 0, 0),
+                    wasmExports.testReadFloatArraysArrayElem(
+                        arraysPointer,
+                        0,
+                        0
+                    ),
                     111
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(arraysPointer, 0, 1),
+                    wasmExports.testReadFloatArraysArrayElem(
+                        arraysPointer,
+                        0,
+                        1
+                    ),
                     222
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(arraysPointer, 0, 2),
+                    wasmExports.testReadFloatArraysArrayElem(
+                        arraysPointer,
+                        0,
+                        2
+                    ),
                     333
                 )
 
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(arraysPointer, 2, 0),
+                    wasmExports.testReadFloatArraysArrayElem(
+                        arraysPointer,
+                        2,
+                        0
+                    ),
                     777
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(arraysPointer, 2, 1),
+                    wasmExports.testReadFloatArraysArrayElem(
+                        arraysPointer,
+                        2,
+                        1
+                    ),
                     888
                 )
             }
@@ -331,7 +370,10 @@ describe('core-bindings', () => {
                     arraysPointer
                 )
                 arrays[1][1] = 88
-                assert.deepStrictEqual(wasmExports.testReadSomeValueFromFloatArrays(), 88)
+                assert.deepStrictEqual(
+                    wasmExports.testReadSomeValueFromFloatArrays(),
+                    88
+                )
             }
         )
     })

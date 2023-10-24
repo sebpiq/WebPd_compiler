@@ -39,7 +39,9 @@ export const getInlet = (
     if (inlet) {
         return inlet
     }
-    throw new Error(`Inlet "${inletId}" not found in node ${node.id} of type ${node.type}`)
+    throw new Error(
+        `Inlet "${inletId}" not found in node ${node.id} of type ${node.type}`
+    )
 }
 
 export const getOutlet = (
@@ -50,7 +52,9 @@ export const getOutlet = (
     if (outlet) {
         return outlet
     }
-    throw new Error(`Outlet "${outletId}" not found in node ${node.id} of type ${node.type}`)
+    throw new Error(
+        `Outlet "${outletId}" not found in node ${node.id} of type ${node.type}`
+    )
 }
 
 /** Returns the list of sinks for the outlet or an empty list. */

@@ -36,7 +36,8 @@ describe('test-helpers-node-implementations', () => {
             'should work with signal inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    generateLoop: ({ ins, outs }) => `${outs.$0} = ${ins.$0} + 0.1`,
+                    generateLoop: ({ ins, outs }) =>
+                        `${outs.$0} = ${ins.$0} + 0.1`,
                 }
 
                 const node: DspGraph.Node = {
@@ -146,7 +147,7 @@ describe('test-helpers-node-implementations', () => {
                         return
                     `,
                     }),
-                    dependencies: [fsReadSoundFile]
+                    dependencies: [fsReadSoundFile],
                 }
 
                 const node: DspGraph.Node = {
@@ -188,7 +189,7 @@ describe('test-helpers-node-implementations', () => {
                         return
                     `,
                     }),
-                    dependencies: [commonsArrays]
+                    dependencies: [commonsArrays],
                 }
 
                 const node: DspGraph.Node = {

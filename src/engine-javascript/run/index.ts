@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 
 import { getFloatArrayType } from '../../compile/compile-helpers'
 import { createModule } from '../../run/modules-helpers'
-import { Bindings } from "../../run/types"
+import { Bindings } from '../../run/types'
 import { AudioSettings, Code } from '../../compile/types'
 import { Engine, FloatArray, RawModule } from '../../run/types'
 
@@ -61,7 +61,8 @@ interface EngineLifecycleRawModule extends RawModule {
 }
 
 export type RawJavaScriptEngine = CommonsRawModule &
-    FsRawModule & EngineLifecycleRawModule
+    FsRawModule &
+    EngineLifecycleRawModule
 
 export const createRawModule = (code: Code): RawJavaScriptEngine =>
     new Function(`

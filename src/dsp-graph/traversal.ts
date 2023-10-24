@@ -162,13 +162,17 @@ export const listConnectionsOut = (
 export const trimGraph = (
     graph: DspGraph.Graph,
     graphTraversal: DspGraph.GraphTraversal
-): DspGraph.Graph => mapArray(
-        Object.values(graph).filter((node) => graphTraversal.includes(node.id)), 
-        (node) => [node.id, {
-            ...node,
-            sources: removeDeadSources(node.sources, graphTraversal),
-            sinks: removeDeadSinks(node.sinks, graphTraversal),
-        }]
+): DspGraph.Graph =>
+    mapArray(
+        Object.values(graph).filter((node) => graphTraversal.includes(node.id)),
+        (node) => [
+            node.id,
+            {
+                ...node,
+                sources: removeDeadSources(node.sources, graphTraversal),
+                sinks: removeDeadSinks(node.sinks, graphTraversal),
+            },
+        ]
     )
 
 /**

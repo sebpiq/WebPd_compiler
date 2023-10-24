@@ -30,7 +30,12 @@
 
 import { CoreRawModule, liftString, lowerString } from './core-bindings'
 import { readTypedArray } from './core-bindings'
-import { ArrayBufferOfIntegersPointer, FloatArrayPointer, MessagePointer, StringPointer } from './types'
+import {
+    ArrayBufferOfIntegersPointer,
+    FloatArrayPointer,
+    MessagePointer,
+    StringPointer,
+} from './types'
 import { Message, RawModule } from '../../run/types'
 
 export interface MsgRawModule extends RawModule {
@@ -112,7 +117,9 @@ export const lowerMessage = (
 
     // Here we should ideally pass an array of Int, but I am not sure how
     // to lower a typed array in a generic manner, so using the available bindings from `commons`.
-    const templateArrayPointer = wasmExports.x_msg_createTemplate(template.length)
+    const templateArrayPointer = wasmExports.x_msg_createTemplate(
+        template.length
+    )
     const loweredTemplateArray = readTypedArray(
         wasmExports,
         Int32Array,

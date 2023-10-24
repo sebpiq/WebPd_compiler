@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,10 +28,7 @@ import {
     GlobalCodeGenerator,
     GlobalCodeGeneratorWithSettings,
 } from './compile/types'
-import {
-    Engine, Module,
-    RawModule
-} from './run/types'
+import { Engine, Module, RawModule } from './run/types'
 import * as variableNames from './compile/code-variable-names'
 import { getMacros } from './compile'
 import { writeFile } from 'fs/promises'
@@ -54,7 +51,10 @@ import {
     createRawModule as createAssemblyScriptWasmRawModule,
     createBindings as createAssemblyScriptWasmEngineBindings,
 } from './engine-assemblyscript/run'
-import { RawJavaScriptEngine, createBindings as createJavaScriptEngineBindings } from './engine-javascript/run'
+import {
+    RawJavaScriptEngine,
+    createBindings as createJavaScriptEngineBindings,
+} from './engine-javascript/run'
 import { createModule } from './run/modules-helpers'
 import generateDeclarationsDependencies from './compile/generate-declarations-dependencies'
 import { collectExports } from './compile/compile-helpers'
@@ -328,29 +328,25 @@ export const runTestSuite = (
                     }
                 }
 
-                ${generateDeclarationsDependencies(
-                    codeGeneratorContext,
-                    [...dependencies, ...testsCodeDefinitions]
-                )}
+                ${generateDeclarationsDependencies(codeGeneratorContext, [
+                    ...dependencies,
+                    ...testsCodeDefinitions,
+                ])}
 
-                ${renderIf(
-                    target === 'javascript',
-                    'const exports = {}'
-                )}
+                ${renderIf(target === 'javascript', 'const exports = {}')}
 
                 ${generateTestExports(
                     target,
-                    collectExports(target, [...dependencies, ...testsCodeDefinitions])
+                    collectExports(target, [
+                        ...dependencies,
+                        ...testsCodeDefinitions,
+                    ])
                 )}
             `
 
             testModules.push([
                 testParameters,
-                await createTestModule(
-                    target,
-                    bitDepth,
-                    code
-                ),
+                await createTestModule(target, bitDepth, code),
             ])
         }
     })
@@ -370,7 +366,7 @@ export const runTestSuite = (
 
     tests.forEach(({ description }, i) => {
         it.each(TEST_PARAMETERS)(description, (testParameters) => {
-            (_findTestModule(testParameters) as any)[testFunctionNames[i]]()
+            ;(_findTestModule(testParameters) as any)[testFunctionNames[i]]()
         })
     })
 }
@@ -378,8 +374,8 @@ export const runTestSuite = (
 const generateTestExports = (
     target: CompilerTarget,
     exports: Array<GlobalCodeDefinitionExport>
-): Code => renderCode`${
-    renderSwitch(
+): Code =>
+    renderCode`${renderSwitch(
         [
             target === 'assemblyscript',
             exports.map(({ name }) => `export { ${name} }`),

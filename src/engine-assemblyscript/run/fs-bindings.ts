@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ import {
     readListOfFloatArrays,
 } from './core-bindings'
 import { liftMessage, MsgRawModule } from './msg-bindings'
-import { Bindings } from "../../run/types"
+import { Bindings } from '../../run/types'
 import {
     EngineLifecycleRawModule,
     updateWasmInOuts,

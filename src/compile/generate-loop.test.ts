@@ -21,7 +21,7 @@
 import assert from 'assert'
 import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
-import { normalizeCode } from "../test-helpers"
+import { normalizeCode } from '../test-helpers'
 import generateLoop from './generate-loop'
 import { makeGraph } from '../dsp-graph/test-helpers'
 
@@ -29,7 +29,8 @@ describe('generateLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         print: {},
         'osc~': {
-            generateLoop: ({ node }) => `// [osc~] : frequency ${node.args.frequency}`,
+            generateLoop: ({ node }) =>
+                `// [osc~] : frequency ${node.args.frequency}`,
         },
         '+~': {
             generateLoop: ({ node }) => `// [+~] : value ${node.args.value}`,

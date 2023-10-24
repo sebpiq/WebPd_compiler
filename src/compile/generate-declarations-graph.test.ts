@@ -21,7 +21,7 @@
 import assert from 'assert'
 import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
-import { normalizeCode } from "../test-helpers"
+import { normalizeCode } from '../test-helpers'
 import generateDeclarationsGraph from './generate-declarations-graph'
 import { makeGraph } from '../dsp-graph/test-helpers'
 
@@ -158,10 +158,7 @@ describe('generateDeclarationsGraph', () => {
 
         const declareCode = generateDeclarationsGraph(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            ''
-        )
+        assert.strictEqual(normalizeCode(declareCode), '')
     })
 
     it('should render correct error throw if debug = true', () => {
@@ -364,10 +361,7 @@ describe('generateDeclarationsGraph', () => {
 
         const declareCode = generateDeclarationsGraph(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            ''
-        )
+        assert.strictEqual(normalizeCode(declareCode), '')
     })
 
     it('should inject outlet listener in node message senders', () => {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -93,6 +93,6 @@ export const core: GlobalCodeGeneratorWithSettings = {
         { name: 'x_core_pushToListOfArrays', targets: ['assemblyscript'] },
         { name: 'x_core_getListOfArraysLength', targets: ['assemblyscript'] },
         { name: 'x_core_getListOfArraysElem', targets: ['assemblyscript'] },
-        { name: 'createFloatArray', targets: ['assemblyscript'] }
+        { name: 'createFloatArray', targets: ['assemblyscript'] },
     ],
 }
