@@ -31,7 +31,7 @@ import { makeGraph } from '../dsp-graph/test-helpers'
 describe('code-variable-names', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         DUMMY: {
-            loop: () => '',
+            generateLoop: () => '',
         },
     }
 
@@ -39,7 +39,7 @@ describe('code-variable-names', () => {
         it('should create variable names for nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    loop: () => `// [osc~] loop`,
+                    generateLoop: () => `// [osc~] loop`,
                     stateVariables: {
                         phase: 1,
                         currentThing: 1,
@@ -47,7 +47,7 @@ describe('code-variable-names', () => {
                     },
                 },
                 'dac~': {
-                    loop: () => `// [dac~] loop`,
+                    generateLoop: () => `// [dac~] loop`,
                 },
             }
 
@@ -110,7 +110,7 @@ describe('code-variable-names', () => {
         it('should create more verbose variable names if debug is true', () => {
             const nodeImplementations: NodeImplementations = {
                 'dac~bla*wow!': {
-                    loop: () => `// [dac~] loop`,
+                    generateLoop: () => `// [dac~] loop`,
                     stateVariables: { bli: 1 },
                 },
             }
@@ -155,7 +155,7 @@ describe('code-variable-names', () => {
         it('should throw error for unknown namespaces', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    loop: () => `// [osc~] loop`,
+                    generateLoop: () => `// [osc~] loop`,
                     stateVariables: { phase: 1 },
                 },
             }

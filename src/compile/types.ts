@@ -22,11 +22,11 @@ import { DspGraph } from '../dsp-graph'
 
 
 // -------------------------------- COMPILATION -------------------------------- //
-export type CompilerTarget = 'assemblyscript' | 'javascript'
-
 export type PortletsIndex = {
     [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
 }
+
+export type CompilerTarget = 'assemblyscript' | 'javascript'
 
 export interface AudioSettings {
     channelCount: {
@@ -72,6 +72,10 @@ export type Code = string
 /** Name of a variable in generated code */
 export type CodeVariableName = string
 
+/** 
+ * Macros injected in code generators so that they can be written in a generic manner. 
+ * Each target language supported must implement the full set of macros.
+ */
 export type CodeMacros = {
     Var: (name: CodeVariableName, typeString: Code) => Code
     Func: (args: Array<Code>, returnType: Code) => Code
@@ -88,7 +92,7 @@ export interface NodeVariableNames {
 /**
  * Map of all global variable names used for compilation.
  *
- * @todo : for the sake of completeness, this should include also api functions from the core code.
+ * @todo : for the sake of completeness, this should include also all global variables dependencies, etc ...
  */
 export interface CodeVariableNames {
     /** Namespace for individual nodes */
@@ -130,6 +134,7 @@ export interface GlobalCodeGeneratorContext {
     audioSettings: AudioSettings
 }
 
+/** Simplest form of generator for global code */
 export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => Code
 
 export interface GlobalCodeDefinitionImport {
@@ -140,6 +145,7 @@ export interface GlobalCodeDefinitionImport {
 
 export interface GlobalCodeDefinitionExport { name: string; targets?: Array<CompilerTarget> }
 
+/** Generator for global code that specifies also extra settings */
 export interface GlobalCodeGeneratorWithSettings {
     codeGenerator: GlobalCodeGenerator
     exports?: Array<GlobalCodeDefinitionExport>
@@ -151,13 +157,23 @@ export type GlobalCodeDefinition =
     | GlobalCodeGenerator
     | GlobalCodeGeneratorWithSettings
 
+/** Implementation of a graph node type */
 export interface NodeImplementation<
     NodeArgsType,
     NodeState = { [name: string]: string }
 > {
+    /** 
+     * A map of state variables for the node type. 
+     * Each state variable will be stored into a global variable
+     * which is assigned a unique name.
+     */
     stateVariables?: NodeState
 
-    declare?: (context: {
+    /**
+     * Generates code for variables declaration for a given node instance. 
+     * This is typically used to declare and initialize state variables.
+     */
+    generateDeclarations?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
@@ -166,7 +182,11 @@ export interface NodeImplementation<
         compilation: Compilation
     }) => Code
 
-    loop?: (context: {
+    /**
+     * Generates the code that will be ran each iteration of the loop for that node instance.
+     * Typically reads from ins, runs some calculations, and write results to outs.
+     */
+    generateLoop?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
@@ -177,7 +197,10 @@ export interface NodeImplementation<
         compilation: Compilation
     }) => Code
 
-    messages?: (context: {
+    /**
+     * Generate code for message receivers for a given node instance.
+     */
+    generateMessageReceivers?: (context: {
         macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
@@ -188,6 +211,7 @@ export interface NodeImplementation<
         [inletId: DspGraph.PortletId]: Code
     }
 
+    /** List of dependencies for this node type */
     dependencies?: Array<GlobalCodeDefinition>
 }
 

@@ -55,7 +55,7 @@ export default (compilation: Compilation): Code => {
         ${graphTraversalNodes.map(node => {
             const { ins, outs, rcvs, snds, state } = codeVariableNames.nodes[node.id]
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
-            const nodeMessageReceivers = nodeImplementation.messages({
+            const nodeMessageReceivers = nodeImplementation.generateMessageReceivers({
                 macros, globs, state, snds, node, compilation
             })
 
@@ -91,7 +91,7 @@ export default (compilation: Compilation): Code => {
                         `}),
 
                 // 3. Custom declarations for the node
-                nodeImplementation.declare({
+                nodeImplementation.generateDeclarations({
                     macros, globs, state, snds, node, compilation
                 }),
             ]

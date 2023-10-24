@@ -14,7 +14,7 @@
     },
     "typeRoots": ["./node_modules/@types"],
     "files": [
-        "./src/engine-assemblyscript/bindings/*.ts", 
-        "./src/engine-javascript/bindings.ts",
+        "./src/engine-assemblyscript/run/*.ts", 
+        "./src/engine-javascript/run/*.ts"
     ]
 }

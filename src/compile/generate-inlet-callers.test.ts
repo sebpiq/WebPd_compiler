@@ -37,7 +37,7 @@ describe('generateInletCallers', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messages: () => ({
+                generateMessageReceivers: () => ({
                     '0': '// [+] message receiver',
                 }),
             },

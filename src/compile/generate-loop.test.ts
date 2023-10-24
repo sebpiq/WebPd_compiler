@@ -29,13 +29,13 @@ describe('generateLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         print: {},
         'osc~': {
-            loop: ({ node }) => `// [osc~] : frequency ${node.args.frequency}`,
+            generateLoop: ({ node }) => `// [osc~] : frequency ${node.args.frequency}`,
         },
         '+~': {
-            loop: ({ node }) => `// [+~] : value ${node.args.value}`,
+            generateLoop: ({ node }) => `// [+~] : value ${node.args.value}`,
         },
         'dac~': {
-            loop: ({ compilation: { audioSettings } }) =>
+            generateLoop: ({ compilation: { audioSettings } }) =>
                 `// [dac~] : channelCount ${audioSettings.channelCount.out}`,
         },
     }

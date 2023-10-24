@@ -20,6 +20,7 @@
 
 import assert from 'assert'
 import { executeCompilation } from './compile'
+export { executeCompilation } from './compile'
 import { makeCompilation, round, createTestEngine } from './test-helpers'
 import {
     NodeImplementations,
@@ -146,7 +147,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            declare: ({ state, macros }) =>
+            generateDeclarations: ({ state, macros }) =>
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -159,7 +160,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     )
                     .join('\n'),
 
-            messages: ({ globs, snds, state }) =>
+            generateMessageReceivers: ({ globs, snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
                     if (fakeSourceNode.outlets[outletId].type === 'message') {
@@ -173,7 +174,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     }
                 }),
 
-            loop: ({ outs, state }) =>
+            generateLoop: ({ outs, state }) =>
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -196,7 +197,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            loop: ({ ins, snds }) =>
+            generateLoop: ({ ins, snds }) =>
                 Object.keys(testNode.sinks)
                     .filter(
                         (outletId) =>
@@ -210,7 +211,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     .join('\n'),
 
             // Take incoming messages and directly proxy them
-            messages: ({ globs, snds }) =>
+            generateMessageReceivers: ({ globs, snds }) =>
                 mapArray(
                     Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>

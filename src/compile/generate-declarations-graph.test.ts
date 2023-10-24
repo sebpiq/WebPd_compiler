@@ -50,14 +50,14 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             'osc~': {
-                declare: ({ node }) =>
+                generateDeclarations: ({ node }) =>
                     `// [osc~] frequency ${node.args.frequency}`,
-                loop: () => ``,
+                generateLoop: () => ``,
             },
             'dac~': {
-                declare: ({ compilation: { audioSettings } }) =>
+                generateDeclarations: ({ compilation: { audioSettings } }) =>
                     `// [dac~] channelCount ${audioSettings.channelCount.out}`,
-                loop: () => ``,
+                generateLoop: () => ``,
             },
         }
 
@@ -100,7 +100,7 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messages: () => ({
+                generateMessageReceivers: () => ({
                     '0': '// [+] message receiver',
                 }),
             },
@@ -138,7 +138,7 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messages: () => ({
+                generateMessageReceivers: () => ({
                     '0': '// [+] message receiver',
                 }),
             },
@@ -176,7 +176,7 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             add: {
-                messages: () => ({
+                generateMessageReceivers: () => ({
                     '0': '// [add] message receiver',
                 }),
             },
@@ -215,7 +215,7 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messages: () => ({}),
+                generateMessageReceivers: () => ({}),
             },
         }
 
@@ -241,7 +241,7 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             '+': {
-                messages: () => ({ '0': '' }),
+                generateMessageReceivers: () => ({ '0': '' }),
             },
         }
 
@@ -292,7 +292,7 @@ describe('generateDeclarationsGraph', () => {
         const nodeImplementations: NodeImplementations = {
             twenty: {},
             float: {
-                messages: () => ({
+                generateMessageReceivers: () => ({
                     '0': '// [float] message receiver',
                 }),
             },
@@ -344,7 +344,7 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             someNodeType: {
-                messages: () => ({
+                generateMessageReceivers: () => ({
                     '0': '// [float] message receiver',
                 }),
             },
@@ -392,7 +392,7 @@ describe('generateDeclarationsGraph', () => {
         const nodeImplementations: NodeImplementations = {
             '+': {},
             float: {
-                messages: () => ({
+                generateMessageReceivers: () => ({
                     '0': '// [float] message receiver',
                 }),
             },
@@ -429,7 +429,7 @@ describe('generateDeclarationsGraph', () => {
         )
     })
 
-    it('should not fail when node implementation has no "declare" hook', () => {
+    it('should not fail when node implementation has no "generateDeclarations" hook', () => {
         const graph = makeGraph({
             osc: {
                 type: 'osc~',
@@ -450,14 +450,14 @@ describe('generateDeclarationsGraph', () => {
 
         const nodeImplementations: NodeImplementations = {
             'osc~': {
-                declare: () => ``,
-                loop: () => ``,
-                messages: () => ({
+                generateDeclarations: () => ``,
+                generateLoop: () => ``,
+                generateMessageReceivers: () => ({
                     '0_message': '// [osc~] message receiver',
                 }),
             },
             'dac~': {
-                loop: () => ``,
+                generateLoop: () => ``,
             },
         }
 

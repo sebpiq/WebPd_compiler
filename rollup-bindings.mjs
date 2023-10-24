@@ -4,7 +4,7 @@ import commonjs from '@rollup/plugin-commonjs'
 
 export default [
     {
-        input: './src/engine-assemblyscript/bindings/index.ts',
+        input: './src/engine-assemblyscript/run/index.ts',
         output: {
             file: './dist/assemblyscript-wasm-bindings.iife.js',
             sourcemap: true,
@@ -20,7 +20,7 @@ export default [
         ],
     },
     {
-        input: './src/engine-javascript/bindings.ts',
+        input: './src/engine-javascript/run/index.ts',
         output: {
             file: './dist/javascript-bindings.iife.js',
             sourcemap: true,

@@ -33,24 +33,24 @@ import { Compilation, NodeImplementation, NodeImplementations } from './types'
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
-            someNodeType: { loop: () => `` },
+            someNodeType: { generateLoop: () => `` },
             boringNodeType: {},
         }
 
         it('should return node implementation if it exists', () => {
             assert.strictEqual(
                 getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType')
-                    .loop,
-                NODE_IMPLEMENTATIONS['someNodeType'].loop
+                    .generateLoop,
+                NODE_IMPLEMENTATIONS['someNodeType'].generateLoop
             )
         })
 
         it('should fill-in all fields with default functions', () => {
             const referenceImplementation: Required<NodeImplementation<any>> = {
                 stateVariables: {},
-                declare: () => '',
-                loop: () => '',
-                messages: () => ({}),
+                generateDeclarations: () => '',
+                generateLoop: () => '',
+                generateMessageReceivers: () => ({}),
                 dependencies: [],
             }
             const defaultImplementation = getNodeImplementation(

@@ -48,7 +48,7 @@ export default (compilation: Compilation) => {
                 )
                 return [
                     // 1. Node loop implementation
-                    nodeImplementation.loop({
+                    nodeImplementation.generateLoop({
                         macros,
                         globs,
                         node,

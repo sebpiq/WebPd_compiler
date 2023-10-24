@@ -89,7 +89,7 @@ describe('Engine', () => {
                 },
             },
             nodeImplementations: {
-                DUMMY: { loop: () => '' },
+                DUMMY: { generateLoop: () => '' },
                 ...(extraCompilation.nodeImplementations || {}),
                 [dependenciesInjectorType]: {
                     dependencies: dependencies,
@@ -120,7 +120,7 @@ describe('Engine', () => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        loop: ({
+                        generateLoop: ({
                             globs,
                             compilation: {
                                 audioSettings: { channelCount },
@@ -189,7 +189,7 @@ describe('Engine', () => {
             async ({ target, bitDepth }) => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        loop: ({
+                        generateLoop: ({
                             globs,
                             compilation: {
                                 audioSettings: { channelCount },
@@ -271,7 +271,7 @@ describe('Engine', () => {
 
                 const nodeImplementations = {
                     DUMMY: {
-                        messages: () => ({ blo: 'return' }),
+                        generateMessageReceivers: () => ({ blo: 'return' }),
                     },
                 }
 
@@ -332,7 +332,7 @@ describe('Engine', () => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const nodeImplementations: NodeImplementations = {
                         DUMMY: {
-                            declare: ({ globs, state, macros: { Var } }) => `
+                            generateDeclarations: ({ globs, state, macros: { Var } }) => `
                                 let ${Var(state.configureCalled, 'Float')} = 0
                                 commons_waitEngineConfigure(() => {
                                     ${state.configureCalled} = ${
@@ -340,7 +340,7 @@ describe('Engine', () => {
                             }
                                 })
                             `,
-                            loop: ({ globs, state, compilation: { target } }) =>
+                            generateLoop: ({ globs, state, compilation: { target } }) =>
                                 target === 'assemblyscript'
                                     ? `${globs.output}[0] = ${state.configureCalled}`
                                     : `${globs.output}[0][0] = ${state.configureCalled}`,
@@ -1185,7 +1185,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messages: ({ globs, node: { id } }) => ({
+                        generateMessageReceivers: ({ globs, node: { id } }) => ({
                             someInlet1: `received.get('${id}:1').push(${globs.m});return`,
                             someInlet2: `received.get('${id}:2').push(${globs.m});return`,
                         }),
@@ -1300,7 +1300,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messages: ({ globs, snds }) => ({
+                        generateMessageReceivers: ({ globs, snds }) => ({
                             '0': `${snds['0']}(${globs.m});return`,
                             '1': `${snds['1']}(${globs.m});return`,
                         }),
@@ -1350,7 +1350,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messages: () => ({
+                        generateMessageReceivers: () => ({
                             // No return so an error will be thrown
                             someInlet: ``,
                         }),

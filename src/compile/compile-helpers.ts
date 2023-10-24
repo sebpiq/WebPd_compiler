@@ -47,9 +47,9 @@ export const getNodeImplementation = (
     }
     return {
         stateVariables: {},
-        declare: () => '',
-        loop: () => '',
-        messages: () => ({}),
+        generateDeclarations: () => '',
+        generateLoop: () => '',
+        generateMessageReceivers: () => ({}),
         dependencies: [],
         ...nodeImplementation,
     }

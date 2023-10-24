@@ -87,7 +87,7 @@ export const makeCompilation = (
     const debug = compilation.debug || false
     const target: CompilerTarget = compilation.target || 'javascript'
     const nodeImplementations = compilation.nodeImplementations || {
-        DUMMY: { loop: () => '' },
+        DUMMY: { generateLoop: () => '' },
     }
     const graph = compilation.graph || {}
     const arrays = compilation.arrays || {}

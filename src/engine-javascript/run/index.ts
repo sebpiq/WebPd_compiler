@@ -1,3 +1,33 @@
+/*
+ * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
+ *
+ * This file is part of WebPd
+ * (see https://github.com/sebpiq/WebPd).
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * These bindings enable easier interaction with Wasm modules generated with our AssemblyScript compilation.
+ * For example : instantiation, passing data back and forth, etc ...
+ *
+ * **Warning** : These bindings are compiled with rollup as a standalone JS module for inclusion in other libraries.
+ * In consequence, they are meant to be kept lightweight, and should avoid importing dependencies.
+ *
+ * @module
+ */
+
 import { getFloatArrayType } from '../../compile/compile-helpers'
 import { createModule } from '../../run/modules-helpers'
 import { Bindings } from "../../run/types"
