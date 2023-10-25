@@ -33,7 +33,7 @@ import generateInletCallers from '../../compile/generate-inlet-callers'
 import generateOutletListeners from '../../compile/generate-outlet-listeners'
 import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
 import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
-import generateImportsExports from '../../compile/generate-imports-exports'
+import generateImportsExports from '../../compile/generate-imps-exps'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {

@@ -33,7 +33,7 @@ import { renderCode } from '../../functional-helpers'
 import generateInletCallers from '../../compile/generate-inlet-callers'
 import generateOutletListeners from '../../compile/generate-outlet-listeners'
 import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
-import generateImportsExports from '../../compile/generate-imports-exports'
+import generateImportsExports from '../../compile/generate-imps-exps'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const { codeVariableNames, outletListenerSpecs, inletCallerSpecs } =

@@ -35,7 +35,7 @@ import {
 } from './compile/types'
 import { Engine, Message, SoundFileInfo, FloatArray } from './run/types'
 import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
-import { getFloatArrayType } from './compile/compile-helpers'
+import { getFloatArrayType } from './run/run-helpers'
 import {
     FS_OPERATION_SUCCESS,
     fsReadSoundFile,

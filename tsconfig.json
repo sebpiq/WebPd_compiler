@@ -1,4 +1,4 @@
 {
     "extends": "./node_modules/@webpd/dev/tsconfig.json",
-    "include": ["src", "@types/**/*.d.ts", "*.d.ts", "index.ts"]
+    "include": ["src", "@types/**/*.d.ts", "global.d.ts", "index.ts"]
 }

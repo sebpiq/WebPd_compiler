@@ -19,7 +19,7 @@
  */
 
 import assert from 'assert'
-import { createModule } from './modules-helpers'
+import { createModule } from './run-helpers'
 
 describe('modules-helpers', () => {
     describe('createModule', () => {

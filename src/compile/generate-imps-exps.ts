@@ -18,6 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// WARNING : for some reason naming this file `generate-imports-exports.ts`
+// failed tests in WebPd package, that's why it's named like this.
+
 import { renderCode } from '../functional-helpers'
 import { collectImports, collectExports } from './compile-helpers'
 import {
@@ -34,7 +37,7 @@ export default (
     dependencies: Array<GlobalCodeDefinition>,
     generateImport: GenerateImportExportFunction,
     generateExport: GenerateImportExportFunction
-) =>
+): Code =>
     // prettier-ignore
     renderCode`
         ${collectImports(dependencies).map(generateImport)}

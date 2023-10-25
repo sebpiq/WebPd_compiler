@@ -30,7 +30,7 @@ import {
 } from './compile/types'
 import { Signal, Message, FloatArray, Engine } from './run/types'
 import { mapArray, mapObject } from './functional-helpers'
-import { getFloatArrayType } from './compile/compile-helpers'
+import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import { commonsArrays } from './stdlib'

@@ -12,9 +12,9 @@
         "declaration": true,
         "moduleResolution": "node"
     },
-    "typeRoots": ["./node_modules/@types"],
     "files": [
-        "./src/engine-assemblyscript/run/*.ts", 
-        "./src/engine-javascript/run/*.ts"
+        "./src/run/run-helpers.ts", 
+        "./src/engine-assemblyscript/run/index.ts", 
+        "./src/engine-javascript/run/index.ts"
     ]
 }

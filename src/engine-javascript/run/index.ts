@@ -28,8 +28,8 @@
  * @module
  */
 
-import { getFloatArrayType } from '../../compile/compile-helpers'
-import { createModule } from '../../run/modules-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
+import { createModule } from '../../run/run-helpers'
 import { Bindings } from '../../run/types'
 import { AudioSettings, Code } from '../../compile/types'
 import { Engine, FloatArray, RawModule } from '../../run/types'

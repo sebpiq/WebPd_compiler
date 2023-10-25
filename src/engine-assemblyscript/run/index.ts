@@ -41,9 +41,9 @@ import {
     ForwardReferences,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
-import { getFloatArrayType } from '../../compile/compile-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
 import { createCommonsBindings } from './commons-bindings'
-import { createModule } from '../../run/modules-helpers'
+import { createModule } from '../../run/run-helpers'
 import {
     createEngineLifecycleBindings,
     createInletCallersBindings,

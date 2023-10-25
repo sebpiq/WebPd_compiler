@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { getFloatArrayType } from '../../compile/compile-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
 import { FloatArrayPointer, InternalPointer } from './types'
 import { AudioSettings } from '../../compile/types'
 import { FloatArray } from '../../run/types'

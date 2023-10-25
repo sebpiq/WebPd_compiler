@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { AudioSettings } from '../compile/types'
 import { Bindings } from './types'
 
-/** @TODO : TEST */
+// NOTE : not necessarily the most logical place to put this function, but we need it here
+// cause it's imported by the bindings.
+export const getFloatArrayType = (bitDepth: AudioSettings['bitDepth']) =>
+    bitDepth === 64 ? Float64Array : Float32Array
+
+/** Helper to create a Module by wrapping a RawModule with Bindings */
 export const createModule = <ModuleType extends { [key: string]: any }>(
     rawModule: { [key: string]: any },
     bindings: Bindings<ModuleType>

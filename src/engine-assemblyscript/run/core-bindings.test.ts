@@ -28,7 +28,7 @@ import {
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getMacros } from '../../compile'
-import { getFloatArrayType } from '../../compile/compile-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
 import { renderCode } from '../../functional-helpers'
 import { FloatArrayPointer, InternalPointer } from './types'

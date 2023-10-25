@@ -55,7 +55,7 @@ import {
     RawJavaScriptEngine,
     createBindings as createJavaScriptEngineBindings,
 } from './engine-javascript/run'
-import { createModule } from './run/modules-helpers'
+import { createModule } from './run/run-helpers'
 import generateDeclarationsDependencies from './compile/generate-declarations-dependencies'
 import { collectExports } from './compile/compile-helpers'
 

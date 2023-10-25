@@ -22,7 +22,6 @@ import { core } from '../stdlib/core'
 import { msg } from '../stdlib/msg'
 import { DspGraph, getters, traversal } from '../dsp-graph'
 import {
-    AudioSettings,
     Compilation,
     CompilerTarget,
     GlobalCodeDefinition,
@@ -274,9 +273,6 @@ export const buildGraphTraversalLoop = (
     })
     return combined
 }
-
-export const getFloatArrayType = (bitDepth: AudioSettings['bitDepth']) =>
-    bitDepth === 64 ? Float64Array : Float32Array
 
 export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
     core,

@@ -27,7 +27,7 @@ import {
 } from './msg-bindings'
 import { AudioSettings, GlobalCodeGeneratorContext } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { getFloatArrayType } from '../../compile/compile-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
 import { getMacros } from '../../compile'
 import { core } from '../../stdlib/core'
 import { sked } from '../../stdlib/sked'
