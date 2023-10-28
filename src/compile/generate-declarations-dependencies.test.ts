@@ -23,12 +23,10 @@ import { getMacros } from '.'
 import {
     GlobalCodeDefinition,
     GlobalCodeGeneratorContext,
-    GlobalCodeGeneratorWithSettings,
 } from './types'
 import generateDeclarationsDependencies, {
     _generateDependenciesDeclarationsRecursive,
 } from './generate-declarations-dependencies'
-import { collectExports, collectImports } from './compile-helpers'
 import { makeCompilation } from '../test-helpers'
 
 describe('generate-declarations-dependencies', () => {
@@ -87,103 +85,6 @@ describe('generate-declarations-dependencies', () => {
                 ),
                 ['bla', 'bly', 'blo', 'bla', 'ble', 'bli', 'blu']
             )
-        })
-    })
-
-    describe('collectExports', () => {
-        it('should collect exports recursively and remove duplicates', () => {
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => ``,
-                exports: [{ name: 'ex1' }, { name: 'ex3' }],
-            }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => ``,
-                // no exports here shouldnt break the chain
-                dependencies: [() => ``, codeDefinition1],
-            }
-            const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => ``,
-                exports: [{ name: 'ex4' }],
-                dependencies: [codeDefinition2],
-            }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                () => ``,
-                codeDefinition3,
-            ]
-
-            assert.deepStrictEqual(collectExports('javascript', dependencies), [
-                { name: 'ex1' },
-                { name: 'ex3' },
-                { name: 'ex4' },
-            ])
-        })
-
-        it('should keep only exports for specified target', () => {
-            const codeGenerator1 = () => 'bla'
-            const codeGenerator2 = () => 'bli'
-            const codeGenerator3 = () => 'blo'
-
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: codeGenerator1,
-                exports: [
-                    { name: 'ex1' },
-                    { name: 'ex3', targets: ['javascript'] },
-                ],
-            }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: codeGenerator2,
-                exports: [
-                    { name: 'ex2', targets: ['javascript'] },
-                    { name: 'ex4', targets: ['assemblyscript'] },
-                    { name: 'ex3', targets: ['assemblyscript'] },
-                ],
-                dependencies: [codeGenerator3, codeDefinition1],
-            }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                codeGenerator1,
-                codeDefinition2,
-            ]
-
-            assert.deepStrictEqual(
-                collectExports('assemblyscript', dependencies),
-                [
-                    { name: 'ex1' },
-                    { name: 'ex4', targets: ['assemblyscript'] },
-                    { name: 'ex3', targets: ['assemblyscript'] },
-                ]
-            )
-        })
-    })
-
-    describe('collectImports', () => {
-        it('should collect imports recursively and remove duplicates', () => {
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => ``,
-                imports: [
-                    { name: 'ex1', args: [], returns: 'void' },
-                    { name: 'ex3', args: [], returns: 'void' },
-                ],
-            }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => ``,
-                // no imports here shouldnt break the chain
-                dependencies: [() => ``, codeDefinition1],
-            }
-            const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => ``,
-                imports: [{ name: 'ex4', args: [], returns: 'void' }],
-                dependencies: [codeDefinition2],
-            }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                () => ``,
-                codeDefinition3,
-            ]
-
-            assert.deepStrictEqual(collectImports(dependencies), [
-                { name: 'ex1', args: [], returns: 'void' },
-                { name: 'ex3', args: [], returns: 'void' },
-                { name: 'ex4', args: [], returns: 'void' },
-            ])
         })
     })
 })
