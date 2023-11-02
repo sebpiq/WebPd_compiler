@@ -18,19 +18,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getters } from '../dsp-graph'
+import { DspGraph, getters } from '../dsp-graph'
+import { mapObject } from '../functional-helpers'
 import * as variableNames from './code-variable-names'
-import { Compilation } from './types'
+import { createNamespace } from './namespace'
+import { Compilation, Precompilation } from './types'
 
-/**
- * Takes the graph traversal, and for each node directly assign the
- * inputs of its next nodes where this can be done.
- * This allow the engine to avoid having to copy between a node's outs
- * and its next node's ins in order to pass data around.
- *
- * @returns Maps that contain inlets and outlets that have been handled
- * by precompilation and don't need to be dealt with further.
- */
+export const initializePrecompilation = (
+    graph: DspGraph.Graph
+): Precompilation =>
+    createNamespace(
+        'precompilation',
+        mapObject(graph, (node) => {
+            const namespaceLabel = `[${node.type}] ${node.id}`
+            return createNamespace(namespaceLabel, {
+                rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
+                outs: createNamespace(`${namespaceLabel}.outs`, {}),
+                snds: createNamespace(`${namespaceLabel}.snds`, {}),
+                ins: createNamespace(`${namespaceLabel}.ins`, {}),
+            })
+        })
+    )
+
 export default (compilation: Compilation) => {
     const {
         graph,
@@ -65,8 +74,9 @@ export default (compilation: Compilation) => {
             //      NODE2_OUT = NODE1_OUT * 2
             //
             if (outlet.type === 'signal') {
-                const outName = variableNames.attachNodeOut(
+                const outName = variableNames.attachNodeVariable(
                     compilation,
+                    'outs',
                     sourceNode.id,
                     outletId
                 )
@@ -97,8 +107,9 @@ export default (compilation: Compilation) => {
                     outletSinks.length === 1 &&
                     !nodeOutletListenerSpecs.includes(outletId)
                 ) {
-                    const rcvName = variableNames.attachNodeRcv(
+                    const rcvName = variableNames.attachNodeVariable(
                         compilation,
+                        'rcvs',
                         outletSinks[0].nodeId,
                         outletSinks[0].portletId
                     )
@@ -132,8 +143,9 @@ export default (compilation: Compilation) => {
                     //      }
                     //
                 } else {
-                    variableNames.attachNodeSnd(
+                    variableNames.attachNodeVariable(
                         compilation,
+                        'snds',
                         sourceNode.id,
                         outletId
                     )
@@ -154,8 +166,9 @@ export default (compilation: Compilation) => {
                         nodeInletCallerSpecs.includes(inlet.id)) ||
                     inletSources.length > 0
                 ) {
-                    variableNames.attachNodeRcv(
+                    variableNames.attachNodeVariable(
                         compilation,
+                        'rcvs',
                         sinkNode.id,
                         inletId
                     )

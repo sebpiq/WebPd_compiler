@@ -21,9 +21,7 @@ import assert from 'assert'
 import {
     assertValidNamePart,
     attachInletCallers,
-    attachNodeOut,
-    attachNodeRcv,
-    attachNodeSnd,
+    attachNodeVariable,
     attachOutletListeners,
     generate,
 } from './code-variable-names'
@@ -128,7 +126,7 @@ describe('code-variable-names', () => {
         })
     })
 
-    describe('attachNodeOut / attachNodeSnd / attachNodeRcv', () => {
+    describe('attachNodeVariable', () => {
         it('should attach variable names for a node', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {},
@@ -162,11 +160,11 @@ describe('code-variable-names', () => {
                 graph,
             })
 
-            attachNodeOut(compilation, 'myOsc', '0')
-            attachNodeOut(compilation, 'myOsc', '2')
-            attachNodeSnd(compilation, 'myOsc', '1')
-            attachNodeSnd(compilation, 'myOsc', '3')
-            attachNodeRcv(compilation, 'myOsc', '1')
+            attachNodeVariable(compilation, 'outs', 'myOsc', '0')
+            attachNodeVariable(compilation, 'outs', 'myOsc', '2')
+            attachNodeVariable(compilation, 'snds', 'myOsc', '1')
+            attachNodeVariable(compilation, 'snds', 'myOsc', '3')
+            attachNodeVariable(compilation, 'rcvs', 'myOsc', '1')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNames.nodes })),
@@ -222,9 +220,9 @@ describe('code-variable-names', () => {
                 graph,
             })
 
-            attachNodeOut(compilation, 'someObj', '0')
-            attachNodeSnd(compilation, 'someObj', '1')
-            attachNodeRcv(compilation, 'someObj', '2')
+            attachNodeVariable(compilation, 'outs', 'someObj', '0')
+            attachNodeVariable(compilation, 'snds', 'someObj', '1')
+            attachNodeVariable(compilation, 'rcvs', 'someObj', '2')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNames.nodes })),

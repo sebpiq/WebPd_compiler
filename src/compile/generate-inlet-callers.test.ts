@@ -23,7 +23,7 @@ import { makeCompilation } from '../test-helpers'
 import { normalizeCode } from '../test-helpers'
 import { NodeImplementations } from './types'
 import generateInletCallers from './generate-inlet-callers'
-import { preCompileSignalAndMessageFlow } from './compile-helpers'
+import precompile from './precompile'
 
 describe('generateInletCallers', () => {
     it('should compile declared inlet callers', () => {
@@ -50,7 +50,7 @@ describe('generateInletCallers', () => {
             nodeImplementations,
         })
 
-        preCompileSignalAndMessageFlow(compilation)
+        precompile(compilation)
 
         const declareCode = generateInletCallers(compilation)
 

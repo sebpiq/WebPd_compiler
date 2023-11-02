@@ -130,6 +130,10 @@ export interface PrecompiledNodeCode {
     ins: { [portletId: DspGraph.PortletId]: CodeVariableName }
 }
 
+/**
+ * Precompilation for a graph, allowing mostly to implement various optimizations.
+ * This map is then used in code generation to replace variables with their precompiled counterparts.
+ */
 export type Precompilation = {
     [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
 }

@@ -83,22 +83,6 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     }
 }
 
-export const initializePrecompilation = (
-    graph: DspGraph.Graph
-): Precompilation =>
-    createNamespace(
-        'precompilation',
-        mapObject(graph, (node) => {
-            const namespaceLabel = `[${node.type}] ${node.id}`
-            return {
-                rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
-                outs: createNamespace(`${namespaceLabel}.outs`, {}),
-                snds: createNamespace(`${namespaceLabel}.snds`, {}),
-                ins: createNamespace(`${namespaceLabel}.ins`, {}),
-            }
-        })
-    )
-
 export const getGlobalCodeGeneratorContext = (
     compilation: Compilation
 ): GlobalCodeGeneratorContext => ({

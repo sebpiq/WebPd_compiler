@@ -40,84 +40,72 @@ export const generate = (
     nodeImplementations: NodeImplementations,
     graph: DspGraph.Graph,
     debug: boolean
-): CodeVariableNames => ({
-    nodes: createNamespace(
-        'n',
-        mapObject(graph, (node) => {
-            const nodeImplementation = getNodeImplementation(
-                nodeImplementations,
-                node.type
-            )
-            const namespaceLabel = `[${node.type}] ${node.id}`
-            const prefix = _namePrefix(debug, node)
-            return {
-                rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
-                outs: createNamespace(`${namespaceLabel}.outs`, {}),
-                snds: createNamespace(`${namespaceLabel}.snds`, {}),
-                state: createNamespace(
-                    `${namespaceLabel}.state`,
-                    mapObject(
-                        nodeImplementation.stateVariables,
-                        (_, stateVariable) =>
-                            `${prefix}_STATE_${_v(stateVariable)}`
-                    )
-                ),
-            }
-        })
-    ),
-    globs: createNamespace('g', {
-        iterFrame: 'F',
-        frame: 'FRAME',
-        blockSize: 'BLOCK_SIZE',
-        sampleRate: 'SAMPLE_RATE',
-        output: 'OUTPUT',
-        input: 'INPUT',
-        nullMessageReceiver: 'SND_TO_NULL',
-        nullSignal: 'NULL_SIGNAL',
-        // TODO : not a glob
-        m: 'm',
-    }),
-    outletListeners: createNamespace('outletListeners', {}),
-    inletCallers: createNamespace('inletCallers', {}),
-})
+): CodeVariableNames =>
+    createNamespace('codeVariableNames', {
+        nodes: createNamespace(
+            'n',
+            mapObject(graph, (node) => {
+                const nodeImplementation = getNodeImplementation(
+                    nodeImplementations,
+                    node.type
+                )
+                const namespaceLabel = `[${node.type}] ${node.id}`
+                const prefix = _namePrefix(debug, node)
+                return createNamespace(namespaceLabel, {
+                    rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
+                    outs: createNamespace(`${namespaceLabel}.outs`, {}),
+                    snds: createNamespace(`${namespaceLabel}.snds`, {}),
+                    state: createNamespace(
+                        `${namespaceLabel}.state`,
+                        mapObject(
+                            nodeImplementation.stateVariables,
+                            (_, stateVariable) =>
+                                `${prefix}_STATE_${_v(stateVariable)}`
+                        )
+                    ),
+                })
+            })
+        ),
+        globs: createNamespace('g', {
+            iterFrame: 'F',
+            frame: 'FRAME',
+            blockSize: 'BLOCK_SIZE',
+            sampleRate: 'SAMPLE_RATE',
+            output: 'OUTPUT',
+            input: 'INPUT',
+            nullMessageReceiver: 'SND_TO_NULL',
+            nullSignal: 'NULL_SIGNAL',
+            // TODO : not a glob
+            m: 'm',
+        }),
+        outletListeners: createNamespace('outletListeners', {}),
+        inletCallers: createNamespace('inletCallers', {}),
+    })
 
-export const attachNodeOut = (
+export const attachNodeVariable = (
     compilation: Compilation,
+    namespace: 'outs' | 'snds' | 'rcvs',
     nodeId: DspGraph.NodeId,
     portletId: DspGraph.PortletId
-): CodeVariableName => {
+) => {
     const { graph, codeVariableNames, debug } = compilation
+    const nodeVariableNames = codeVariableNames.nodes[nodeId]
     const sinkNode = getters.getNode(graph, nodeId)
     const prefix = _namePrefix(debug, sinkNode)
-    return (codeVariableNames.nodes[nodeId].outs[
-        portletId
-    ] = `${prefix}_OUTS_${_v(portletId)}`)
-}
-
-export const attachNodeSnd = (
-    compilation: Compilation,
-    nodeId: DspGraph.NodeId,
-    portletId: DspGraph.PortletId
-): CodeVariableName => {
-    const { graph, codeVariableNames, debug } = compilation
-    const sinkNode = getters.getNode(graph, nodeId)
-    const prefix = _namePrefix(debug, sinkNode)
-    return (codeVariableNames.nodes[nodeId].snds[
-        portletId
-    ] = `${prefix}_SNDS_${_v(portletId)}`)
-}
-
-export const attachNodeRcv = (
-    compilation: Compilation,
-    nodeId: DspGraph.NodeId,
-    portletId: DspGraph.PortletId
-): CodeVariableName => {
-    const { graph, codeVariableNames, debug } = compilation
-    const sinkNode = getters.getNode(graph, nodeId)
-    const prefix = _namePrefix(debug, sinkNode)
-    return (codeVariableNames.nodes[nodeId].rcvs[
-        portletId
-    ] = `${prefix}_RCVS_${_v(portletId)}`)
+    switch (namespace) {
+        case 'outs':
+            return (nodeVariableNames.outs[portletId] = `${prefix}_OUTS_${_v(
+                portletId
+            )}`)
+        case 'snds':
+            return (nodeVariableNames.snds[portletId] = `${prefix}_SNDS_${_v(
+                portletId
+            )}`)
+        case 'rcvs':
+            return (nodeVariableNames.rcvs[portletId] = `${prefix}_RCVS_${_v(
+                portletId
+            )}`)
+    }
 }
 
 /**

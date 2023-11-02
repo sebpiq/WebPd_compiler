@@ -35,11 +35,10 @@ import * as variableNames from './code-variable-names'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
-    initializePrecompilation,
-    preCompileSignalAndMessageFlow,
 } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
 import { traversal } from '../dsp-graph'
+import precompile, { initializePrecompilation } from './precompile'
 
 interface CompilationSuccess {
     status: 0
@@ -125,7 +124,7 @@ export const getMacros = (target: CompilerTarget): CodeMacros =>
 
 /** Helper to execute compilation */
 export const executeCompilation = (compilation: Compilation) => {
-    preCompileSignalAndMessageFlow(compilation)
+    precompile(compilation)
     if (compilation.target === 'javascript') {
         return compileToJavascript(compilation)
     } else if (compilation.target === 'assemblyscript') {

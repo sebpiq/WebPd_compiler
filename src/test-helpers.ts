@@ -35,7 +35,6 @@ import { writeFile } from 'fs/promises'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
-    initializePrecompilation,
 } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
@@ -59,6 +58,7 @@ import {
 import { createModule } from './run/run-helpers'
 import generateDeclarationsDependencies from './compile/generate-declarations-dependencies'
 import { collectExports } from './compile/compile-helpers'
+import { initializePrecompilation } from './compile/precompile'
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -133,9 +133,9 @@ interface TestParameters {
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
-    // { bitDepth: 64, target: 'javascript' },
-    // { bitDepth: 32, target: 'assemblyscript' },
-    // { bitDepth: 64, target: 'assemblyscript' },
+    { bitDepth: 64, target: 'javascript' },
+    { bitDepth: 32, target: 'assemblyscript' },
+    { bitDepth: 64, target: 'assemblyscript' },
 ]
 
 interface CreateTestModuleApplyBindings {
