@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@ import {
     collectDependenciesFromTraversal,
     engineMinimalDependencies,
 } from '../../compile/compile-helpers'
-import generateDeclarationsGraph from '../../compile/generate-declarations-graph'
+import generateDeclarationsNodes from '../../compile/generate-declarations-nodes'
 import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
 import generateLoop from '../../compile/generate-loop'
 import { renderCode } from '../../functional-helpers'
@@ -54,7 +54,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     return renderCode`
         ${generateDeclarationsGlobals(compilation)}
         ${generateDeclarationsDependencies(compilation, dependencies)}
-        ${generateDeclarationsGraph(compilation)}
+        ${generateDeclarationsNodes(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
 

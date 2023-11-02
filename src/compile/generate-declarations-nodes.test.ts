@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd
+ * This file is part of WebPd 
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,27 +19,14 @@
  */
 
 import assert from 'assert'
-import {
-    CodeVariableNames,
-    NodeImplementations,
-    NodeVariableNames,
-    Precompilation,
-} from './types'
+import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
 import { normalizeCode } from '../test-helpers'
-import generateDeclarationsGraph from './generate-declarations-graph'
+import generateDeclarationsNodes from './generate-declarations-nodes'
 import { makeGraph } from '../dsp-graph/test-helpers'
-import * as variableNames from './code-variable-names'
-import { preCompileSignalAndMessageFlow } from './compile-helpers'
+import precompile from './precompile'
 
-const defaultPrecompiledNode = () => ({
-    rcvs: {},
-    snds: {},
-    outs: {},
-    ins: {},
-})
-
-describe('generateDeclarationsGraph', () => {
+describe('generateDeclarationsNodes', () => {
     it('should compile custom declarations', () => {
         const graph = makeGraph({
             node1: {
@@ -70,9 +57,9 @@ describe('generateDeclarationsGraph', () => {
             nodeImplementations,
         })
 
-        preCompileSignalAndMessageFlow(compilation)
+        precompile(compilation)
 
-        const declareCode = generateDeclarationsGraph(compilation)
+        const declareCode = generateDeclarationsNodes(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -110,7 +97,7 @@ describe('generateDeclarationsGraph', () => {
 
         compilation.codeVariableNames.nodes.node1.outs['0'] = 'node1_OUTS_0'
 
-        const declareCode = generateDeclarationsGraph(compilation)
+        const declareCode = generateDeclarationsNodes(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -148,7 +135,7 @@ describe('generateDeclarationsGraph', () => {
 
         compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
-        const declareCode = generateDeclarationsGraph(compilation)
+        const declareCode = generateDeclarationsNodes(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -188,7 +175,7 @@ describe('generateDeclarationsGraph', () => {
 
         compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
-        const declareCode = generateDeclarationsGraph(compilation)
+        const declareCode = generateDeclarationsNodes(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -225,7 +212,7 @@ describe('generateDeclarationsGraph', () => {
 
         compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
-        assert.throws(() => generateDeclarationsGraph(compilation))
+        assert.throws(() => generateDeclarationsNodes(compilation))
     })
 
     it('should not throw an error if message receiver is implemented but string empty', () => {
@@ -252,7 +239,7 @@ describe('generateDeclarationsGraph', () => {
 
         compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
-        assert.doesNotThrow(() => generateDeclarationsGraph(compilation))
+        assert.doesNotThrow(() => generateDeclarationsNodes(compilation))
     })
 
     it('should compile node message senders for message outlets declared in variable names and omit others', () => {
@@ -306,7 +293,7 @@ describe('generateDeclarationsGraph', () => {
         compilation.codeVariableNames.nodes.node3.rcvs['0'] = 'node3_RCVS_0'
         compilation.precompilation.node3.rcvs['0'] = 'node3_RCVS_0'
 
-        const declareCode = generateDeclarationsGraph(compilation)
+        const declareCode = generateDeclarationsNodes(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -375,7 +362,7 @@ describe('generateDeclarationsGraph', () => {
         compilation.codeVariableNames.outletListeners.node1['1'] =
             'outletListener_node1_1'
 
-        const declareCode = generateDeclarationsGraph(compilation)
+        const declareCode = generateDeclarationsNodes(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
@@ -419,8 +406,8 @@ describe('generateDeclarationsGraph', () => {
             nodeImplementations,
         })
 
-        preCompileSignalAndMessageFlow(compilation)
+        precompile(compilation)
 
-        assert.doesNotThrow(() => generateDeclarationsGraph(compilation))
+        assert.doesNotThrow(() => generateDeclarationsNodes(compilation))
     })
 })
