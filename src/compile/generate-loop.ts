@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ export default (compilation: Compilation) => {
         graph,
         graphTraversalLoop,
         codeVariableNames,
+        precompilation,
         macros,
         nodeImplementations,
     } = compilation
@@ -41,7 +42,8 @@ export default (compilation: Compilation) => {
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
             ${graphTraversalNodes.map((node) => {
-                const { outs, ins, snds, state } = codeVariableNames.nodes[node.id]
+                const { state } = codeVariableNames.nodes[node.id]
+                const { outs, ins, snds } = precompilation[node.id]
                 const nodeImplementation = getNodeImplementation(
                     nodeImplementations,
                     node.type

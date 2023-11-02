@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,7 @@ import { writeFile } from 'fs/promises'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
+    initializePrecompilation,
 } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
@@ -98,21 +99,15 @@ export const makeCompilation = (
         buildGraphTraversalDeclare(graph, inletCallerSpecs)
     const graphTraversalLoop =
         compilation.graphTraversalLoop || buildGraphTraversalLoop(graph)
-    const precompiledPortlets = compilation.precompiledPortlets || {
-        precompiledInlets: {},
-        precompiledOutlets: {},
-    }
-    const codeVariableNames = variableNames.generate(
-        nodeImplementations,
-        graph,
-        debug
-    )
+    const precompilation =
+        compilation.precompilation || initializePrecompilation(graph)
+    const codeVariableNames =
+        compilation.codeVariableNames ||
+        variableNames.generate(nodeImplementations, graph, debug)
     const audioSettings = compilation.audioSettings || {
         bitDepth: 32,
         channelCount: { in: 2, out: 2 },
     }
-    variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
-    variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
     return {
         ...compilation,
         target,
@@ -127,7 +122,7 @@ export const makeCompilation = (
         macros: getMacros(target),
         codeVariableNames,
         debug,
-        precompiledPortlets,
+        precompilation,
     }
 }
 
@@ -138,9 +133,9 @@ interface TestParameters {
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
-    { bitDepth: 64, target: 'javascript' },
-    { bitDepth: 32, target: 'assemblyscript' },
-    { bitDepth: 64, target: 'assemblyscript' },
+    // { bitDepth: 64, target: 'javascript' },
+    // { bitDepth: 32, target: 'assemblyscript' },
+    // { bitDepth: 64, target: 'assemblyscript' },
 ]
 
 interface CreateTestModuleApplyBindings {

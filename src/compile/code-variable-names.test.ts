@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,34 +21,32 @@ import assert from 'assert'
 import {
     assertValidNamePart,
     attachInletCallers,
+    attachNodeOut,
+    attachNodeRcv,
+    attachNodeSnd,
     attachOutletListeners,
-    createNamespace,
     generate,
 } from './code-variable-names'
 import { CodeVariableNames, NodeImplementations } from '../compile/types'
 import { makeGraph } from '../dsp-graph/test-helpers'
+import { makeCompilation } from '../test-helpers'
 
 describe('code-variable-names', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
-        DUMMY: {
-            generateLoop: () => '',
-        },
+        DUMMY: {},
     }
 
     describe('generate', () => {
-        it('should create variable names for nodes', () => {
+        it('should create state variables for nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    generateLoop: () => `// [osc~] loop`,
                     stateVariables: {
                         phase: 1,
                         currentThing: 1,
                         k: 1,
                     },
                 },
-                'dac~': {
-                    generateLoop: () => `// [dac~] loop`,
-                },
+                'dac~': {},
             }
 
             const graph = makeGraph({
@@ -76,20 +74,9 @@ describe('code-variable-names', () => {
                 JSON.parse(JSON.stringify({ ...variableNames.nodes })),
                 {
                     myOsc: {
-                        ins: {
-                            '0': 'myOsc_INS_0',
-                        },
-                        outs: {
-                            '0': 'myOsc_OUTS_0',
-                            '2': 'myOsc_OUTS_2',
-                        },
-                        snds: {
-                            '1': 'myOsc_SNDS_1',
-                            '3': 'myOsc_SNDS_3',
-                        },
-                        rcvs: {
-                            '1': 'myOsc_RCVS_1',
-                        },
+                        outs: {},
+                        snds: {},
+                        rcvs: {},
                         state: {
                             phase: 'myOsc_STATE_phase',
                             currentThing: 'myOsc_STATE_currentThing',
@@ -97,7 +84,6 @@ describe('code-variable-names', () => {
                         },
                     },
                     myDac: {
-                        ins: {},
                         outs: {},
                         rcvs: {},
                         snds: {},
@@ -107,55 +93,9 @@ describe('code-variable-names', () => {
             )
         })
 
-        it('should create more verbose variable names if debug is true', () => {
-            const nodeImplementations: NodeImplementations = {
-                'dac~bla*wow!': {
-                    generateLoop: () => `// [dac~] loop`,
-                    stateVariables: { bli: 1 },
-                },
-            }
-
-            const graph = makeGraph({
-                someObj: {
-                    inlets: {
-                        '0': { type: 'signal', id: '0' },
-                    },
-                    outlets: {
-                        '0': { type: 'signal', id: '0' },
-                        '1': { type: 'message', id: '1' },
-                    },
-                    type: 'dac~bla*wow!',
-                },
-            })
-
-            const variableNames = generate(nodeImplementations, graph, true)
-
-            assert.deepStrictEqual(
-                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
-                {
-                    someObj: {
-                        ins: {
-                            '0': 'dacblawow_someObj_INS_0',
-                        },
-                        outs: {
-                            '0': 'dacblawow_someObj_OUTS_0',
-                        },
-                        snds: {
-                            '1': 'dacblawow_someObj_SNDS_1',
-                        },
-                        rcvs: {},
-                        state: {
-                            bli: 'dacblawow_someObj_STATE_bli',
-                        },
-                    },
-                }
-            )
-        })
-
         it('should throw error for unknown namespaces', () => {
             const nodeImplementations: NodeImplementations = {
                 'osc~': {
-                    generateLoop: () => `// [osc~] loop`,
                     stateVariables: { phase: 1 },
                 },
             }
@@ -176,9 +116,6 @@ describe('code-variable-names', () => {
 
             assert.throws(() => variableNames.nodes.unknownNode)
             assert.throws(
-                () => variableNames.nodes.myOsc.ins['unknown portlet']
-            )
-            assert.throws(
                 () => variableNames.nodes.myOsc.rcvs['unknown receiver']
             )
             assert.throws(
@@ -188,6 +125,124 @@ describe('code-variable-names', () => {
                 () => variableNames.nodes.myOsc.snds['unknown sender']
             )
             assert.throws(() => variableNames.nodes.myOsc.state['unknown var'])
+        })
+    })
+
+    describe('attachNodeOut / attachNodeSnd / attachNodeRcv', () => {
+        it('should attach variable names for a node', () => {
+            const nodeImplementations: NodeImplementations = {
+                'osc~': {},
+                'dac~': {},
+            }
+
+            const graph = makeGraph({
+                myOsc: {
+                    type: 'osc~',
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
+                        '2': { type: 'signal', id: '2' },
+                        '3': { type: 'message', id: '3' },
+                    },
+                },
+                myDac: {
+                    type: 'dac~',
+                },
+            })
+
+            const variableNames = generate(nodeImplementations, graph, false)
+
+            const compilation = makeCompilation({
+                nodeImplementations,
+                codeVariableNames: variableNames,
+                graph,
+            })
+
+            attachNodeOut(compilation, 'myOsc', '0')
+            attachNodeOut(compilation, 'myOsc', '2')
+            attachNodeSnd(compilation, 'myOsc', '1')
+            attachNodeSnd(compilation, 'myOsc', '3')
+            attachNodeRcv(compilation, 'myOsc', '1')
+
+            assert.deepStrictEqual(
+                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
+                {
+                    myOsc: {
+                        outs: {
+                            '0': 'myOsc_OUTS_0',
+                            '2': 'myOsc_OUTS_2',
+                        },
+                        snds: {
+                            '1': 'myOsc_SNDS_1',
+                            '3': 'myOsc_SNDS_3',
+                        },
+                        rcvs: {
+                            '1': 'myOsc_RCVS_1',
+                        },
+                        state: {},
+                    },
+                    myDac: {
+                        outs: {},
+                        rcvs: {},
+                        snds: {},
+                        state: {},
+                    },
+                }
+            )
+        })
+
+        it('should create more verbose variable names if debug is true', () => {
+            const nodeImplementations: NodeImplementations = {
+                'dac~bla*wow!': {},
+            }
+
+            const graph = makeGraph({
+                someObj: {
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
+                    },
+                    type: 'dac~bla*wow!',
+                },
+            })
+
+            const variableNames = generate(nodeImplementations, graph, true)
+
+            const compilation = makeCompilation({
+                nodeImplementations,
+                codeVariableNames: variableNames,
+                debug: true,
+                graph,
+            })
+
+            attachNodeOut(compilation, 'someObj', '0')
+            attachNodeSnd(compilation, 'someObj', '1')
+            attachNodeRcv(compilation, 'someObj', '2')
+
+            assert.deepStrictEqual(
+                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
+                {
+                    someObj: {
+                        outs: {
+                            '0': 'dacblawow_someObj_OUTS_0',
+                        },
+                        snds: {
+                            '1': 'dacblawow_someObj_SNDS_1',
+                        },
+                        rcvs: {
+                            '2': 'dacblawow_someObj_RCVS_2',
+                        },
+                        state: {},
+                    },
+                }
+            )
         })
     })
 
@@ -204,19 +259,21 @@ describe('code-variable-names', () => {
 
     describe('attachOutletListeners / attachInletCallers', () => {
         it('should attach outlet listeners variable names', () => {
+            const graph = makeGraph({
+                node1: {
+                    inlets: {
+                        inlet1: { type: 'message', id: 'inlet1' },
+                    },
+                    outlets: {
+                        outlet1: { type: 'message', id: 'outlet1' },
+                        outlet2: { type: 'message', id: 'outlet2' },
+                    },
+                },
+            })
+
             const codeVariableNames: CodeVariableNames = generate(
                 NODE_IMPLEMENTATIONS,
-                makeGraph({
-                    node1: {
-                        inlets: {
-                            inlet1: { type: 'message', id: 'inlet1' },
-                        },
-                        outlets: {
-                            outlet1: { type: 'message', id: 'outlet1' },
-                            outlet2: { type: 'message', id: 'outlet2' },
-                        },
-                    },
-                }),
+                graph,
                 false
             )
             const outletListenerSpecs = {
@@ -226,63 +283,22 @@ describe('code-variable-names', () => {
                 node1: ['inlet1'],
             }
 
-            attachOutletListeners(codeVariableNames, outletListenerSpecs)
+            const compilation = makeCompilation({
+                graph,
+                outletListenerSpecs,
+                inletCallerSpecs,
+                codeVariableNames,
+            })
+
+            attachOutletListeners(compilation)
             assert.deepStrictEqual(codeVariableNames.outletListeners, {
                 node1: { outlet1: 'outletListener_node1_outlet1' },
             })
 
-            attachInletCallers(codeVariableNames, inletCallerSpecs)
+            attachInletCallers(compilation)
             assert.deepStrictEqual(codeVariableNames.inletCallers, {
                 node1: { inlet1: 'inletCaller_node1_inlet1' },
             })
-        })
-    })
-
-    describe('createNamespace', () => {
-        it('should proxy access to exisinting keys', () => {
-            const namespace = createNamespace('dummy', {
-                bla: '1',
-                hello: '2',
-            })
-            assert.strictEqual(namespace.bla, '1')
-            assert.strictEqual(namespace.hello, '2')
-        })
-
-        it('should create automatic $ alias for keys starting with a number', () => {
-            const namespace: { [key: string]: string } = createNamespace(
-                'dummy',
-                {
-                    '0': 'blabla',
-                    '0_bla': 'bloblo',
-                }
-            )
-            assert.strictEqual(namespace.$0, 'blabla')
-            assert.strictEqual(namespace.$0_bla, 'bloblo')
-        })
-
-        it('should throw error when trying to access unknown key', () => {
-            const namespace: { [key: string]: string } = createNamespace(
-                'dummy',
-                {
-                    bla: '1',
-                    hello: '2',
-                }
-            )
-            assert.throws(() => namespace.blo)
-        })
-
-        it('should not prevent from using JSON stringify', () => {
-            const namespace: { [key: string]: string } = createNamespace(
-                'dummy',
-                {
-                    bla: '1',
-                    hello: '2',
-                }
-            )
-            assert.deepStrictEqual(
-                JSON.stringify(namespace),
-                '{"bla":"1","hello":"2"}'
-            )
         })
     })
 })

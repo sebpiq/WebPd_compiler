@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,12 +23,13 @@ import { makeCompilation } from '../test-helpers'
 import { normalizeCode } from '../test-helpers'
 import { NodeImplementations } from './types'
 import generateInletCallers from './generate-inlet-callers'
+import { preCompileSignalAndMessageFlow } from './compile-helpers'
 
 describe('generateInletCallers', () => {
     it('should compile declared inlet callers', () => {
         const graph = makeGraph({
-            add: {
-                type: '+',
+            node1: {
+                type: 'type1',
                 inlets: {
                     '0': { id: '0', type: 'message' },
                 },
@@ -36,27 +37,28 @@ describe('generateInletCallers', () => {
         })
 
         const nodeImplementations: NodeImplementations = {
-            '+': {
+            type1: {
                 generateMessageReceivers: () => ({
-                    '0': '// [+] message receiver',
+                    '0': '// [type1] message receiver',
                 }),
             },
         }
 
         const compilation = makeCompilation({
-            target: 'javascript',
             graph,
-            inletCallerSpecs: { add: ['0'] },
+            inletCallerSpecs: { node1: ['0'] },
             nodeImplementations,
         })
+
+        preCompileSignalAndMessageFlow(compilation)
 
         const declareCode = generateInletCallers(compilation)
 
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
-                    function inletCaller_add_0 (m) {add_RCVS_0(m)}
-                `)
+                function inletCaller_node1_0 (m) {node1_RCVS_0(m)}
+            `)
         )
     })
 })

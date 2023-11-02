@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -55,12 +55,9 @@ export interface Compilation {
     readonly outletListenerSpecs: PortletsIndex
     readonly inletCallerSpecs: PortletsIndex
     readonly codeVariableNames: CodeVariableNames
+    readonly precompilation: Precompilation
     readonly macros: CodeMacros
     readonly debug: boolean
-    precompiledPortlets: {
-        precompiledInlets: PortletsIndex
-        precompiledOutlets: PortletsIndex
-    }
 }
 
 // -------------------------------- CODE GENERATION -------------------------------- //
@@ -80,7 +77,6 @@ export type CodeMacros = {
 }
 
 export interface NodeVariableNames {
-    ins: { [portletId: DspGraph.PortletId]: CodeVariableName }
     outs: { [portletId: DspGraph.PortletId]: CodeVariableName }
     snds: { [portletId: DspGraph.PortletId]: CodeVariableName }
     rcvs: { [portletId: DspGraph.PortletId]: CodeVariableName }
@@ -107,6 +103,7 @@ export interface CodeVariableNames {
         output: string
         input: string
         nullMessageReceiver: string
+        nullSignal: string
         /** Input argument for message receiver functions @todo : not a glob */
         m: string
     }
@@ -124,6 +121,17 @@ export interface CodeVariableNames {
             [outletId: DspGraph.PortletId]: CodeVariableName
         }
     }
+}
+
+export interface PrecompiledNodeCode {
+    outs: { [portletId: DspGraph.PortletId]: CodeVariableName }
+    snds: { [portletId: DspGraph.PortletId]: CodeVariableName }
+    rcvs: { [portletId: DspGraph.PortletId]: CodeVariableName }
+    ins: { [portletId: DspGraph.PortletId]: CodeVariableName }
+}
+
+export type Precompilation = {
+    [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
 }
 
 export interface GlobalCodeGeneratorContext {
@@ -178,7 +186,7 @@ export interface NodeImplementation<
         macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
-        snds: NodeVariableNames['snds']
+        snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => Code
@@ -191,9 +199,9 @@ export interface NodeImplementation<
         macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
-        ins: NodeVariableNames['ins']
-        outs: NodeVariableNames['outs']
-        snds: NodeVariableNames['snds']
+        ins: PrecompiledNodeCode['ins']
+        outs: PrecompiledNodeCode['outs']
+        snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => Code
@@ -205,7 +213,7 @@ export interface NodeImplementation<
         macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
-        snds: NodeVariableNames['snds']
+        snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => {

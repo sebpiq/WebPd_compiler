@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,12 +19,14 @@
  */
 
 import { getNodeImplementation } from './compile-helpers'
-import { DspGraph } from '../dsp-graph'
-import { mapArray, mapObject } from '../functional-helpers'
+import { DspGraph, getters } from '../dsp-graph'
+import { mapObject } from '../functional-helpers'
+import { createNamespace } from './namespace'
 import {
     NodeImplementations,
     CodeVariableNames,
-    PortletsIndex,
+    Compilation,
+    CodeVariableName,
 } from '../compile/types'
 
 /**
@@ -41,59 +43,27 @@ export const generate = (
 ): CodeVariableNames => ({
     nodes: createNamespace(
         'n',
-        Object.values(graph).reduce<CodeVariableNames['nodes']>(
-            (nodeMap, node) => {
-                const nodeImplementation = getNodeImplementation(
-                    nodeImplementations,
-                    node.type
-                )
-                const namespaceLabel = `[${node.type}] ${node.id}`
-                const prefix = debug
-                    ? _v(
-                          `${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${
-                              node.id
-                          }`
-                      )
-                    : _v(node.id)
-
-                nodeMap[node.id] = {
-                    ins: createNamespaceFromPortlets(
-                        `${namespaceLabel}.ins`,
-                        node.inlets,
-                        'signal',
-                        (inlet) => `${prefix}_INS_${_v(inlet.id)}`
-                    ),
-                    rcvs: createNamespaceFromPortlets(
-                        `${namespaceLabel}.rcvs`,
-                        node.inlets,
-                        'message',
-                        (inlet) => `${prefix}_RCVS_${_v(inlet.id)}`
-                    ),
-                    outs: createNamespaceFromPortlets(
-                        `${namespaceLabel}.outs`,
-                        node.outlets,
-                        'signal',
-                        (outlet) => `${prefix}_OUTS_${_v(outlet.id)}`
-                    ),
-                    snds: createNamespaceFromPortlets(
-                        `${namespaceLabel}.snds`,
-                        node.outlets,
-                        'message',
-                        (outlet) => `${prefix}_SNDS_${_v(outlet.id)}`
-                    ),
-                    state: createNamespace(
-                        `${namespaceLabel}.state`,
-                        mapObject(
-                            nodeImplementation.stateVariables,
-                            (_, stateVariable) =>
-                                `${prefix}_STATE_${_v(stateVariable)}`
-                        )
-                    ),
-                }
-                return nodeMap
-            },
-            {}
-        )
+        mapObject(graph, (node) => {
+            const nodeImplementation = getNodeImplementation(
+                nodeImplementations,
+                node.type
+            )
+            const namespaceLabel = `[${node.type}] ${node.id}`
+            const prefix = _namePrefix(debug, node)
+            return {
+                rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
+                outs: createNamespace(`${namespaceLabel}.outs`, {}),
+                snds: createNamespace(`${namespaceLabel}.snds`, {}),
+                state: createNamespace(
+                    `${namespaceLabel}.state`,
+                    mapObject(
+                        nodeImplementation.stateVariables,
+                        (_, stateVariable) =>
+                            `${prefix}_STATE_${_v(stateVariable)}`
+                    )
+                ),
+            }
+        })
     ),
     globs: createNamespace('g', {
         iterFrame: 'F',
@@ -103,6 +73,7 @@ export const generate = (
         output: 'OUTPUT',
         input: 'INPUT',
         nullMessageReceiver: 'SND_TO_NULL',
+        nullSignal: 'NULL_SIGNAL',
         // TODO : not a glob
         m: 'm',
     }),
@@ -110,16 +81,55 @@ export const generate = (
     inletCallers: createNamespace('inletCallers', {}),
 })
 
+export const attachNodeOut = (
+    compilation: Compilation,
+    nodeId: DspGraph.NodeId,
+    portletId: DspGraph.PortletId
+): CodeVariableName => {
+    const { graph, codeVariableNames, debug } = compilation
+    const sinkNode = getters.getNode(graph, nodeId)
+    const prefix = _namePrefix(debug, sinkNode)
+    return (codeVariableNames.nodes[nodeId].outs[
+        portletId
+    ] = `${prefix}_OUTS_${_v(portletId)}`)
+}
+
+export const attachNodeSnd = (
+    compilation: Compilation,
+    nodeId: DspGraph.NodeId,
+    portletId: DspGraph.PortletId
+): CodeVariableName => {
+    const { graph, codeVariableNames, debug } = compilation
+    const sinkNode = getters.getNode(graph, nodeId)
+    const prefix = _namePrefix(debug, sinkNode)
+    return (codeVariableNames.nodes[nodeId].snds[
+        portletId
+    ] = `${prefix}_SNDS_${_v(portletId)}`)
+}
+
+export const attachNodeRcv = (
+    compilation: Compilation,
+    nodeId: DspGraph.NodeId,
+    portletId: DspGraph.PortletId
+): CodeVariableName => {
+    const { graph, codeVariableNames, debug } = compilation
+    const sinkNode = getters.getNode(graph, nodeId)
+    const prefix = _namePrefix(debug, sinkNode)
+    return (codeVariableNames.nodes[nodeId].rcvs[
+        portletId
+    ] = `${prefix}_RCVS_${_v(portletId)}`)
+}
+
 /**
  * Helper that attaches to the generated `codeVariableNames` the names of specified outlet listeners.
  *
  * @param codeVariableNames
  * @param outletListenerSpecs
  */
-export const attachOutletListeners = (
-    codeVariableNames: CodeVariableNames,
-    outletListenerSpecs: PortletsIndex
-): void => {
+export const attachOutletListeners = ({
+    codeVariableNames,
+    outletListenerSpecs,
+}: Compilation): void =>
     Object.entries(outletListenerSpecs).forEach(([nodeId, outletIds]) => {
         codeVariableNames.outletListeners[nodeId] = {}
         outletIds.forEach((outletId) => {
@@ -128,7 +138,6 @@ export const attachOutletListeners = (
             ] = `outletListener_${nodeId}_${outletId}`
         })
     })
-}
 
 /**
  * Helper that attaches to the generated `codeVariableNames` the names of specified inlet callers.
@@ -136,10 +145,10 @@ export const attachOutletListeners = (
  * @param codeVariableNames
  * @param inletCallerSpecs
  */
-export const attachInletCallers = (
-    codeVariableNames: CodeVariableNames,
-    inletCallerSpecs: PortletsIndex
-): void => {
+export const attachInletCallers = ({
+    codeVariableNames,
+    inletCallerSpecs,
+}: Compilation): void =>
     Object.entries(inletCallerSpecs).forEach(([nodeId, inletIds]) => {
         codeVariableNames.inletCallers[nodeId] = {}
         inletIds.forEach((inletId) => {
@@ -148,49 +157,11 @@ export const attachInletCallers = (
             ] = `inletCaller_${nodeId}_${inletId}`
         })
     })
-}
 
-/**
- * Helper to generate VariableNames, essentially a proxy object that throws an error
- * when trying to access undefined properties.
- *
- * @param namespace
- * @returns
- */
-export const createNamespace = <T extends Object>(
-    label: string,
-    namespace: T
-) => {
-    return new Proxy<T>(namespace, {
-        get: (target, k) => {
-            const key = String(k)
-            if (!target.hasOwnProperty(key)) {
-                if (key[0] === '$' && target.hasOwnProperty(key.slice(1))) {
-                    return (target as any)[key.slice(1)]
-                }
-
-                // Whitelist some fields that are undefined but accessed at
-                // some point or another by our code.
-                if (
-                    [
-                        'toJSON',
-                        'Symbol(Symbol.toStringTag)',
-                        'constructor',
-                        '$$typeof',
-                        '@@__IMMUTABLE_ITERABLE__@@',
-                        '@@__IMMUTABLE_RECORD__@@',
-                    ].includes(key)
-                ) {
-                    return undefined
-                }
-                throw new Error(
-                    `Namespace "${label}" doesn't know key "${String(key)}"`
-                )
-            }
-            return (target as any)[key]
-        },
-    })
-}
+const _namePrefix = (debug: boolean, node: DspGraph.Node) =>
+    debug
+        ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`)
+        : _v(node.id)
 
 export const assertValidNamePart = (namePart: string) => {
     const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)
@@ -204,19 +175,3 @@ export const assertValidNamePart = (namePart: string) => {
 const _v = assertValidNamePart
 
 const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/
-
-export const createNamespaceFromPortlets = <T>(
-    label: string,
-    portletMap: DspGraph.PortletMap,
-    portletType: DspGraph.PortletType,
-    mapFunction: (portlet: DspGraph.Portlet) => T
-) =>
-    createNamespace(
-        label,
-        mapArray(
-            Object.values(portletMap).filter(
-                (portlet) => portlet.type === portletType
-            ),
-            (portlet) => [portlet.id, mapFunction(portlet)]
-        )
-    )

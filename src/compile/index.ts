@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,7 @@ import * as variableNames from './code-variable-names'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
+    initializePrecompilation,
     preCompileSignalAndMessageFlow,
 } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
@@ -65,14 +66,12 @@ export default (
         debug,
     } = validateSettings(settings)
     const macros = getMacros(target)
+    const precompilation = initializePrecompilation(graph)
     const codeVariableNames = variableNames.generate(
         nodeImplementations,
         graph,
         debug
     )
-    variableNames.attachInletCallers(codeVariableNames, inletCallerSpecs)
-    variableNames.attachOutletListeners(codeVariableNames, outletListenerSpecs)
-
     const graphTraversalDeclare = buildGraphTraversalDeclare(
         graph,
         inletCallerSpecs
@@ -95,10 +94,7 @@ export default (
             codeVariableNames,
             macros,
             debug,
-            precompiledPortlets: {
-                precompiledInlets: {},
-                precompiledOutlets: {},
-            },
+            precompilation,
         }),
     }
 }

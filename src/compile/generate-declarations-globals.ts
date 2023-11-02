@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,5 +30,6 @@ export default ({
         let ${Var(globs.frame, 'Int')} = 0
         let ${Var(globs.blockSize, 'Int')} = 0
         let ${Var(globs.sampleRate, 'Float')} = 0
+        let ${Var(globs.nullSignal, 'Float')} = 0
         function ${globs.nullMessageReceiver} ${Func([Var('m', 'Message')], 'void')} {}
     `

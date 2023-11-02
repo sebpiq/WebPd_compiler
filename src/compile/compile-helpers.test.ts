@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,12 @@ import {
     preCompileSignalAndMessageFlow,
 } from './compile-helpers'
 import { makeCompilation } from '../test-helpers'
-import { Compilation, GlobalCodeDefinition, GlobalCodeGeneratorWithSettings, NodeImplementation, NodeImplementations } from './types'
+import {
+    GlobalCodeDefinition,
+    GlobalCodeGeneratorWithSettings,
+    NodeImplementation,
+    NodeImplementations,
+} from './types'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
@@ -102,29 +107,26 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1', 'node2'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
 
+                // Variable declarations
                 assert.strictEqual(
-                    compilation.codeVariableNames.nodes.node2.ins['0'],
-                    compilation.codeVariableNames.nodes.node1.outs['0']
+                    compilation.codeVariableNames.nodes.node1.outs['0'],
+                    'node1_OUTS_0'
                 )
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: {
-                            node2: ['0'],
-                        },
-                        precompiledOutlets: {},
-                    }
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node2.ins['0'],
+                    'node1_OUTS_0'
                 )
             })
 
-            it('should leave unconnected signal IN unchanged', () => {
+            it('should put empty signal for unconnected IN', () => {
                 const graph = makeGraph({
                     node1: {
                         inlets: {
@@ -134,43 +136,37 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
 
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: {},
-                        precompiledOutlets: {},
-                    }
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node1.ins['0'],
+                    compilation.codeVariableNames.globs.nullSignal
                 )
             })
         })
 
         describe('message SNDS', () => {
-            it("should substitute message SND with the sink's RCV if only one sink", () => {
+            it('should create SND if several sinks', () => {
                 const graph = makeGraph({
                     node1: {
                         outlets: {
                             '0': { id: '0', type: 'message' },
-                            '1': { id: '1', type: 'message' },
                         },
                         sinks: {
                             '0': [
                                 ['node2', '0'],
                                 ['node3', '0'],
                             ],
-                            '1': [['node2', '1']],
                         },
                     },
                     node2: {
                         inlets: {
                             '0': { id: '0', type: 'message' },
-                            '1': { id: '1', type: 'message' },
                         },
                     },
                     node3: {
@@ -181,25 +177,62 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1', 'node2', 'node3'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
 
+                // Variable declarations
                 assert.strictEqual(
-                    compilation.codeVariableNames.nodes.node1.snds['1'],
-                    compilation.codeVariableNames.nodes.node2.rcvs['1']
+                    compilation.codeVariableNames.nodes.node1.snds['0'],
+                    'node1_SNDS_0'
                 )
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: {},
-                        precompiledOutlets: {
-                            node1: ['1'],
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node1.snds['0'],
+                    'node1_SNDS_0'
+                )
+            })
+
+            it("should substitute message SND with the sink's RCV if only one sink", () => {
+                const graph = makeGraph({
+                    node1: {
+                        outlets: {
+                            '0': { id: '0', type: 'message' },
                         },
-                    }
+                        sinks: {
+                            '0': [['node2', '0']],
+                        },
+                    },
+                    node2: {
+                        inlets: {
+                            '0': { id: '0', type: 'message' },
+                        },
+                    },
+                })
+
+                const compilation = makeCompilation({
+                    graph,
+                    graphTraversalDeclare: ['node1', 'node2'],
+                })
+
+                preCompileSignalAndMessageFlow(compilation)
+
+                // Variable declarations
+                assert.strictEqual(
+                    compilation.codeVariableNames.nodes.node2.rcvs['0'],
+                    'node2_RCVS_0'
+                )
+                assert.ok(
+                    !('0' in compilation.codeVariableNames.nodes.node1.snds)
+                )
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node1.snds['0'],
+                    'node2_RCVS_0'
                 )
             })
 
@@ -221,7 +254,6 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1', 'node2'],
                     outletListenerSpecs: {
@@ -231,12 +263,16 @@ describe('compile-helpers', () => {
 
                 preCompileSignalAndMessageFlow(compilation)
 
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: {},
-                        precompiledOutlets: {},
-                    }
+                // Variable declarations
+                assert.strictEqual(
+                    compilation.codeVariableNames.nodes.node1.snds['0'],
+                    'node1_SNDS_0'
+                )
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node1.snds['0'],
+                    'node1_SNDS_0'
                 )
             })
 
@@ -250,7 +286,6 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1'],
                     outletListenerSpecs: {
@@ -260,18 +295,16 @@ describe('compile-helpers', () => {
 
                 preCompileSignalAndMessageFlow(compilation)
 
+                // Variable declarations
                 assert.strictEqual(
-                    compilation.codeVariableNames.nodes.node1.snds['0'],
-                    compilation.codeVariableNames.outletListeners.node1['0']
+                    compilation.codeVariableNames.outletListeners.node1['0'],
+                    'outletListener_node1_0'
                 )
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: {},
-                        precompiledOutlets: {
-                            node1: ['0'],
-                        },
-                    }
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node1.snds['0'],
+                    compilation.codeVariableNames.outletListeners.node1['0']
                 )
             })
 
@@ -285,30 +318,129 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
 
+                // Precompilation
                 assert.strictEqual(
-                    compilation.codeVariableNames.nodes.node1.snds['0'],
+                    compilation.precompilation.node1.snds['0'],
                     compilation.codeVariableNames.globs.nullMessageReceiver
-                )
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: {},
-                        precompiledOutlets: {
-                            node1: ['0'],
-                        },
-                    }
                 )
             })
         })
 
         describe('message RCVS', () => {
+            it('should declare message inlet when it has one or more sources', () => {
+                const graph = makeGraph({
+                    node1: {
+                        outlets: {
+                            '0': { id: '0', type: 'message' },
+                            '1': { id: '1', type: 'message' },
+                        },
+                        sinks: {
+                            '0': [
+                                ['node2', '0'],
+                                ['node3', '0'],
+                            ],
+                            '1': [['node2', '0']],
+                        },
+                    },
+                    node2: {
+                        inlets: {
+                            '0': { id: '0', type: 'message' },
+                        },
+                    },
+                    node3: {
+                        inlets: {
+                            '0': { id: '0', type: 'message' },
+                        },
+                    },
+                })
+
+                const compilation = makeCompilation({
+                    graph,
+                    graphTraversalDeclare: ['node1', 'node2', 'node3'],
+                })
+
+                preCompileSignalAndMessageFlow(compilation)
+
+                // Variable declarations
+                assert.strictEqual(
+                    compilation.codeVariableNames.nodes.node2.rcvs['0'],
+                    'node2_RCVS_0'
+                )
+                assert.strictEqual(
+                    compilation.codeVariableNames.nodes.node3.rcvs['0'],
+                    'node3_RCVS_0'
+                )
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node2.rcvs['0'],
+                    'node2_RCVS_0'
+                )
+                assert.strictEqual(
+                    compilation.precompilation.node3.rcvs['0'],
+                    'node3_RCVS_0'
+                )
+            })
+
+            it('should declare message inlet when outlet has several sinks', () => {
+                const graph = makeGraph({
+                    node1: {
+                        outlets: {
+                            '0': { id: '0', type: 'message' },
+                        },
+                        sinks: {
+                            '0': [
+                                ['node2', '0'],
+                                ['node3', '0'],
+                            ],
+                        },
+                    },
+                    node2: {
+                        inlets: {
+                            '0': { id: '0', type: 'message' },
+                        },
+                    },
+                    node3: {
+                        inlets: {
+                            '0': { id: '0', type: 'message' },
+                        },
+                    },
+                })
+
+                const compilation = makeCompilation({
+                    graph,
+                    graphTraversalDeclare: ['node1', 'node2', 'node3'],
+                })
+
+                preCompileSignalAndMessageFlow(compilation)
+
+                // Variable declarations
+                assert.strictEqual(
+                    compilation.codeVariableNames.nodes.node2.rcvs['0'],
+                    'node2_RCVS_0'
+                )
+                assert.strictEqual(
+                    compilation.codeVariableNames.nodes.node3.rcvs['0'],
+                    'node3_RCVS_0'
+                )
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node2.rcvs['0'],
+                    'node2_RCVS_0'
+                )
+                assert.strictEqual(
+                    compilation.precompilation.node3.rcvs['0'],
+                    'node3_RCVS_0'
+                )
+            })
+
             it('should remove message inlets when inlet has no source', () => {
                 const graph = makeGraph({
                     node1: {
@@ -319,19 +451,15 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1'],
                 })
 
                 preCompileSignalAndMessageFlow(compilation)
 
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: { node1: ['0'] },
-                        precompiledOutlets: {},
-                    }
+                // Variable declarations
+                assert.ok(
+                    !('0' in compilation.codeVariableNames.nodes.node1.rcvs)
                 )
             })
 
@@ -345,7 +473,6 @@ describe('compile-helpers', () => {
                 })
 
                 const compilation = makeCompilation({
-                    target: 'javascript',
                     graph,
                     graphTraversalDeclare: ['node1'],
                     inletCallerSpecs: { node1: ['0'] },
@@ -353,12 +480,16 @@ describe('compile-helpers', () => {
 
                 preCompileSignalAndMessageFlow(compilation)
 
-                assert.deepStrictEqual<Compilation['precompiledPortlets']>(
-                    compilation.precompiledPortlets,
-                    {
-                        precompiledInlets: {},
-                        precompiledOutlets: {},
-                    }
+                // Variable declarations
+                assert.strictEqual(
+                    compilation.codeVariableNames.nodes.node1.rcvs['0'],
+                    'node1_RCVS_0'
+                )
+
+                // Precompilation
+                assert.strictEqual(
+                    compilation.precompilation.node1.rcvs['0'],
+                    'node1_RCVS_0'
                 )
             })
         })
@@ -452,8 +583,8 @@ describe('compile-helpers', () => {
     })
 
     describe('buildGraphTraversalLoop', () => {
-        it('should combine signal and message traversals and remove duplicates', () => {
-            // [  n1  ]         [  n5  ]
+        it('should return signal traversal and remove duplicates', () => {
+            // [  n1  ]
             //    / \
             //   |  [  n2  ]
             //   |    /   \
@@ -471,7 +602,6 @@ describe('compile-helpers', () => {
                     },
                 },
                 n2: {
-                    isPushingMessages: true,
                     sinks: {
                         '0': [['n3', '0']],
                         '1': [['n4', '0']],
@@ -481,7 +611,6 @@ describe('compile-helpers', () => {
                     },
                     outlets: {
                         '0': { type: 'signal', id: '0' },
-                        '1': { type: 'message', id: '1' },
                     },
                 },
                 n3: {
@@ -491,22 +620,18 @@ describe('compile-helpers', () => {
                     },
                 },
                 n4: {
+                    isPullingSignal: true,
                     inlets: {
-                        '0': { type: 'message', id: '0' },
+                        '0': { type: 'signal', id: '0' },
                     },
-                },
-                n5: {
-                    isPushingMessages: true,
                 },
             })
             const traversal = buildGraphTraversalLoop(graph)
-            // n5 first because messages are triggered before signal
-            // n4 not included because it is not pushing messages.
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, [
-                'n5',
                 'n1',
                 'n2',
                 'n3',
+                'n4',
             ])
         })
     })

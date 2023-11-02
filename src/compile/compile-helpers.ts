@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,8 +32,12 @@ import {
     NodeImplementation,
     NodeImplementations,
     PortletsIndex,
+    Precompilation,
 } from './types'
 import { EngineMetadata } from '../run/types'
+import * as variableNames from './code-variable-names'
+import { createNamespace } from './namespace'
+import { mapObject } from '../functional-helpers'
 
 /** Helper to get node implementation or throw an error if not implemented. */
 export const getNodeImplementation = (
@@ -80,6 +84,22 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     }
 }
 
+export const initializePrecompilation = (
+    graph: DspGraph.Graph
+): Precompilation =>
+    createNamespace(
+        'precompilation',
+        mapObject(graph, (node) => {
+            const namespaceLabel = `[${node.type}] ${node.id}`
+            return {
+                rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
+                outs: createNamespace(`${namespaceLabel}.outs`, {}),
+                snds: createNamespace(`${namespaceLabel}.snds`, {}),
+                ins: createNamespace(`${namespaceLabel}.ins`, {}),
+            }
+        })
+    )
+
 /**
  * Takes the graph traversal, and for each node directly assign the
  * inputs of its next nodes where this can be done.
@@ -94,114 +114,156 @@ export const preCompileSignalAndMessageFlow = (compilation: Compilation) => {
         graph,
         graphTraversalDeclare,
         codeVariableNames,
+        precompilation,
         inletCallerSpecs,
         outletListenerSpecs,
     } = compilation
+
     const graphTraversalNodes = graphTraversalDeclare.map((nodeId) =>
         getters.getNode(graph, nodeId)
     )
-    const precompiledInlets: PortletsIndex = {}
-    const precompiledOutlets: PortletsIndex = {}
-    const _pushEntry = (
-        portletsIndex: PortletsIndex,
-        nodeId: DspGraph.NodeId,
-        portletId: DspGraph.PortletId
-    ) => {
-        portletsIndex[nodeId] = portletsIndex[nodeId] || []
-        if (!portletsIndex[nodeId].includes(portletId)) {
-            portletsIndex[nodeId].push(portletId)
-        }
-    }
+
+    variableNames.attachInletCallers(compilation)
+    variableNames.attachOutletListeners(compilation)
 
     graphTraversalNodes.forEach((node) => {
-        const { outs, snds } = codeVariableNames.nodes[node.id]
         Object.entries(node.outlets).forEach(([outletId, outlet]) => {
-            const outletSinks = getters.getSinks(node, outletId)
-            const nodeOutletListenerSpecs = outletListenerSpecs[node.id] || []
+            const sourceNode = node
+            const outletSinks = getters.getSinks(sourceNode, outletId)
 
             // Signal inlets can receive input from ONLY ONE signal.
-            // Therefore, we replace signal inlet directly with
+            // Therefore, we substitute inlet variable directly with
             // previous node's outs. e.g. instead of :
             //
-            //      NODE1_OUT = A + B
             //      NODE2_IN = NODE1_OUT
             //      NODE2_OUT = NODE2_IN * 2
             //
             // we will have :
             //
-            //      NODE1_OUT = A + B
             //      NODE2_OUT = NODE1_OUT * 2
             //
             if (outlet.type === 'signal') {
-                outletSinks.forEach((sink) => {
-                    codeVariableNames.nodes[sink.nodeId].ins[sink.portletId] =
-                        outs[outletId]
-                    _pushEntry(precompiledInlets, sink.nodeId, sink.portletId)
-                })
+                const outName = variableNames.attachNodeOut(
+                    compilation,
+                    sourceNode.id,
+                    outletId
+                )
+                outletSinks.forEach(
+                    ({ portletId: inletId, nodeId: sinkNodeId }) => {
+                        precompilation[sinkNodeId].ins[inletId] = outName
+                    }
+                )
 
                 // For a message outlet that sends to a single sink node
                 // its out can be directly replaced by next node's in.
-                // e.g. instead of :
+                // e.g. instead of (which is useful if several sinks) :
                 //
-                //      const NODE1_MSG = () => {
-                //          NODE1_SND('bla')
+                //      const NODE1_SND = (m) => {
+                //          NODE2_RCV(m)
                 //      }
+                //      // ...
+                //      NODE1_SND(m)
                 //
-                //      const NODE1_SND = NODE2_MSG
+                // we can directly substitute NODE1_SND by NODE2_RCV :
                 //
-                // we can have :
-                //
-                //      const NODE1_MSG = () => {
-                //          NODE2_MSG('bla')
-                //      }
+                //      NODE2_RCV(m)
                 //
             } else if (outlet.type === 'message') {
+                const nodeOutletListenerSpecs =
+                    outletListenerSpecs[sourceNode.id] || []
                 if (
                     outletSinks.length === 1 &&
-                    !nodeOutletListenerSpecs.includes(outlet.id)
+                    !nodeOutletListenerSpecs.includes(outletId)
                 ) {
-                    snds[outletId] =
-                        codeVariableNames.nodes[outletSinks[0].nodeId].rcvs[
-                            outletSinks[0].portletId
-                        ]
-                    _pushEntry(precompiledOutlets, node.id, outletId)
+                    const rcvName = variableNames.attachNodeRcv(
+                        compilation,
+                        outletSinks[0].nodeId,
+                        outletSinks[0].portletId
+                    )
+                    precompilation[sourceNode.id].snds[outletId] = rcvName
 
                     // Same thing if there's no sink, but one outlet listener
                 } else if (
                     outletSinks.length === 0 &&
-                    nodeOutletListenerSpecs.includes(outlet.id)
+                    nodeOutletListenerSpecs.includes(outletId)
                 ) {
-                    snds[outletId] =
-                        codeVariableNames.outletListeners[node.id][outletId]
-                    _pushEntry(precompiledOutlets, node.id, outletId)
+                    precompilation[sourceNode.id].snds[outletId] =
+                        codeVariableNames.outletListeners[sourceNode.id][
+                            outletId
+                        ]
 
                     // If no sink, no message receiver, we assign the node SND
                     // a function that does nothing
                 } else if (
                     outletSinks.length === 0 &&
-                    !nodeOutletListenerSpecs.includes(outlet.id)
+                    !nodeOutletListenerSpecs.includes(outletId)
                 ) {
-                    snds[outletId] =
+                    precompilation[sourceNode.id].snds[outletId] =
                         compilation.codeVariableNames.globs.nullMessageReceiver
-                    _pushEntry(precompiledOutlets, node.id, outletId)
+
+                    // Otherwise, there are several sinks, we then need to generate
+                    // a function to send messages to all sinks, e.g. :
+                    //
+                    //      const NODE1_SND = (m) => {
+                    //          NODE3_RCV(m)
+                    //          NODE2_RCV(m)
+                    //      }
+                    //
+                } else {
+                    variableNames.attachNodeSnd(
+                        compilation,
+                        sourceNode.id,
+                        outletId
+                    )
                 }
             }
         })
 
         Object.entries(node.inlets).forEach(([inletId, inlet]) => {
-            const nodeInletCallerSpecs = inletCallerSpecs[node.id] || []
-            // If message inlet has no source, no need to compile it.
-            if (
-                inlet.type === 'message' &&
-                getters.getSources(node, inletId).length === 0 &&
-                !nodeInletCallerSpecs.includes(inlet.id)
+            const sinkNode = node
+            const nodeInletCallerSpecs = inletCallerSpecs[sinkNode.id] || []
+            const inletSources = getters.getSources(sinkNode, inletId)
+
+            if (inlet.type === 'message') {
+                // If message inlet has at least one source, or no source but an inlet caller,
+                // we need to declare the receiver.
+                if (
+                    (inletSources.length === 0 &&
+                        nodeInletCallerSpecs.includes(inlet.id)) ||
+                    inletSources.length > 0
+                ) {
+                    variableNames.attachNodeRcv(
+                        compilation,
+                        sinkNode.id,
+                        inletId
+                    )
+                } else {
+                    // No need to declare rcv if no inlet caller
+                }
+            } else if (
+                inlet.type === 'signal' &&
+                getters.getSources(sinkNode, inletId).length === 0
             ) {
-                _pushEntry(precompiledInlets, node.id, inletId)
+                // If signal inlet has no source, we assign it a constant value of 0.
+                precompilation[sinkNode.id].ins[inletId] =
+                    codeVariableNames.globs.nullSignal
             }
         })
     })
-    compilation.precompiledPortlets.precompiledInlets = precompiledInlets
-    compilation.precompiledPortlets.precompiledOutlets = precompiledOutlets
+
+    // Copy code variable names over to precompilation object.
+    Object.entries(codeVariableNames.nodes).forEach(
+        ([nodeId, nodeVariableNames]) => {
+            ;(['outs', 'snds', 'rcvs'] as const).forEach((ns) => {
+                Object.keys(nodeVariableNames[ns]).forEach((portletId) => {
+                    if (!(portletId in precompilation[nodeId][ns])) {
+                        precompilation[nodeId][ns][portletId] =
+                            nodeVariableNames[ns][portletId]
+                    }
+                })
+            })
+        }
+    )
 }
 
 export const getGlobalCodeGeneratorContext = (
@@ -245,11 +307,7 @@ export const buildGraphTraversalDeclare = (
 }
 
 /**
- * Build graph traversal for the declaring nodes.
- * We first put nodes that push messages, so they have the opportunity
- * to change the engine state before running the loop.
- * !!! If a node is pushing messages but also writing signal outputs,
- * it will not be ran first, and stay in the signal flow.
+ * Build graph traversal for generating the loop.
  */
 export const buildGraphTraversalLoop = (
     graph: DspGraph.Graph
@@ -257,21 +315,7 @@ export const buildGraphTraversalLoop = (
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
     )
-    const nodesPushingMessages = Object.values(graph).filter(
-        (node) => !!node.isPushingMessages
-    )
-
-    const combined = nodesPushingMessages.map((node) => node.id)
-    traversal.signalNodes(graph, nodesPullingSignal).forEach((nodeId) => {
-        // If a node is already in the traversal, because it's puhsing messages,
-        // we prefer to remove it and put it after so that we keep the signal traversal
-        // order unchanged.
-        if (combined.includes(nodeId)) {
-            combined.splice(combined.indexOf(nodeId), 1)
-        }
-        combined.push(nodeId)
-    })
-    return combined
+    return traversal.signalNodes(graph, nodesPullingSignal)
 }
 
 export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
@@ -324,6 +368,7 @@ export const collectImports = (
                 : [...imports, imprt],
         []
     )
+
 const _collectExportsRecursive = (dependencies: Array<GlobalCodeDefinition>) =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
@@ -339,6 +384,7 @@ const _collectExportsRecursive = (dependencies: Array<GlobalCodeDefinition>) =>
                 ...(globalCodeDefinition.exports || []),
             ]
         )
+
 const _collectImportsRecursive = (dependencies: Array<GlobalCodeDefinition>) =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
@@ -354,6 +400,7 @@ const _collectImportsRecursive = (dependencies: Array<GlobalCodeDefinition>) =>
                 ...(globalCodeDefinition.imports || []),
             ]
         )
+
 export const isGlobalDefinitionWithSettings = (
     globalCodeDefinition: GlobalCodeDefinition
 ): globalCodeDefinition is GlobalCodeGeneratorWithSettings =>
