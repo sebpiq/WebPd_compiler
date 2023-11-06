@@ -31,11 +31,12 @@ type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]
  */
 export const signalNodes = (
     graph: DspGraph.Graph,
-    nodesPullingSignal: Array<DspGraph.Node>
+    nodesPullingSignal: Array<DspGraph.Node>,
+    shouldContinue?: (node: DspGraph.Node) => boolean,
 ): DspGraph.GraphTraversal => {
     const traversal: DspGraph.GraphTraversal = []
     nodesPullingSignal.forEach((node) =>
-        _signalNodesBreadthFirstRecursive(traversal, [], graph, node)
+        _signalNodesBreadthFirstRecursive(traversal, [], graph, node, shouldContinue)
     )
     return traversal
 }
@@ -44,8 +45,12 @@ const _signalNodesBreadthFirstRecursive = (
     traversal: DspGraph.GraphTraversal,
     currentPath: DspGraph.GraphTraversal,
     graph: DspGraph.Graph,
-    node: DspGraph.Node
+    node: DspGraph.Node,
+    shouldContinue?: (node: DspGraph.Node) => boolean,
 ) => {
+    if (shouldContinue && !shouldContinue(node)) { 
+        return 
+    }
     const nextPath: DspGraph.GraphTraversal = [...currentPath, node.id]
     Object.entries(node.sources)
         .filter(([inletId]) => getInlet(node, inletId).type === 'signal')
@@ -59,7 +64,8 @@ const _signalNodesBreadthFirstRecursive = (
                     traversal,
                     nextPath,
                     graph,
-                    sourceNode
+                    sourceNode,
+                    shouldContinue,
                 )
             })
         })

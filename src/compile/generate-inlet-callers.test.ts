@@ -57,7 +57,7 @@ describe('generateInletCallers', () => {
         assert.strictEqual(
             normalizeCode(declareCode),
             normalizeCode(`
-                function inletCaller_node1_0 (m) {node1_RCVS_0(m)}
+                function inletCallers_node1_0 (m) {node1_RCVS_0(m)}
             `)
         )
     })

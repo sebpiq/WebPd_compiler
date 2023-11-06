@@ -85,7 +85,8 @@ describe('Engine', () => {
                 [dependenciesInjectorId]: {
                     ...nodeDefaults(dependenciesInjectorId),
                     type: dependenciesInjectorType,
-                    isPullingSignal: true,
+                    // Force node to be in declaration graph traversal
+                    isPushingMessages: true,
                 },
             },
             nodeImplementations: {
@@ -1117,9 +1118,9 @@ describe('Engine', () => {
                     msg_writeStringToken(m2, 0, 'bla')
 
                     function testCallOutletListener ${Func([], 'void')} {
-                        outletListener_someNode1_someOutlet1(m1)
-                        outletListener_someNode1_someOutlet2(m2)
-                        outletListener_someNode2_someOutlet1(m1)
+                        outletListeners_someNode1_someOutlet1(m1)
+                        outletListeners_someNode1_someOutlet2(m2)
+                        outletListeners_someNode2_someOutlet1(m1)
                     }
                 `,
                     exports: [{ name: 'testCallOutletListener' }],

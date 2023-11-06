@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -72,6 +72,86 @@ describe('graph-traversal', () => {
             })
             const traversal = signalNodes(graph, [graph.n3!])
             assert.deepStrictEqual(traversal, ['n1', 'n2', 'n3'])
+        })
+
+        it('should respect stop condition when given', () => {
+            // [  n1  ]
+            //   |
+            // [  n2  ]
+            //   |    \
+            //   |   [  n3  ]
+            //   |        \
+            // [  n4  ]  [  n5  ]
+            //   \        /
+            //    \      /
+            //     \    /
+            //    [  n6  ]
+            const graph = makeGraph({
+                n1: {
+                    sinks: {
+                        '0': [['n2', '0']],
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n2: {
+                    sinks: {
+                        '0': [['n4', '0']],
+                        '1': [['n3', '0']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'signal', id: '1' },
+                    },
+                },
+                n3: {
+                    sinks: {
+                        '0': [['n5', '0']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n4: {
+                    sinks: {
+                        '0': [['n6', '0']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n5: {
+                    sinks: {
+                        '0': [['n6', '1']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n6: {
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'signal', id: '1' },
+                    },
+                },
+            })
+            const traversal = signalNodes(graph, [graph.n6!], (node) =>
+                !(['n1', 'n3'].includes(node.id))
+            )
+            assert.deepStrictEqual(traversal, ['n2', 'n4', 'n5', 'n6'])
         })
 
         it('traverses a graph with node with several sources', () => {

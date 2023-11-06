@@ -86,7 +86,6 @@ describe('generateLoop', () => {
         })
 
         const compilation = makeCompilation({
-            target: 'javascript',
             graph,
             graphTraversalLoop: ['osc', 'plus', 'dac'],
             nodeImplementations: NODE_IMPLEMENTATIONS,
@@ -112,33 +111,27 @@ describe('generateLoop', () => {
         )
     })
 
-    it('should ignore nodes that implement no loop function', () => {
+    it('should generate loop for inline nodes', () => {
         const graph = makeGraph({
-            print: {
-                type: 'print',
-                args: {
-                    messages: ['bla', 'hello'],
-                },
-                inlets: { '0': { id: '0', type: 'message' } },
-            },
-            dac: {
-                type: 'dac~',
-                args: {
-                    value: 'bla',
-                },
-                inlets: {
-                    '0': { id: '0', type: 'signal' },
-                    '1': { id: '1', type: 'signal' },
-                },
+            node1: {
+                type: 'type1',
+                outlets: { '0': { id: '0', type: 'signal' } },
             },
         })
 
+        const nodeImplementations: NodeImplementations = {
+            type1: {
+                generateLoopInline: () => 'BLA',
+            }
+        }
+
         const compilation = makeCompilation({
-            target: 'javascript',
             graph,
-            graphTraversalLoop: ['print', 'dac'],
-            nodeImplementations: NODE_IMPLEMENTATIONS,
+            graphTraversalLoop: ['node1'],
+            nodeImplementations,
         })
+
+        compilation.precompilation.node1.outs['0'] = 'node1_OUTS_0'
 
         const loop = generateLoop(compilation)
 
@@ -147,10 +140,30 @@ describe('generateLoop', () => {
             normalizeCode(`
             for (F = 0; F < BLOCK_SIZE; F++) {
                 _commons_emitFrame(FRAME)
-                // [dac~] : channelCount 2
+                node1_OUTS_0 = BLA
                 FRAME++
             }
         `)
         )
+    })
+
+    it('should throw error for nodes with no loop function', () => {
+        const graph = makeGraph({
+            node1: {
+                type: 'type1',
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            'type1': {}
+        }
+
+        const compilation = makeCompilation({
+            graph,
+            graphTraversalLoop: ['node1'],
+            nodeImplementations,
+        })
+
+        assert.throws(() => generateLoop(compilation))
     })
 })

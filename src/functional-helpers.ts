@@ -20,12 +20,14 @@
 
 import { Code } from './compile/types'
 
-type CodeLines = Array<CodeLines | Code | number>
+type CodeLine = Code | number | null
+type CodeLines = Array<CodeLines | CodeLine>
 
 /**
  * Renders templated strings which contain nested arrays of strings.
  * This helper allows to use functions such as `.map` to generate several lines
  * of code, without having to use `.join('\n')`.
+ * If a code line inserted in the template is falsy (null / undefined), it is ignored.
  * @todo : should not have to check for falsy codeLine has it should be typechecked.
  */
 export const renderCode = (
@@ -42,14 +44,15 @@ export const renderCode = (
     return rendered
 }
 
-const _renderCodeRecursive = (codeLines: CodeLines | Code | number): Code => {
+const _renderCodeRecursive = (codeLines: CodeLines | CodeLine): Code => {
     if (Array.isArray(codeLines)) {
         return codeLines
             .map(_renderCodeRecursive)
             .filter((line) => line.length)
             .join('\n')
+    } else {
+        return (codeLines !== null ? codeLines: '').toString()
     }
-    return codeLines.toString()
 }
 
 /** Generate an integer series from 0 to `count` (non-inclusive). */

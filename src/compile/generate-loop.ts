@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,24 +33,34 @@ export default (compilation: Compilation) => {
         nodeImplementations,
     } = compilation
     const { globs } = codeVariableNames
-    const graphTraversalNodes = graphTraversalLoop.map((nodeId) =>
-        getters.getNode(graph, nodeId)
-    )
 
     // prettier-ignore
     return renderCode`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
-            ${graphTraversalNodes.map((node) => {
-                const { state } = codeVariableNames.nodes[node.id]
-                const { outs, ins, snds } = precompilation[node.id]
+            ${graphTraversalLoop.map((nodeId) => {
+                const { state } = codeVariableNames.nodes[nodeId]
+                const { outs, ins, snds } = precompilation[nodeId]
+                const node = getters.getNode(graph, nodeId)
                 const nodeImplementation = getNodeImplementation(
                     nodeImplementations,
                     node.type
                 )
-                return [
-                    // 1. Node loop implementation
-                    nodeImplementation.generateLoop({
+
+                if (nodeImplementation.generateLoopInline) {
+                    const outletId = Object.keys(node.outlets)[0]
+                    const inlined = nodeImplementation.generateLoopInline({
+                        macros,
+                        globs,
+                        node,
+                        state,
+                        ins,
+                        compilation,
+                    })
+                    return `${outs[outletId]} = ${inlined}`
+                
+                } else if (nodeImplementation.generateLoop) {
+                    return nodeImplementation.generateLoop({
                         macros,
                         globs,
                         node,
@@ -59,8 +69,11 @@ export default (compilation: Compilation) => {
                         outs,
                         snds,
                         compilation,
-                    }),
-                ]
+                    })
+
+                } else {
+                    throw new Error(`No loop to generate for node ${node.type}:${nodeId}`)
+                }
             })}
             ${globs.frame}++
         }

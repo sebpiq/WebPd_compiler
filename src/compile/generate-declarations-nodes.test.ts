@@ -395,9 +395,7 @@ describe('generateDeclarationsNodes', () => {
         })
 
         const nodeImplementations: NodeImplementations = {
-            type1: {
-                generateLoop: () => ``,
-            },
+            type1: {},
         }
 
         const compilation = makeCompilation({

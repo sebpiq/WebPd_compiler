@@ -32,26 +32,20 @@ import {
     NodeImplementation,
     NodeImplementations,
     PortletsIndex,
-    Precompilation,
 } from './types'
 import { EngineMetadata } from '../run/types'
-import { createNamespace } from './namespace'
-import { mapObject } from '../functional-helpers'
 
 /** Helper to get node implementation or throw an error if not implemented. */
 export const getNodeImplementation = (
     nodeImplementations: NodeImplementations,
     nodeType: DspGraph.NodeType
-): Required<NodeImplementation<DspGraph.NodeArguments>> => {
+): NodeImplementation<DspGraph.NodeArguments> => {
     const nodeImplementation = nodeImplementations[nodeType]
     if (!nodeImplementation) {
         throw new Error(`node [${nodeType}] is not implemented`)
     }
     return {
         stateVariables: {},
-        generateDeclarations: () => '',
-        generateLoop: () => '',
-        generateMessageReceivers: () => ({}),
         dependencies: [],
         ...nodeImplementation,
     }

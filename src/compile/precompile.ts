@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { DspGraph, getters } from '../dsp-graph'
+import { DspGraph, getters, traversal } from '../dsp-graph'
 import { mapObject } from '../functional-helpers'
 import * as variableNames from './code-variable-names'
-import { createNamespace } from './namespace'
+import { getNodeImplementation } from './compile-helpers'
+import generateLoopInline from './generate-loop-inline'
+import { createNamespace, nodeNamespaceLabel } from './namespace'
 import { Compilation, Precompilation } from './types'
 
 export const initializePrecompilation = (
@@ -29,162 +31,92 @@ export const initializePrecompilation = (
 ): Precompilation =>
     createNamespace(
         'precompilation',
-        mapObject(graph, (node) => {
-            const namespaceLabel = `[${node.type}] ${node.id}`
-            return createNamespace(namespaceLabel, {
-                rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
-                outs: createNamespace(`${namespaceLabel}.outs`, {}),
-                snds: createNamespace(`${namespaceLabel}.snds`, {}),
-                ins: createNamespace(`${namespaceLabel}.ins`, {}),
+        mapObject(graph, (node) =>
+            createNamespace(nodeNamespaceLabel(node), {
+                rcvs: createNamespace(nodeNamespaceLabel(node, 'rcvs'), {}),
+                outs: createNamespace(nodeNamespaceLabel(node, 'outs'), {}),
+                snds: createNamespace(nodeNamespaceLabel(node, 'snds'), {}),
+                ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {}),
             })
-        })
+        )
     )
 
 export default (compilation: Compilation) => {
     const {
-        graph,
-        graphTraversalDeclare,
         codeVariableNames,
         precompilation,
-        inletCallerSpecs,
-        outletListenerSpecs,
+        graphTraversalDeclare,
+        graphTraversalLoop,
+        graph,
     } = compilation
 
-    const graphTraversalNodes = graphTraversalDeclare.map((nodeId) =>
-        getters.getNode(graph, nodeId)
+    variableNames.attachOutletListenersAndInletCallers(compilation)
+
+    // Go through the graph and precompile inlets / outlets.
+    // For example if a node has only one sink there is no need
+    // to copy values between outlet and sink's inlet. Instead we can
+    // collapse these two variables into one.
+    _graphTraversalInflate(compilation, graphTraversalDeclare).forEach(
+        (node) => {
+            Object.values(node.outlets).forEach((outlet) => {
+                if (outlet.type === 'signal') {
+                    _precompileSignalOutlet(
+                        compilation,
+                        node,
+                        outlet.id
+                    )
+                } else if (outlet.type === 'message') {
+                    _precompileMessageOutlet(compilation, node, outlet.id)
+                }
+            })
+
+            Object.values(node.inlets).forEach((inlet) => {
+                if (inlet.type === 'signal') {
+                    _precompileSignalInlet(compilation, node, inlet.id)
+                } else if (inlet.type === 'message') {
+                    _precompileMessageInlet(compilation, node, inlet.id)
+                }
+            })
+        }
     )
 
-    variableNames.attachInletCallers(compilation)
-    variableNames.attachOutletListeners(compilation)
-
-    graphTraversalNodes.forEach((node) => {
-        Object.entries(node.outlets).forEach(([outletId, outlet]) => {
-            const sourceNode = node
-            const outletSinks = getters.getSinks(sourceNode, outletId)
-
-            // Signal inlets can receive input from ONLY ONE signal.
-            // Therefore, we substitute inlet variable directly with
-            // previous node's outs. e.g. instead of :
-            //
-            //      NODE2_IN = NODE1_OUT
-            //      NODE2_OUT = NODE2_IN * 2
-            //
-            // we will have :
-            //
-            //      NODE2_OUT = NODE1_OUT * 2
-            //
-            if (outlet.type === 'signal') {
-                const outName = variableNames.attachNodeVariable(
-                    compilation,
-                    'outs',
-                    sourceNode.id,
-                    outletId
-                )
-                outletSinks.forEach(
-                    ({ portletId: inletId, nodeId: sinkNodeId }) => {
-                        precompilation[sinkNodeId].ins[inletId] = outName
-                    }
-                )
-
-                // For a message outlet that sends to a single sink node
-                // its out can be directly replaced by next node's in.
-                // e.g. instead of (which is useful if several sinks) :
-                //
-                //      const NODE1_SND = (m) => {
-                //          NODE2_RCV(m)
-                //      }
-                //      // ...
-                //      NODE1_SND(m)
-                //
-                // we can directly substitute NODE1_SND by NODE2_RCV :
-                //
-                //      NODE2_RCV(m)
-                //
-            } else if (outlet.type === 'message') {
-                const nodeOutletListenerSpecs =
-                    outletListenerSpecs[sourceNode.id] || []
-                if (
-                    outletSinks.length === 1 &&
-                    !nodeOutletListenerSpecs.includes(outletId)
-                ) {
-                    const rcvName = variableNames.attachNodeVariable(
-                        compilation,
-                        'rcvs',
-                        outletSinks[0].nodeId,
-                        outletSinks[0].portletId
-                    )
-                    precompilation[sourceNode.id].snds[outletId] = rcvName
-
-                    // Same thing if there's no sink, but one outlet listener
-                } else if (
-                    outletSinks.length === 0 &&
-                    nodeOutletListenerSpecs.includes(outletId)
-                ) {
-                    precompilation[sourceNode.id].snds[outletId] =
-                        codeVariableNames.outletListeners[sourceNode.id][
-                            outletId
-                        ]
-
-                    // If no sink, no message receiver, we assign the node SND
-                    // a function that does nothing
-                } else if (
-                    outletSinks.length === 0 &&
-                    !nodeOutletListenerSpecs.includes(outletId)
-                ) {
-                    precompilation[sourceNode.id].snds[outletId] =
-                        compilation.codeVariableNames.globs.nullMessageReceiver
-
-                    // Otherwise, there are several sinks, we then need to generate
-                    // a function to send messages to all sinks, e.g. :
-                    //
-                    //      const NODE1_SND = (m) => {
-                    //          NODE3_RCV(m)
-                    //          NODE2_RCV(m)
-                    //      }
-                    //
-                } else {
-                    variableNames.attachNodeVariable(
-                        compilation,
-                        'snds',
-                        sourceNode.id,
-                        outletId
-                    )
-                }
+    // This must come after we have assigned all node variables, so we can use ins from
+    // inlined signal nodes
+    _graphTraversalInflate(compilation, graphTraversalDeclare).forEach(
+        (leafNode) => {
+            const sink = _getInlineNodeSinkList(leafNode)[0]
+            if (!sink) {
+                return
             }
-        })
+            const sinkNode = getters.getNode(graph, sink.nodeId)
+            const isLeafNode =
+                _isNodeInlinable(compilation, leafNode) &&
+                !_isNodeInlinable(compilation, sinkNode)
 
-        Object.entries(node.inlets).forEach(([inletId, inlet]) => {
-            const sinkNode = node
-            const nodeInletCallerSpecs = inletCallerSpecs[sinkNode.id] || []
-            const inletSources = getters.getSources(sinkNode, inletId)
-
-            if (inlet.type === 'message') {
-                // If message inlet has at least one source, or no source but an inlet caller,
-                // we need to declare the receiver.
-                if (
-                    (inletSources.length === 0 &&
-                        nodeInletCallerSpecs.includes(inlet.id)) ||
-                    inletSources.length > 0
-                ) {
-                    variableNames.attachNodeVariable(
-                        compilation,
-                        'rcvs',
-                        sinkNode.id,
-                        inletId
-                    )
-                } else {
-                    // No need to declare rcv if no inlet caller
-                }
-            } else if (
-                inlet.type === 'signal' &&
-                getters.getSources(sinkNode, inletId).length === 0
-            ) {
-                // If signal inlet has no source, we assign it a constant value of 0.
-                precompilation[sinkNode.id].ins[inletId] =
-                    codeVariableNames.globs.nullSignal
+            // We filter nodes that are leaves of an inlinable subtree.
+            if (!isLeafNode) {
+                return
             }
-        })
-    })
+
+            const inlineNodeTraversal = traversal.signalNodes(
+                graph,
+                [leafNode],
+                (sourceNode) => _isNodeInlinable(compilation, sourceNode)
+            )
+
+            precompilation[sink.nodeId].ins[sink.portletId] =
+                generateLoopInline(compilation, inlineNodeTraversal)
+            
+            // We don't want inlined nodes to be handled by the generateLoop
+            // function, so we remove them from the graphTraversalLoop.
+            inlineNodeTraversal.forEach(nodeId => {
+                const found = graphTraversalLoop.indexOf(nodeId)
+                if (found !== -1) {
+                    graphTraversalLoop.splice(found, 1)
+                }
+            })
+        }
+    )
 
     // Copy code variable names over to precompilation object.
     Object.entries(codeVariableNames.nodes).forEach(
@@ -200,3 +132,176 @@ export default (compilation: Compilation) => {
         }
     )
 }
+
+const _precompileSignalOutlet = (
+    compilation: Compilation,
+    node: DspGraph.Node,
+    outletId: DspGraph.PortletId
+) => {
+    const { precompilation } = compilation
+    const outletSinks = getters.getSinks(node, outletId)
+
+    // Signal inlets can receive input from ONLY ONE signal.
+    // Therefore, we substitute inlet variable directly with
+    // previous node's outs. e.g. instead of :
+    //
+    //      NODE2_IN = NODE1_OUT
+    //      NODE2_OUT = NODE2_IN * 2
+    //
+    // we will have :
+    //
+    //      NODE2_OUT = NODE1_OUT * 2
+    //
+    if (!_isNodeInlinable(compilation, node)) {
+        const outName = variableNames.attachNodeVariable(
+            compilation,
+            'outs',
+            node.id,
+            outletId
+        )
+        outletSinks.forEach(({ portletId: inletId, nodeId: sinkNodeId }) => {
+            precompilation[sinkNodeId].ins[inletId] = outName
+        })
+    }
+}
+
+const _precompileMessageOutlet = (
+    compilation: Compilation,
+    sourceNode: DspGraph.Node,
+    outletId: DspGraph.PortletId
+) => {
+    const outletSinks = getters.getSinks(sourceNode, outletId)
+    const { codeVariableNames, precompilation, outletListenerSpecs } =
+        compilation
+    const nodeOutletListenerSpecs = outletListenerSpecs[sourceNode.id] || []
+
+    // For a message outlet that sends to a single sink node
+    // its out can be directly replaced by next node's in.
+    // e.g. instead of (which is useful if several sinks) :
+    //
+    //      const NODE1_SND = (m) => {
+    //          NODE2_RCV(m)
+    //      }
+    //      // ...
+    //      NODE1_SND(m)
+    //
+    // we can directly substitute NODE1_SND by NODE2_RCV :
+    //
+    //      NODE2_RCV(m)
+    //
+    if (
+        outletSinks.length === 1 &&
+        !nodeOutletListenerSpecs.includes(outletId)
+    ) {
+        const rcvName = variableNames.attachNodeVariable(
+            compilation,
+            'rcvs',
+            outletSinks[0].nodeId,
+            outletSinks[0].portletId
+        )
+        precompilation[sourceNode.id].snds[outletId] = rcvName
+
+        // Same thing if there's no sink, but one outlet listener
+    } else if (
+        outletSinks.length === 0 &&
+        nodeOutletListenerSpecs.includes(outletId)
+    ) {
+        precompilation[sourceNode.id].snds[outletId] =
+            codeVariableNames.outletListeners[sourceNode.id][outletId]
+
+        // If no sink, no message receiver, we assign the node SND
+        // a function that does nothing
+    } else if (
+        outletSinks.length === 0 &&
+        !nodeOutletListenerSpecs.includes(outletId)
+    ) {
+        precompilation[sourceNode.id].snds[outletId] =
+            compilation.codeVariableNames.globs.nullMessageReceiver
+
+        // Otherwise, there are several sinks, we then need to generate
+        // a function to send messages to all sinks, e.g. :
+        //
+        //      const NODE1_SND = (m) => {
+        //          NODE3_RCV(m)
+        //          NODE2_RCV(m)
+        //      }
+        //
+    } else {
+        variableNames.attachNodeVariable(
+            compilation,
+            'snds',
+            sourceNode.id,
+            outletId
+        )
+    }
+}
+
+const _precompileSignalInlet = (
+    compilation: Compilation,
+    sinkNode: DspGraph.Node,
+    inletId: DspGraph.PortletId
+) => {
+    const { precompilation, codeVariableNames } = compilation
+    if (getters.getSources(sinkNode, inletId).length === 0) {
+        // If signal inlet has no source, we assign it a constant value of 0.
+        precompilation[sinkNode.id].ins[inletId] =
+            codeVariableNames.globs.nullSignal
+    } else {
+        // No need to declare ins if node has source as it should be precompiled
+        // from source's connected out.
+    }
+}
+
+const _precompileMessageInlet = (
+    compilation: Compilation,
+    sinkNode: DspGraph.Node,
+    inletId: DspGraph.PortletId
+) => {
+    const { inletCallerSpecs } = compilation
+    const nodeInletCallerSpecs = inletCallerSpecs[sinkNode.id] || []
+    const inletSources = getters.getSources(sinkNode, inletId)
+
+    // If message inlet has at least one source, or no source but an inlet caller,
+    // we need to declare the receiver.
+    if (
+        (inletSources.length === 0 && nodeInletCallerSpecs.includes(inletId)) ||
+        inletSources.length > 0
+    ) {
+        variableNames.attachNodeVariable(
+            compilation,
+            'rcvs',
+            sinkNode.id,
+            inletId
+        )
+    } else {
+        // No need to declare rcv if no inlet caller
+    }
+}
+
+const _graphTraversalInflate = (
+    compilation: Compilation,
+    graphTraversal: DspGraph.GraphTraversal
+) => {
+    const { graph } = compilation
+    return graphTraversal.map<DspGraph.Node>(
+        (nodeId) => getters.getNode(graph, nodeId)
+    )
+}
+
+const _isNodeInlinable = (compilation: Compilation, node: DspGraph.Node) => {
+    const { nodeImplementations } = compilation
+    const sinkList = _getInlineNodeSinkList(node)
+    const nodeImplementation = getNodeImplementation(
+        nodeImplementations,
+        node.type
+    )
+    return !!nodeImplementation.generateLoopInline && sinkList.length === 1
+}
+
+/**
+ * Inline node has only one outlet, but that outlet can be connected to
+ * several sinks.
+ */
+const _getInlineNodeSinkList = (
+    node: DspGraph.Node
+): Array<DspGraph.ConnectionEndpoint> => Object.values(node.sinks)[0] || []

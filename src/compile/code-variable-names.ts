@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,12 +21,11 @@
 import { getNodeImplementation } from './compile-helpers'
 import { DspGraph, getters } from '../dsp-graph'
 import { mapObject } from '../functional-helpers'
-import { createNamespace } from './namespace'
+import { createNamespace, nodeNamespaceLabel } from './namespace'
 import {
     NodeImplementations,
     CodeVariableNames,
     Compilation,
-    CodeVariableName,
 } from '../compile/types'
 
 /**
@@ -49,14 +48,13 @@ export const generate = (
                     nodeImplementations,
                     node.type
                 )
-                const namespaceLabel = `[${node.type}] ${node.id}`
                 const prefix = _namePrefix(debug, node)
-                return createNamespace(namespaceLabel, {
-                    rcvs: createNamespace(`${namespaceLabel}.rcvs`, {}),
-                    outs: createNamespace(`${namespaceLabel}.outs`, {}),
-                    snds: createNamespace(`${namespaceLabel}.snds`, {}),
+                return createNamespace(nodeNamespaceLabel(node), {
+                    rcvs: createNamespace(nodeNamespaceLabel(node, 'rcvs'), {}),
+                    outs: createNamespace(nodeNamespaceLabel(node, 'outs'), {}),
+                    snds: createNamespace(nodeNamespaceLabel(node, 'snds'), {}),
                     state: createNamespace(
-                        `${namespaceLabel}.state`,
+                        nodeNamespaceLabel(node, 'state'),
                         mapObject(
                             nodeImplementation.stateVariables,
                             (_, stateVariable) =>
@@ -84,7 +82,7 @@ export const generate = (
 
 export const attachNodeVariable = (
     compilation: Compilation,
-    namespace: 'outs' | 'snds' | 'rcvs',
+    nsKey: 'outs' | 'snds' | 'rcvs',
     nodeId: DspGraph.NodeId,
     portletId: DspGraph.PortletId
 ) => {
@@ -92,7 +90,7 @@ export const attachNodeVariable = (
     const nodeVariableNames = codeVariableNames.nodes[nodeId]
     const sinkNode = getters.getNode(graph, nodeId)
     const prefix = _namePrefix(debug, sinkNode)
-    switch (namespace) {
+    switch (nsKey) {
         case 'outs':
             return (nodeVariableNames.outs[portletId] = `${prefix}_OUTS_${_v(
                 portletId
@@ -109,40 +107,31 @@ export const attachNodeVariable = (
 }
 
 /**
- * Helper that attaches to the generated `codeVariableNames` the names of specified outlet listeners.
- *
- * @param codeVariableNames
- * @param outletListenerSpecs
+ * Helper that attaches to the generated `codeVariableNames` the names of specified outlet listeners
+ * and inlet callers.
  */
-export const attachOutletListeners = ({
+export const attachOutletListenersAndInletCallers = ({
     codeVariableNames,
     outletListenerSpecs,
-}: Compilation): void =>
-    Object.entries(outletListenerSpecs).forEach(([nodeId, outletIds]) => {
-        codeVariableNames.outletListeners[nodeId] = {}
-        outletIds.forEach((outletId) => {
-            codeVariableNames.outletListeners[nodeId][
-                outletId
-            ] = `outletListener_${nodeId}_${outletId}`
-        })
-    })
-
-/**
- * Helper that attaches to the generated `codeVariableNames` the names of specified inlet callers.
- *
- * @param codeVariableNames
- * @param inletCallerSpecs
- */
-export const attachInletCallers = ({
-    codeVariableNames,
     inletCallerSpecs,
+    graph,
 }: Compilation): void =>
-    Object.entries(inletCallerSpecs).forEach(([nodeId, inletIds]) => {
-        codeVariableNames.inletCallers[nodeId] = {}
-        inletIds.forEach((inletId) => {
-            codeVariableNames.inletCallers[nodeId][
-                inletId
-            ] = `inletCaller_${nodeId}_${inletId}`
+    (['inletCallers', 'outletListeners'] as const).forEach((nsKey) => {
+        const specs =
+            nsKey === 'inletCallers'
+                ? inletCallerSpecs
+                : outletListenerSpecs
+        Object.entries(specs).forEach(([nodeId, outletIds]) => {
+            const node = getters.getNode(graph, nodeId)
+            codeVariableNames[nsKey][nodeId] = createNamespace(
+                nodeNamespaceLabel(node, nsKey),
+                {}
+            )
+            outletIds.forEach((outletId) => {
+                codeVariableNames[nsKey][nodeId][
+                    outletId
+                ] = `${nsKey}_${nodeId}_${outletId}`
+            })
         })
     })
 

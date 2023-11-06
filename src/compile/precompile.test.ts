@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,10 +21,11 @@ import assert from 'assert'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 import precompile from './precompile'
+import { NodeImplementations } from './types'
 
 describe('precompile', () => {
     describe('signal INS/OUTS', () => {
-        it('should substitute connected signal IN with its source OUT', () => {
+        it('should substitute connected signal IN with its source OUT for non-inline nodes', () => {
             const graph = makeGraph({
                 node1: {
                     outlets: {
@@ -41,8 +42,16 @@ describe('precompile', () => {
                 },
             })
 
+            const nodeImplementations: NodeImplementations = {
+                DUMMY: {
+                    // generateLoop signals that node is non-inline
+                    generateLoop: () => '',
+                },
+            }
+
             const compilation = makeCompilation({
                 graph,
+                nodeImplementations,
                 graphTraversalDeclare: ['node1', 'node2'],
             })
 
@@ -231,7 +240,7 @@ describe('precompile', () => {
             // Variable declarations
             assert.strictEqual(
                 compilation.codeVariableNames.outletListeners.node1['0'],
-                'outletListener_node1_0'
+                'outletListeners_node1_0'
             )
 
             // Precompilation
@@ -422,6 +431,257 @@ describe('precompile', () => {
                 compilation.precompilation.node1.rcvs['0'],
                 'node1_RCVS_0'
             )
+        })
+    })
+
+    describe('inline nodes', () => {
+        it('should precompile the inline loop code', () => {
+            //       [  nonInline1  ]
+            //         |
+            //       [  n1  ]
+            //            \
+            // [  n2  ]  [  n3  ]
+            //   \        /
+            //    \      /
+            //     \    /
+            //    [  n4  ]
+            //       |
+            //    [  nonInline2  ]
+            const graph = makeGraph({
+                nonInline1: {
+                    type: 'signalType',
+                    sinks: {
+                        '0': [['n1', '0']],
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n1: {
+                    type: 'inlineType1',
+                    args: { value: 'N1' },
+                    sinks: {
+                        '0': [['n3', '0']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n2: {
+                    type: 'inlineType0',
+                    args: { value: 'N2' },
+                    sinks: {
+                        '0': [['n4', '0']],
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n3: {
+                    type: 'inlineType1',
+                    args: { value: 'N3' },
+                    sinks: {
+                        '0': [['n4', '1']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n4: {
+                    type: 'inlineType2',
+                    args: { value: 'N4' },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'signal', id: '1' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    sinks: {
+                        '0': [['nonInline2', '0']],
+                    },
+                },
+                nonInline2: {
+                    type: 'signalType',
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                inlineType0: {
+                    generateLoopInline: ({ node: { args } }) =>
+                        `${args.value} + 1`,
+                },
+                inlineType1: {
+                    generateLoopInline: ({ node: { args }, ins }) =>
+                        `${ins.$0} * ${args.value}`,
+                },
+                inlineType2: {
+                    generateLoopInline: ({ node: { args }, ins }) =>
+                        `${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
+                },
+                signalType: {},
+            }
+
+            const graphTraversalLoop = [
+                'nonInline1',
+                'n1',
+                'n2',
+                'n3',
+                'n4',
+                'nonInline2',
+            ]
+            const graphTraversalDeclare = [
+                'nonInline1',
+                'n1',
+                'n2',
+                'n3',
+                'n4',
+                'nonInline2',
+            ]
+
+            const compilation = makeCompilation({
+                graph,
+                nodeImplementations,
+                graphTraversalDeclare,
+                graphTraversalLoop,
+            })
+
+            precompile(compilation)
+
+            assert.strictEqual(
+                compilation.precompilation.nonInline2.ins['0'],
+                '(N4 * (N2 + 1) - N4 * ((nonInline1_OUTS_0 * N1) * N3))'
+            )
+
+            assert.deepStrictEqual(graphTraversalLoop, [
+                'nonInline1',
+                'nonInline2',
+            ])
+        })
+
+        it('should work with non inlinable node with generateLoopInline and several sinks', () => {
+            //    [  nonInline1  ]
+            //      |
+            //    [  n1  ]
+            //      |
+            //    [  n2  ]     <- non-inlinable cause 2 sinks
+            //      / \
+            //     |   \________________
+            //     |                    \
+            // [  nonInline2  ]      [  nonInline3  ]
+            const graph = makeGraph({
+                nonInline1: {
+                    type: 'signalType',
+                    sinks: {
+                        '0': [['n1', '0']],
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n1: {
+                    type: 'inlineType1',
+                    args: { value: 'N1' },
+                    sinks: {
+                        '0': [['n2', '0']],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n2: {
+                    type: 'inlineType1',
+                    args: { value: 'N2' },
+                    sinks: {
+                        '0': [
+                            ['nonInline2', '0'],
+                            ['nonInline3', '0'],
+                        ],
+                    },
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                nonInline2: {
+                    type: 'signalType',
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                nonInline3: {
+                    type: 'signalType',
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                inlineType1: {
+                    generateLoopInline: ({ node: { args }, ins }) =>
+                        `${ins.$0} * ${args.value}`,
+                },
+                signalType: {},
+            }
+
+            const graphTraversalLoop = [
+                'nonInline1',
+                'n1',
+                'n2',
+                'nonInline2',
+                'nonInline3',
+            ]
+            const graphTraversalDeclare = [
+                'nonInline1',
+                'n1',
+                'n2',
+                'nonInline2',
+                'nonInline3',
+            ]
+
+            const compilation = makeCompilation({
+                graph,
+                nodeImplementations,
+                graphTraversalDeclare,
+                graphTraversalLoop,
+            })
+
+            precompile(compilation)
+
+            assert.strictEqual(
+                compilation.precompilation.n2.ins['0'],
+                '(nonInline1_OUTS_0 * N1)'
+            )
+            assert.strictEqual(
+                compilation.precompilation.nonInline2.ins['0'],
+                'n2_OUTS_0'
+            )
+            assert.strictEqual(
+                compilation.precompilation.nonInline3.ins['0'],
+                'n2_OUTS_0'
+            )
+
+            assert.deepStrictEqual(graphTraversalLoop, [
+                'nonInline1',
+                'n2',
+                'nonInline2',
+                'nonInline3',
+            ])
         })
     })
 })

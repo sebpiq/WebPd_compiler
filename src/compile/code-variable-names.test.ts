@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,8 @@
 import assert from 'assert'
 import {
     assertValidNamePart,
-    attachInletCallers,
     attachNodeVariable,
-    attachOutletListeners,
+    attachOutletListenersAndInletCallers,
     generate,
 } from './code-variable-names'
 import { CodeVariableNames, NodeImplementations } from '../compile/types'
@@ -255,7 +254,7 @@ describe('code-variable-names', () => {
         })
     })
 
-    describe('attachOutletListeners / attachInletCallers', () => {
+    describe('attachOutletListenersAndInletCallers', () => {
         it('should attach outlet listeners variable names', () => {
             const graph = makeGraph({
                 node1: {
@@ -288,14 +287,16 @@ describe('code-variable-names', () => {
                 codeVariableNames,
             })
 
-            attachOutletListeners(compilation)
+            attachOutletListenersAndInletCallers(compilation)
             assert.deepStrictEqual(codeVariableNames.outletListeners, {
-                node1: { outlet1: 'outletListener_node1_outlet1' },
+                node1: {
+                    outlet1: 'outletListeners_node1_outlet1',
+                },
             })
-
-            attachInletCallers(compilation)
             assert.deepStrictEqual(codeVariableNames.inletCallers, {
-                node1: { inlet1: 'inletCaller_node1_inlet1' },
+                node1: {
+                    inlet1: 'inletCallers_node1_inlet1',
+                },
             })
         })
     })

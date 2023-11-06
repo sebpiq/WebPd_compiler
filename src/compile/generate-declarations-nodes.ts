@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ export default (compilation: Compilation): Code => {
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             const nodeVariableNames = codeVariableNames.nodes[node.id]
             const nodePrecompilation = precompilation[node.id]
-            const nodeMessageReceivers =
+            const nodeMessageReceivers = nodeImplementation.generateMessageReceivers ? 
                 nodeImplementation.generateMessageReceivers({
                     macros,
                     globs,
@@ -54,7 +54,7 @@ export default (compilation: Compilation): Code => {
                     snds: nodePrecompilation.snds,
                     node,
                     compilation,
-                })
+                }): {}
 
             return [
                 // 1. Declares signal outlets
@@ -88,14 +88,14 @@ export default (compilation: Compilation): Code => {
                     }),
 
                 // 3. Custom declarations for the node
-                nodeImplementation.generateDeclarations({
+                nodeImplementation.generateDeclarations ? nodeImplementation.generateDeclarations({
                     macros,
                     globs,
                     state: nodeVariableNames.state,
                     snds: nodePrecompilation.snds,
                     node,
                     compilation,
-                }),
+                }): null,
             ]
         })}
 

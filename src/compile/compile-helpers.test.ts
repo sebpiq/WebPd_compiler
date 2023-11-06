@@ -51,11 +51,8 @@ describe('compile-helpers', () => {
         })
 
         it('should fill-in all fields with default functions', () => {
-            const referenceImplementation: Required<NodeImplementation<any>> = {
+            const referenceImplementation: NodeImplementation<any> = {
                 stateVariables: {},
-                generateDeclarations: () => '',
-                generateLoop: () => '',
-                generateMessageReceivers: () => ({}),
                 dependencies: [],
             }
             const defaultImplementation = getNodeImplementation(
@@ -64,14 +61,8 @@ describe('compile-helpers', () => {
             )
 
             assert.deepStrictEqual(
-                Object.entries(referenceImplementation).map(([name, obj]) => [
-                    name,
-                    typeof obj === 'function' ? (obj as any)() : obj,
-                ]),
-                Object.entries(defaultImplementation).map(([name, obj]) => [
-                    name,
-                    typeof obj === 'function' ? (obj as any)() : obj,
-                ])
+                referenceImplementation,
+                defaultImplementation,
             )
         })
 

@@ -198,6 +198,8 @@ export interface NodeImplementation<
     /**
      * Generates the code that will be ran each iteration of the loop for that node instance.
      * Typically reads from ins, runs some calculations, and write results to outs.
+     * 
+     * @see generateInlineLoop for more complexe loop code generation.
      */
     generateLoop?: (context: {
         macros: CodeMacros
@@ -206,6 +208,23 @@ export interface NodeImplementation<
         ins: PrecompiledNodeCode['ins']
         outs: PrecompiledNodeCode['outs']
         snds: PrecompiledNodeCode['snds']
+        node: DspGraph.Node<NodeArgsType>
+        compilation: Compilation
+    }) => Code
+
+    /**
+     * Generates the code that will be ran each iteration of the loop for that node instance.
+     * This should only generate an expression without side effects : no variable declaration, 
+     * no variable assignment, ... Therefore, this can only be used if the node has a unique 
+     * signal outlet.
+     * 
+     * @see generateLoop for more complexe loop code generation.
+     */
+    generateLoopInline?: (context: {
+        macros: CodeMacros
+        globs: CodeVariableNames['globs']
+        state: { [Parameter in keyof NodeState]: string }
+        ins: PrecompiledNodeCode['ins']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => Code
