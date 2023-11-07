@@ -11,6 +11,7 @@
         "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config jest.mjs --testTimeout 10000",
         "build:dist": "npx rollup --config rollup.mjs",
         "build:bindings": "npx rollup --config rollup-bindings.mjs",
+        "build:all": "rm -rf dist; npm run build:dist; npm run build:bindings",
         "prettier": "npm explore @webpd/dev -- npm run prettier $(pwd)/src",
         "eslint": "npm explore @webpd/dev -- npm run eslint $(pwd)/src"
     },
