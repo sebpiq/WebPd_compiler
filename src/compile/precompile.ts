@@ -20,7 +20,10 @@
 
 import { DspGraph, getters, traversal } from '../dsp-graph'
 import { mapObject } from '../functional-helpers'
-import * as variableNames from './code-variable-names'
+import {
+    attachNodePortlet,
+    attachOutletListenersAndInletCallers,
+} from './code-variable-names'
 import { getNodeImplementation } from './compile-helpers'
 import generateLoopInline from './generate-loop-inline'
 import { createNamespace, nodeNamespaceLabel } from './namespace'
@@ -50,7 +53,7 @@ export default (compilation: Compilation) => {
         graph,
     } = compilation
 
-    variableNames.attachOutletListenersAndInletCallers(compilation)
+    attachOutletListenersAndInletCallers(compilation)
 
     // Go through the graph and precompile inlets / outlets.
     // For example if a node has only one sink there is no need
@@ -60,11 +63,7 @@ export default (compilation: Compilation) => {
         (node) => {
             Object.values(node.outlets).forEach((outlet) => {
                 if (outlet.type === 'signal') {
-                    _precompileSignalOutlet(
-                        compilation,
-                        node,
-                        outlet.id
-                    )
+                    _precompileSignalOutlet(compilation, node, outlet.id)
                 } else if (outlet.type === 'message') {
                     _precompileMessageOutlet(compilation, node, outlet.id)
                 }
@@ -106,10 +105,10 @@ export default (compilation: Compilation) => {
 
             precompilation[sink.nodeId].ins[sink.portletId] =
                 generateLoopInline(compilation, inlineNodeTraversal)
-            
+
             // We don't want inlined nodes to be handled by the generateLoop
             // function, so we remove them from the graphTraversalLoop.
-            inlineNodeTraversal.forEach(nodeId => {
+            inlineNodeTraversal.forEach((nodeId) => {
                 const found = graphTraversalLoop.indexOf(nodeId)
                 if (found !== -1) {
                     graphTraversalLoop.splice(found, 1)
@@ -153,7 +152,7 @@ const _precompileSignalOutlet = (
     //      NODE2_OUT = NODE1_OUT * 2
     //
     if (!_isNodeInlinable(compilation, node)) {
-        const outName = variableNames.attachNodeVariable(
+        const outName = attachNodePortlet(
             compilation,
             'outs',
             node.id,
@@ -193,7 +192,7 @@ const _precompileMessageOutlet = (
         outletSinks.length === 1 &&
         !nodeOutletListenerSpecs.includes(outletId)
     ) {
-        const rcvName = variableNames.attachNodeVariable(
+        const rcvName = attachNodePortlet(
             compilation,
             'rcvs',
             outletSinks[0].nodeId,
@@ -227,12 +226,7 @@ const _precompileMessageOutlet = (
         //      }
         //
     } else {
-        variableNames.attachNodeVariable(
-            compilation,
-            'snds',
-            sourceNode.id,
-            outletId
-        )
+        attachNodePortlet(compilation, 'snds', sourceNode.id, outletId)
     }
 }
 
@@ -260,21 +254,13 @@ const _precompileMessageInlet = (
     const { inletCallerSpecs } = compilation
     const nodeInletCallerSpecs = inletCallerSpecs[sinkNode.id] || []
     const inletSources = getters.getSources(sinkNode, inletId)
+    const sourcesCount =
+        inletSources.length + +nodeInletCallerSpecs.includes(inletId)
 
-    // If message inlet has at least one source, or no source but an inlet caller,
-    // we need to declare the receiver.
-    if (
-        (inletSources.length === 0 && nodeInletCallerSpecs.includes(inletId)) ||
-        inletSources.length > 0
-    ) {
-        variableNames.attachNodeVariable(
-            compilation,
-            'rcvs',
-            sinkNode.id,
-            inletId
-        )
+    if (sourcesCount >= 1) {
+        attachNodePortlet(compilation, 'rcvs', sinkNode.id, inletId)
     } else {
-        // No need to declare rcv if no inlet caller
+        // If sourcesCount === 0, no need to declare rcv
     }
 }
 
@@ -283,8 +269,8 @@ const _graphTraversalInflate = (
     graphTraversal: DspGraph.GraphTraversal
 ) => {
     const { graph } = compilation
-    return graphTraversal.map<DspGraph.Node>(
-        (nodeId) => getters.getNode(graph, nodeId)
+    return graphTraversal.map<DspGraph.Node>((nodeId) =>
+        getters.getNode(graph, nodeId)
     )
 }
 

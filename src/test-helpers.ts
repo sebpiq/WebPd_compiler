@@ -29,7 +29,7 @@ import {
     GlobalCodeGeneratorWithSettings,
 } from './compile/types'
 import { Engine, Module, RawModule } from './run/types'
-import * as variableNames from './compile/code-variable-names'
+import { generateCodeVariableNames } from './compile/code-variable-names'
 import { getMacros } from './compile'
 import { writeFile } from 'fs/promises'
 import {
@@ -59,6 +59,18 @@ import { createModule } from './run/run-helpers'
 import generateDeclarationsDependencies from './compile/generate-declarations-dependencies'
 import { collectExports } from './compile/compile-helpers'
 import { initializePrecompilation } from './compile/precompile'
+
+interface TestParameters {
+    bitDepth: AudioSettings['bitDepth']
+    target: CompilerTarget
+}
+
+export const TEST_PARAMETERS: Array<TestParameters> = [
+    { bitDepth: 32, target: 'javascript' },
+    { bitDepth: 64, target: 'javascript' },
+    { bitDepth: 32, target: 'assemblyscript' },
+    { bitDepth: 64, target: 'assemblyscript' },
+]
 
 export const normalizeCode = (rawCode: string) => {
     const lines = rawCode
@@ -103,7 +115,7 @@ export const makeCompilation = (
         compilation.precompilation || initializePrecompilation(graph)
     const codeVariableNames =
         compilation.codeVariableNames ||
-        variableNames.generate(nodeImplementations, graph, debug)
+        generateCodeVariableNames(nodeImplementations, graph, debug)
     const audioSettings = compilation.audioSettings || {
         bitDepth: 32,
         channelCount: { in: 2, out: 2 },
@@ -125,18 +137,6 @@ export const makeCompilation = (
         precompilation,
     }
 }
-
-interface TestParameters {
-    bitDepth: AudioSettings['bitDepth']
-    target: CompilerTarget
-}
-
-export const TEST_PARAMETERS: Array<TestParameters> = [
-    { bitDepth: 32, target: 'javascript' },
-    { bitDepth: 64, target: 'javascript' },
-    { bitDepth: 32, target: 'assemblyscript' },
-    { bitDepth: 64, target: 'assemblyscript' },
-]
 
 interface CreateTestModuleApplyBindings {
     assemblyscript?: (buffer: ArrayBuffer) => Promise<Module>

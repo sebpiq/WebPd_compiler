@@ -20,9 +20,9 @@
 import assert from 'assert'
 import {
     assertValidNamePart,
-    attachNodeVariable,
+    attachNodePortlet,
     attachOutletListenersAndInletCallers,
-    generate,
+    generateCodeVariableNames,
 } from './code-variable-names'
 import { CodeVariableNames, NodeImplementations } from '../compile/types'
 import { makeGraph } from '../dsp-graph/test-helpers'
@@ -65,7 +65,7 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNames = generate(nodeImplementations, graph, false)
+            const variableNames = generateCodeVariableNames(nodeImplementations, graph, false)
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNames.nodes })),
@@ -109,7 +109,7 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNames = generate(nodeImplementations, graph, false)
+            const variableNames = generateCodeVariableNames(nodeImplementations, graph, false)
 
             assert.throws(() => variableNames.nodes.unknownNode)
             assert.throws(
@@ -125,16 +125,16 @@ describe('code-variable-names', () => {
         })
     })
 
-    describe('attachNodeVariable', () => {
-        it('should attach variable names for a node', () => {
+    describe('attachNodePortlet', () => {
+        it('should attach portlet variable names for a node', () => {
             const nodeImplementations: NodeImplementations = {
-                'osc~': {},
-                'dac~': {},
+                'type1': {},
+                'type2': {},
             }
 
             const graph = makeGraph({
-                myOsc: {
-                    type: 'osc~',
+                node1: {
+                    type: 'type1',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                         '1': { type: 'message', id: '1' },
@@ -146,12 +146,12 @@ describe('code-variable-names', () => {
                         '3': { type: 'message', id: '3' },
                     },
                 },
-                myDac: {
-                    type: 'dac~',
-                },
+                node2: {
+                    type: 'type2',
+                }
             })
 
-            const variableNames = generate(nodeImplementations, graph, false)
+            const variableNames = generateCodeVariableNames(nodeImplementations, graph, false)
 
             const compilation = makeCompilation({
                 nodeImplementations,
@@ -159,30 +159,30 @@ describe('code-variable-names', () => {
                 graph,
             })
 
-            attachNodeVariable(compilation, 'outs', 'myOsc', '0')
-            attachNodeVariable(compilation, 'outs', 'myOsc', '2')
-            attachNodeVariable(compilation, 'snds', 'myOsc', '1')
-            attachNodeVariable(compilation, 'snds', 'myOsc', '3')
-            attachNodeVariable(compilation, 'rcvs', 'myOsc', '1')
+            attachNodePortlet(compilation, 'outs', 'node1', '0')
+            attachNodePortlet(compilation, 'outs', 'node1', '2')
+            attachNodePortlet(compilation, 'snds', 'node1', '1')
+            attachNodePortlet(compilation, 'snds', 'node1', '3')
+            attachNodePortlet(compilation, 'rcvs', 'node1', '1')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNames.nodes })),
                 {
-                    myOsc: {
+                    node1: {
                         outs: {
-                            '0': 'myOsc_OUTS_0',
-                            '2': 'myOsc_OUTS_2',
+                            '0': 'node1_OUTS_0',
+                            '2': 'node1_OUTS_2',
                         },
                         snds: {
-                            '1': 'myOsc_SNDS_1',
-                            '3': 'myOsc_SNDS_3',
+                            '1': 'node1_SNDS_1',
+                            '3': 'node1_SNDS_3',
                         },
                         rcvs: {
-                            '1': 'myOsc_RCVS_1',
+                            '1': 'node1_RCVS_1',
                         },
                         state: {},
                     },
-                    myDac: {
+                    node2: {
                         outs: {},
                         rcvs: {},
                         snds: {},
@@ -210,7 +210,7 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNames = generate(nodeImplementations, graph, true)
+            const variableNames = generateCodeVariableNames(nodeImplementations, graph, true)
 
             const compilation = makeCompilation({
                 nodeImplementations,
@@ -219,9 +219,9 @@ describe('code-variable-names', () => {
                 graph,
             })
 
-            attachNodeVariable(compilation, 'outs', 'someObj', '0')
-            attachNodeVariable(compilation, 'snds', 'someObj', '1')
-            attachNodeVariable(compilation, 'rcvs', 'someObj', '2')
+            attachNodePortlet(compilation, 'outs', 'someObj', '0')
+            attachNodePortlet(compilation, 'snds', 'someObj', '1')
+            attachNodePortlet(compilation, 'rcvs', 'someObj', '2')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNames.nodes })),
@@ -240,6 +240,19 @@ describe('code-variable-names', () => {
                     },
                 }
             )
+        })
+
+        it('should not throw an error if variable already assigned', () => {
+            const graph = makeGraph({
+                node1: {},
+            })
+
+            const compilation = makeCompilation({ graph })
+
+            attachNodePortlet(compilation, 'rcvs', 'node1', '0')
+            assert.strictEqual(compilation.codeVariableNames.nodes.node1.rcvs.$0, 'node1_RCVS_0')
+            assert.doesNotThrow(() => attachNodePortlet(compilation, 'rcvs', 'node1', '0'))
+            assert.strictEqual(compilation.codeVariableNames.nodes.node1.rcvs.$0, 'node1_RCVS_0')
         })
     })
 
@@ -268,7 +281,7 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const codeVariableNames: CodeVariableNames = generate(
+            const codeVariableNames: CodeVariableNames = generateCodeVariableNames(
                 NODE_IMPLEMENTATIONS,
                 graph,
                 false

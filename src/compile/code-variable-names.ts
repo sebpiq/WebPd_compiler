@@ -35,7 +35,7 @@ import {
  * @param graph
  * @returns
  */
-export const generate = (
+export const generateCodeVariableNames = (
     nodeImplementations: NodeImplementations,
     graph: DspGraph.Graph,
     debug: boolean
@@ -50,6 +50,8 @@ export const generate = (
                 )
                 const prefix = _namePrefix(debug, node)
                 return createNamespace(nodeNamespaceLabel(node), {
+                    // No need for `ins` here, as signal inlets will always directly be assigned
+                    // the outlet from their source node. 
                     rcvs: createNamespace(nodeNamespaceLabel(node, 'rcvs'), {}),
                     outs: createNamespace(nodeNamespaceLabel(node, 'outs'), {}),
                     snds: createNamespace(nodeNamespaceLabel(node, 'snds'), {}),
@@ -80,7 +82,7 @@ export const generate = (
         inletCallers: createNamespace('inletCallers', {}),
     })
 
-export const attachNodeVariable = (
+export const attachNodePortlet = (
     compilation: Compilation,
     nsKey: 'outs' | 'snds' | 'rcvs',
     nodeId: DspGraph.NodeId,
@@ -90,20 +92,16 @@ export const attachNodeVariable = (
     const nodeVariableNames = codeVariableNames.nodes[nodeId]
     const sinkNode = getters.getNode(graph, nodeId)
     const prefix = _namePrefix(debug, sinkNode)
-    switch (nsKey) {
-        case 'outs':
-            return (nodeVariableNames.outs[portletId] = `${prefix}_OUTS_${_v(
-                portletId
-            )}`)
-        case 'snds':
-            return (nodeVariableNames.snds[portletId] = `${prefix}_SNDS_${_v(
-                portletId
-            )}`)
-        case 'rcvs':
-            return (nodeVariableNames.rcvs[portletId] = `${prefix}_RCVS_${_v(
-                portletId
-            )}`)
+    // Shouldnt throw an error if the variable already exists, as precompile might try to 
+    // declare it several times. 
+    if (!(portletId in nodeVariableNames[nsKey])) {
+        nodeVariableNames[nsKey][portletId] = ({
+            'outs': `${prefix}_OUTS_${_v(portletId)}`,
+            'snds': `${prefix}_SNDS_${_v(portletId)}`,
+            'rcvs': `${prefix}_RCVS_${_v(portletId)}`,
+        })[nsKey]
     }
+    return nodeVariableNames[nsKey][portletId]
 }
 
 /**

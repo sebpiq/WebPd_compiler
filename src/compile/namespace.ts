@@ -21,7 +21,9 @@
 import { DspGraph } from '../dsp-graph'
 
 /**
- * Helper that throws an error when trying to read unknown properties.
+ * Helper to declare namespace objects enforcing stricter access rules. Specifically, it forbids :
+ * - reading an unknown property.
+ * - trying to overwrite an existing property.
  *
  * Also allows to access properties starting with a number by prepending a `$`.
  * This is convenient to access portlets by their id without using indexing syntax, for example :
@@ -59,6 +61,18 @@ export const createNamespace = <T extends Object>(
                 )
             }
             return (target as any)[key]
+        },
+
+        set: (target, k, newValue) => {
+            const key = String(k) as keyof T
+            if (target.hasOwnProperty(key)) {
+                throw new Error(
+                    `Key "${String(key)}" is protected and cannot be overwritten.`
+                )
+            } else {
+                target[key] = newValue
+            }
+            return newValue
         },
     })
 }
