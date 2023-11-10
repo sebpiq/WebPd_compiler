@@ -18,14 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import jsMacros from '../engine-javascript/compile/macros'
-import ascMacros from '../engine-assemblyscript/compile/macros'
 import {
-    CodeMacros,
     Compilation,
     CompilationSettings,
     NodeImplementations,
-    CompilerTarget,
 } from './types'
 import compileToJavascript from '../engine-javascript/compile'
 import compileToAssemblyscript from '../engine-assemblyscript/compile'
@@ -64,7 +60,6 @@ export default (
         target,
         debug,
     } = validateSettings(settings)
-    const macros = getMacros(target)
     const precompilation = initializePrecompilation(graph)
     const codeVariableNames = generateCodeVariableNames(
         nodeImplementations,
@@ -91,7 +86,6 @@ export default (
             inletCallerSpecs,
             outletListenerSpecs,
             codeVariableNames,
-            macros,
             debug,
             precompilation,
         }),
@@ -117,10 +111,6 @@ export const validateSettings = (
         debug,
     }
 }
-
-/** Helper to get code macros from compile target. */
-export const getMacros = (target: CompilerTarget): CodeMacros =>
-    ({ javascript: jsMacros, assemblyscript: ascMacros }[target])
 
 /** Helper to execute compilation */
 export const executeCompilation = (compilation: Compilation) => {

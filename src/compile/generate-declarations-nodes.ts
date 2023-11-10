@@ -20,14 +20,14 @@
 
 import { getNodeImplementation } from './compile-helpers'
 import { getters } from '../dsp-graph'
-import { renderCode } from '../functional-helpers'
-import { Code, Compilation } from './types'
+import { Compilation } from './types'
+import { AstContainer } from '../ast/types'
+import { AstRaw, Func, Var } from '../ast/declare'
 
-export default (compilation: Compilation): Code => {
+export default (compilation: Compilation): AstContainer => {
     const {
         graph,
         graphTraversalDeclare,
-        macros,
         codeVariableNames,
         nodeImplementations,
         outletListenerSpecs,
@@ -37,18 +37,16 @@ export default (compilation: Compilation): Code => {
     const graphTraversalNodes = graphTraversalDeclare.map((nodeId) =>
         getters.getNode(graph, nodeId)
     )
-    const { Var, Func } = macros
     const { globs } = codeVariableNames
 
     // prettier-ignore
-    return renderCode`
-        ${graphTraversalNodes.map(node => {
+    return AstRaw([
+        graphTraversalNodes.map(node => {
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             const nodeVariableNames = codeVariableNames.nodes[node.id]
             const nodePrecompilation = precompilation[node.id]
             const nodeMessageReceivers = nodeImplementation.generateMessageReceivers ? 
                 nodeImplementation.generateMessageReceivers({
-                    macros,
                     globs,
                     state: nodeVariableNames.state,
                     snds: nodePrecompilation.snds,
@@ -59,37 +57,32 @@ export default (compilation: Compilation): Code => {
             return [
                 // 1. Declares signal outlets
                 Object.values(nodeVariableNames.outs).map(
-                    (outName) => `let ${Var(outName, 'Float')} = 0`
+                    (outName) => Var('Float', outName, '0')
                 ),
 
                 // 2. Declares message receivers for all message inlets.
                 Object.values(node.inlets)
                     .filter((inlet) => inlet.id in nodeVariableNames.rcvs)
                     .map((inlet) => {
-                        if (
-                            typeof nodeMessageReceivers[inlet.id] !== 'string'
-                        ) {
+                        if (!nodeMessageReceivers[inlet.id]) {
                             throw new Error(
                                 `Message receiver for inlet "${inlet.id}" of node type "${node.type}" is not implemented`
                             )
                         }
                         // prettier-ignore
-                        return `
-                            function ${nodeVariableNames.rcvs[inlet.id]} ${Func([
-                                Var(globs.m, 'Message')
-                            ], 'void')} {
-                                ${nodeMessageReceivers[inlet.id]}
-                                throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${globs.m})${
-                                    debug
-                                        ? " + '\\nDEBUG : remember, you must return from message receiver'"
-                                        : ''})
-                            }
+                        return Func(nodeVariableNames.rcvs[inlet.id], [
+                                Var('Message', globs.m)
+                            ], 'void')`
+                            ${nodeMessageReceivers[inlet.id]}
+                            throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${globs.m})${
+                                debug
+                                    ? " + '\\nDEBUG : remember, you must return from message receiver'"
+                                    : ''})
                         `
                     }),
 
                 // 3. Custom declarations for the node
                 nodeImplementation.generateDeclarations ? nodeImplementation.generateDeclarations({
-                    macros,
                     globs,
                     state: nodeVariableNames.state,
                     snds: nodePrecompilation.snds,
@@ -97,35 +90,33 @@ export default (compilation: Compilation): Code => {
                     compilation,
                 }): null,
             ]
-        })}
+        }),
 
-        ${  // 4. Declares message senders for all message outlets.
-            // This needs to come after all message receivers are declared since we reference them here.
-            // If there are outlets listeners declared we also inject the code here.
-            // Senders that don't appear in precompilation are not declared.
-            graphTraversalNodes.map(node => {
-                const nodeVariableNames = codeVariableNames.nodes[node.id]
-                const nodeOutletListeners = outletListenerSpecs[node.id] || []
-                return Object.values(node.outlets)
-                    .filter(outlet => outlet.id in nodeVariableNames.snds)
-                    .map(outlet => {
-                        const hasOutletListener = nodeOutletListeners.includes(outlet.id)
-                        const outletSinks = getters.getSinks(node, outlet.id)
-                        // prettier-ignore
-                        return renderCode`
-                            function ${nodeVariableNames.snds[outlet.id]} ${Func([
-                                Var('m', 'Message')
-                            ], 'void')} {
-                                ${[
-                                    hasOutletListener ? 
-                                        `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : '',
-                                    outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
-                                        `${precompilation[sinkNodeId].rcvs[inletId]}(${globs.m})`
-                                    )
-                                ]}
-                            }
-                        `
-                    })
-            })}
-    `
+        // 4. Declares message senders for all message outlets.
+        // This needs to come after all message receivers are declared since we reference them here.
+        // If there are outlets listeners declared we also inject the code here.
+        // Senders that don't appear in precompilation are not declared.
+        graphTraversalNodes.map(node => {
+            const nodeVariableNames = codeVariableNames.nodes[node.id]
+            const nodeOutletListeners = outletListenerSpecs[node.id] || []
+            return Object.values(node.outlets)
+                .filter(outlet => outlet.id in nodeVariableNames.snds)
+                .map(outlet => {
+                    const hasOutletListener = nodeOutletListeners.includes(outlet.id)
+                    const outletSinks = getters.getSinks(node, outlet.id)
+                    // prettier-ignore
+                    return Func(nodeVariableNames.snds[outlet.id], [
+                            Var('Message', globs.m)
+                        ], 'void')`
+                        ${[
+                            hasOutletListener ? 
+                                `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : '',
+                            outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
+                                `${precompilation[sinkNodeId].rcvs[inletId]}(${globs.m})`
+                            )
+                        ]}
+                    `
+                })
+        })
+    ])
 }

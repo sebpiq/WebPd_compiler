@@ -19,7 +19,7 @@
  */
 
 import { writeFileSync } from 'fs'
-import { Code } from '../../compile/types'
+import { Code } from '../../ast/types'
 import { RawModule } from '../../run/types'
 import { exec } from 'child_process'
 import { promisify } from 'util'

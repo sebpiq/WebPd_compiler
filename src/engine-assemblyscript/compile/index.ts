@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,6 @@ import {
 import generateDeclarationsNodes from '../../compile/generate-declarations-nodes'
 import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
 import generateLoop from '../../compile/generate-loop'
-import { renderCode } from '../../functional-helpers'
 import { Compilation } from '../../compile/types'
 import { AssemblyScriptWasmEngineCode } from './types'
 import generateInletCallers from '../../compile/generate-inlet-callers'
@@ -34,14 +33,12 @@ import generateOutletListeners from '../../compile/generate-outlet-listeners'
 import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
 import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
 import generateImportsExports from '../../compile/generate-imps-exps'
+import render from '../../ast/render'
+import macros from './macros'
+import { Ast } from '../../ast/declare'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const {
-        audioSettings,
-        inletCallerSpecs,
-        codeVariableNames,
-        macros: { Func, Var },
-    } = compilation
+    const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.codeVariableNames.globs
     const metadata = buildMetadata(compilation)
@@ -51,17 +48,16 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     ]
 
     // prettier-ignore
-    return renderCode`
+    return render(macros, Ast`
         ${generateDeclarationsGlobals(compilation)}
         ${generateDeclarationsDependencies(compilation, dependencies)}
         ${generateDeclarationsNodes(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
 
-        ${generateInletCallers(compilation)}        
-        ${generateOutletListeners(compilation, (variableName) => `
-            export declare function ${variableName}(m: Message): void
-        `)}
+        ${generateInletCallers(compilation)}
+        ${generateOutletListeners(compilation, (variableName) => 
+            Ast`export declare function ${variableName}(m: Message): void`)}
 
         const metadata: string = '${JSON.stringify(metadata)}'
         let ${globs.input}: FloatArray = createFloatArray(0)
@@ -95,8 +91,10 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         ${generateImportsExports(
             'assemblyscript',
             dependencies,
-            ({ name, args, returns }) => `export declare function ${name} ${Func(args.map((a) => Var(a[0], a[1])), returns)}`, 
-            ({ name }) => `export { ${name} }`
+            ({ name, args, returns }) => Ast`export declare function ${name} (${
+                args.map((a) => `${a[0]}: ${a[1]}`).join(',')
+            }): ${returns}`, 
+            ({ name }) => Ast`export { ${name} }`
         )}
-    `
+    `)
 }

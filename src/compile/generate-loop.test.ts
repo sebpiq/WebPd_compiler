@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,20 +24,23 @@ import { makeCompilation } from '../test-helpers'
 import { normalizeCode } from '../test-helpers'
 import generateLoop from './generate-loop'
 import { makeGraph } from '../dsp-graph/test-helpers'
+import { Ast } from '../ast/declare'
+import { AstContainer } from '../ast/types'
+import { normalizeCodeForTests } from '../ast/test-helpers'
 
 describe('generateLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         print: {},
         'osc~': {
             generateLoop: ({ node }) =>
-                `// [osc~] : frequency ${node.args.frequency}`,
+                Ast`// [osc~] : frequency ${node.args.frequency}`,
         },
         '+~': {
-            generateLoop: ({ node }) => `// [+~] : value ${node.args.value}`,
+            generateLoop: ({ node }) => Ast`// [+~] : value ${node.args.value}`,
         },
         'dac~': {
             generateLoop: ({ compilation: { audioSettings } }) =>
-                `// [dac~] : channelCount ${audioSettings.channelCount.out}`,
+                Ast`// [dac~] : channelCount ${audioSettings.channelCount.out}`,
         },
     }
 
@@ -95,20 +98,18 @@ describe('generateLoop', () => {
             },
         })
 
-        const loop = generateLoop(compilation)
+        const ast = generateLoop(compilation)
 
-        assert.strictEqual(
-            normalizeCode(loop),
-            normalizeCode(`
-            for (F = 0; F < BLOCK_SIZE; F++) {
-                _commons_emitFrame(FRAME)
-                // [osc~] : frequency 440
-                // [+~] : value 110
-                // [dac~] : channelCount 2
-                FRAME++
-            }
-        `)
-        )
+        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
+            astType: 'Container',
+            content: [
+                `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)`,
+                '// [osc~] : frequency 440',
+                '// [+~] : value 110',
+                '// [dac~] : channelCount 2',
+                `FRAME++\n}`,
+            ],
+        })
     })
 
     it('should generate loop for inline nodes', () => {
@@ -122,7 +123,7 @@ describe('generateLoop', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateLoopInline: () => 'BLA',
-            }
+            },
         }
 
         const compilation = makeCompilation({
@@ -133,18 +134,16 @@ describe('generateLoop', () => {
 
         compilation.precompilation.node1.outs['0'] = 'node1_OUTS_0'
 
-        const loop = generateLoop(compilation)
+        const ast = generateLoop(compilation)
 
-        assert.strictEqual(
-            normalizeCode(loop),
-            normalizeCode(`
-            for (F = 0; F < BLOCK_SIZE; F++) {
-                _commons_emitFrame(FRAME)
-                node1_OUTS_0 = BLA
-                FRAME++
-            }
-        `)
-        )
+        assert.deepStrictEqual(normalizeCodeForTests(ast), {
+            astType: 'Container',
+            content: [
+                'for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)',
+                'node1_OUTS_0 = BLA',
+                'FRAME++\n}',
+            ],
+        })
     })
 
     it('should throw error for nodes with no loop function', () => {
@@ -155,7 +154,7 @@ describe('generateLoop', () => {
         })
 
         const nodeImplementations: NodeImplementations = {
-            'type1': {}
+            type1: {},
         }
 
         const compilation = makeCompilation({

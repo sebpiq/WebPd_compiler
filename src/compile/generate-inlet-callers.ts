@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,23 +18,25 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { renderCode } from '../functional-helpers'
+import { AstRaw, Func, Var } from '../ast/declare'
+import { AstContainer } from '../ast/types'
 import { Compilation } from './types'
 
 export default ({
     inletCallerSpecs,
     codeVariableNames,
-    macros: { Var, Func },
-}: Compilation) =>
+}: Compilation): AstContainer =>
     // Here not possible to assign directly the receiver because otherwise assemblyscript
     // doesn't export a function but a global instead.
-    renderCode`${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
-        inletIds.map(
-            (inletId) =>
-                `function ${
-                    codeVariableNames.inletCallers[nodeId][inletId]
-                } ${Func([Var('m', 'Message')], 'void')} {${
-                    codeVariableNames.nodes[nodeId].rcvs[inletId]
-                }(m)}`
+    AstRaw(
+        Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
+            inletIds.map(
+                (inletId) =>
+                    Func(
+                        codeVariableNames.inletCallers[nodeId][inletId],
+                        [Var('Message', 'm')],
+                        'void'
+                    )`${codeVariableNames.nodes[nodeId].rcvs[inletId]}(m)`
+            )
         )
-    )}`
+    )

@@ -21,25 +21,25 @@
 // WARNING : for some reason naming this file `generate-imports-exports.ts`
 // failed tests in WebPd package, that's why it's named like this.
 
-import { renderCode } from '../functional-helpers'
 import { collectImports, collectExports } from './compile-helpers'
 import {
     GlobalCodeDefinitionImport,
-    Code,
     GlobalCodeDefinition,
     CompilerTarget,
 } from './types'
+import { AstContainer } from '../ast/types'
+import { Ast } from '../ast/declare'
 
-type GenerateImportExportFunction = (imprt: GlobalCodeDefinitionImport) => Code
+type GenerateImportExportFunction = (imprt: GlobalCodeDefinitionImport) => AstContainer
 
 export default (
     target: CompilerTarget,
     dependencies: Array<GlobalCodeDefinition>,
     generateImport: GenerateImportExportFunction,
     generateExport: GenerateImportExportFunction
-): Code =>
+): AstContainer =>
     // prettier-ignore
-    renderCode`
+    Ast`
         ${collectImports(dependencies).map(generateImport)}
         ${collectExports(target, dependencies).map(generateExport)}
     `

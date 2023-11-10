@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,35 +19,47 @@
  */
 
 import { isGlobalDefinitionWithSettings } from './compile-helpers'
-import { GlobalCodeDefinition, GlobalCodeGeneratorContext, Code } from './types'
+import {
+    GlobalCodeDefinition,
+    GlobalCodeGenerator,
+    GlobalCodeGeneratorContext,
+} from './types'
+import { AstContainer } from '../ast/types'
 
 export default (
     context: GlobalCodeGeneratorContext,
     dependencies: Array<GlobalCodeDefinition>
-) =>
+): Array<AstContainer> =>
     // De-duplicate code
-    _generateDependenciesDeclarationsRecursive(context, dependencies)
-        .reduce<Array<Code>>(
-            (codes, code) => (!codes.includes(code) ? [...codes, code] : codes),
+    _flattenDependencies(dependencies)
+        .reduce<Array<GlobalCodeDefinition>>(
+            (codeDefinitions, codeDefinition) =>
+                !codeDefinitions.includes(codeDefinition)
+                    ? [...codeDefinitions, codeDefinition]
+                    : codeDefinitions,
             []
         )
-        .join('\n')
+        .map((codeDefinition) =>
+            isGlobalDefinitionWithSettings(codeDefinition)
+                ? codeDefinition.codeGenerator(context)
+                : codeDefinition(context)
+        )
 
-export const _generateDependenciesDeclarationsRecursive = (
-    context: GlobalCodeGeneratorContext,
+export const _flattenDependencies = (
     dependencies: Array<GlobalCodeDefinition>
-): Array<Code> =>
-    dependencies.flatMap(
-        (globalCodeDefinition): Array<Code> =>
-            isGlobalDefinitionWithSettings(globalCodeDefinition)
-                ? [
-                      ...(globalCodeDefinition.dependencies
-                          ? _generateDependenciesDeclarationsRecursive(
-                                context,
-                                globalCodeDefinition.dependencies
-                            )
-                          : []),
-                      globalCodeDefinition.codeGenerator(context),
-                  ]
-                : [globalCodeDefinition(context)]
-    )
+): Array<GlobalCodeGenerator> =>
+    dependencies.flatMap<GlobalCodeGenerator>((codeDefinition) => {
+        if (
+            isGlobalDefinitionWithSettings(codeDefinition) &&
+            codeDefinition.dependencies
+        ) {
+            return [
+                ..._flattenDependencies(codeDefinition.dependencies),
+                codeDefinition.codeGenerator,
+            ]
+        } else if (isGlobalDefinitionWithSettings(codeDefinition)) {
+            return [codeDefinition.codeGenerator]
+        } else {
+            return [codeDefinition]
+        }
+    })

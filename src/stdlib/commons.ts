@@ -18,128 +18,120 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { AstRaw, ConstVar, Func, Var } from '../ast/declare'
 import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 import { sked } from './sked'
 
 export const commonsCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Var, Func } }) => `
-        const _commons_ENGINE_LOGGED_SKEDULER = sked_create(true)
-        const _commons_FRAME_SKEDULER = sked_create(false)
-
-        function _commons_emitEngineConfigure ${Func([], 'void')} {
+    codeGenerator: () => AstRaw([
+        ConstVar('Skeduler', '_commons_ENGINE_LOGGED_SKEDULER', 'sked_create(true)'),
+        ConstVar('Skeduler', '_commons_FRAME_SKEDULER', 'sked_create(false)'),
+        Func('_commons_emitEngineConfigure', [], 'void')`
             sked_emit(_commons_ENGINE_LOGGED_SKEDULER, 'configure')
-        }
-        
-        function _commons_emitFrame ${Func([Var('frame', 'Int')], 'void')} {
+        `,
+        Func('_commons_emitFrame', [
+            Var('Int', 'frame')
+        ], 'void')`
             sked_emit(_commons_FRAME_SKEDULER, frame.toString())
-        }
-    `,
+        `
+    ]),
     dependencies: [sked],
 }
 
 export const commonsArrays: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Var, Func } }) => `
-        const ${Var('_commons_ARRAYS', 'Map<string, FloatArray>')} = new Map()
-        const ${Var(
-            '_commons_ARRAYS_SKEDULER',
-            'Skeduler'
-        )} = sked_create(false)
+    codeGenerator: () => AstRaw([
+        ConstVar('Map<string, FloatArray>', '_commons_ARRAYS', 'new Map()'),
+        ConstVar('Skeduler', '_commons_ARRAYS_SKEDULER', 'sked_create(false)'),
 
         /** Gets an named array, throwing an error if the array doesn't exist. */
-        function commons_getArray ${Func(
-            [Var('arrayName', 'string')],
-            'FloatArray'
-        )} {
+        Func('commons_getArray', [
+            Var('string', 'arrayName')
+        ], 'FloatArray')`
             if (!_commons_ARRAYS.has(arrayName)) {
                 throw new Error('Unknown array ' + arrayName)
             }
             return _commons_ARRAYS.get(arrayName)
-        }
+        `,
 
-        function commons_hasArray ${Func(
-            [Var('arrayName', 'string')],
-            'boolean'
-        )} {
+        Func('commons_hasArray', [
+            Var('string', 'arrayName')
+        ], 'boolean')`
             return _commons_ARRAYS.has(arrayName)
-        }
+        `,
 
-        function commons_setArray ${Func(
-            [Var('arrayName', 'string'), Var('array', 'FloatArray')],
-            'void'
-        )} {
+        Func('commons_setArray', [
+            Var('string', 'arrayName'), 
+            Var('FloatArray', 'array'),
+        ], 'void')`
             _commons_ARRAYS.set(arrayName, array)
             sked_emit(_commons_ARRAYS_SKEDULER, arrayName)
-        }
+        `,
 
         /** 
          * @param callback Called immediately if the array exists, and subsequently, everytime 
          * the array is set again.
          * @returns An id that can be used to cancel the subscription.
          */
-        function commons_subscribeArrayChanges ${Func(
-            [Var('arrayName', 'string'), Var('callback', 'SkedCallback')],
-            'SkedId'
-        )} {
+        Func('commons_subscribeArrayChanges', [
+            Var('string', 'arrayName'), 
+            Var('SkedCallback', 'callback'),
+        ], 'SkedId')`
             const id = sked_subscribe(_commons_ARRAYS_SKEDULER, arrayName, callback)
             if (_commons_ARRAYS.has(arrayName)) {
                 callback(arrayName)
             }
             return id
-        }
+        `,
 
         /** 
          * @param id The id received when subscribing.
          */
-        function commons_cancelArrayChangesSubscription ${Func(
-            [Var('id', 'SkedId')],
-            'void'
-        )} {
+        Func('commons_cancelArrayChangesSubscription', [
+            Var('SkedId', 'id')
+        ], 'void')`
             sked_cancel(_commons_ARRAYS_SKEDULER, id)
-        }
-    `,
+        `,
+    ]),
 
     exports: [{ name: 'commons_getArray' }, { name: 'commons_setArray' }],
 }
 
 export const commonsWaitEngineConfigure: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Var, Func } }) => `
+    codeGenerator: () => AstRaw([
         /** 
          * @param callback Called when the engine is configured, or immediately if the engine
          * was already configured.
          */
-        function commons_waitEngineConfigure ${Func(
-            [Var('callback', 'SkedCallback')],
-            'void'
-        )} {
+        Func('commons_waitEngineConfigure',[
+            Var('SkedCallback', 'callback'),
+        ], 'void')`
             sked_wait(_commons_ENGINE_LOGGED_SKEDULER, 'configure', callback)
-        }
-    `,
+        `
+    ]),
     dependencies: [commonsCore],
 }
 
 export const commonsWaitFrame: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Var, Func } }) => `
+    codeGenerator: () => AstRaw([
         /** 
          * Schedules a callback to be called at the given frame.
          * If the frame already occurred, or is the current frame, the callback won't be executed.
          */
-        function commons_waitFrame ${Func(
-            [Var('frame', 'Int'), Var('callback', 'SkedCallback')],
-            'SkedId'
-        )} {
+        Func('commons_waitFrame', [
+            Var('Int', 'frame'), 
+            Var('SkedCallback', 'callback'),
+        ], 'SkedId')`
             return sked_wait_future(_commons_FRAME_SKEDULER, frame.toString(), callback)
-        }
+        `,
 
         /** 
          * Cancels waiting for a frame to occur.
          */
-        function commons_cancelWaitFrame ${Func(
-            [Var('id', 'SkedId')],
-            'void'
-        )} {
+        Func('commons_cancelWaitFrame', [
+            Var('SkedId', 'id')
+        ], 'void')`
             sked_cancel(_commons_FRAME_SKEDULER, id)
-        }
-
-    `,
+        `,
+    ]),
     dependencies: [commonsCore],
 }

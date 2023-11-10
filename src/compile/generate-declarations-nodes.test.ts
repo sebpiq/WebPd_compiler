@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,10 +21,12 @@
 import assert from 'assert'
 import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
-import { normalizeCode } from '../test-helpers'
 import generateDeclarationsNodes from './generate-declarations-nodes'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import precompile from './precompile'
+import { Ast, Var } from '../ast/declare'
+import { AstContainer } from '../ast/types'
+import { normalizeCodeForTests } from '../ast/test-helpers'
 
 describe('generateDeclarationsNodes', () => {
     it('should compile custom declarations', () => {
@@ -43,11 +45,11 @@ describe('generateDeclarationsNodes', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateDeclarations: ({ node }) =>
-                    `// [type1] arg1 ${node.args.arg1}`,
+                    Ast`// [type1] arg1 ${node.args.arg1.toString()}`,
             },
             type2: {
                 generateDeclarations: ({ compilation: { audioSettings } }) =>
-                    `// [type2] channelCount ${audioSettings.channelCount.out}`,
+                    Ast`// [type2] channelCount ${audioSettings.channelCount.out.toString()}`,
             },
         }
 
@@ -59,15 +61,12 @@ describe('generateDeclarationsNodes', () => {
 
         precompile(compilation)
 
-        const declareCode = generateDeclarationsNodes(compilation)
+        const ast = generateDeclarationsNodes(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                // [type1] arg1 440
-                // [type2] channelCount 2                
-            `)
-        )
+        assert.deepStrictEqual<AstContainer>(ast, {
+            astType: 'Container',
+            content: ['// [type1] arg1 440\n// [type2] channelCount 2'],
+        })
     })
 
     it('should compile declarations for signal outlets declared in variable names', () => {
@@ -97,14 +96,12 @@ describe('generateDeclarationsNodes', () => {
 
         compilation.codeVariableNames.nodes.node1.outs['0'] = 'node1_OUTS_0'
 
-        const declareCode = generateDeclarationsNodes(compilation)
+        const ast = generateDeclarationsNodes(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                let node1_OUTS_0 = 0
-            `)
-        )
+        assert.deepStrictEqual<AstContainer>(ast, {
+            astType: 'Container',
+            content: [Var('Float', 'node1_OUTS_0', '0')],
+        })
     })
 
     it('should compile node message receivers for message inlets declared in variable names and omit the others', () => {
@@ -121,8 +118,8 @@ describe('generateDeclarationsNodes', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': '// [type1] message receiver 0',
-                    '1': '// [type1] message receiver 1',
+                    '0': Ast`// [type1] message receiver 0`,
+                    '1': Ast`// [type1] message receiver 1`,
                 }),
             },
         }
@@ -135,17 +132,33 @@ describe('generateDeclarationsNodes', () => {
 
         compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
-        const declareCode = generateDeclarationsNodes(compilation)
+        const ast = generateDeclarationsNodes(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                function node1_RCVS_0 (m) {
-                    // [type1] message receiver 0
-                    throw new Error('[type1], id "node1", inlet "0", unsupported message : ' + msg_display(m))
-                }
-            `)
-        )
+        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
+            astType: 'Container',
+            content: [
+                {
+                    astType: 'Func',
+                    name: 'node1_RCVS_0',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: [
+                            '// [type1] message receiver 0',
+                                `throw new Error('[type1], id "node1", inlet "0", unsupported message : ' + msg_display(m))`,
+                        ],
+                    },
+                },
+            ],
+        })
     })
 
     it('should render correct error throw if debug = true', () => {
@@ -161,7 +174,7 @@ describe('generateDeclarationsNodes', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': '// [type1] message receiver',
+                    '0': Ast`// [type1] message receiver`,
                 }),
             },
         }
@@ -175,17 +188,33 @@ describe('generateDeclarationsNodes', () => {
 
         compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
-        const declareCode = generateDeclarationsNodes(compilation)
+        const ast = generateDeclarationsNodes(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`   
-                function node1_RCVS_0 (m) {
-                    // [type1] message receiver
-                    throw new Error('[type1], id "node1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')
-                }
-            `)
-        )
+        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
+            astType: 'Container',
+            content: [
+                {
+                    astType: 'Func',
+                    name: 'node1_RCVS_0',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: [
+                            '// [type1] message receiver',
+                                `throw new Error('[type1], id "node1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
+                        ],
+                    },
+                },
+            ],
+        })
     })
 
     it('should throw an error if no implementation for message receiver', () => {
@@ -227,7 +256,7 @@ describe('generateDeclarationsNodes', () => {
 
         const nodeImplementations: NodeImplementations = {
             type1: {
-                generateMessageReceivers: () => ({ '0': '' }),
+                generateMessageReceivers: () => ({ '0': Ast`` }),
             },
         }
 
@@ -276,7 +305,7 @@ describe('generateDeclarationsNodes', () => {
             type1: {},
             type2: {
                 generateMessageReceivers: () => ({
-                    '0': '// [type2] message receiver',
+                    '0': Ast`// [type2] message receiver`,
                 }),
             },
         }
@@ -293,27 +322,70 @@ describe('generateDeclarationsNodes', () => {
         compilation.codeVariableNames.nodes.node3.rcvs['0'] = 'node3_RCVS_0'
         compilation.precompilation.node3.rcvs['0'] = 'node3_RCVS_0'
 
-        const declareCode = generateDeclarationsNodes(compilation)
+        const ast = generateDeclarationsNodes(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                function node2_RCVS_0 (m) {
-                    // [type2] message receiver
-                    throw new Error('[type2], id "node2", inlet "0", unsupported message : ' + msg_display(m))
-                }
-
-                function node3_RCVS_0 (m) {
-                    // [type2] message receiver
-                    throw new Error('[type2], id "node3", inlet "0", unsupported message : ' + msg_display(m))
-                }
-
-                function node1_SNDS_0 (m) {
-                    node2_RCVS_0(m)
-                    node3_RCVS_0(m)
-                }
-            `)
-        )
+        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
+            astType: 'Container',
+            content: [
+                {
+                    astType: 'Func',
+                    name: 'node2_RCVS_0',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: [
+                            '// [type2] message receiver',
+                                `throw new Error('[type2], id "node2", inlet "0", unsupported message : ' + msg_display(m))`,
+                        ],
+                    },
+                },
+                {
+                    astType: 'Func',
+                    name: 'node3_RCVS_0',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: [
+                            '// [type2] message receiver',
+                                `throw new Error('[type2], id "node3", inlet "0", unsupported message : ' + msg_display(m))`,
+                        ],
+                    },
+                },
+                {
+                    astType: 'Func',
+                    name: 'node1_SNDS_0',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: ['node2_RCVS_0(m)','node3_RCVS_0(m)'],
+                    },
+                },
+            ],
+        })
     })
 
     it('should inject outlet listener in node message senders', () => {
@@ -338,7 +410,7 @@ describe('generateDeclarationsNodes', () => {
             type1: {},
             type2: {
                 generateMessageReceivers: () => ({
-                    '0': '// [type2] message receiver',
+                    '0': Ast`// [type2] message receiver`,
                 }),
             },
         }
@@ -362,25 +434,67 @@ describe('generateDeclarationsNodes', () => {
         compilation.codeVariableNames.outletListeners.node1['1'] =
             'outletListener_node1_1'
 
-        const declareCode = generateDeclarationsNodes(compilation)
+        const ast = generateDeclarationsNodes(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                function node2_RCVS_0 (m) {
-                    // [type2] message receiver
-                    throw new Error('[type2], id "node2", inlet "0", unsupported message : ' + msg_display(m))
-                }
-
-                function node1_SNDS_0 (m) {
-                    outletListener_node1_0(m)
-                }
-                function node1_SNDS_1 (m) {
-                    outletListener_node1_1(m)
-                    node2_RCVS_0(m)
-                }
-            `)
-        )
+        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
+            astType: 'Container',
+            content: [
+                {
+                    astType: 'Func',
+                    name: 'node2_RCVS_0',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: [
+                            '// [type2] message receiver',
+                                `throw new Error('[type2], id "node2", inlet "0", unsupported message : ' + msg_display(m))`,
+                        ],
+                    },
+                },
+                {
+                    astType: 'Func',
+                    name: 'node1_SNDS_0',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: ['outletListener_node1_0(m)'],
+                    },
+                },
+                {
+                    astType: 'Func',
+                    name: 'node1_SNDS_1',
+                    args: [
+                        {
+                            astType: 'Var',
+                            name: 'm',
+                            type: 'Message',
+                            value: undefined,
+                        },
+                    ],
+                    returnType: 'void',
+                    body: {
+                        astType: 'Container',
+                        content: ['outletListener_node1_1(m)','node2_RCVS_0(m)'],
+                    },
+                },
+            ],
+        })
     })
 
     it('should not fail when node implementation has no "generateDeclarations" hook', () => {

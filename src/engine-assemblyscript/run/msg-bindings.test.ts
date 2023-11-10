@@ -28,12 +28,13 @@ import {
 import { AudioSettings, GlobalCodeGeneratorContext } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getFloatArrayType } from '../../run/run-helpers'
-import { getMacros } from '../../compile'
 import { core } from '../../stdlib/core'
 import { sked } from '../../stdlib/sked'
 import { msg } from '../../stdlib/msg'
-import { renderCode } from '../../functional-helpers'
 import { MessagePointer } from './types'
+import { AstRaw } from '../../ast/declare'
+import render from '../../ast/render'
+import macros from '../compile/macros'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {
@@ -62,22 +63,21 @@ describe('msg-bindings', () => {
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => {
         const context: GlobalCodeGeneratorContext = {
             target: 'assemblyscript',
-            macros: getMacros('assemblyscript'),
             audioSettings: {
                 bitDepth,
                 channelCount: { in: 2, out: 2 },
             },
         }
-        return renderCode`
-            ${core.codeGenerator(context)}
-            ${sked(context)}
-            ${msg.codeGenerator(context)}
-            export function testReadMessageData(message: Message, index: Int): Int {
+        return render(macros, AstRaw([
+            core.codeGenerator(context),
+            sked(context),
+            msg.codeGenerator(context),
+            `export function testReadMessageData(message: Message, index: Int): Int {
                 return message.dataView.getInt32(index * sizeof<Int>())
-            }
-            ${core.exports.map(({ name }) => `export { ${name} }`)}
-            ${msg.exports.map(({ name }) => `export { ${name} }`)}
-        `
+            }`,
+            core.exports.map(({ name }) => `export { ${name} }`),
+            msg.exports.map(({ name }) => `export { ${name} }`),
+        ]))
     }
 
     describe('lowerMessage', () => {

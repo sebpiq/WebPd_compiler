@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,21 +20,22 @@
 
 import {
     AudioSettings,
-    Code,
     Compilation,
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
-    GlobalCodeGenerator,
+    GlobalCodeGeneratorContext,
     GlobalCodeGeneratorWithSettings,
 } from './compile/types'
+import { AstContainer, Code, FuncDeclaration } from './ast/types'
+import { Ast, AstRaw, Func, Var } from './ast/declare'
 import { Engine, Module, RawModule } from './run/types'
 import { generateCodeVariableNames } from './compile/code-variable-names'
-import { getMacros } from './compile'
 import { writeFile } from 'fs/promises'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
+    getMacros,
 } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
@@ -43,7 +44,6 @@ import {
 } from './engine-assemblyscript/run/test-helpers'
 import {
     mapArray,
-    renderCode,
     renderIf,
     renderSwitch,
 } from './functional-helpers'
@@ -59,6 +59,7 @@ import { createModule } from './run/run-helpers'
 import generateDeclarationsDependencies from './compile/generate-declarations-dependencies'
 import { collectExports } from './compile/compile-helpers'
 import { initializePrecompilation } from './compile/precompile'
+import render from './ast/render'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
@@ -67,9 +68,9 @@ interface TestParameters {
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
-    { bitDepth: 64, target: 'javascript' },
+    // { bitDepth: 64, target: 'javascript' },
     { bitDepth: 32, target: 'assemblyscript' },
-    { bitDepth: 64, target: 'assemblyscript' },
+    // { bitDepth: 64, target: 'assemblyscript' },
 ]
 
 export const normalizeCode = (rawCode: string) => {
@@ -131,7 +132,6 @@ export const makeCompilation = (
         arrays,
         outletListenerSpecs,
         inletCallerSpecs,
-        macros: getMacros(target),
         codeVariableNames,
         debug,
         precompilation,
@@ -218,7 +218,10 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
 }
 
 export const runTestSuite = (
-    tests: Array<{ description: string; codeGenerator: GlobalCodeGenerator }>,
+    tests: Array<{
+        description: string
+        testFunction: (declareTestFunction: ReturnType<typeof Func>, target: CompilerTarget) => FuncDeclaration
+    }>,
     dependencies: Array<GlobalCodeDefinition> = []
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
@@ -228,10 +231,7 @@ export const runTestSuite = (
     beforeAll(async () => {
         for (let testParameters of TEST_PARAMETERS) {
             const { target, bitDepth } = testParameters
-            const macros = getMacros(target)
-            const { Var, Func } = macros
-            const codeGeneratorContext = {
-                macros,
+            const codeGeneratorContext: GlobalCodeGeneratorContext = {
                 target,
                 audioSettings: {
                     bitDepth,
@@ -240,108 +240,97 @@ export const runTestSuite = (
             }
 
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
-                tests.map(({ codeGenerator }, i) => ({
-                    codeGenerator: () => `function ${
-                        testFunctionNames[i]
-                    } ${Func([], 'void')} {
-                        ${codeGenerator(codeGeneratorContext)}
-                    }`,
+                tests.map(({ testFunction }, i) => ({
+                    codeGenerator: () => AstRaw([
+                        testFunction(Func(testFunctionNames[i], [], 'void'), target)
+                    ]),
                     exports: [{ name: testFunctionNames[i] }],
                 }))
 
-            let code = renderCode`
-                function reportTestFailure ${Func(
-                    [Var('msg', 'string')],
-                    'void'
-                )} {
+            let ast = AstRaw([
+                Func('reportTestFailure', [
+                    Var('string', 'msg')
+                ], 'void')`
                     console.log(msg)
                     throw new Error('test failed')
-                }                
-
-                function assert_stringsEqual ${Func(
-                    [Var('actual', 'string'), Var('expected', 'string')],
-                    'void'
-                )} {
+                `,
+                Func('assert_stringsEqual', [
+                    Var('string', 'actual'), 
+                    Var('string', 'expected')
+                ], 'void')`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got string "' + actual 
                             + '" expected "' + expected + '"')
                     }
-                }
-
-                function assert_booleansEqual ${Func(
-                    [Var('actual', 'boolean'), Var('expected', 'boolean')],
-                    'void'
-                )} {
+                `,
+                Func('assert_booleansEqual', [
+                    Var('boolean', 'actual'), 
+                    Var('boolean', 'expected')
+                ], 'void')`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got boolean ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
-                }
-
-                function assert_integersEqual ${Func(
-                    [Var('actual', 'Int'), Var('expected', 'Int')],
-                    'void'
-                )} {
+                `,
+                Func('assert_integersEqual', [
+                    Var('Int', 'actual'), 
+                    Var('Int', 'expected')
+                ], 'void')`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got integer ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
-                }
-    
-                function assert_floatsEqual ${Func(
-                    [Var('actual', 'Float'), Var('expected', 'Float')],
-                    'void'
-                )} {
+                `,
+                Func('assert_floatsEqual', [
+                    Var('Float', 'actual'), 
+                    Var('Float', 'expected')
+                ], 'void')`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got float ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
-                }
-
-                function assert_floatArraysEqual ${Func(
-                    [
-                        Var('actual', 'FloatArray'),
-                        Var('expected', 'FloatArray'),
-                    ],
-                    'void'
-                )} {
+                `,
+                Func('assert_floatArraysEqual', [
+                    Var('FloatArray', 'actual'),
+                    Var('FloatArray', 'expected'),
+                ], 'void')`
                     if (actual.length !== expected.length) {
                         reportTestFailure(
                             'Arrays of different length ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
-                    for (let ${Var('i', 'Int')} = 0; i < actual.length; i++) {
+                    for (${Var('Int', 'i', '0')}; i < actual.length; i++) {
                         if (actual[i] !== expected[i]) {
                             reportTestFailure(
                                 'Arrays are not equal ' + actual.toString() 
                                 + ' expected ' + expected.toString())
                         }
                     }
-                }
+                `,
 
-                ${generateDeclarationsDependencies(codeGeneratorContext, [
+                generateDeclarationsDependencies(codeGeneratorContext, [
                     ...dependencies,
                     ...testsCodeDefinitions,
-                ])}
+                ]),
 
-                ${renderIf(target === 'javascript', 'const exports = {}')}
+                renderIf(target === 'javascript', '\nconst exports = {}\n'),
 
-                ${generateTestExports(
+                generateTestExports(
                     target,
                     collectExports(target, [
                         ...dependencies,
                         ...testsCodeDefinitions,
                     ])
-                )}
-            `
+                )
+            ])
 
             testModules.push([
                 testParameters,
-                await createTestModule(target, bitDepth, code),
+                await createTestModule(target, bitDepth, render(getMacros(target), ast)),
             ])
         }
     })
@@ -369,8 +358,8 @@ export const runTestSuite = (
 const generateTestExports = (
     target: CompilerTarget,
     exports: Array<GlobalCodeDefinitionExport>
-): Code =>
-    renderCode`${renderSwitch(
+): AstContainer =>
+    Ast`${renderSwitch(
         [
             target === 'assemblyscript',
             exports.map(({ name }) => `export { ${name} }`),

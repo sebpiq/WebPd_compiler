@@ -24,6 +24,7 @@ import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
 import { CompilerTarget, NodeImplementation } from './compile/types'
+import { Ast } from './ast/declare'
 
 const TEST_PARAMETERS: Array<{ target: CompilerTarget }> = [
     { target: 'javascript' },
@@ -37,7 +38,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateLoop: ({ ins, outs }) =>
-                        `${outs.$0} = ${ins.$0} + 0.1`,
+                        Ast`${outs.$0} = ${ins.$0} + 0.1`,
                 }
 
                 const node: DspGraph.Node = {
@@ -65,7 +66,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateMessageReceivers: ({ globs, snds }) => ({
-                        '0': `
+                        '0': Ast`
                         ${snds.$0}(
                             msg_floats([
                                 msg_readFloatToken(${globs.m}, 0) + 0.1
@@ -101,7 +102,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateMessageReceivers: ({ globs, snds }) => ({
-                        '0': `
+                        '0': Ast`
                         ${snds.$0}(
                             msg_floats([toFloat(${globs.frame})])
                         )
@@ -135,7 +136,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateMessageReceivers: ({}) => ({
-                        '0': `
+                        '0': Ast`
                         fs_readSoundFile('/bla', {
                             channelCount: 11,
                             sampleRate: 666,
@@ -184,7 +185,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateMessageReceivers: () => ({
-                        '0': `
+                        '0': Ast`
                         commons_getArray('array1')[0] = 666
                         return
                     `,

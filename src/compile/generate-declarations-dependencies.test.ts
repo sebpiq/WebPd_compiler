@@ -19,48 +19,42 @@
  */
 
 import assert from 'assert'
-import { getMacros } from '.'
-import { GlobalCodeDefinition, GlobalCodeGeneratorContext } from './types'
+import { GlobalCodeDefinition, GlobalCodeGenerator } from './types'
 import generateDeclarationsDependencies, {
-    _generateDependenciesDeclarationsRecursive,
+    _flattenDependencies,
 } from './generate-declarations-dependencies'
 import { makeCompilation } from '../test-helpers'
+import { Ast } from '../ast/declare'
 
 describe('generate-declarations-dependencies', () => {
-    const CONTEXT: GlobalCodeGeneratorContext = {
-        target: 'javascript',
-        audioSettings: {
-            bitDepth: 32,
-            channelCount: { in: 2, out: 2 },
-        },
-        macros: getMacros('javascript'),
-    }
-
     const COMPILATION = makeCompilation({})
 
     describe('default', () => {
         it('should compile the global code, removing duplicates', () => {
-            assert.strictEqual(
-                generateDeclarationsDependencies(COMPILATION, [
-                    () => 'blo',
-                    {
-                        codeGenerator: () => 'bli',
-                        dependencies: [() => 'blo'],
-                    },
-                ]),
-                'blo\nbli'
-            )
+            const bli = Ast`"bli"`
+            const blo = Ast`"blo"`
+            const bloGenerator: GlobalCodeGenerator = () => blo
+            const generated = generateDeclarationsDependencies(COMPILATION, [
+                bloGenerator,
+                {
+                    codeGenerator: () => bli,
+                    dependencies: [bloGenerator],
+                },
+            ])
+            assert.strictEqual(generated.length, 2)
+            assert.strictEqual(generated[0], blo)
+            assert.strictEqual(generated[1], bli)
         })
     })
 
-    describe('_generateDependenciesDeclarationsRecursive', () => {
-        it('should render code and dependencies recursively, dependencies should coem first', () => {
-            const codeGenerator1 = () => 'bla'
-            const codeGenerator2 = () => 'bli'
-            const codeGenerator3 = () => 'blo'
-            const codeGenerator4 = () => 'blu'
-            const codeGenerator5 = () => 'bly'
-            const codeGenerator6 = () => 'ble'
+    describe('_flattenDependencies', () => {
+        it('should render code and dependencies recursively, dependencies should come first', () => {
+            const codeGenerator1 = () => Ast`"bla"`
+            const codeGenerator2 = () => Ast`"bli"`
+            const codeGenerator3 = () => Ast`"blo"`
+            const codeGenerator4 = () => Ast`"blu"`
+            const codeGenerator5 = () => Ast`"bly"`
+            const codeGenerator6 = () => Ast`"ble"`
 
             const codeDefinition1 = {
                 codeGenerator: codeGenerator2,
@@ -74,14 +68,16 @@ describe('generate-declarations-dependencies', () => {
                 codeGenerator1,
                 codeDefinition2,
             ]
+            const generated = _flattenDependencies(dependencies)
 
-            assert.deepStrictEqual(
-                _generateDependenciesDeclarationsRecursive(
-                    CONTEXT,
-                    dependencies
-                ),
-                ['bla', 'bly', 'blo', 'bla', 'ble', 'bli', 'blu']
-            )
+            assert.strictEqual(generated.length, 7)
+            assert.strictEqual(generated[0], codeGenerator1)
+            assert.strictEqual(generated[1], codeGenerator5)
+            assert.strictEqual(generated[2], codeGenerator3)
+            assert.strictEqual(generated[3], codeGenerator1)
+            assert.strictEqual(generated[4], codeGenerator6)
+            assert.strictEqual(generated[5], codeGenerator2)
+            assert.strictEqual(generated[6], codeGenerator4)
         })
     })
 })

@@ -21,6 +21,8 @@ import { commonsCore } from '../stdlib/commons'
 import { core } from '../stdlib/core'
 import { msg } from '../stdlib/msg'
 import { DspGraph, getters, traversal } from '../dsp-graph'
+import jsMacros from '../engine-javascript/compile/macros'
+import ascMacros from '../engine-assemblyscript/compile/macros'
 import {
     Compilation,
     CompilerTarget,
@@ -34,6 +36,11 @@ import {
     PortletsIndex,
 } from './types'
 import { EngineMetadata } from '../run/types'
+import { CodeMacros } from '../ast/types'
+
+/** Helper to get code macros from compile target. */
+export const getMacros = (target: CompilerTarget): CodeMacros =>
+    ({ javascript: jsMacros, assemblyscript: ascMacros }[target])
 
 /** Helper to get node implementation or throw an error if not implemented. */
 export const getNodeImplementation = (
@@ -80,7 +87,6 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
 export const getGlobalCodeGeneratorContext = (
     compilation: Compilation
 ): GlobalCodeGeneratorContext => ({
-    macros: compilation.macros,
     target: compilation.target,
     audioSettings: compilation.audioSettings,
 })

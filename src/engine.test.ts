@@ -44,6 +44,7 @@ import {
     fsWriteSoundStream,
 } from './stdlib/fs'
 import { commonsArrays, commonsWaitEngineConfigure } from './stdlib/commons'
+import { Ast, AstRaw, ConstVar, Func, Var } from './ast/declare'
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
@@ -90,7 +91,7 @@ describe('Engine', () => {
                 },
             },
             nodeImplementations: {
-                DUMMY: { generateLoop: () => '' },
+                DUMMY: { generateLoop: () => AstRaw([]) },
                 ...(extraCompilation.nodeImplementations || {}),
                 [dependenciesInjectorType]: {
                     dependencies: dependencies,
@@ -129,12 +130,12 @@ describe('Engine', () => {
                             },
                         }) =>
                             target === 'assemblyscript'
-                                ? `
+                                ? Ast`
                         for (let channel: Int = 0; channel < ${channelCount.out}; channel++) {
                             ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] = 2.0
                         }
                     `
-                                : `
+                                : Ast`
                         for (let channel = 0; channel < ${channelCount.out}; channel++) {
                             ${globs.output}[channel][${globs.iterFrame}] = 2.0
                         }
@@ -198,13 +199,13 @@ describe('Engine', () => {
                             },
                         }) =>
                             target === 'assemblyscript'
-                                ? `
+                                ? Ast`
                         for (let channel: Int = 0; channel < ${channelCount.in}; channel++) {
                             ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] 
                                 = ${globs.input}[${globs.iterFrame} + ${globs.blockSize} * channel]
                         }
                     `
-                                : `
+                                : Ast`
                         for (let channel = 0; channel < ${channelCount.in}; channel++) {
                             ${globs.output}[channel][${globs.iterFrame}] 
                                 = ${globs.input}[channel][${globs.iterFrame}]
@@ -272,7 +273,7 @@ describe('Engine', () => {
 
                 const nodeImplementations = {
                     DUMMY: {
-                        generateMessageReceivers: () => ({ blo: 'return' }),
+                        generateMessageReceivers: () => ({ blo: Ast`return` }),
                     },
                 }
 
@@ -336,23 +337,18 @@ describe('Engine', () => {
                             generateDeclarations: ({
                                 globs,
                                 state,
-                                macros: { Var },
-                            }) => `
-                                let ${Var(state.configureCalled, 'Float')} = 0
-                                commons_waitEngineConfigure(() => {
-                                    ${state.configureCalled} = ${
-                                globs.sampleRate
-                            }
-                                })
-                            `,
+                            }) => AstRaw([
+                                Var('Float', state.configureCalled, '0'),
+                                `commons_waitEngineConfigure(() => {${state.configureCalled} = ${globs.sampleRate}})`
+                            ]),
                             generateLoop: ({
                                 globs,
                                 state,
                                 compilation: { target },
                             }) =>
                                 target === 'assemblyscript'
-                                    ? `${globs.output}[0] = ${state.configureCalled}`
-                                    : `${globs.output}[0][0] = ${state.configureCalled}`,
+                                    ? Ast`${globs.output}[0] = ${state.configureCalled}`
+                                    : Ast`${globs.output}[0][0] = ${state.configureCalled}`,
 
                             stateVariables: { configureCalled: 1 },
                         },
@@ -397,7 +393,7 @@ describe('Engine', () => {
                 'should get the array %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: GlobalCodeDefinition = () => `
+                    const testCode: GlobalCodeDefinition = () => Ast`
                         const array = createFloatArray(4)
                         array[0] = 123
                         array[1] = 456
@@ -425,32 +421,28 @@ describe('Engine', () => {
                 'should set the array %s',
                 async ({ target, bitDepth }) => {
                     const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: ({ macros: { Func, Var } }) => `
-                        function testReadArray1 ${Func(
-                            [Var('index', 'Int')],
-                            'Float'
-                        )} {
-                            return _commons_ARRAYS.get('array1')[index]
-                        }
-                        function testReadArray2 ${Func(
-                            [Var('index', 'Int')],
-                            'Float'
-                        )} {
-                            return _commons_ARRAYS.get('array2')[index]
-                        }
-                        function testReadArray3 ${Func(
-                            [Var('index', 'Int')],
-                            'Float'
-                        )} {
-                            return _commons_ARRAYS.get('array3')[index]
-                        }
-                        function testIsFloatArray ${Func(
-                            [Var('index', 'Int')],
-                            'void'
-                        )} {
-                            return _commons_ARRAYS.get('array3').set([111, 222])
-                        }
-                    `,
+                        codeGenerator: () => AstRaw([
+                            Func('testReadArray1', [
+                                Var('Int', 'index')
+                            ], 'Float') `
+                                return _commons_ARRAYS.get('array1')[index]
+                            `,
+                            Func('testReadArray2', [
+                                Var('Int', 'index')
+                            ], 'Float') `
+                                return _commons_ARRAYS.get('array2')[index]
+                            `,
+                            Func('testReadArray3', [
+                                Var('Int', 'index')
+                            ], 'Float') `
+                                return _commons_ARRAYS.get('array3')[index]
+                            `,
+                            Func('testIsFloatArray', [
+                                Var('Int', 'index')
+                            ], 'void') `
+                                return _commons_ARRAYS.get('array3').set([111, 222])
+                            `,
+                        ]),
                         exports: [
                             { name: 'testReadArray1' },
                             { name: 'testReadArray2' },
@@ -524,52 +516,49 @@ describe('Engine', () => {
     describe('fs', () => {
         describe('read sound file', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ macros: { Var, Func } }) => `
-                let ${Var('receivedId', 'fs_OperationId')} = -1
-                let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
-                let ${Var('receivedSound', 'FloatArray[]')} = []
-                function testStartReadFile ${Func([], 'Int')} {
-                    return fs_readSoundFile(
-                        '/some/url', 
-                        {
-                            channelCount: 3,
-                            sampleRate: 48000, 
-                            bitDepth: 64, 
-                            encodingFormat: 'aiff', 
-                            endianness: 'l',
-                            extraOptions: '',
-                        }, function ${Func(
-                            [
-                                Var('id', 'fs_OperationId'),
-                                Var('status', 'fs_OperationStatus'),
-                                Var('sound', 'FloatArray[]'),
-                            ],
-                            'void'
-                        )} {
-                            receivedId = id
-                            receivedStatus = status
-                            receivedSound = sound
-                        }
-                    )
-                }
-                function testOperationId ${Func([], 'Int')} {
-                    return receivedId
-                }
-                function testOperationStatus ${Func([], 'Int')} {
-                    return receivedStatus
-                }
-                function testSoundLength ${Func([], 'Int')} {
-                    return receivedSound.length
-                }
-                function testOperationCleaned ${Func(
-                    [Var('id', 'fs_OperationId')],
-                    'boolean'
-                )} {
-                    return !_FS_OPERATIONS_IDS.has(id)
-                        && !_FS_OPERATIONS_CALLBACKS.has(id)
-                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                }
-            `,
+                codeGenerator: () => AstRaw([
+                    Var('fs_OperationId', 'receivedId', '-1'),
+                    Var('fs_OperationStatus', 'receivedStatus', '-1'),
+                    Var('FloatArray[]', 'receivedSound', '[]'),
+
+                    Func('testStartReadFile', [], 'Int')`
+                        return fs_readSoundFile(
+                            '/some/url', 
+                            {
+                                channelCount: 3,
+                                sampleRate: 48000, 
+                                bitDepth: 64, 
+                                encodingFormat: 'aiff', 
+                                endianness: 'l',
+                                extraOptions: '',
+                            }, ${Func('readSoundFileComplete', [
+                                Var('fs_OperationId', 'id'),
+                                Var('fs_OperationStatus', 'status'),
+                                Var('FloatArray[]', 'sound'),
+                            ], 'void')`
+                                receivedId = id
+                                receivedStatus = status
+                                receivedSound = sound
+                            `}
+                        )
+                    `,
+                    Func('testOperationId',[], 'Int')`
+                        return receivedId
+                    `,
+                    Func('testOperationStatus',[], 'Int')`
+                        return receivedStatus
+                    `,
+                    Func('testSoundLength',[], 'Int')`
+                        return receivedSound.length
+                    `,
+                    Func('testOperationCleaned', [
+                        Var('fs_OperationId', 'id')
+                    ], 'boolean')`
+                        return !_FS_OPERATIONS_IDS.has(id)
+                            && !_FS_OPERATIONS_CALLBACKS.has(id)
+                            && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                    `
+                ]),
                 exports: [
                     { name: 'testStartReadFile' },
                     { name: 'testOperationId' },
@@ -584,9 +573,8 @@ describe('Engine', () => {
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: ({ macros: { Func } }) =>
-                            `
-                            function testReceivedSound ${Func([], 'boolean')} {
+                        codeGenerator: () => AstRaw([
+                            Func('testReceivedSound', [], 'boolean')`
                                 return receivedSound[0][0] === -1
                                     && receivedSound[0][1] === -2
                                     && receivedSound[0][2] === -3
@@ -596,8 +584,8 @@ describe('Engine', () => {
                                     && receivedSound[2][0] === -7
                                     && receivedSound[2][1] === -8
                                     && receivedSound[2][2] === -9
-                            }
-                        `,
+                            `
+                        ]),
                         exports: [{ name: 'testReceivedSound' }],
                     }
 
@@ -652,58 +640,60 @@ describe('Engine', () => {
 
         describe('read sound stream', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ macros: { Var, Func } }) => `
-                let ${Var('receivedId', 'fs_OperationId')} = -1
-                let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
-                const ${Var('channelCount', 'Int')} = 3
-                function testStartReadStream ${Func(
-                    [Var('array', 'FloatArray')],
-                    'Int'
-                )} {
-                    return fs_openSoundReadStream(
-                        '/some/url', 
-                        {
-                            channelCount: channelCount,
-                            sampleRate: 48000, 
-                            bitDepth: 32, 
-                            encodingFormat: 'next', 
-                            endianness: 'l',
-                            extraOptions: '--some 8 --options'
-                        }, 
-                        function${Func(
-                            [
-                                Var('id', 'fs_OperationId'),
-                                Var('status', 'fs_OperationStatus'),
-                            ],
-                            'void'
-                        )} {
-                            receivedId = id
-                            receivedStatus = status
-                        }
-                    )
-                }
-                function testOperationId ${Func([], 'Int')} {
-                    return receivedId
-                }
-                function testOperationStatus ${Func([], 'Int')} {
-                    return receivedStatus
-                }
-                function testOperationChannelCount ${Func(
-                    [Var('id', 'fs_OperationId')],
-                    'Int'
-                )} {
-                    return _FS_SOUND_STREAM_BUFFERS.get(id).length
-                }
-                function testOperationCleaned  ${Func(
-                    [Var('id', 'fs_OperationId')],
-                    'boolean'
-                )} {
-                    return !_FS_OPERATIONS_IDS.has(id)
-                        && !_FS_OPERATIONS_CALLBACKS.has(id)
-                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
-                }
-            `,
+                codeGenerator: () => AstRaw([
+                    Var('fs_OperationId', 'receivedId', '-1'),
+                    Var('fs_OperationStatus', 'receivedStatus', '-1'),
+                    ConstVar('Int', 'channelCount', '3'),
+
+                    Func('testStartReadStream', [
+                        Var('FloatArray', 'array')
+                    ], 'Int')`
+                        return fs_openSoundReadStream(
+                            '/some/url', 
+                            {
+                                channelCount: channelCount,
+                                sampleRate: 48000, 
+                                bitDepth: 32, 
+                                encodingFormat: 'next', 
+                                endianness: 'l',
+                                extraOptions: '--some 8 --options'
+                            }, 
+                            ${Func('fs_openSoundReadStreamComplete', 
+                                [
+                                    Var('fs_OperationId', 'id'),
+                                    Var('fs_OperationStatus', 'status'),
+                                ],
+                                'void'
+                            )`
+                                receivedId = id
+                                receivedStatus = status
+                            `}
+                        )
+                    `,
+                    
+                    Func('testOperationId', [], 'Int')`
+                        return receivedId
+                    `,
+                    
+                    Func('testOperationStatus', [], 'Int')`
+                        return receivedStatus
+                    `,
+
+                    Func('testOperationChannelCount', [
+                        Var('fs_OperationId', 'id')
+                    ], 'Int')`
+                        return _FS_SOUND_STREAM_BUFFERS.get(id).length
+                    `,
+
+                    Func('testOperationCleaned', [
+                        Var('fs_OperationId', 'id')
+                    ], 'boolean')`
+                        return !_FS_OPERATIONS_IDS.has(id)
+                            && !_FS_OPERATIONS_CALLBACKS.has(id)
+                            && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                            && !_FS_SOUND_STREAM_BUFFERS.has(id)
+                    `
+                ]),
                 exports: [
                     { name: 'testStartReadStream' },
                     { name: 'testOperationId' },
@@ -717,17 +707,16 @@ describe('Engine', () => {
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
                     const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: ({ macros: { Func, Var } }) => `
-                        function testReceivedSound ${Func(
-                            [Var('id', 'fs_OperationId')],
-                            'boolean'
-                        )} {
-                            const buffers = _FS_SOUND_STREAM_BUFFERS.get(id)
-                            return buf_pullSample(buffers[0]) === -1
-                                && buf_pullSample(buffers[0]) === -2
-                                && buf_pullSample(buffers[0]) === -3
-                        }
-                    `,
+                        codeGenerator: () => AstRaw([
+                            Func('testReceivedSound', [
+                                Var('fs_OperationId', 'id')
+                            ], 'boolean')`
+                                const buffers = _FS_SOUND_STREAM_BUFFERS.get(id)
+                                return buf_pullSample(buffers[0]) === -1
+                                    && buf_pullSample(buffers[0]) === -2
+                                    && buf_pullSample(buffers[0]) === -3
+                            `
+                        ]),
                         exports: [{ name: 'testReceivedSound' }],
                     }
 
@@ -807,72 +796,73 @@ describe('Engine', () => {
 
         describe('write sound stream', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ macros: { Var, Func } }) => `
-                let ${Var('receivedId', 'fs_OperationId')} = -1
-                let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
-                const ${Var('channelCount', 'Int')} = 3
-                const ${Var('blockSize', 'Int')} = 2
-                let ${Var('counter', 'Int')} = 0
-                function testStartWriteStream ${Func([], 'Int')} {
-                    return fs_openSoundWriteStream(
-                        '/some/url', 
-                        {
-                            channelCount: channelCount,
-                            sampleRate: 44100, 
-                            bitDepth: 24, 
-                            encodingFormat: 'aiff', 
-                            endianness: 'b',
-                            extraOptions: '--bla',
-                        }, 
-                        function ${Func(
-                            [
-                                Var('id', 'fs_OperationId'),
-                                Var('status', 'fs_OperationStatus'),
-                            ],
-                            'void'
-                        )} {
-                            receivedId = id
-                            receivedStatus = status
-                        }
-                    )
-                }
-                function testSendSoundStreamData ${Func(
-                    [Var('id', 'fs_OperationId')],
-                    'void'
-                )} {
-                    const ${Var('block', 'FloatArray[]')} = [
-                        createFloatArray(blockSize),
-                        createFloatArray(blockSize),
-                        createFloatArray(blockSize),
-                    ]
-                    block[0][0] = toFloat(10 + blockSize * counter)
-                    block[0][1] = toFloat(11 + blockSize * counter)
+                codeGenerator: () => AstRaw([
+                    Var('fs_OperationId', 'receivedId', '-1'),
+                    Var('fs_OperationStatus', 'receivedStatus', '-1'),
+                    ConstVar('Int', 'channelCount', '3'),
+                    ConstVar('Int', 'blockSize', '2'),
+                    Var('Int', 'counter', '0'),
 
-                    block[1][0] = toFloat(20 + blockSize * counter)
-                    block[1][1] = toFloat(21 + blockSize * counter)
+                    Func('testStartWriteStream', [], 'Int')`
+                        return fs_openSoundWriteStream(
+                            '/some/url', 
+                            {
+                                channelCount: channelCount,
+                                sampleRate: 44100, 
+                                bitDepth: 24, 
+                                encodingFormat: 'aiff', 
+                                endianness: 'b',
+                                extraOptions: '--bla',
+                            }, 
+                            ${Func('fs_openSoundWriteStreamComplete', [
+                                Var('fs_OperationId', 'id'),
+                                Var('fs_OperationStatus', 'status'),
+                            ], 'void')`
+                                receivedId = id
+                                receivedStatus = status
+                            `}
+                        )
+                    `,
 
-                    block[2][0] = toFloat(30 + blockSize * counter)
-                    block[2][1] = toFloat(31 + blockSize * counter)
+                    Func('testSendSoundStreamData', [
+                        Var('fs_OperationId', 'id')
+                    ], 'void')`
+                        ${ConstVar('FloatArray[]', 'block', `[
+                            createFloatArray(blockSize),
+                            createFloatArray(blockSize),
+                            createFloatArray(blockSize),
+                        ]`)}
+                        block[0][0] = toFloat(10 + blockSize * counter)
+                        block[0][1] = toFloat(11 + blockSize * counter)
 
-                    counter++
-                    fs_sendSoundStreamData(id, block)
-                }
-                function testOperationId ${Func([], 'Int')} {
-                    return receivedId
-                }
-                function testOperationStatus ${Func([], 'Int')} {
-                    return receivedStatus
-                }
-                function testOperationCleaned ${Func(
-                    [Var('id', 'fs_OperationId')],
-                    'boolean'
-                )} {
-                    return !_FS_OPERATIONS_IDS.has(id)
-                        && !_FS_OPERATIONS_CALLBACKS.has(id)
-                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                        && !_FS_SOUND_STREAM_BUFFERS.has(id)
-                }
-            `,
+                        block[1][0] = toFloat(20 + blockSize * counter)
+                        block[1][1] = toFloat(21 + blockSize * counter)
+
+                        block[2][0] = toFloat(30 + blockSize * counter)
+                        block[2][1] = toFloat(31 + blockSize * counter)
+
+                        counter++
+                        fs_sendSoundStreamData(id, block)
+                    `
+                    ,
+                    Func('testOperationId', [], 'Int')`
+                        return receivedId
+                    `
+                    ,
+                    Func('testOperationStatus', [], 'Int')`
+                        return receivedStatus
+                    `
+                    ,
+                    Func('testOperationCleaned', [
+                        Var('fs_OperationId', 'id'),
+                    ], 'boolean')`
+                        return !_FS_OPERATIONS_IDS.has(id)
+                            && !_FS_OPERATIONS_CALLBACKS.has(id)
+                            && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                            && !_FS_SOUND_STREAM_BUFFERS.has(id)
+                    `,
+
+                ]),
                 exports: [
                     { name: 'testStartWriteStream' },
                     { name: 'testSendSoundStreamData' },
@@ -964,62 +954,61 @@ describe('Engine', () => {
 
         describe('write sound file', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ macros: { Var, Func } }) => `
-                let ${Var('receivedId', 'fs_OperationId')} = -1
-                let ${Var('receivedStatus', 'fs_OperationStatus')} = -1
-                const ${Var('sound', 'FloatArray[]')} = [
-                    createFloatArray(2),
-                    createFloatArray(2),
-                    createFloatArray(2),
-                    createFloatArray(2),
-                ]
-                sound[0][0] = 11
-                sound[0][1] = 12
-                sound[1][0] = 21
-                sound[1][1] = 22
-                sound[2][0] = 31
-                sound[2][1] = 32
-                sound[3][0] = 41
-                sound[3][1] = 42
+                codeGenerator: () => AstRaw([
+                    Var('fs_OperationId', 'receivedId', '-1'),
+                    Var('fs_OperationStatus', 'receivedStatus', '-1'),
+                    ConstVar('FloatArray[]', 'sound', `[
+                        createFloatArray(2),
+                        createFloatArray(2),
+                        createFloatArray(2),
+                        createFloatArray(2),
+                    ]`),
+                    `
+                    sound[0][0] = 11
+                    sound[0][1] = 12
+                    sound[1][0] = 21
+                    sound[1][1] = 22
+                    sound[2][0] = 31
+                    sound[2][1] = 32
+                    sound[3][0] = 41
+                    sound[3][1] = 42
+                    `,
 
-                function testStartWriteFile ${Func([], 'Int')} {
-                    return fs_writeSoundFile(
-                        sound, 
-                        '/some/url', 
-                        {
-                            channelCount: sound.length,
-                            sampleRate: 44100, 
-                            bitDepth: 24, 
-                            encodingFormat: 'wave', 
-                            endianness: 'l',
-                            extraOptions: '',
-                        }, function ${Func(
-                            [
-                                Var('id', 'fs_OperationId'),
-                                Var('status', 'fs_OperationStatus'),
-                            ],
-                            'void'
-                        )} {
-                            receivedId = id
-                            receivedStatus = status
-                        }
-                    )
-                }
-                function testOperationId ${Func([], 'Int')} {
-                    return receivedId
-                }
-                function testOperationStatus ${Func([], 'Int')} {
-                    return receivedStatus
-                }
-                function testOperationCleaned ${Func(
-                    [Var('id', 'fs_OperationId')],
-                    'boolean'
-                )} {
-                    return !_FS_OPERATIONS_IDS.has(id)
-                        && !_FS_OPERATIONS_CALLBACKS.has(id)
-                        && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                }
-            `,
+                    Func('testStartWriteFile', [], 'Int')`
+                        return fs_writeSoundFile(
+                            sound, 
+                            '/some/url', 
+                            {
+                                channelCount: sound.length,
+                                sampleRate: 44100, 
+                                bitDepth: 24, 
+                                encodingFormat: 'wave', 
+                                endianness: 'l',
+                                extraOptions: '',
+                            }, ${Func('fs_writeSoundFileComplete', [
+                                Var('fs_OperationId', 'id'),
+                                Var('fs_OperationStatus', 'status'),
+                            ], 'void')`
+                                receivedId = id
+                                receivedStatus = status
+                            `}
+                        )
+                    `,
+                    Func('testOperationId', [], 'Int')`
+                        return receivedId
+                    `
+                    ,
+                    Func('testOperationStatus', [], 'Int')`
+                        return receivedStatus
+                    `,
+                    Func('testOperationCleaned', [
+                        Var('fs_OperationId', 'id')
+                    ], 'boolean')`
+                        return !_FS_OPERATIONS_IDS.has(id)
+                            && !_FS_OPERATIONS_CALLBACKS.has(id)
+                            && !_FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                    `,
+                ]),
                 exports: [
                     { name: 'testStartWriteFile' },
                     { name: 'testOperationId' },
@@ -1104,25 +1093,29 @@ describe('Engine', () => {
                 }
 
                 const testCode: GlobalCodeGeneratorWithSettings = {
-                    codeGenerator: ({ macros: { Var, Func } }) => `
-                    const ${Var(
-                        'm1',
-                        'Message'
-                    )} = msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN])
-                    msg_writeFloatToken(m1, 0, 11)
-                    msg_writeFloatToken(m1, 1, 22)
-                    const ${Var(
-                        'm2',
-                        'Message'
-                    )} = msg_create([MSG_STRING_TOKEN, 3])
-                    msg_writeStringToken(m2, 0, 'bla')
+                    codeGenerator: () => AstRaw([
+                        ConstVar(
+                            'Message',
+                            'm1',
+                            'msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN])',
+                        ),
+                        ConstVar(
+                            'Message',
+                            'm2',
+                            'msg_create([MSG_STRING_TOKEN, 3])',
+                        ),
+                        `
+                        msg_writeFloatToken(m1, 0, 11)
+                        msg_writeFloatToken(m1, 1, 22)
+                        msg_writeStringToken(m2, 0, 'bla')
+                        `,
 
-                    function testCallOutletListener ${Func([], 'void')} {
-                        outletListeners_someNode1_someOutlet1(m1)
-                        outletListeners_someNode1_someOutlet2(m2)
-                        outletListeners_someNode2_someOutlet1(m1)
-                    }
-                `,
+                        Func('testCallOutletListener', [], 'void')`
+                            outletListeners_someNode1_someOutlet1(m1)
+                            outletListeners_someNode1_someOutlet2(m2)
+                            outletListeners_someNode2_someOutlet1(m1)
+                        `
+                    ]),
                     exports: [{ name: 'testCallOutletListener' }],
                 }
 
@@ -1206,42 +1199,44 @@ describe('Engine', () => {
                             globs,
                             node: { id },
                         }) => ({
-                            someInlet1: `received.get('${id}:1').push(${globs.m});return`,
-                            someInlet2: `received.get('${id}:2').push(${globs.m});return`,
+                            someInlet1: Ast`received.get('${id}:1').push(${globs.m});return`,
+                            someInlet2: Ast`received.get('${id}:2').push(${globs.m});return`,
                         }),
                     },
                 }
 
                 const testCode: GlobalCodeGeneratorWithSettings = {
-                    codeGenerator: ({ macros: { Var, Func } }) => `
-                    const ${Var(
-                        'received',
-                        'Map<string, Array<Message>>'
-                    )} = new Map()
-                    received.set("someNode1:1", [])
-                    received.set("someNode1:2", [])
-                    received.set("someNode2:1", [])
+                    codeGenerator: () => AstRaw([
+                        ConstVar(
+                            'Map<string, Array<Message>>',
+                            'received',
+                            'new Map()',
+                        ),
+                        `
+                        received.set("someNode1:1", [])
+                        received.set("someNode1:2", [])
+                        received.set("someNode2:1", [])
+                        `,
 
-                    function messageIsCorrect ${Func(
-                        [Var('message', 'Message')],
-                        'boolean'
-                    )} {
-                        return msg_getLength(message) === 2
-                            && msg_isFloatToken(message, 0)
-                            && msg_isStringToken(message, 1)
-                            && msg_readFloatToken(message, 0) === 666
-                            && msg_readStringToken(message, 1) === 'n4t4s'
-                    }
+                        Func('messageIsCorrect', [
+                            Var('Message', 'message'),
+                        ], 'boolean')`
+                            return msg_getLength(message) === 2
+                                && msg_isFloatToken(message, 0)
+                                && msg_isStringToken(message, 1)
+                                && msg_readFloatToken(message, 0) === 666
+                                && msg_readStringToken(message, 1) === 'n4t4s'
+                        `,
 
-                    function testMessageReceived ${Func([], 'boolean')} {
-                        return received.get("someNode1:1").length === 1
-                            && received.get("someNode1:2").length === 1
-                            && received.get("someNode2:1").length === 1
-                            && messageIsCorrect(received.get("someNode1:1")[0])
-                            && messageIsCorrect(received.get("someNode1:2")[0])
-                            && messageIsCorrect(received.get("someNode2:1")[0])
-                    }
-                `,
+                        Func('testMessageReceived', [], 'boolean')`
+                            return received.get("someNode1:1").length === 1
+                                && received.get("someNode1:2").length === 1
+                                && received.get("someNode2:1").length === 1
+                                && messageIsCorrect(received.get("someNode1:1")[0])
+                                && messageIsCorrect(received.get("someNode1:2")[0])
+                                && messageIsCorrect(received.get("someNode2:1")[0])
+                        `,
+                    ]),
                     exports: [{ name: 'testMessageReceived' }],
                 }
 
@@ -1321,8 +1316,8 @@ describe('Engine', () => {
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
                         generateMessageReceivers: ({ globs, snds }) => ({
-                            '0': `${snds['0']}(${globs.m});return`,
-                            '1': `${snds['1']}(${globs.m});return`,
+                            '0': Ast`${snds['0']}(${globs.m});return`,
+                            '1': Ast`${snds['1']}(${globs.m});return`,
                         }),
                     },
                 }
@@ -1372,7 +1367,7 @@ describe('Engine', () => {
                     someNodeType: {
                         generateMessageReceivers: () => ({
                             // No return so an error will be thrown
-                            someInlet: ``,
+                            someInlet: Ast``,
                         }),
                     },
                 }

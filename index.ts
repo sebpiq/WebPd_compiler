@@ -1,11 +1,11 @@
 export { default as default, executeCompilation } from './src/compile'
 export {
-    Code,
     CompilationSettings,
     NodeImplementations,
     CompilerTarget,
     AudioSettings,
 } from './src/compile/types'
+export { Code } from './src/ast/types'
 export { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './src/stdlib/fs'
 export { Engine, Message, FloatArray } from './src/run/types'
 export { createEngine as createAssemblyScriptWasmEngine } from './src/engine-assemblyscript/run'

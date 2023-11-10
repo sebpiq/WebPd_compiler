@@ -18,13 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { getFloatArrayType } from '../run/run-helpers'
-import { renderCode } from '../functional-helpers'
 import { Compilation } from './types'
+import { Ast } from '../ast/declare'
 
 /**
  * Embed arrays passed to the compiler in the compiled module.
  */
-export default (compilation: Compilation) => renderCode`
+export default (compilation: Compilation) => Ast`
     ${Object.entries(compilation.arrays).map(
         ([arrayName, array]) => `
         commons_setArray("${arrayName}", new ${

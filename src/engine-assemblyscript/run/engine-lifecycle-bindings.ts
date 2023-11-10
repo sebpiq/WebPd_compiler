@@ -20,7 +20,7 @@
 
 import { Bindings } from '../../run/types'
 import { mapArray, mapObject } from '../../functional-helpers'
-import { CodeVariableName } from '../../compile/types'
+import { CodeVariableName } from '../../ast/types'
 import {
     Engine,
     EngineMetadata,

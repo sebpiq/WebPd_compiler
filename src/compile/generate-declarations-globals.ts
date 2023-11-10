@@ -18,18 +18,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Code, Compilation } from './types'
+import { Compilation } from './types'
+import { AstContainer } from '../ast/types'
+import { AstRaw, Func, Var } from '../ast/declare'
 
 export default ({
-    macros: { Var, Func },
     codeVariableNames: { globs },
-}: Compilation): Code =>
+}: Compilation): AstContainer =>
     // prettier-ignore
-    `
-        let ${Var(globs.iterFrame, 'Int')} = 0
-        let ${Var(globs.frame, 'Int')} = 0
-        let ${Var(globs.blockSize, 'Int')} = 0
-        let ${Var(globs.sampleRate, 'Float')} = 0
-        let ${Var(globs.nullSignal, 'Float')} = 0
-        function ${globs.nullMessageReceiver} ${Func([Var('m', 'Message')], 'void')} {}
-    `
+    AstRaw([
+        Var('Int', globs.iterFrame, '0'),
+        Var('Int', globs.frame, '0'),
+        Var('Int', globs.blockSize, '0'),
+        Var('Float', globs.sampleRate, '0'),
+        Var('Float', globs.nullSignal, '0'),
+        Func(globs.nullMessageReceiver, [
+            Var('Message', 'm')
+        ], 'void')``
+    ])

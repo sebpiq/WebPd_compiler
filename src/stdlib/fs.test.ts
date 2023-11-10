@@ -29,6 +29,7 @@ import {
 import { bufCore, bufPushPull } from './buf'
 import { core } from './core'
 import { msg } from './msg'
+import { AstRaw, ConstVar, Func, Var } from '../ast/declare'
 
 describe('fs', () => {
     runTestSuite(
@@ -36,20 +37,21 @@ describe('fs', () => {
             {
                 description:
                     'sound info > should be able to convert fs_SoundInfo to Message %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    const ${Var('soundInfo', 'fs_SoundInfo')} = {
+                    ${ConstVar('fs_SoundInfo', 'soundInfo', `{
                         channelCount: 2,
                         sampleRate: 48000,
                         bitDepth: 24,
                         encodingFormat: 'wave',
                         endianness: 'l',
                         extraOptions: '--blo --bli',
-                    }
-                    const ${Var(
+                    }`)}
+                    ${ConstVar(
+                        'Message',
                         'soundInfoMessage',
-                        'Message'
-                    )} = fs_soundInfoToMessage(soundInfo)
+                        'fs_soundInfoToMessage(soundInfo)',
+                    )}
                     assert_floatsEqual(msg_readFloatToken(soundInfoMessage, 0), 2)
                     assert_floatsEqual(msg_readFloatToken(soundInfoMessage, 1), 48000)
                     assert_floatsEqual(msg_readFloatToken(soundInfoMessage, 2), 24)
@@ -61,23 +63,24 @@ describe('fs', () => {
             {
                 description:
                     'fs_readSoundFile > should create the operation %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_readSoundFile(
-                        '/some/url', 
-                        {
-                            channelCount: 4, 
-                            sampleRate: 44100, 
-                            bitDepth: 32, 
-                            encodingFormat: 'wave', 
-                            endianness: 'b', 
-                            extraOptions: ''
-                        },
-                        someSoundCallback
-                    )
+                        `fs_readSoundFile(
+                            '/some/url', 
+                            {
+                                channelCount: 4, 
+                                sampleRate: 44100, 
+                                bitDepth: 32, 
+                                encodingFormat: 'wave', 
+                                endianness: 'b', 
+                                extraOptions: ''
+                            },
+                            someSoundCallback
+                        )`,
+                    )}
             
                     assert_stringsEqual(calls[0], 'i_fs_readSoundFile')
                     assert_integersEqual(id_received[0], operationId)
@@ -97,32 +100,33 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendReadSoundFileResponse > should register the operation success and call the callback %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
                     // 1. Create the operation
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_readSoundFile(
-                        '/some/url', 
-                        {
-                            channelCount: 3,
-                            sampleRate: 44100,
-                            bitDepth: 32,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: ''
-                        }, 
-                        someSoundCallback
-                    )
+                        `fs_readSoundFile(
+                            '/some/url', 
+                            {
+                                channelCount: 3,
+                                sampleRate: 44100,
+                                bitDepth: 32,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: ''
+                            }, 
+                            someSoundCallback
+                        )`,
+                    )}
                     assert_integersEqual(callbackOperationId, 0)
 
                     // 2. Operation is done, call fs_sendReadSoundFileResponse
-                    let ${Var('sound', 'FloatArray[]')} = [
+                    ${Var('FloatArray[]', 'sound', `[
                         createFloatArray(3),
                         createFloatArray(3),
                         createFloatArray(3),
-                    ]
+                    ]`)}
                     sound[0].set([-0.1, -0.2, -0.3])
                     sound[1].set([0.4, 0.5, 0.6])
                     sound[2].set([-0.7, -0.8, -0.9])
@@ -146,23 +150,24 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendReadSoundFileResponse > should register the operation failure %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_readSoundFile(
-                        '/some/url', 
-                        {
-                            channelCount: 1,
-                            sampleRate: 44100,
-                            bitDepth: 32,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someSoundCallback
-                    )
+                        `fs_readSoundFile(
+                            '/some/url', 
+                            {
+                                channelCount: 1,
+                                sampleRate: 44100,
+                                bitDepth: 32,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someSoundCallback
+                        )`,
+                    )}
 
                     x_fs_onReadSoundFileResponse(
                         operationId,
@@ -180,24 +185,25 @@ describe('fs', () => {
             {
                 description:
                     'fs_openSoundReadStream > should create the operation %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    const ${Var('channelCount', 'Int')} = 22
-                    const ${Var(
+                    ${ConstVar('Int', 'channelCount', '22')}
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_openSoundReadStream(
-                        '/some/url', 
-                        {
-                            channelCount: channelCount,
-                            sampleRate: 44100,
-                            bitDepth: 32,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someCallback
-                    )
+                        `fs_openSoundReadStream(
+                            '/some/url', 
+                            {
+                                channelCount: channelCount,
+                                sampleRate: 44100,
+                                bitDepth: 32,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someCallback
+                        )`,
+                    )}
 
                     assert_stringsEqual(calls[0], 'i_fs_openSoundReadStream')
                     assert_integersEqual(id_received[0], operationId)
@@ -220,27 +226,28 @@ describe('fs', () => {
             {
                 description:
                     'fs_onSoundStreamData > should push data to the buffer %s',
-                codeGenerator: ({ macros: { Var, Func } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    let ${Var('availableFrameCount', 'Int')} = 0
-                    let ${Var('data', 'FloatArray[]')} = []
+                    ${Var('Int', 'availableFrameCount', '0')}
+                    ${Var('FloatArray[]', 'data', '[]')}
 
                     // 1. Create the operation
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_openSoundReadStream(
-                        '/some/url', 
-                        {
-                            channelCount: 2,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        },
-                        someCallback
-                    )
+                        `fs_openSoundReadStream(
+                            '/some/url', 
+                            {
+                                channelCount: 2,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            },
+                            someCallback
+                        )`,
+                    )}
 
                     // 2. Send in some sound
                     data = [
@@ -273,12 +280,11 @@ describe('fs', () => {
                     assert_integersEqual(availableFrameCount, 9)
 
                     // 5. Testing buffer contents
-                    function pullSample ${Func(
-                        [Var('operationId', 'fs_OperationId')],
-                        'Float'
-                    )} {
+                    ${Func('pullSample', [
+                        Var('fs_OperationId', 'operationId')
+                    ], 'Float')`
                         return buf_pullSample(_FS_SOUND_STREAM_BUFFERS.get(operationId)[0])
-                    }
+                    `}
                     assert_floatsEqual(pullSample(operationId), -11)
                     assert_floatsEqual(pullSample(operationId), -22)
                     assert_floatsEqual(pullSample(operationId), -33)
@@ -292,26 +298,27 @@ describe('fs', () => {
             {
                 description:
                     'fs_closeSoundStream > should close the read stream and call the callback %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    let ${Var('data', 'FloatArray[]')} = []
+                    ${Var('FloatArray[]', 'data', '[]')}
 
                     // 1. Create the operation
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_openSoundReadStream(
-                        '/some/url', 
-                        {
-                            channelCount: 2,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someCallback
-                    )
+                        `fs_openSoundReadStream(
+                            '/some/url', 
+                            {
+                                channelCount: 2,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someCallback
+                        )`,
+                    )}
 
                     // 2. Send in some sound
                     data = [
@@ -343,23 +350,24 @@ describe('fs', () => {
             {
                 description:
                     'fs_openSoundWriteStream > should create the operation %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_openSoundWriteStream(
-                        '/some/url', 
-                        {
-                            channelCount: 4,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someCallback
-                    )
+                        `fs_openSoundWriteStream(
+                            '/some/url', 
+                            {
+                                channelCount: 4,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someCallback
+                        )`,
+                    )}
         
                     assert_integersEqual(calls.length, 1)
                     assert_stringsEqual(calls[0], 'i_fs_openSoundWriteStream')
@@ -380,19 +388,19 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendSoundStreamData > should push data to the buffer %s',
-                codeGenerator: ({ macros: { Var, Func } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    let ${Var('counter', 'Float')} = 0
-                    let ${Var('data', 'FloatArray[]')} = []
+                    ${Var('Float', 'counter', '0')}
+                    ${Var('FloatArray[]', 'data', '[]')}
 
-                    function testSendSoundStreamData ${Func(
-                        [Var('counter', 'Float'), Var('id', 'fs_OperationId')],
-                        'void'
-                    )} {
-                        const ${Var('block', 'FloatArray[]')} = [
+                    ${Func('testSendSoundStreamData', [
+                        Var('Float', 'counter'), 
+                        Var('fs_OperationId', 'id')
+                    ], 'void')`
+                        ${ConstVar('FloatArray[]', 'block', `[
                             createFloatArray(4),
                             createFloatArray(4),
-                        ]
+                        ]`)}
                         block[0][0] = 10 + 4 * counter
                         block[0][1] = 11 + 4 * counter
                         block[0][2] = 12 + 4 * counter
@@ -402,24 +410,25 @@ describe('fs', () => {
                         block[1][2] = 22 + 4 * counter
                         block[1][3] = 23 + 4 * counter
                         fs_sendSoundStreamData(id, block)
-                    }
+                    `}
 
                     // 1. Create the operation
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_openSoundWriteStream(
-                        '/some/url', 
-                        {
-                            channelCount: 2,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someCallback
-                    )
+                        `fs_openSoundWriteStream(
+                            '/some/url', 
+                            {
+                                channelCount: 2,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someCallback
+                        )`,
+                    )}
 
                     // 2. Receive some sound
                     testSendSoundStreamData(counter++, operationId)
@@ -454,35 +463,36 @@ describe('fs', () => {
             {
                 description:
                     'fs_closeSoundStream > should close the write stream and call the callback %s',
-                codeGenerator: ({ macros: { Var, Func } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
-                    function testSendSoundStreamData ${Func(
-                        [Var('id', 'fs_OperationId')],
-                        'void'
-                    )} {
-                        const ${Var(
+                    ${Func('testSendSoundStreamData', [
+                        Var('fs_OperationId', 'id')
+                    ], 'void')`
+                        ${ConstVar(
+                            'FloatArray[]',
                             'block',
-                            'FloatArray[]'
-                        )} = [createFloatArray(2)]
+                            '[createFloatArray(2)]',
+                        )}
                         fs_sendSoundStreamData(id, block)
-                    }
+                    `}
     
                     // 1. Create the operation
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_openSoundWriteStream(
-                        '/some/url', 
-                        {
-                            channelCount: 1,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someCallback
-                    )
+                        `fs_openSoundWriteStream(
+                            '/some/url', 
+                            {
+                                channelCount: 1,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someCallback
+                        )`,
+                    )}
 
                     // 2. Receive some sound
                     testSendSoundStreamData(operationId)
@@ -506,34 +516,35 @@ describe('fs', () => {
             {
                 description:
                     'fs_writeSoundFile > should create the operation %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
 
-                    const ${Var('sound', 'FloatArray[]')} = [
+                    ${ConstVar('FloatArray[]', 'sound', `[
                         createFloatArray(4),
                         createFloatArray(4),
                         createFloatArray(4),
-                    ]
+                    ]`)}
                     sound[0].set([11, 12, 13, 14])
                     sound[1].set([21, 22, 23, 24])
                     sound[2].set([31, 32, 33, 34])
                 
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_writeSoundFile(
-                        sound, 
-                        '/some/url', 
-                        {
-                            channelCount: sound.length,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        },
-                        someCallback
-                    )
+                        `fs_writeSoundFile(
+                            sound, 
+                            '/some/url', 
+                            {
+                                channelCount: sound.length,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            },
+                            someCallback
+                        )`
+                    )}
         
                     assert_integersEqual(calls.length, 1)
                     assert_stringsEqual(calls[0], 'i_fs_writeSoundFile')
@@ -548,31 +559,32 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendWriteSoundFileResponse > should register the operation success and call the callback %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
 
-                    const ${Var('sound', 'FloatArray[]')} = [
+                    ${ConstVar('FloatArray[]', 'sound', `[
                         createFloatArray(512),
                         createFloatArray(512),
-                    ]
+                    ]`)}
 
                     // 1. Create the operation
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_writeSoundFile(
-                        sound, 
-                        '/some/url', 
-                        {
-                            channelCount: sound.length,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someCallback
-                    )
+                        `fs_writeSoundFile(
+                            sound, 
+                            '/some/url', 
+                            {
+                                channelCount: sound.length,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someCallback
+                        )`
+                    )}
                     assert_integersEqual(callbackOperationId, 0)
         
                     // 2. Operation is done, call fs_sendWriteSoundFileResponse
@@ -591,30 +603,31 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendWriteSoundFileResponse > should register the operation failure %s',
-                codeGenerator: ({ macros: { Var } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     initializeTest()
 
-                    const ${Var('sound', 'FloatArray[]')} = [
+                    ${ConstVar('FloatArray[]', 'sound', `[
                         createFloatArray(512),
                         createFloatArray(512),
-                    ]
+                    ]`)}
 
-                    const ${Var(
+                    ${ConstVar(
+                        'fs_OperationId',
                         'operationId',
-                        'fs_OperationId'
-                    )} = fs_writeSoundFile(
-                        sound, 
-                        '/some/url', 
-                        {
-                            channelCount: sound.length,
-                            sampleRate: 44100,
-                            bitDepth: 24,
-                            encodingFormat: 'wave',
-                            endianness: 'b',
-                            extraOptions: '',
-                        }, 
-                        someCallback
-                    )
+                        `fs_writeSoundFile(
+                            sound, 
+                            '/some/url', 
+                            {
+                                channelCount: sound.length,
+                                sampleRate: 44100,
+                                bitDepth: 24,
+                                encodingFormat: 'wave',
+                                endianness: 'b',
+                                extraOptions: '',
+                            }, 
+                            someCallback
+                        )`
+                    )}
 
                     x_fs_onWriteSoundFileResponse(operationId, FS_OPERATION_FAILURE)
                     assert_integersEqual(callbackOperationId, operationId)
@@ -633,225 +646,203 @@ describe('fs', () => {
             fsSoundStreamCore.codeGenerator,
             fsReadSoundStream.codeGenerator,
             fsWriteSoundStream.codeGenerator,
-            ({ macros: { Var, Func } }) => `
-            // Global test variables
-            let ${Var('calls', 'Array<string>')} = []
-            let ${Var('id_received', 'Array<fs_OperationId>')} = []
-            let ${Var('sound_received', 'FloatArray[][]')} = []
-            let ${Var('url_received', 'Array<fs_Url>')} = []
-            let ${Var('info_received', 'Array<Message>')} = []
-            let ${Var('status_received', 'fs_OperationStatus')} = -1
-            let ${Var('callbackOperationId', 'Int')} = 0
-            let ${Var('callbackOperationStatus', 'fs_OperationStatus')} = -1
-            let ${Var('callbackOperationSound', 'FloatArray[]')} = []
-
-            function initializeTest ${Func([], 'void')} {
-                calls = []
-                id_received = []
-                sound_received = []
-                url_received = []
-                info_received = []
-                status_received = -1
-
-                callbackOperationId = 0
-                callbackOperationStatus = -1
-                callbackOperationSound = []
-            }
-
-            // Dummy import
-            function i_fs_readSoundFile ${Func(
-                [
-                    Var('id', 'fs_OperationId'),
-                    Var('url', 'fs_Url'),
-                    Var('info', 'Message'),
-                ],
-                'void'
-            )} {
-                calls.push('i_fs_readSoundFile')
-                id_received.push(id)
-                url_received.push(url)
-                info_received.push(info)
-            }
-
-            function i_fs_openSoundReadStream ${Func(
-                [
-                    Var('id', 'fs_OperationId'),
-                    Var('url', 'fs_Url'),
-                    Var('info', 'Message'),
-                ],
-                'void'
-            )} {
-                calls.push('i_fs_openSoundReadStream')
-                id_received.push(id)
-                url_received.push(url)
-                info_received.push(info)
-            }
-
-            function i_fs_openSoundWriteStream ${Func(
-                [
-                    Var('id', 'fs_OperationId'),
-                    Var('url', 'fs_Url'),
-                    Var('info', 'Message'),
-                ],
-                'void'
-            )} {
-                calls.push('i_fs_openSoundWriteStream')
-                id_received.push(id)
-                url_received.push(url)
-                info_received.push(info)
-            }
-
-            function i_fs_writeSoundFile ${Func(
-                [
-                    Var('id', 'fs_OperationId'),
-                    Var('sound', 'FloatArray[]'),
-                    Var('url', 'fs_Url'),
-                    Var('info', 'Message'),
-                ],
-                'void'
-            )} {
-                calls.push('i_fs_writeSoundFile')
-                id_received.push(id)
-                sound_received.push(sound)
-                url_received.push(url)
-                info_received.push(info)
-            }
-
-            function i_fs_sendSoundStreamData ${Func(
-                [Var('id', 'fs_OperationId'), Var('sound', 'FloatArray[]')],
-                'void'
-            )} {
-                calls.push('i_fs_sendSoundStreamData')
-                id_received.push(id)
-                sound_received.push(sound)
-            }
-
-            function i_fs_closeSoundStream ${Func(
-                [
-                    Var('id', 'fs_OperationId'),
-                    Var('status', 'fs_OperationStatus'),
-                ],
-                'void'
-            )} {
-                calls.push('i_fs_closeSoundStream')
-                id_received.push(id)
-                status_received = status
-            }
-
-            function someSoundCallback ${Func(
-                [
-                    Var('id', 'fs_OperationId'),
-                    Var('status', 'fs_OperationStatus'),
-                    Var('sound', 'FloatArray[]'),
-                ],
-                'void'
-            )} {
-                callbackOperationId = id
-                callbackOperationStatus = status
-                callbackOperationSound = sound
-            }
-
-            function someCallback ${Func(
-                [
-                    Var('id', 'fs_OperationId'),
-                    Var('status', 'fs_OperationStatus'),
-                ],
-                'void'
-            )} {
-                callbackOperationId = id
-                callbackOperationStatus = status
-            }
-
-            function assert_operationCleaned ${Func(
-                [Var('id', 'fs_OperationId')],
-                'void'
-            )} {
-                if(
-                    _FS_OPERATIONS_IDS.has(id)
-                    || _FS_OPERATIONS_CALLBACKS.has(id)
-                    || _FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                    || _FS_SOUND_STREAM_BUFFERS.has(id)
-                ) {
-                    reportTestFailure('operation ' + id.toString() + ' was not cleaned properly')
-                }
-            }
-
-            function assert_soundInfoMessagesEqual ${Func(
-                [Var('actual', 'Message'), Var('expected', 'Message')],
-                'void'
-            )} {
-                if (!msg_isMatching(actual, [
-                    MSG_FLOAT_TOKEN, 
-                    MSG_FLOAT_TOKEN, 
-                    MSG_FLOAT_TOKEN, 
-                    MSG_STRING_TOKEN, 
-                    MSG_STRING_TOKEN, 
-                    MSG_STRING_TOKEN
-                ])) {
-                    reportTestFailure('Unexpected sound info message shape for <actual> arg')
-                }
+            () => AstRaw([
+                // Global test variables
+                Var('Array<string>', 'calls', '[]'),
+                Var('Array<fs_OperationId>', 'id_received', '[]'),
+                Var('FloatArray[][]', 'sound_received', '[]'),
+                Var('Array<fs_Url>', 'url_received', '[]'),
+                Var('Array<Message>', 'info_received', '[]'),
+                Var('fs_OperationStatus', 'status_received', '-1'),
+                Var('Int', 'callbackOperationId', '0'),
+                Var('fs_OperationStatus', 'callbackOperationStatus', '-1'),
+                Var('FloatArray[]', 'callbackOperationSound', '[]'),
                 
-                if (!msg_isMatching(expected, [
-                    MSG_FLOAT_TOKEN, 
-                    MSG_FLOAT_TOKEN, 
-                    MSG_FLOAT_TOKEN, 
-                    MSG_STRING_TOKEN, 
-                    MSG_STRING_TOKEN, 
-                    MSG_STRING_TOKEN
-                ])) {
-                    reportTestFailure('Unexpected sound info message shape for <expected> arg')
-                }
+                Func('initializeTest', [], 'void')`
+                    calls = []        
+                    id_received = []
+                    sound_received = []
+                    url_received = []
+                    info_received = []
+                    status_received = -1
 
-                const actualChannelCount = msg_readFloatToken(actual, 0)
-                const expectedChannelCount = msg_readFloatToken(expected, 0)
-                if (actualChannelCount !== expectedChannelCount) {
-                    reportTestFailure(
-                        'Got SoundInfo.channelCount ' + actualChannelCount.toString() 
-                        + ' expected ' + expectedChannelCount.toString())
-                }
+                    callbackOperationId = 0
+                    callbackOperationStatus = -1
+                    callbackOperationSound = []
+                `,
 
-                const actualSampleRate = msg_readFloatToken(actual, 1)
-                const expectedSampleRate = msg_readFloatToken(expected, 1)
-                if (actualSampleRate !== expectedSampleRate) {
-                    reportTestFailure(
-                        'Got SoundInfo.sampleRate ' + actualSampleRate.toString() 
-                        + ' expected ' + expectedSampleRate.toString())
-                }
+                // Dummy import
+                Func('i_fs_readSoundFile', [
+                    Var('fs_OperationId', 'id'),
+                    Var('fs_Url', 'url'),
+                    Var('Message', 'info'),
+                ], 'void')`
+                    calls.push('i_fs_readSoundFile')
+                    id_received.push(id)
+                    url_received.push(url)
+                    info_received.push(info)
+                `,
 
-                const actualBitDepth = msg_readFloatToken(actual, 2)
-                const expectedBitDepth = msg_readFloatToken(expected, 2)
-                if (actualBitDepth !== expectedBitDepth) {
-                    reportTestFailure(
-                        'Got SoundInfo.bitDepth ' + actualBitDepth.toString() 
-                        + ' expected ' + expectedBitDepth.toString())
-                }
+                Func('i_fs_openSoundReadStream', [
+                    Var('fs_OperationId', 'id'),
+                    Var('fs_Url', 'url'),
+                    Var('Message', 'info'),
+                ], 'void')`
+                    calls.push('i_fs_openSoundReadStream')
+                    id_received.push(id)
+                    url_received.push(url)
+                    info_received.push(info)
+                `,
 
-                const actualEncodingFormat = msg_readStringToken(actual, 3)
-                const expectedEncodingFormat = msg_readStringToken(expected, 3)
-                if (actualEncodingFormat !== expectedEncodingFormat) {
-                    reportTestFailure(
-                        'Got SoundInfo.encodingFormat ' + actualEncodingFormat.toString() 
-                        + ' expected ' + expectedEncodingFormat.toString())
-                }
+                Func('i_fs_openSoundWriteStream', [
+                    Var('fs_OperationId', 'id'),
+                    Var('fs_Url', 'url'),
+                    Var('Message', 'info'),
+                ], 'void')`
+                    calls.push('i_fs_openSoundWriteStream')
+                    id_received.push(id)
+                    url_received.push(url)
+                    info_received.push(info)
+                `,
 
-                const actualEndianness = msg_readStringToken(actual, 4)
-                const expectedEndianness = msg_readStringToken(expected, 4)
-                if (actualEndianness !== expectedEndianness) {
-                    reportTestFailure(
-                        'Got SoundInfo.endianness ' + actualEndianness.toString() 
-                        + ' expected ' + expectedEndianness.toString())
-                }
+                Func('i_fs_writeSoundFile', [
+                    Var('fs_OperationId', 'id'),
+                    Var('FloatArray[]', 'sound'),
+                    Var('fs_Url', 'url'),
+                    Var('Message', 'info'),
+                ], 'void')`
+                    calls.push('i_fs_writeSoundFile')
+                    id_received.push(id)
+                    sound_received.push(sound)
+                    url_received.push(url)
+                    info_received.push(info)
+                `,
 
-                const actualExtraOptions = msg_readStringToken(actual, 5)
-                const expectedExtraOptions = msg_readStringToken(expected, 5)
-                if (actualExtraOptions !== expectedExtraOptions) {
-                    reportTestFailure(
-                        'Got SoundInfo.extraOptions ' + actualExtraOptions.toString() 
-                        + ' expected ' + expectedExtraOptions.toString())
-                }
-            }
+                Func('i_fs_sendSoundStreamData', [
+                    Var('fs_OperationId', 'id'), 
+                    Var('FloatArray[]', 'sound')
+                ], 'void')`
+                    calls.push('i_fs_sendSoundStreamData')
+                    id_received.push(id)
+                    sound_received.push(sound)
+                `,
 
-        `,
+                Func('i_fs_closeSoundStream', [
+                    Var('fs_OperationId', 'id'),
+                    Var('fs_OperationStatus', 'status'),
+                ], 'void')`
+                    calls.push('i_fs_closeSoundStream')
+                    id_received.push(id)
+                    status_received = status
+                `,
+
+                Func('someSoundCallback', [
+                    Var('fs_OperationId', 'id'),
+                    Var('fs_OperationStatus', 'status'),
+                    Var('FloatArray[]', 'sound'),
+                ], 'void')`
+                    callbackOperationId = id
+                    callbackOperationStatus = status
+                    callbackOperationSound = sound
+                `,
+
+                Func('someCallback', [
+                    Var('fs_OperationId', 'id'),
+                    Var('fs_OperationStatus', 'status'),
+                ], 'void')`
+                    callbackOperationId = id
+                    callbackOperationStatus = status
+                `,
+
+                Func('assert_operationCleaned', [
+                    Var('fs_OperationId', 'id')
+                ], 'void')`
+                    if(
+                        _FS_OPERATIONS_IDS.has(id)
+                        || _FS_OPERATIONS_CALLBACKS.has(id)
+                        || _FS_OPERATIONS_SOUND_CALLBACKS.has(id)
+                        || _FS_SOUND_STREAM_BUFFERS.has(id)
+                    ) {
+                        reportTestFailure('operation ' + id.toString() + ' was not cleaned properly')
+                    }
+                `,
+
+                Func('assert_soundInfoMessagesEqual', [
+                    Var('Message', 'actual'), 
+                    Var('Message', 'expected')
+                ], 'void')`
+                    if (!msg_isMatching(actual, [
+                        MSG_FLOAT_TOKEN, 
+                        MSG_FLOAT_TOKEN, 
+                        MSG_FLOAT_TOKEN, 
+                        MSG_STRING_TOKEN, 
+                        MSG_STRING_TOKEN, 
+                        MSG_STRING_TOKEN
+                    ])) {
+                        reportTestFailure('Unexpected sound info message shape for <actual> arg')
+                    }
+                    
+                    if (!msg_isMatching(expected, [
+                        MSG_FLOAT_TOKEN, 
+                        MSG_FLOAT_TOKEN, 
+                        MSG_FLOAT_TOKEN, 
+                        MSG_STRING_TOKEN, 
+                        MSG_STRING_TOKEN, 
+                        MSG_STRING_TOKEN
+                    ])) {
+                        reportTestFailure('Unexpected sound info message shape for <expected> arg')
+                    }
+
+                    const actualChannelCount = msg_readFloatToken(actual, 0)
+                    const expectedChannelCount = msg_readFloatToken(expected, 0)
+                    if (actualChannelCount !== expectedChannelCount) {
+                        reportTestFailure(
+                            'Got SoundInfo.channelCount ' + actualChannelCount.toString() 
+                            + ' expected ' + expectedChannelCount.toString())
+                    }
+
+                    const actualSampleRate = msg_readFloatToken(actual, 1)
+                    const expectedSampleRate = msg_readFloatToken(expected, 1)
+                    if (actualSampleRate !== expectedSampleRate) {
+                        reportTestFailure(
+                            'Got SoundInfo.sampleRate ' + actualSampleRate.toString() 
+                            + ' expected ' + expectedSampleRate.toString())
+                    }
+
+                    const actualBitDepth = msg_readFloatToken(actual, 2)
+                    const expectedBitDepth = msg_readFloatToken(expected, 2)
+                    if (actualBitDepth !== expectedBitDepth) {
+                        reportTestFailure(
+                            'Got SoundInfo.bitDepth ' + actualBitDepth.toString() 
+                            + ' expected ' + expectedBitDepth.toString())
+                    }
+
+                    const actualEncodingFormat = msg_readStringToken(actual, 3)
+                    const expectedEncodingFormat = msg_readStringToken(expected, 3)
+                    if (actualEncodingFormat !== expectedEncodingFormat) {
+                        reportTestFailure(
+                            'Got SoundInfo.encodingFormat ' + actualEncodingFormat.toString() 
+                            + ' expected ' + expectedEncodingFormat.toString())
+                    }
+
+                    const actualEndianness = msg_readStringToken(actual, 4)
+                    const expectedEndianness = msg_readStringToken(expected, 4)
+                    if (actualEndianness !== expectedEndianness) {
+                        reportTestFailure(
+                            'Got SoundInfo.endianness ' + actualEndianness.toString() 
+                            + ' expected ' + expectedEndianness.toString())
+                    }
+
+                    const actualExtraOptions = msg_readStringToken(actual, 5)
+                    const expectedExtraOptions = msg_readStringToken(expected, 5)
+                    if (actualExtraOptions !== expectedExtraOptions) {
+                        reportTestFailure(
+                            'Got SoundInfo.extraOptions ' + actualExtraOptions.toString() 
+                            + ' expected ' + expectedExtraOptions.toString())
+                    }
+                `,
+
+            ]),
         ]
     )
 })

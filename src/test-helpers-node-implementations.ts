@@ -34,6 +34,7 @@ import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import { commonsArrays } from './stdlib'
+import { Ast, AstRaw, Var } from './ast/declare'
 export { makeCompilation } from './test-helpers'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
@@ -145,7 +146,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            generateDeclarations: ({ state, macros }) =>
+            generateDeclarations: ({ state }) => AstRaw([
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -153,26 +154,23 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     )
                     .map(
                         (outletId) =>
-                            // prettier-ignore
-                            `let ${macros.Var(state[`VALUE_${outletId}`], 'Float')}`
+                            Var('Float', state[`VALUE_${outletId}`], '0')
                     )
-                    .join('\n'),
+            ]),
 
             generateMessageReceivers: ({ globs, snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
                     if (fakeSourceNode.outlets[outletId].type === 'message') {
-                        return `${snds[outletId]}(${globs.m});return`
+                        return Ast`${snds[outletId]}(${globs.m});return`
 
                         // Messages received for signal outlets are written to the loop
                     } else {
-                        return `${
-                            state[`VALUE_${outletId}`]
-                        } = msg_readFloatToken(${globs.m}, 0);return`
+                        return Ast`${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.m}, 0);return`
                     }
                 }),
 
-            generateLoop: ({ outs, state }) =>
+            generateLoop: ({ outs, state }) => AstRaw([
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -182,7 +180,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                         (outletId) =>
                             `${outs[outletId]} = ${state[`VALUE_${outletId}`]}`
                     )
-                    .join('\n'),
+            ]),
 
             stateVariables: mapArray(
                 Object.keys(fakeSourceNode.outlets).filter(
@@ -195,18 +193,18 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            generateLoop: ({ ins, snds }) =>
+            generateLoop: ({ ins, snds }) => AstRaw([
                 Object.keys(testNode.sinks)
-                    .filter(
-                        (outletId) =>
-                            testNode.outlets[outletId].type === 'signal'
-                    )
-                    .map(
-                        (outletId) =>
-                            // prettier-ignore
-                            `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
-                    )
-                    .join('\n'),
+                .filter(
+                    (outletId) =>
+                        testNode.outlets[outletId].type === 'signal'
+                )
+                .map(
+                    (outletId) =>
+                        // prettier-ignore
+                        `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
+                )
+            ]),
 
             // Take incoming messages and directly proxy them
             generateMessageReceivers: ({ globs, snds }) =>
@@ -217,7 +215,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     ),
                     (inletId) => [
                         inletId,
-                        `${snds[inletId]}(${globs.m});return`,
+                        Ast`${snds[inletId]}(${globs.m});return`,
                     ]
                 ),
         },

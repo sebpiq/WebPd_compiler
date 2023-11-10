@@ -22,7 +22,8 @@ import { mapArray } from '../functional-helpers'
 import { DspGraph, getters } from '../dsp-graph'
 import { getNodeImplementation } from './compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from './namespace'
-import { Compilation, Code } from './types'
+import { Compilation } from './types'
+import { Code } from '../ast/types'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
 type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
@@ -33,7 +34,6 @@ export default (
 ): Code => {
     const {
         precompilation,
-        macros,
         codeVariableNames,
         nodeImplementations,
         graph,
@@ -86,7 +86,6 @@ export default (
             // Bugs when a single variable name is surrounded with brackets : e.g. `(node1_OUTS_0)` 
             // causes compilation error.
             const inlined = nodeImplementation.generateLoopInline({
-                macros,
                 globs,
                 state,
                 ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
@@ -104,7 +103,6 @@ export default (
                 [nodeId]:
                     (containsSpace ? '(': '') +
                     nodeImplementation.generateLoopInline({
-                        macros,
                         globs,
                         state,
                         ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {

@@ -18,6 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { AstContainer } from '../ast/types'
+import { CodeVariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 
 // -------------------------------- COMPILATION -------------------------------- //
@@ -56,26 +58,10 @@ export interface Compilation {
     readonly inletCallerSpecs: PortletsIndex
     readonly codeVariableNames: CodeVariableNames
     readonly precompilation: Precompilation
-    readonly macros: CodeMacros
     readonly debug: boolean
 }
 
 // -------------------------------- CODE GENERATION -------------------------------- //
-/** Code stored in string variable for later evaluation. */
-export type Code = string
-
-/** Name of a variable in generated code */
-export type CodeVariableName = string
-
-/**
- * Macros injected in code generators so that they can be written in a generic manner.
- * Each target language supported must implement the full set of macros.
- */
-export type CodeMacros = {
-    Var: (name: CodeVariableName, typeString: Code) => Code
-    Func: (args: Array<Code>, returnType: Code) => Code
-}
-
 export interface NodeVariableNames {
     outs: { [portletId: DspGraph.PortletId]: CodeVariableName }
     snds: { [portletId: DspGraph.PortletId]: CodeVariableName }
@@ -139,13 +125,12 @@ export type Precompilation = {
 }
 
 export interface GlobalCodeGeneratorContext {
-    macros: CodeMacros
     target: CompilerTarget
     audioSettings: AudioSettings
 }
 
 /** Simplest form of generator for global code */
-export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => Code
+export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => AstContainer
 
 export interface GlobalCodeDefinitionImport {
     name: string
@@ -187,13 +172,12 @@ export interface NodeImplementation<
      * This is typically used to declare and initialize state variables.
      */
     generateDeclarations?: (context: {
-        macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
-    }) => Code
+    }) => AstContainer
 
     /**
      * Generates the code that will be ran each iteration of the loop for that node instance.
@@ -202,7 +186,6 @@ export interface NodeImplementation<
      * @see generateInlineLoop for more complexe loop code generation.
      */
     generateLoop?: (context: {
-        macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
         ins: PrecompiledNodeCode['ins']
@@ -210,7 +193,7 @@ export interface NodeImplementation<
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
-    }) => Code
+    }) => AstContainer
 
     /**
      * Generates the code that will be ran each iteration of the loop for that node instance.
@@ -221,7 +204,6 @@ export interface NodeImplementation<
      * @see generateLoop for more complexe loop code generation.
      */
     generateLoopInline?: (context: {
-        macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
         ins: PrecompiledNodeCode['ins']
@@ -233,14 +215,13 @@ export interface NodeImplementation<
      * Generate code for message receivers for a given node instance.
      */
     generateMessageReceivers?: (context: {
-        macros: CodeMacros
         globs: CodeVariableNames['globs']
         state: { [Parameter in keyof NodeState]: string }
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => {
-        [inletId: DspGraph.PortletId]: Code
+        [inletId: DspGraph.PortletId]: AstContainer
     }
 
     /** List of dependencies for this node type */

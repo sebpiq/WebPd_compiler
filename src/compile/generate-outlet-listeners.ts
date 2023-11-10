@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,22 +19,28 @@
  */
 
 import { DspGraph } from '../dsp-graph'
-import { renderCode } from '../functional-helpers'
-import { Code, CodeVariableName, Compilation } from './types'
+import { Compilation } from './types'
+import { AstContainer, CodeVariableName } from '../ast/types'
+import { AstRaw } from '../ast/declare'
 
 export default (
     { outletListenerSpecs, codeVariableNames }: Compilation,
-    generateCode: (
+    generateOutletListener: (
         variableName: CodeVariableName,
         nodeId: DspGraph.NodeId,
         outletId: DspGraph.PortletId
-    ) => Code
+    ) => AstContainer
 ) =>
-    renderCode`${Object.entries(outletListenerSpecs).map(
-        ([nodeId, outletIds]) =>
+    AstRaw([
+        Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
             outletIds.map((outletId) => {
                 const listenerVariableName =
                     codeVariableNames.outletListeners[nodeId][outletId]
-                return generateCode(listenerVariableName, nodeId, outletId)
+                return generateOutletListener(
+                    listenerVariableName,
+                    nodeId,
+                    outletId
+                )
             })
-    )}`
+        ),
+    ])

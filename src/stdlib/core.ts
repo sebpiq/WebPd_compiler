@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { renderCode, renderSwitch } from '../functional-helpers'
 import { GlobalCodeGeneratorWithSettings } from '../compile/types'
+import { AstRaw, Func, Var } from '../ast/declare'
 
 export const core: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ target, audioSettings: { bitDepth } }) => {
@@ -28,64 +28,96 @@ export const core: GlobalCodeGeneratorWithSettings = {
         const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
         const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
         const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
-        return renderCode`${renderSwitch(
-            [
-                target === 'assemblyscript',
+        const declareFuncs = {
+            toInt: Func('toInt', [Var('Float', 'v')], 'Int'),
+            toFloat: Func('toFloat', [Var('Int', 'v')], 'Float'),
+            createFloatArray: Func('createFloatArray', [Var('Int', 'length')], 'FloatArray'),
+            setFloatDataView: Func('setFloatDataView', [
+                Var('DataView', 'dataView'), 
+                Var('Int', 'position'), 
+                Var('Float', 'value'), 
+            ], 'void'),
+            getFloatDataView: Func('getFloatDataView', [
+                Var('DataView', 'dataView'), 
+                Var('Int', 'position'), 
+            ], 'Float')
+        }
+
+        if (target === 'assemblyscript') {
+            return AstRaw([
                 `
-                    type FloatArray = ${FloatArray}
-                    type Float = ${Float}
-                    type Int = ${Int}
-
-                    function toInt (v: Float): Int { return ${Int}(v) }
-                    function toFloat (v: Int): Float { return ${Float}(v) }
-                    function createFloatArray (length: Int): FloatArray {
-                        return new ${FloatArray}(length)
-                    }
-                    function setFloatDataView (
-                        dataView: DataView, 
-                        position: Int, 
-                        value: Float,
-                    ): void { dataView.${setFloat}(position, value) }
-                    function getFloatDataView (
-                        dataView: DataView, 
-                        position: Int, 
-                    ): Float { return dataView.${getFloat}(position) }
-
-                    // =========================== EXPORTED API
-                    function x_core_createListOfArrays(): FloatArray[] {
-                        const arrays: FloatArray[] = []
-                        return arrays
-                    }
-
-                    function x_core_pushToListOfArrays(arrays: FloatArray[], array: FloatArray): void {
-                        arrays.push(array)
-                    }
-
-                    function x_core_getListOfArraysLength(arrays: FloatArray[]): Int {
-                        return arrays.length
-                    }
-
-                    function x_core_getListOfArraysElem(arrays: FloatArray[], index: Int): FloatArray {
-                        return arrays[index]
-                    }
+                type FloatArray = ${FloatArray}
+                type Float = ${Float}
+                type Int = ${Int}
                 `,
-            ],
+                declareFuncs.toInt`
+                    return ${Int}(v)
+                `,
+                declareFuncs.toFloat`
+                    return ${Float}(v)
+                `,
+                declareFuncs.createFloatArray`
+                    return new ${FloatArray}(length)
+                `,
+                declareFuncs.setFloatDataView`
+                    dataView.${setFloat}(position, value)
+                `,
+                declareFuncs.getFloatDataView`
+                    return dataView.${getFloat}(position)
+                `,
 
-            [
-                target === 'javascript',
+                // =========================== EXPORTED API
+                Func('x_core_createListOfArrays', [], 'FloatArray[]')`
+                    const arrays: FloatArray[] = []
+                    return arrays
+                `,
+
+                Func('x_core_pushToListOfArrays', [
+                    Var('FloatArray[]', 'arrays'), 
+                    Var('FloatArray', 'array')
+                ], 'void')`
+                    arrays.push(array)
+                `,
+
+                Func('x_core_getListOfArraysLength', [
+                    Var('FloatArray[]', 'arrays')
+                ], 'Int')`
+                    return arrays.length
+                `,
+
+                Func('x_core_getListOfArraysElem', [
+                    Var('FloatArray[]', 'arrays'), 
+                    Var('Int', 'index')
+                ], 'FloatArray')`
+                    return arrays[index]
                 `
-                    const i32 = (v) => v
-                    const f32 = i32
-                    const f64 = i32
-                    const toInt = (v) => v
-                    const toFloat = (v) => v
-                    const createFloatArray = (length) => 
-                        new ${FloatArray}(length)
-                    const setFloatDataView = (d, p, v) => d.${setFloat}(p, v)
-                    const getFloatDataView = (d, p) => d.${getFloat}(p)
+            ])
+        } else if (target === 'javascript') {
+            return AstRaw([
+                `
+                const i32 = (v) => v
+                const f32 = i32
+                const f64 = i32
                 `,
-            ]
-        )}`
+                declareFuncs.toInt`
+                    return v
+                `,
+                declareFuncs.toFloat`
+                    return v
+                `,
+                declareFuncs.createFloatArray`
+                    return new ${FloatArray}(length)
+                `,
+                declareFuncs.setFloatDataView`
+                    dataView.${setFloat}(position, value)
+                `,
+                declareFuncs.getFloatDataView`
+                    return dataView.${getFloat}(position)
+                `,
+            ])
+        } else {
+            throw new Error(`Unexpected target: ${target}`)
+        }
     },
 
     exports: [

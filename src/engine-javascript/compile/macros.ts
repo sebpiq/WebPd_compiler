@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,15 +18,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Code, CodeMacros, CodeVariableName } from '../../compile/types'
+import { ClassDeclaration, CodeMacros, ConstVarDeclaration, FuncDeclaration, VarDeclaration } from '../../ast/types'
+import { Code } from '../../ast/types'
 
-const Var = (name: CodeVariableName) => `${name}`
+const Var = (declaration: VarDeclaration, renderedValue: Code) =>
+    `let ${declaration.name} = ${renderedValue}`
 
-const Func = (args: Array<Code>) => `(${args.join(', ')})`
+const ConstVar = (declaration: ConstVarDeclaration, renderedValue: Code) =>
+    `const ${declaration.name} = ${renderedValue}`
+
+const Func = (declaration: FuncDeclaration, renderedBody: Code) => 
+    `function ${declaration.name} (${declaration.args.map(arg => arg.name).join(', ')}) {
+${renderedBody}
+}`
+
+const Class = (declaration: ClassDeclaration) => 
+    `class ${declaration.name} {}`
 
 const macros: CodeMacros = {
     Var,
+    ConstVar,
     Func,
+    Class,
 }
 
 export default macros

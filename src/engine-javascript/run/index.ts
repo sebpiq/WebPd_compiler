@@ -31,7 +31,8 @@
 import { getFloatArrayType } from '../../run/run-helpers'
 import { createModule } from '../../run/run-helpers'
 import { Bindings } from '../../run/types'
-import { AudioSettings, Code } from '../../compile/types'
+import { AudioSettings } from '../../compile/types'
+import { Code } from '../../ast/types'
 import { Engine, FloatArray, RawModule } from '../../run/types'
 
 interface CommonsRawModule extends RawModule {

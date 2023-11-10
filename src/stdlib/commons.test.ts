@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import { Ast, AstRaw, ConstVar, Func, Var } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import {
     commonsCore,
@@ -33,18 +34,19 @@ describe('commons', () => {
             {
                 description:
                     'setArray > should set the array and notifiy the subscribers hooks %s',
-                codeGenerator: ({ macros: { Var, Func } }) => `
+                testFunction: (declareTestFunction) => declareTestFunction`
                     callbackCallCounter = 0
 
-                    const ${Var(
+                    ${ConstVar(
+                        'SkedId',
                         'subscription',
-                        'SkedId'
-                    )} = commons_subscribeArrayChanges(
-                        'array1', 
-                        ${Func([], 'void')} => {
-                            callbackCallCounter++
-                        }
-                    )
+                        Ast`commons_subscribeArrayChanges(
+                            'array1', 
+                            ${Func('callback', [], 'void')`
+                                callbackCallCounter++
+                            `}
+                        )`
+                    )}
 
                     // First time array is set, subscriber is notified
                     commons_setArray('array1', createFloatArray(5))
@@ -78,8 +80,9 @@ describe('commons', () => {
             commonsArrays.codeGenerator,
             commonsWaitEngineConfigure,
             commonsWaitFrame,
-            ({ macros: { Var } }) =>
-                `let ${Var('callbackCallCounter', 'Int')} = 0`,
+            () => AstRaw([
+                Var('Int', 'callbackCallCounter', '0'),
+            ])
         ]
     )
 })

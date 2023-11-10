@@ -27,11 +27,12 @@ import {
 } from './core-bindings'
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { getMacros } from '../../compile'
 import { getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
-import { renderCode } from '../../functional-helpers'
 import { FloatArrayPointer, InternalPointer } from './types'
+import { AstRaw } from '../../ast/declare'
+import macros from '../compile/macros'
+import render from '../../ast/render'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {
@@ -53,35 +54,35 @@ describe('core-bindings', () => {
         testReadSomeValueFromFloatArrays: () => number
     }
 
-    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => renderCode`
-        ${core.codeGenerator({
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => render(macros, AstRaw([
+        core.codeGenerator({
             target: 'assemblyscript',
-            macros: getMacros('assemblyscript'),
             audioSettings: { bitDepth, channelCount: { in: 2, out: 2 } },
-        })}
-        ${core.exports.map(({ name }) => `export { ${name} }`)}
-    `
+        }),
+        core.exports.map(({ name }) => `export { ${name} }`)
+    ]))
 
     describe('readTypedArray', () => {
         it.each(TEST_PARAMETERS)(
             'should read existing typed array from wasm module %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(getBaseTestCode(bitDepth) + `
-                    const myArray: Float64Array = new Float64Array(3)
-                    myArray[0] = 123
-                    myArray[1] = 456
-                    myArray[2] = 789
-                    export function testGetMyArray(): Float64Array {
-                        return myArray
-                    }
-                    export function testReadArrayElem (array: Float64Array, index: Int): f64 {
-                        return array[index]
-                    }
-                    export function testReadArrayLength (array: Float64Array): Int {
-                        return array.length
-                    }
-                `, bitDepth)
+                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(
+                    getBaseTestCode(bitDepth) + `
+                        const myArray: Float64Array = new Float64Array(3)
+                        myArray[0] = 123
+                        myArray[1] = 456
+                        myArray[2] = 789
+                        export function testGetMyArray(): Float64Array {
+                            return myArray
+                        }
+                        export function testReadArrayElem (array: Float64Array, index: Int): f64 {
+                            return array[index]
+                        }
+                        export function testReadArrayLength (array: Float64Array): Int {
+                            return array.length
+                        }
+                    `, bitDepth)
 
                 const arrayPointer = wasmExports.testGetMyArray()
                 const myArray = readTypedArray(

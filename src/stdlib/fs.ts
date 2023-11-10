@@ -18,131 +18,125 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { renderIf } from '../functional-helpers'
 import {
     GlobalCodeGeneratorWithSettings,
-    GlobalCodeGenerator,
 } from '../compile/types'
 import { bufCore, bufPushPull } from './buf'
 import { msg } from './msg'
+import { AstRaw, Class, ConstVar, Func, Var } from '../ast/declare'
+import { AstContent } from '../ast/types'
 
 export const FS_OPERATION_SUCCESS = 0
 export const FS_OPERATION_FAILURE = 1
 
 export const fsCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Var, Func }, target }) => `
-        ${renderIf(
-            target === 'assemblyscript',
-            `
+    codeGenerator: ({ target }) => {
+        const content: Array<AstContent> = []
+        if (target === 'assemblyscript') {
+            content.push(`
                 type fs_OperationId = Int
                 type fs_OperationStatus = Int
                 type fs_OperationCallback = (id: fs_OperationId, status: fs_OperationStatus) => void
                 type fs_OperationSoundCallback = (id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]) => void
                 type fs_Url = string
+            `)
+        }
+        return AstRaw([
+            ...content,
+            ConstVar('Int', 'FS_OPERATION_SUCCESS', FS_OPERATION_SUCCESS.toString()),
+            ConstVar('Int', 'FS_OPERATION_FAILURE', FS_OPERATION_FAILURE.toString()),
+            
+            ConstVar('Set<fs_OperationId>', '_FS_OPERATIONS_IDS', 'new Set()'),
+            ConstVar('Map<fs_OperationId, fs_OperationCallback>', '_FS_OPERATIONS_CALLBACKS', 'new Map()'),
+            
+            ConstVar(
+                'Map<fs_OperationId, fs_OperationSoundCallback>',
+                '_FS_OPERATIONS_SOUND_CALLBACKS',
+                'new Map()',
+            ),
+    
+            // We start at 1, because 0 is what ASC uses when host forgets to pass an arg to 
+            // a function. Therefore we can get false negatives when a test happens to expect a 0.
+            Var('Int', '_FS_OPERATION_COUNTER', '1'),
+
+            Class('fs_SoundInfo', [
+                Var('Int', 'channelCount'),
+                Var('Int', 'sampleRate'),
+                Var('Int', 'bitDepth'),
+                Var('string', 'encodingFormat'),
+                Var('string', 'endianness'),
+                Var('string', 'extraOptions'),
+            ]),
+
+            Func('fs_soundInfoToMessage', [
+                Var('fs_SoundInfo', 'soundInfo')
+            ], 'Message')`
+                ${ConstVar('Message', 'info', `msg_create([
+                    MSG_FLOAT_TOKEN,
+                    MSG_FLOAT_TOKEN,
+                    MSG_FLOAT_TOKEN,
+                    MSG_STRING_TOKEN,
+                    soundInfo.encodingFormat.length,
+                    MSG_STRING_TOKEN,
+                    soundInfo.endianness.length,
+                    MSG_STRING_TOKEN,
+                    soundInfo.extraOptions.length
+                ])`)}
+                msg_writeFloatToken(info, 0, toFloat(soundInfo.channelCount))
+                msg_writeFloatToken(info, 1, toFloat(soundInfo.sampleRate))
+                msg_writeFloatToken(info, 2, toFloat(soundInfo.bitDepth))
+                msg_writeStringToken(info, 3, soundInfo.encodingFormat)
+                msg_writeStringToken(info, 4, soundInfo.endianness)
+                msg_writeStringToken(info, 5, soundInfo.extraOptions)
+                return info
+            `,
+    
+            Func('_fs_assertOperationExists', [
+                Var('fs_OperationId', 'id'), 
+                Var('string', 'operationName'),
+            ], 'void')`
+                if (!_FS_OPERATIONS_IDS.has(id)) {
+                    throw new Error(operationName + ' operation unknown : ' + id.toString())
+                }
+            `,
+    
+            Func('_fs_createOperationId', [], 'fs_OperationId')`
+                ${ConstVar('fs_OperationId', 'id', '_FS_OPERATION_COUNTER++')}
+                _FS_OPERATIONS_IDS.add(id)
+                return id
             `
-        )}
-
-        const ${Var('FS_OPERATION_SUCCESS', 'Int')} = ${FS_OPERATION_SUCCESS}
-        const ${Var('FS_OPERATION_FAILURE', 'Int')} = ${FS_OPERATION_FAILURE}
-        
-        const ${Var('_FS_OPERATIONS_IDS', 'Set<fs_OperationId>')} = new Set()
-        const ${Var(
-            '_FS_OPERATIONS_CALLBACKS',
-            'Map<fs_OperationId, fs_OperationCallback>'
-        )} = new Map()
-        const ${Var(
-            '_FS_OPERATIONS_SOUND_CALLBACKS',
-            'Map<fs_OperationId, fs_OperationSoundCallback>'
-        )} = new Map()
-
-        // We start at 1, because 0 is what ASC uses when host forgets to pass an arg to 
-        // a function. Therefore we can get false negatives when a test happens to expect a 0.
-        let ${Var('_FS_OPERATION_COUNTER', 'Int')} = 1
-
-        class fs_SoundInfo {
-            ${Var('channelCount', 'Int')}
-            ${Var('sampleRate', 'Int')}
-            ${Var('bitDepth', 'Int')}
-            ${Var('encodingFormat', 'string')}
-            ${Var('endianness', 'string')}
-            ${Var('extraOptions', 'string')}
-        }
-
-        function fs_soundInfoToMessage ${Func(
-            [Var('soundInfo', 'fs_SoundInfo')],
-            'Message'
-        )} {
-            const ${Var('info', 'Message')} = msg_create([
-                MSG_FLOAT_TOKEN,
-                MSG_FLOAT_TOKEN,
-                MSG_FLOAT_TOKEN,
-                MSG_STRING_TOKEN,
-                soundInfo.encodingFormat.length,
-                MSG_STRING_TOKEN,
-                soundInfo.endianness.length,
-                MSG_STRING_TOKEN,
-                soundInfo.extraOptions.length
-            ])
-            msg_writeFloatToken(info, 0, toFloat(soundInfo.channelCount))
-            msg_writeFloatToken(info, 1, toFloat(soundInfo.sampleRate))
-            msg_writeFloatToken(info, 2, toFloat(soundInfo.bitDepth))
-            msg_writeStringToken(info, 3, soundInfo.encodingFormat)
-            msg_writeStringToken(info, 4, soundInfo.endianness)
-            msg_writeStringToken(info, 5, soundInfo.extraOptions)
-            return info
-        }
-
-        function _fs_assertOperationExists ${Func(
-            [Var('id', 'fs_OperationId'), Var('operationName', 'string')],
-            'void'
-        )} {
-            if (!_FS_OPERATIONS_IDS.has(id)) {
-                throw new Error(operationName + ' operation unknown : ' + id.toString())
-            }
-        }
-
-        function _fs_createOperationId ${Func([], 'fs_OperationId')} {
-            const ${Var('id', 'fs_OperationId')} = _FS_OPERATION_COUNTER++
-            _FS_OPERATIONS_IDS.add(id)
-            return id
-        }   
-    `,
+        ])
+    },
 
     dependencies: [msg],
 }
 
 export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Func, Var } }) => `
-        function fs_readSoundFile ${Func(
-            [
-                Var('url', 'fs_Url'),
-                Var('soundInfo', 'fs_SoundInfo'),
-                Var('callback', 'fs_OperationSoundCallback'),
-            ],
-            'fs_OperationId'
-        )} {
-            const ${Var('id', 'fs_OperationId')} = _fs_createOperationId()
+    codeGenerator: () => AstRaw([
+        Func('fs_readSoundFile', [
+            Var('fs_Url', 'url'),
+            Var('fs_SoundInfo', 'soundInfo'),
+            Var('fs_OperationSoundCallback', 'callback'),
+        ], 'fs_OperationId')`
+            ${ConstVar('fs_OperationId', 'id', '_fs_createOperationId()')}
             _FS_OPERATIONS_SOUND_CALLBACKS.set(id, callback)
             i_fs_readSoundFile(id, url, fs_soundInfoToMessage(soundInfo))
             return id
-        }
+        `,
 
-        function x_fs_onReadSoundFileResponse ${Func(
-            [
-                Var('id', 'fs_OperationId'),
-                Var('status', 'fs_OperationStatus'),
-                Var('sound', 'FloatArray[]'),
-            ],
-            'void'
-        )} {
+        Func('x_fs_onReadSoundFileResponse', [
+            Var('fs_OperationId', 'id'),
+            Var('fs_OperationStatus', 'status'),
+            Var('FloatArray[]', 'sound'),
+        ], 'void')`
             _fs_assertOperationExists(id, 'x_fs_onReadSoundFileResponse')
             _FS_OPERATIONS_IDS.delete(id)
             // Finish cleaning before calling the callback in case it would throw an error.
             const callback = _FS_OPERATIONS_SOUND_CALLBACKS.get(id)
             callback(id, status, sound)
             _FS_OPERATIONS_SOUND_CALLBACKS.delete(id)
-        }
-    `,
+        `
+    ]),
 
     exports: [
         {
@@ -166,34 +160,31 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Func, Var } }) => `
-        function fs_writeSoundFile ${Func(
-            [
-                Var('sound', 'FloatArray[]'),
-                Var('url', 'fs_Url'),
-                Var('soundInfo', 'fs_SoundInfo'),
-                Var('callback', 'fs_OperationCallback'),
-            ],
-            'fs_OperationId'
-        )} {
-            const id = _fs_createOperationId()
+    codeGenerator: () => AstRaw([
+        Func('fs_writeSoundFile', [
+            Var('FloatArray[]', 'sound'),
+            Var('fs_Url', 'url'),
+            Var('fs_SoundInfo', 'soundInfo'),
+            Var('fs_OperationCallback', 'callback'),
+        ], 'fs_OperationId')`
+            ${ConstVar('fs_OperationId', 'id', '_fs_createOperationId()')}
             _FS_OPERATIONS_CALLBACKS.set(id, callback)
             i_fs_writeSoundFile(id, sound, url, fs_soundInfoToMessage(soundInfo))
             return id
-        }
+        `,
 
-        function x_fs_onWriteSoundFileResponse ${Func(
-            [Var('id', 'fs_OperationId'), Var('status', 'fs_OperationStatus')],
-            'void'
-        )} {
+        Func('x_fs_onWriteSoundFileResponse', [
+            Var('fs_OperationId', 'id'), 
+            Var('fs_OperationStatus', 'status'),
+        ], 'void')`
             _fs_assertOperationExists(id, 'x_fs_onWriteSoundFileResponse')
             _FS_OPERATIONS_IDS.delete(id)
             // Finish cleaning before calling the callback in case it would throw an error.
-            const callback = _FS_OPERATIONS_CALLBACKS.get(id)
+            ${ConstVar('fs_OperationCallback', 'callback', '_FS_OPERATIONS_CALLBACKS.get(id)')}
             callback(id, status)
             _FS_OPERATIONS_CALLBACKS.delete(id)
-        }
-    `,
+        `
+    ]),
 
     exports: [
         {
@@ -218,18 +209,23 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Func, Var } }) => `
-        const ${Var(
+    codeGenerator: () => AstRaw([
+        ConstVar(
+            'Map<fs_OperationId, Array<buf_SoundBuffer>>',
             '_FS_SOUND_STREAM_BUFFERS',
-            'Map<fs_OperationId, Array<buf_SoundBuffer>>'
-        )} = new Map()
+            'new Map()'
+        ),
 
-        const ${Var('_FS_SOUND_BUFFER_LENGTH', 'Int')} = 20 * 44100
+        ConstVar(
+            'Int',
+            '_FS_SOUND_BUFFER_LENGTH', 
+            '20 * 44100',
+        ),
 
-        function fs_closeSoundStream ${Func(
-            [Var('id', 'fs_OperationId'), Var('status', 'fs_OperationStatus')],
-            'void'
-        )} {
+        Func('fs_closeSoundStream', [
+            Var('fs_OperationId', 'id'), 
+            Var('fs_OperationStatus', 'status'),
+        ], 'void')`
             if (!_FS_OPERATIONS_IDS.has(id)) {
                 return
             }
@@ -243,15 +239,15 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
                 _FS_SOUND_STREAM_BUFFERS.delete(id)
             }
             i_fs_closeSoundStream(id, status)
-        }
+        `,
 
-        function x_fs_onCloseSoundStream ${Func(
-            [Var('id', 'fs_OperationId'), Var('status', 'fs_OperationStatus')],
-            'void'
-        )} {
+        Func('x_fs_onCloseSoundStream', [
+            Var('fs_OperationId', 'id'), 
+            Var('fs_OperationStatus', 'status'),
+        ], 'void')`
             fs_closeSoundStream(id, status)
-        }
-    `,
+        `
+    ]),
 
     exports: [
         {
@@ -274,38 +270,35 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Var, Func } }) => `
-        function fs_openSoundReadStream ${Func(
-            [
-                Var('url', 'fs_Url'),
-                Var('soundInfo', 'fs_SoundInfo'),
-                Var('callback', 'fs_OperationCallback'),
-            ],
-            'fs_OperationId'
-        )} {
-            const id = _fs_createOperationId()
-            const ${Var('buffers', 'Array<buf_SoundBuffer>')} = []
-            for (let channel = 0; channel < soundInfo.channelCount; channel++) {
-                buffers.push(new buf_SoundBuffer(_FS_SOUND_BUFFER_LENGTH))
+    codeGenerator: () => AstRaw([
+        Func('fs_openSoundReadStream', [
+            Var('fs_Url', 'url'),
+            Var('fs_SoundInfo', 'soundInfo'),
+            Var('fs_OperationCallback', 'callback'),
+        ], 'fs_OperationId')`
+            ${ConstVar('fs_OperationId', 'id', '_fs_createOperationId()')}
+            ${ConstVar('Array<buf_SoundBuffer>', 'buffers', '[]')}
+            for (${Var('Int', 'channel', '0')}; channel < soundInfo.channelCount; channel++) {
+                buffers.push(buf_create(_FS_SOUND_BUFFER_LENGTH))
             }
             _FS_SOUND_STREAM_BUFFERS.set(id, buffers)
             _FS_OPERATIONS_CALLBACKS.set(id, callback)
             i_fs_openSoundReadStream(id, url, fs_soundInfoToMessage(soundInfo))
             return id
-        }
+        `,
 
-        function x_fs_onSoundStreamData ${Func(
-            [Var('id', 'fs_OperationId'), Var('block', 'FloatArray[]')],
-            'Int'
-        )} {
+        Func('x_fs_onSoundStreamData',[
+            Var('fs_OperationId', 'id'),
+            Var('FloatArray[]', 'block'),
+        ], 'Int')`
             _fs_assertOperationExists(id, 'x_fs_onSoundStreamData')
             const buffers = _FS_SOUND_STREAM_BUFFERS.get(id)
-            for (let ${Var('i', 'Int')} = 0; i < buffers.length; i++) {
+            for (${Var('Int', 'i', '0')}; i < buffers.length; i++) {
                 buf_pushBlock(buffers[i], block[i])
             }
             return buffers[0].pullAvailableLength
-        }
-    `,
+        `
+    ]),
 
     exports: [
         {
@@ -329,30 +322,29 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ macros: { Func, Var } }) => `
-        function fs_openSoundWriteStream ${Func(
-            [
-                Var('url', 'fs_Url'),
-                Var('soundInfo', 'fs_SoundInfo'),
-                Var('callback', 'fs_OperationCallback'),
+    codeGenerator: () => AstRaw([
+        Func('fs_openSoundWriteStream', [
+                Var('fs_Url', 'url'),
+                Var('fs_SoundInfo', 'soundInfo'),
+                Var('fs_OperationCallback', 'callback'),
             ],
             'fs_OperationId'
-        )} {
+        )`
             const id = _fs_createOperationId()
             _FS_SOUND_STREAM_BUFFERS.set(id, [])
             _FS_OPERATIONS_CALLBACKS.set(id, callback)
             i_fs_openSoundWriteStream(id, url, fs_soundInfoToMessage(soundInfo))
             return id
-        }
+        `,
 
-        function fs_sendSoundStreamData ${Func(
-            [Var('id', 'fs_OperationId'), Var('block', 'FloatArray[]')],
-            'void'
-        )} {
+        Func('fs_sendSoundStreamData', [
+            Var('fs_OperationId', 'id'), 
+            Var('FloatArray[]', 'block')
+        ], 'void')`
             _fs_assertOperationExists(id, 'fs_sendSoundStreamData')
             i_fs_sendSoundStreamData(id, block)
-        }
-    `,
+        `
+    ]),
 
     imports: [
         {

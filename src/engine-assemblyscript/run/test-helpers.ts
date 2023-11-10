@@ -19,7 +19,8 @@
  */
 
 import asc from 'assemblyscript/asc'
-import { AudioSettings, Code } from '../../compile/types'
+import { AudioSettings } from '../../compile/types'
+import { Code } from '../../ast/types'
 import { RawModule } from '../../run/types'
 import { instantiateWasmModule } from './wasm-helpers'
 

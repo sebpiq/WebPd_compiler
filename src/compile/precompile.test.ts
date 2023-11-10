@@ -22,6 +22,7 @@ import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 import precompile from './precompile'
 import { NodeImplementations } from './types'
+import { Ast } from '../ast/declare'
 
 describe('precompile', () => {
     describe('signal INS/OUTS', () => {
@@ -45,7 +46,7 @@ describe('precompile', () => {
             const nodeImplementations: NodeImplementations = {
                 DUMMY: {
                     // generateLoop signals that node is non-inline
-                    generateLoop: () => '',
+                    generateLoop: () => Ast``,
                 },
             }
 

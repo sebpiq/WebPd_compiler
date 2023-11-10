@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
- * This file is part of WebPd 
+ * This file is part of WebPd
  * (see https://github.com/sebpiq/WebPd).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,10 +20,11 @@
 import assert from 'assert'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
-import { normalizeCode } from '../test-helpers'
 import { NodeImplementations } from './types'
 import generateInletCallers from './generate-inlet-callers'
 import precompile from './precompile'
+import { AstContainer } from '../ast/types'
+import { Ast } from '../ast/declare'
 
 describe('generateInletCallers', () => {
     it('should compile declared inlet callers', () => {
@@ -39,7 +40,7 @@ describe('generateInletCallers', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': '// [type1] message receiver',
+                    '0': Ast`// [type1] message receiver`,
                 }),
             },
         }
@@ -52,13 +53,32 @@ describe('generateInletCallers', () => {
 
         precompile(compilation)
 
-        const declareCode = generateInletCallers(compilation)
+        const ast = generateInletCallers(compilation)
 
-        assert.strictEqual(
-            normalizeCode(declareCode),
-            normalizeCode(`
-                function inletCallers_node1_0 (m) {node1_RCVS_0(m)}
-            `)
+        assert.deepStrictEqual<AstContainer>(
+            ast,
+            {
+                astType: 'Container',
+                content: [
+                    {
+                        astType: 'Func',
+                        name: 'inletCallers_node1_0',
+                        args: [
+                            {
+                                astType: 'Var',
+                                name: 'm',
+                                type: 'Message',
+                                value: undefined,
+                            },
+                        ],
+                        returnType: 'void',
+                        body: {
+                            astType: 'Container',
+                            content: ['node1_RCVS_0(m)']
+                        }
+                    },
+                ],
+            }
         )
     })
 })

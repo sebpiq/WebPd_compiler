@@ -20,8 +20,8 @@
 
 import { getNodeImplementation } from './compile-helpers'
 import { getters } from '../dsp-graph'
-import { renderCode } from '../functional-helpers'
 import { Compilation } from './types'
+import { Ast } from '../ast/declare'
 
 export default (compilation: Compilation) => {
     const {
@@ -29,13 +29,12 @@ export default (compilation: Compilation) => {
         graphTraversalLoop,
         codeVariableNames,
         precompilation,
-        macros,
         nodeImplementations,
     } = compilation
     const { globs } = codeVariableNames
 
     // prettier-ignore
-    return renderCode`
+    return Ast`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
             ${graphTraversalLoop.map((nodeId) => {
@@ -49,19 +48,16 @@ export default (compilation: Compilation) => {
 
                 if (nodeImplementation.generateLoopInline) {
                     const outletId = Object.keys(node.outlets)[0]
-                    const inlined = nodeImplementation.generateLoopInline({
-                        macros,
+                    return `${outs[outletId]} = ${nodeImplementation.generateLoopInline({
                         globs,
                         node,
                         state,
                         ins,
                         compilation,
-                    })
-                    return `${outs[outletId]} = ${inlined}`
+                    })}`
                 
                 } else if (nodeImplementation.generateLoop) {
                     return nodeImplementation.generateLoop({
-                        macros,
                         globs,
                         node,
                         state,
