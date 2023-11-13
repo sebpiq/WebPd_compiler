@@ -23,15 +23,15 @@ import {
 } from '../compile/types'
 import { bufCore, bufPushPull } from './buf'
 import { msg } from './msg'
-import { AstRaw, Class, ConstVar, Func, Var } from '../ast/declare'
-import { AstContent } from '../ast/types'
+import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
+import { AstSequenceContent } from '../ast/types'
 
 export const FS_OPERATION_SUCCESS = 0
 export const FS_OPERATION_FAILURE = 1
 
 export const fsCore: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ target }) => {
-        const content: Array<AstContent> = []
+        const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`
                 type fs_OperationId = Int
@@ -41,7 +41,7 @@ export const fsCore: GlobalCodeGeneratorWithSettings = {
                 type fs_Url = string
             `)
         }
-        return AstRaw([
+        return Sequence([
             ...content,
             ConstVar('Int', 'FS_OPERATION_SUCCESS', FS_OPERATION_SUCCESS.toString()),
             ConstVar('Int', 'FS_OPERATION_FAILURE', FS_OPERATION_FAILURE.toString()),
@@ -112,7 +112,7 @@ export const fsCore: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         Func('fs_readSoundFile', [
             Var('fs_Url', 'url'),
             Var('fs_SoundInfo', 'soundInfo'),
@@ -160,7 +160,7 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         Func('fs_writeSoundFile', [
             Var('FloatArray[]', 'sound'),
             Var('fs_Url', 'url'),
@@ -209,7 +209,7 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         ConstVar(
             'Map<fs_OperationId, Array<buf_SoundBuffer>>',
             '_FS_SOUND_STREAM_BUFFERS',
@@ -270,7 +270,7 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         Func('fs_openSoundReadStream', [
             Var('fs_Url', 'url'),
             Var('fs_SoundInfo', 'soundInfo'),
@@ -322,7 +322,7 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         Func('fs_openSoundWriteStream', [
                 Var('fs_Url', 'url'),
                 Var('fs_SoundInfo', 'soundInfo'),

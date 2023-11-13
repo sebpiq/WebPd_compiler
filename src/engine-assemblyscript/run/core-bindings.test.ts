@@ -30,7 +30,7 @@ import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
 import { FloatArrayPointer, InternalPointer } from './types'
-import { AstRaw } from '../../ast/declare'
+import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../ast/render'
 
@@ -54,7 +54,7 @@ describe('core-bindings', () => {
         testReadSomeValueFromFloatArrays: () => number
     }
 
-    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => render(macros, AstRaw([
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => render(macros, Sequence([
         core.codeGenerator({
             target: 'assemblyscript',
             audioSettings: { bitDepth, channelCount: { in: 2, out: 2 } },

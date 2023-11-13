@@ -34,7 +34,7 @@ import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import { commonsArrays } from './stdlib'
-import { Ast, AstRaw, Var } from './ast/declare'
+import { ast, Sequence, Var } from './ast/declare'
 export { makeCompilation } from './test-helpers'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
@@ -146,7 +146,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            generateDeclarations: ({ state }) => AstRaw([
+            generateDeclarations: ({ state }) => Sequence([
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -162,15 +162,15 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
                     if (fakeSourceNode.outlets[outletId].type === 'message') {
-                        return Ast`${snds[outletId]}(${globs.m});return`
+                        return ast`${snds[outletId]}(${globs.m});return`
 
                         // Messages received for signal outlets are written to the loop
                     } else {
-                        return Ast`${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.m}, 0);return`
+                        return ast`${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.m}, 0);return`
                     }
                 }),
 
-            generateLoop: ({ outs, state }) => AstRaw([
+            generateLoop: ({ outs, state }) => Sequence([
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -193,7 +193,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            generateLoop: ({ ins, snds }) => AstRaw([
+            generateLoop: ({ ins, snds }) => Sequence([
                 Object.keys(testNode.sinks)
                 .filter(
                     (outletId) =>
@@ -215,7 +215,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     ),
                     (inletId) => [
                         inletId,
-                        Ast`${snds[inletId]}(${globs.m});return`,
+                        ast`${snds[inletId]}(${globs.m});return`,
                     ]
                 ),
         },

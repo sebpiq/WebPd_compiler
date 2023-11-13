@@ -18,17 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstRaw, Func, Var } from '../ast/declare'
-import { AstContainer } from '../ast/types'
+import { Sequence, Func, Var } from '../ast/declare'
+import { AstSequence } from '../ast/types'
 import { Compilation } from './types'
 
 export default ({
     inletCallerSpecs,
     codeVariableNames,
-}: Compilation): AstContainer =>
+}: Compilation): AstSequence =>
     // Here not possible to assign directly the receiver because otherwise assemblyscript
     // doesn't export a function but a global instead.
-    AstRaw(
+    Sequence(
         Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
             inletIds.map(
                 (inletId) =>

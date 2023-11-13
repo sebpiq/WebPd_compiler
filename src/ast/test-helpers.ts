@@ -17,28 +17,67 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { AstContainer } from './types'
+import assert from 'assert'
+import { AstElement, AstSequence, Code } from './types'
 
 const LINE_NORMALIZE_INDENTS_RE = /\s*\n\s*/g
 const LINE_TRIM_START_RE = /^[\s\n]*/
 const LINE_TRIM_END_RE = /[\s\n]*$/
 
-export const normalizeCodeForTests = (ast: AstContainer): AstContainer => ({
-    astType: 'Container',
-    content: ast.content.map((element) => {
-        if (typeof element === 'string') {
-            return element
-                .replaceAll(LINE_NORMALIZE_INDENTS_RE, '\n')
-                .replace(LINE_TRIM_START_RE, '')
-                .replace(LINE_TRIM_END_RE, '')
-            
-        } else if (element.astType === 'Func') {
+export const assertAstSequencesAreEqual = (
+    actual: AstSequence,
+    expected: AstSequence
+) => {
+    assert.deepStrictEqual(
+        normalizeAstSequence(actual),
+        normalizeAstSequence(expected)
+    )
+}
+
+export const normalizeAstSequence = <T extends AstElement>(element: T): T => {
+    switch (element.astType) {
+        case 'Func':
             return {
                 ...element,
-                body: normalizeCodeForTests(element.body)
+                body: normalizeAstSequence(element.body),
+                args: element.args.map(normalizeAstSequence),
             }
-        } else {
-            return element
-        }
-    }).filter(element => typeof element === 'string' ? element.length : true)
-})
+        case 'Class':
+            return {
+                ...element,
+                members: element.members.map(normalizeAstSequence),
+            }
+        case 'Sequence':
+            return {
+                ...element,
+                content: element.content
+                    .map((element) => {
+                        if (typeof element === 'string') {
+                            return _normalizeCode(element)
+                        } else {
+                            return normalizeAstSequence(element)
+                        }
+                    })
+                    .filter((element) => {
+                        return typeof element === 'string'
+                            ? element.length > 0
+                            : true
+                    }),
+            }
+        case 'Var':
+        case 'ConstVar':
+            return {
+                ...element,
+                value: element.value ? normalizeAstSequence(element.value): element.value,
+            }
+
+        default:
+            return {...element}
+    }
+}
+
+const _normalizeCode = (code: Code) =>
+    code
+        .replaceAll(LINE_NORMALIZE_INDENTS_RE, '\n')
+        .replace(LINE_TRIM_START_RE, '')
+        .replace(LINE_TRIM_END_RE, '')

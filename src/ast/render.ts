@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { AstContainer, Code, CodeMacros } from './types'
+import { AstSequence, Code, CodeMacros } from './types'
 
 /**
  * Renders templated strings which contain nested arrays of strings.
@@ -26,8 +26,8 @@ import { AstContainer, Code, CodeMacros } from './types'
  * If a code line inserted in the template is falsy (null / undefined), it is ignored.
  * @todo : should not have to check for falsy codeLine has it should be typechecked.
  */
-const render = (macros: CodeMacros, ast: AstContainer): Code => {
-    return ast.content
+const render = (macros: CodeMacros, sequence: AstSequence): Code => {
+    return sequence.content
         .map((element) => {
             if (typeof element === 'string') {
                 return element

@@ -27,19 +27,19 @@ import {
     GlobalCodeDefinition,
     CompilerTarget,
 } from './types'
-import { AstContainer } from '../ast/types'
-import { Ast } from '../ast/declare'
+import { AstSequence } from '../ast/types'
+import { ast } from '../ast/declare'
 
-type GenerateImportExportFunction = (imprt: GlobalCodeDefinitionImport) => AstContainer
+type GenerateImportExportFunction = (imprt: GlobalCodeDefinitionImport) => AstSequence
 
 export default (
     target: CompilerTarget,
     dependencies: Array<GlobalCodeDefinition>,
     generateImport: GenerateImportExportFunction,
     generateExport: GenerateImportExportFunction
-): AstContainer =>
+): AstSequence =>
     // prettier-ignore
-    Ast`
+    ast`
         ${collectImports(dependencies).map(generateImport)}
         ${collectExports(target, dependencies).map(generateExport)}
     `

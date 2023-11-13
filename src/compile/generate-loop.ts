@@ -21,7 +21,7 @@
 import { getNodeImplementation } from './compile-helpers'
 import { getters } from '../dsp-graph'
 import { Compilation } from './types'
-import { Ast } from '../ast/declare'
+import { ast } from '../ast/declare'
 
 export default (compilation: Compilation) => {
     const {
@@ -34,7 +34,7 @@ export default (compilation: Compilation) => {
     const { globs } = codeVariableNames
 
     // prettier-ignore
-    return Ast`
+    return ast`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
             ${graphTraversalLoop.map((nodeId) => {

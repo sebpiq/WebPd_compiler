@@ -18,63 +18,63 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** Code stored in string variable for later evaluation. */
+/** 
+ * Code string, either provided as part of an AST, 
+ * or the result of a compilation operation 
+ */
 export type Code = string
 
-/** Name of a variable in generated code */
-export type CodeVariableName = string
+/** Name of a variable */
+export type VariableName = string
 
+/** Name of a type */
 export type TypeName = string
 
-
-
-export interface AstElement {
+/** Base type for all AST elements */
+export interface AstElementBase {
     astType: string
 }
 
+export type AstElement = AstSequence | AstVar | AstConstVar | AstFunc | AstClass
 
-
-export type AstContent =
-    | VarDeclaration
-    | ConstVarDeclaration
-    | FuncDeclaration
-    | ClassDeclaration
+export type AstSequenceContent =
+    | AstVar
+    | AstConstVar
+    | AstFunc
+    | AstClass
     | Code
 
-export interface AstContainer extends AstElement {
-    astType: 'Container'
-    content: Array<AstContent>
+export interface AstSequence extends AstElementBase {
+    astType: 'Sequence'
+    content: Array<AstSequenceContent>
 }
 
-
-
-
-export interface BaseVarDeclaration extends AstElement {
-    name: CodeVariableName
+export interface AstVarBase extends AstElementBase {
+    name: VariableName
     type: TypeName
-    value?: AstContainer
+    value?: AstSequence
 }
 
-export interface VarDeclaration extends BaseVarDeclaration {
+export interface AstVar extends AstVarBase {
     astType: 'Var'
 }
 
-export interface ConstVarDeclaration extends BaseVarDeclaration {
+export interface AstConstVar extends AstVarBase {
     astType: 'ConstVar'
 }
 
-export interface FuncDeclaration extends AstElement {
+export interface AstFunc extends AstElementBase {
     astType: 'Func'
-    name: CodeVariableName
-    args: Array<VarDeclaration>
+    name: VariableName
+    args: Array<AstVar>
     returnType: TypeName
-    body: AstContainer
+    body: AstSequence
 }
 
-export interface ClassDeclaration extends AstElement {
+export interface AstClass extends AstElementBase {
     astType: 'Class'
-    name: CodeVariableName
-    members: Array<VarDeclaration>
+    name: VariableName
+    members: Array<AstVar>
 }
 
 /**
@@ -82,8 +82,8 @@ export interface ClassDeclaration extends AstElement {
  * Each target language supported must implement the full set of macros.
  */
 export type CodeMacros = {
-    Var: (declaration: VarDeclaration, renderedValue: Code) => Code
-    ConstVar: (declaration: ConstVarDeclaration, renderedValue: Code) => Code
-    Func: (declaration: FuncDeclaration, renderedBody: Code) => Code
-    Class: (declaration: ClassDeclaration) => Code
+    Var: (declaration: AstVar, renderedValue: Code) => Code
+    ConstVar: (declaration: AstConstVar, renderedValue: Code) => Code
+    Func: (declaration: AstFunc, renderedBody: Code) => Code
+    Class: (declaration: AstClass) => Code
 }

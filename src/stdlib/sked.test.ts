@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { AstRaw, ConstVar, Func, Var } from '../ast/declare'
+import { Sequence, ConstVar, Func, Var } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import { core } from './core'
 import { sked } from './sked'
@@ -258,7 +258,7 @@ describe('sked', () => {
         [
             core.codeGenerator,
             sked,
-            () => AstRaw([
+            () => Sequence([
                 Var('Array<Int>', 'received', '[]'),
                 Func('initializeTests', [], 'void')`received = []`,
             ]),

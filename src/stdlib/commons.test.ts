@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { Ast, AstRaw, ConstVar, Func, Var } from '../ast/declare'
+import { ast, Sequence, ConstVar, Func, Var } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import {
     commonsCore,
@@ -40,7 +40,7 @@ describe('commons', () => {
                     ${ConstVar(
                         'SkedId',
                         'subscription',
-                        Ast`commons_subscribeArrayChanges(
+                        ast`commons_subscribeArrayChanges(
                             'array1', 
                             ${Func('callback', [], 'void')`
                                 callbackCallCounter++
@@ -80,7 +80,7 @@ describe('commons', () => {
             commonsArrays.codeGenerator,
             commonsWaitEngineConfigure,
             commonsWaitFrame,
-            () => AstRaw([
+            () => Sequence([
                 Var('Int', 'callbackCallCounter', '0'),
             ])
         ]

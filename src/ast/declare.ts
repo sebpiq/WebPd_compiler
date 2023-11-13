@@ -18,79 +18,70 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { countTo } from '../functional-helpers'
-import { AstContent, AstElement, Code, CodeVariableName } from './types'
+import { AstElement, AstSequenceContent, Code, VariableName } from './types'
 import {
     TypeName,
-    VarDeclaration,
-    ConstVarDeclaration,
-    AstContainer,
-    FuncDeclaration,
-    ClassDeclaration,
+    AstVar,
+    AstConstVar,
+    AstSequence,
+    AstFunc,
+    AstClass,
 } from './types'
 
-type AstContentRaw = AstContent | AstContainer | null | number
+type AstContentRaw = AstSequenceContent | AstSequence | null | number
 
 type AstContentRawNested = Array<AstContentRawNested | AstContentRaw>
 
 export const Var = (
     typeName: TypeName,
-    name: CodeVariableName,
-    value?: Code | AstContainer
-): VarDeclaration =>
+    name: VariableName,
+    value?: Code | AstSequence
+): AstVar =>
     _preventToString({
         astType: 'Var',
         name,
         type: typeName,
-        value: typeof value === 'string' ? AstRaw([value]) : value,
+        value: typeof value === 'string' ? Sequence([value]) : value,
     })
 
 export const ConstVar = (
     typeName: TypeName,
-    name: CodeVariableName,
-    value?: Code | AstContainer
-): ConstVarDeclaration =>
+    name: VariableName,
+    value?: Code | AstSequence
+): AstConstVar =>
     _preventToString({
         astType: 'ConstVar',
         name,
         type: typeName,
-        value: typeof value === 'string' ? AstRaw([value]) : value,
+        value: typeof value === 'string' ? Sequence([value]) : value,
     })
 
 export const Func =
-    (name: string, args: Array<VarDeclaration>, returnType: Code) =>
+    (name: string, args: Array<AstVar>, returnType: Code) =>
     (
         strings: ReadonlyArray<Code>,
         ...content: AstContentRawNested
-    ): FuncDeclaration =>
+    ): AstFunc =>
         _preventToString({
             astType: 'Func',
             name,
             args,
             returnType,
-            body: Ast(strings, ...content),
+            body: ast(strings, ...content),
         })
 
 export const Class = (
     name: string,
-    members: Array<VarDeclaration>
-): ClassDeclaration =>
+    members: Array<AstVar>
+): AstClass =>
     _preventToString({
         astType: 'Class',
         name,
         members,
     })
 
-export const Ast = (
-    strings: ReadonlyArray<Code>,
-    ...content: AstContentRawNested
-): AstContainer =>
-    _preventToString({
-        astType: 'Container',
-        content: _processRawContent(_intersperse(strings, content)),
-    })
-
-export const AstRaw = (content: AstContentRawNested): AstContainer => ({
-    astType: 'Container',
+export const Sequence = (content: AstContentRawNested): AstSequence => ({
+    astType: 'Sequence',
     content: _processRawContent(
         _intersperse(
             content,
@@ -99,10 +90,19 @@ export const AstRaw = (content: AstContentRawNested): AstContainer => ({
     ),
 })
 
+export const ast = (
+    strings: ReadonlyArray<Code>,
+    ...content: AstContentRawNested
+): AstSequence =>
+    _preventToString({
+        astType: 'Sequence',
+        content: _processRawContent(_intersperse(strings, content)),
+    })
+
 export const _processRawContent = (
     content: AstContentRawNested
-): Array<AstContent> => {
-    // 1. Flatten arrays and AstContainer, filter out nulls, and convert numbers to strings
+): Array<AstSequenceContent> => {
+    // 1. Flatten arrays and AstSequence, filter out nulls, and convert numbers to strings
     // Basically converts input to an Array<AstContent>.
     const flattenedAndFiltered = content.flatMap((element) => {
         if (typeof element === 'string') {
@@ -121,7 +121,7 @@ export const _processRawContent = (
                 )
             } else if (
                 typeof element === 'object' &&
-                element.astType === 'Container'
+                element.astType === 'Sequence'
             ) {
                 return element.content
             } else {
@@ -132,7 +132,7 @@ export const _processRawContent = (
 
     // 2. Combine adjacent strings
     const [combinedContent, remainingString] = flattenedAndFiltered.reduce<
-        [Array<AstContent>, string]
+        [Array<AstSequenceContent>, string]
     >(
         ([combinedContent, currentString], element) => {
             if (typeof element === 'string') {
@@ -174,9 +174,13 @@ const _intersperse = (
         )
 }
 
+/**
+ * Prevents AST elements from being rendered as a string, as this is 
+ * most likely an error due to unproper use of `ast`. 
+ * Deacivated. Activate for debugging by uncommenting the line below.
+ */
 const _preventToString = <T extends AstElement>(element: T): T => ({
     ...element,
-    // toString: () => {
-    //     throw new Error(`Rendering element ${element.astType} as string is probably an error`)
-    // }
+    // Uncomment this to activate
+    // toString: () => { throw new Error(`Rendering element ${elemennt.astType} as string is probably an error`) }
 })

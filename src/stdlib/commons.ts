@@ -18,12 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstRaw, ConstVar, Func, Var } from '../ast/declare'
+import { Sequence, ConstVar, Func, Var } from '../ast/declare'
 import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 import { sked } from './sked'
 
 export const commonsCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         ConstVar('Skeduler', '_commons_ENGINE_LOGGED_SKEDULER', 'sked_create(true)'),
         ConstVar('Skeduler', '_commons_FRAME_SKEDULER', 'sked_create(false)'),
         Func('_commons_emitEngineConfigure', [], 'void')`
@@ -39,7 +39,7 @@ export const commonsCore: GlobalCodeGeneratorWithSettings = {
 }
 
 export const commonsArrays: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         ConstVar('Map<string, FloatArray>', '_commons_ARRAYS', 'new Map()'),
         ConstVar('Skeduler', '_commons_ARRAYS_SKEDULER', 'sked_create(false)'),
 
@@ -97,7 +97,7 @@ export const commonsArrays: GlobalCodeGeneratorWithSettings = {
 }
 
 export const commonsWaitEngineConfigure: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         /** 
          * @param callback Called when the engine is configured, or immediately if the engine
          * was already configured.
@@ -112,7 +112,7 @@ export const commonsWaitEngineConfigure: GlobalCodeGeneratorWithSettings = {
 }
 
 export const commonsWaitFrame: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         /** 
          * Schedules a callback to be called at the given frame.
          * If the frame already occurred, or is the current frame, the callback won't be executed.

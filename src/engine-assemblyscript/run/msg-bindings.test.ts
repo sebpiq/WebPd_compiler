@@ -32,7 +32,7 @@ import { core } from '../../stdlib/core'
 import { sked } from '../../stdlib/sked'
 import { msg } from '../../stdlib/msg'
 import { MessagePointer } from './types'
-import { AstRaw } from '../../ast/declare'
+import { Sequence } from '../../ast/declare'
 import render from '../../ast/render'
 import macros from '../compile/macros'
 
@@ -68,7 +68,7 @@ describe('msg-bindings', () => {
                 channelCount: { in: 2, out: 2 },
             },
         }
-        return render(macros, AstRaw([
+        return render(macros, Sequence([
             core.codeGenerator(context),
             sked(context),
             msg.codeGenerator(context),

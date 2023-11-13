@@ -19,11 +19,11 @@
  */
 
 import { GlobalCodeGenerator } from '../compile/types'
-import { AstRaw, Class, ConstVar, Func, Var } from '../ast/declare'
-import { AstContent } from '../ast/types'
+import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
+import { AstSequenceContent } from '../ast/types'
 
 export const sked: GlobalCodeGenerator = ({target}) => {
-    const content: Array<AstContent> = []
+    const content: Array<AstSequenceContent> = []
     if (target === 'assemblyscript') {
         content.push(`
             type SkedCallback = (event: SkedEvent) => void
@@ -33,7 +33,7 @@ export const sked: GlobalCodeGenerator = ({target}) => {
         `)
     }
 
-    return AstRaw([
+    return Sequence([
         ...content,
         
         /** 

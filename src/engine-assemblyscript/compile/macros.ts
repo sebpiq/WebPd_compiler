@@ -18,19 +18,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { ClassDeclaration, CodeMacros, ConstVarDeclaration, FuncDeclaration, VarDeclaration } from '../../ast/types'
+import { AstClass, CodeMacros, AstConstVar, AstFunc, AstVar } from '../../ast/types'
 import { Code } from '../../ast/types'
 
-const Var = (declaration: VarDeclaration, renderedValue: Code) =>
+const Var = (declaration: AstVar, renderedValue: Code) =>
     `let ${declaration.name}: ${declaration.type} = ${renderedValue}`
 
-const ConstVar = (declaration: ConstVarDeclaration, renderedValue: Code) =>
+const ConstVar = (declaration: AstConstVar, renderedValue: Code) =>
     `const ${declaration.name}: ${declaration.type} = ${renderedValue}`
 
-const Func = (declaration: FuncDeclaration, renderedBody: Code) => 
+const Func = (declaration: AstFunc, renderedBody: Code) => 
     `function ${declaration.name}(${declaration.args.map(arg => `${arg.name}: ${arg.type}`).join(', ')}): ${declaration.returnType} {${renderedBody}}`
 
-const Class = (declaration: ClassDeclaration) => 
+const Class = (declaration: AstClass) => 
 `class ${declaration.name} {
 ${declaration.members.map(
     varDeclaration => `${varDeclaration.name}: ${varDeclaration.type}`

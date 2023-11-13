@@ -19,14 +19,14 @@
  */
 
 import { Compilation } from './types'
-import { AstContainer } from '../ast/types'
-import { AstRaw, Func, Var } from '../ast/declare'
+import { AstSequence } from '../ast/types'
+import { Sequence, Func, Var } from '../ast/declare'
 
 export default ({
     codeVariableNames: { globs },
-}: Compilation): AstContainer =>
+}: Compilation): AstSequence =>
     // prettier-ignore
-    AstRaw([
+    Sequence([
         Var('Int', globs.iterFrame, '0'),
         Var('Int', globs.frame, '0'),
         Var('Int', globs.blockSize, '0'),

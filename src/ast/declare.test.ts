@@ -19,15 +19,15 @@
  */
 import assert from 'assert'
 import {
-    Ast,
-    AstRaw,
+    ast,
+    Sequence,
     Class,
     ConstVar,
     Func,
     Var,
     _processRawContent,
 } from './declare'
-import { AstContainer } from './types'
+import { AstSequence, AstFunc } from './types'
 
 describe('declare', () => {
     describe('_processRawContent', () => {
@@ -68,17 +68,17 @@ describe('declare', () => {
             )
         })
 
-        it('should expand AstContainer', () => {
+        it('should expand AstSequence', () => {
             const var1 = Var('Int', 'bla')
             const var2 = Var('Int', 'blu')
-            const ast1: AstContainer = {
-                astType: 'Container',
+            const ast1: AstSequence = {
+                astType: 'Sequence',
                 content: [var1, 'blo', var2],
             }
 
             const var3 = Var('Int', 'bli')
-            const ast2: AstContainer = {
-                astType: 'Container',
+            const ast2: AstSequence = {
+                astType: 'Sequence',
                 content: [var3, 'bly'],
             }
             assert.deepStrictEqual(
@@ -87,7 +87,7 @@ describe('declare', () => {
             )
         })
 
-        it('should leave other ast elements untouched', () => {
+        it('should leave other AST elements untouched', () => {
             const var1 = Var('Int', 'bla')
             const var2 = Var('Int', 'blu')
             const func1 = Func('myFunc', [], 'void')`
@@ -105,12 +105,12 @@ describe('declare', () => {
         })
     })
 
-    describe('AstRaw', () => {
+    describe('Sequence', () => {
         it('should intersperse newlines between elements', () => {
             const var1 = Var('Int', 'bla')
-            const ast = AstRaw(['a', 'b', var1, 'c'])
-            assert.deepStrictEqual(ast, {
-                astType: 'Container',
+            const sequence = Sequence(['a', 'b', var1, 'c'])
+            assert.deepStrictEqual<AstSequence>(sequence, {
+                astType: 'Sequence',
                 content: ['a\nb\n', var1, '\nc'],
             })
         })
@@ -120,12 +120,12 @@ describe('declare', () => {
         it('should intersperse newlines between array elements, but not mess with top-level strings', () => {
             const var1 = Var('Int', 'bla', '1')
             const var2 = ConstVar('Int', 'blu', '3')
-            const ast = Ast`
+            const sequence = ast`
                 ${var1}
                 bla = 2
                 ${var2}`
-            assert.deepStrictEqual(ast, {
-                astType: 'Container',
+            assert.deepStrictEqual<AstSequence>(sequence, {
+                astType: 'Sequence',
                 content: [
                     '\n                ',
                     var1,
@@ -144,7 +144,7 @@ describe('declare', () => {
                 'void'
             )`const a = 1`
 
-            assert.deepStrictEqual(astFunc, {
+            assert.deepStrictEqual<AstFunc>(astFunc, {
                 astType: 'Func',
                 name: 'myFunc',
                 args: [
@@ -163,7 +163,7 @@ describe('declare', () => {
                 ],
                 returnType: 'void',
                 body: {
-                    astType: 'Container',
+                    astType: 'Sequence',
                     content: ['const a = 1'],
                 },
             })
@@ -175,20 +175,20 @@ describe('declare', () => {
                 ${ConstVar('string', 'b', '"HELLO"')}
                 return b`
 
-            assert.deepStrictEqual(astFunc, {
+            assert.deepStrictEqual<AstFunc>(astFunc, {
                 astType: 'Func',
                 name: 'myFunc',
                 args: [],
                 returnType: 'string',
                 body: {
-                    astType: 'Container',
+                    astType: 'Sequence',
                     content: [
                         '\n                ',
                         {
                             astType: 'Var',
                             name: 'a',
                             type: 'number',
-                            value: { astType: 'Container', content: ['1'] },
+                            value: { astType: 'Sequence', content: ['1'] },
                         },
                         '\n                ',
                         {
@@ -196,7 +196,7 @@ describe('declare', () => {
                             name: 'b',
                             type: 'string',
                             value: {
-                                astType: 'Container',
+                                astType: 'Sequence',
                                 content: ['"HELLO"'],
                             },
                         },
@@ -214,13 +214,13 @@ describe('declare', () => {
                 return 'hello'
             `
 
-            assert.deepStrictEqual(astFunc, {
+            assert.deepStrictEqual<AstFunc>(astFunc, {
                 astType: 'Func',
                 name: 'myFunc',
                 args: [],
                 returnType: 'string',
                 body: {
-                    astType: 'Container',
+                    astType: 'Sequence',
                     content: [
                         '\n                ',
                         {
@@ -229,7 +229,7 @@ describe('declare', () => {
                             args: [],
                             returnType: 'void',
                             body: {
-                                astType: 'Container',
+                                astType: 'Sequence',
                                 content: [
                                     '\n                    return\n                ',
                                 ],

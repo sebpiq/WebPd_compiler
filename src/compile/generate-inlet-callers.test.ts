@@ -23,8 +23,8 @@ import { makeCompilation } from '../test-helpers'
 import { NodeImplementations } from './types'
 import generateInletCallers from './generate-inlet-callers'
 import precompile from './precompile'
-import { AstContainer } from '../ast/types'
-import { Ast } from '../ast/declare'
+import { AstSequence } from '../ast/types'
+import { ast } from '../ast/declare'
 
 describe('generateInletCallers', () => {
     it('should compile declared inlet callers', () => {
@@ -40,7 +40,7 @@ describe('generateInletCallers', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': Ast`// [type1] message receiver`,
+                    '0': ast`// [type1] message receiver`,
                 }),
             },
         }
@@ -53,12 +53,12 @@ describe('generateInletCallers', () => {
 
         precompile(compilation)
 
-        const ast = generateInletCallers(compilation)
+        const sequence = generateInletCallers(compilation)
 
-        assert.deepStrictEqual<AstContainer>(
-            ast,
+        assert.deepStrictEqual<AstSequence>(
+            sequence,
             {
-                astType: 'Container',
+                astType: 'Sequence',
                 content: [
                     {
                         astType: 'Func',
@@ -73,7 +73,7 @@ describe('generateInletCallers', () => {
                         ],
                         returnType: 'void',
                         body: {
-                            astType: 'Container',
+                            astType: 'Sequence',
                             content: ['node1_RCVS_0(m)']
                         }
                     },

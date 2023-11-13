@@ -20,18 +20,18 @@
 
 import { DspGraph } from '../dsp-graph'
 import { Compilation } from './types'
-import { AstContainer, CodeVariableName } from '../ast/types'
-import { AstRaw } from '../ast/declare'
+import { AstSequence, VariableName } from '../ast/types'
+import { Sequence } from '../ast/declare'
 
 export default (
     { outletListenerSpecs, codeVariableNames }: Compilation,
     generateOutletListener: (
-        variableName: CodeVariableName,
+        variableName: VariableName,
         nodeId: DspGraph.NodeId,
         outletId: DspGraph.PortletId
-    ) => AstContainer
+    ) => AstSequence
 ) =>
-    AstRaw([
+    Sequence([
         Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
             outletIds.map((outletId) => {
                 const listenerVariableName =

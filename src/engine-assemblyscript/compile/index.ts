@@ -35,7 +35,7 @@ import generateDeclarationsDependencies from '../../compile/generate-declaration
 import generateImportsExports from '../../compile/generate-imps-exps'
 import render from '../../ast/render'
 import macros from './macros'
-import { Ast } from '../../ast/declare'
+import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
@@ -48,7 +48,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     ]
 
     // prettier-ignore
-    return render(macros, Ast`
+    return render(macros, ast`
         ${generateDeclarationsGlobals(compilation)}
         ${generateDeclarationsDependencies(compilation, dependencies)}
         ${generateDeclarationsNodes(compilation)}
@@ -57,7 +57,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
         ${generateInletCallers(compilation)}
         ${generateOutletListeners(compilation, (variableName) => 
-            Ast`export declare function ${variableName}(m: Message): void`)}
+            ast`export declare function ${variableName}(m: Message): void`)}
 
         const metadata: string = '${JSON.stringify(metadata)}'
         let ${globs.input}: FloatArray = createFloatArray(0)
@@ -91,10 +91,10 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         ${generateImportsExports(
             'assemblyscript',
             dependencies,
-            ({ name, args, returns }) => Ast`export declare function ${name} (${
+            ({ name, args, returns }) => ast`export declare function ${name} (${
                 args.map((a) => `${a[0]}: ${a[1]}`).join(',')
             }): ${returns}`, 
-            ({ name }) => Ast`export { ${name} }`
+            ({ name }) => ast`export { ${name} }`
         )}
     `)
 }

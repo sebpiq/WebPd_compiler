@@ -19,12 +19,12 @@
  */
 import { getFloatArrayType } from '../run/run-helpers'
 import { Compilation } from './types'
-import { Ast } from '../ast/declare'
+import { ast } from '../ast/declare'
 
 /**
  * Embed arrays passed to the compiler in the compiled module.
  */
-export default (compilation: Compilation) => Ast`
+export default (compilation: Compilation) => ast`
     ${Object.entries(compilation.arrays).map(
         ([arrayName, array]) => `
         commons_setArray("${arrayName}", new ${

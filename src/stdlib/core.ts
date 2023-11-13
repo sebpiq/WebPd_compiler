@@ -19,7 +19,7 @@
  */
 
 import { GlobalCodeGeneratorWithSettings } from '../compile/types'
-import { AstRaw, Func, Var } from '../ast/declare'
+import { Sequence, Func, Var } from '../ast/declare'
 
 export const core: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ target, audioSettings: { bitDepth } }) => {
@@ -44,7 +44,7 @@ export const core: GlobalCodeGeneratorWithSettings = {
         }
 
         if (target === 'assemblyscript') {
-            return AstRaw([
+            return Sequence([
                 `
                 type FloatArray = ${FloatArray}
                 type Float = ${Float}
@@ -93,7 +93,7 @@ export const core: GlobalCodeGeneratorWithSettings = {
                 `
             ])
         } else if (target === 'javascript') {
-            return AstRaw([
+            return Sequence([
                 `
                 const i32 = (v) => v
                 const f32 = i32

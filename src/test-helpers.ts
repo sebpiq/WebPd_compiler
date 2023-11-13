@@ -27,8 +27,8 @@ import {
     GlobalCodeGeneratorContext,
     GlobalCodeGeneratorWithSettings,
 } from './compile/types'
-import { AstContainer, Code, FuncDeclaration } from './ast/types'
-import { Ast, AstRaw, Func, Var } from './ast/declare'
+import { AstSequence, Code, AstFunc } from './ast/types'
+import { ast, Sequence, Func, Var } from './ast/declare'
 import { Engine, Module, RawModule } from './run/types'
 import { generateCodeVariableNames } from './compile/code-variable-names'
 import { writeFile } from 'fs/promises'
@@ -212,7 +212,7 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
 export const runTestSuite = (
     tests: Array<{
         description: string
-        testFunction: (declareTestFunction: ReturnType<typeof Func>, target: CompilerTarget) => FuncDeclaration
+        testFunction: (declareTestFunction: ReturnType<typeof Func>, target: CompilerTarget) => AstFunc
     }>,
     dependencies: Array<GlobalCodeDefinition> = []
 ) => {
@@ -233,13 +233,13 @@ export const runTestSuite = (
 
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
                 tests.map(({ testFunction }, i) => ({
-                    codeGenerator: () => AstRaw([
+                    codeGenerator: () => Sequence([
                         testFunction(Func(testFunctionNames[i], [], 'void'), target)
                     ]),
                     exports: [{ name: testFunctionNames[i] }],
                 }))
 
-            let ast = AstRaw([
+            let sequence = Sequence([
                 Func('reportTestFailure', [
                     Var('string', 'msg')
                 ], 'void')`
@@ -322,7 +322,7 @@ export const runTestSuite = (
 
             testModules.push([
                 testParameters,
-                await createTestModule(target, bitDepth, render(getMacros(target), ast)),
+                await createTestModule(target, bitDepth, render(getMacros(target), sequence)),
             ])
         }
     })
@@ -350,8 +350,8 @@ export const runTestSuite = (
 const generateTestExports = (
     target: CompilerTarget,
     exports: Array<GlobalCodeDefinitionExport>
-): AstContainer =>
-    Ast`${renderSwitch(
+): AstSequence =>
+    ast`${renderSwitch(
         [
             target === 'assemblyscript',
             exports.map(({ name }) => `export { ${name} }`),

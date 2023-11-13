@@ -34,12 +34,12 @@ import {
     NodeImplementation,
     NodeImplementations,
 } from './types'
-import { AstRaw } from '../ast/declare'
+import { Sequence } from '../ast/declare'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
-            someNodeType: { generateLoop: () => AstRaw([]) },
+            someNodeType: { generateLoop: () => Sequence([]) },
             boringNodeType: {},
         }
 
@@ -221,21 +221,21 @@ describe('compile-helpers', () => {
     describe('collectExports', () => {
         it('should collect exports recursively and remove duplicates', () => {
             const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([]),
+                codeGenerator: () => Sequence([]),
                 exports: [{ name: 'ex1' }, { name: 'ex3' }],
             }
             const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([]),
+                codeGenerator: () => Sequence([]),
                 // no exports here shouldnt break the chain
-                dependencies: [() => AstRaw([]), codeDefinition1],
+                dependencies: [() => Sequence([]), codeDefinition1],
             }
             const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([]),
+                codeGenerator: () => Sequence([]),
                 exports: [{ name: 'ex4' }],
                 dependencies: [codeDefinition2],
             }
             const dependencies: Array<GlobalCodeDefinition> = [
-                () => AstRaw([]),
+                () => Sequence([]),
                 codeDefinition3,
             ]
 
@@ -247,9 +247,9 @@ describe('compile-helpers', () => {
         })
 
         it('should keep only exports for specified target', () => {
-            const codeGenerator1 = () => AstRaw([])
-            const codeGenerator2 = () => AstRaw([])
-            const codeGenerator3 = () => AstRaw([])
+            const codeGenerator1 = () => Sequence([])
+            const codeGenerator2 = () => Sequence([])
+            const codeGenerator3 = () => Sequence([])
 
             const codeDefinition1: GlobalCodeGeneratorWithSettings = {
                 codeGenerator: codeGenerator1,
@@ -286,24 +286,24 @@ describe('compile-helpers', () => {
     describe('collectImports', () => {
         it('should collect imports recursively and remove duplicates', () => {
             const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([]),
+                codeGenerator: () => Sequence([]),
                 imports: [
                     { name: 'ex1', args: [], returns: 'void' },
                     { name: 'ex3', args: [], returns: 'void' },
                 ],
             }
             const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([]),
+                codeGenerator: () => Sequence([]),
                 // no imports here shouldnt break the chain
-                dependencies: [() => AstRaw([]), codeDefinition1],
+                dependencies: [() => Sequence([]), codeDefinition1],
             }
             const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([]),
+                codeGenerator: () => Sequence([]),
                 imports: [{ name: 'ex4', args: [], returns: 'void' }],
                 dependencies: [codeDefinition2],
             }
             const dependencies: Array<GlobalCodeDefinition> = [
-                () => AstRaw([]),
+                () => Sequence([]),
                 codeDefinition3,
             ]
 

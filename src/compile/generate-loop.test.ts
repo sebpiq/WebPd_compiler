@@ -23,23 +23,23 @@ import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
 import generateLoop from './generate-loop'
 import { makeGraph } from '../dsp-graph/test-helpers'
-import { Ast } from '../ast/declare'
-import { AstContainer } from '../ast/types'
-import { normalizeCodeForTests } from '../ast/test-helpers'
+import { ast } from '../ast/declare'
+import { AstSequence } from '../ast/types'
+import { normalizeAstSequence } from '../ast/test-helpers'
 
 describe('generateLoop', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         print: {},
         'osc~': {
             generateLoop: ({ node }) =>
-                Ast`// [osc~] : frequency ${node.args.frequency}`,
+                ast`// [osc~] : frequency ${node.args.frequency}`,
         },
         '+~': {
-            generateLoop: ({ node }) => Ast`// [+~] : value ${node.args.value}`,
+            generateLoop: ({ node }) => ast`// [+~] : value ${node.args.value}`,
         },
         'dac~': {
             generateLoop: ({ compilation: { audioSettings } }) =>
-                Ast`// [dac~] : channelCount ${audioSettings.channelCount.out}`,
+                ast`// [dac~] : channelCount ${audioSettings.channelCount.out}`,
         },
     }
 
@@ -97,10 +97,10 @@ describe('generateLoop', () => {
             },
         })
 
-        const ast = generateLoop(compilation)
+        const sequence = generateLoop(compilation)
 
-        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
-            astType: 'Container',
+        assert.deepStrictEqual<AstSequence>(normalizeAstSequence(sequence), {
+            astType: 'Sequence',
             content: [
                 `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
                 '// [osc~] : frequency 440\n' +
@@ -133,10 +133,10 @@ describe('generateLoop', () => {
 
         compilation.precompilation.node1.outs['0'] = 'node1_OUTS_0'
 
-        const ast = generateLoop(compilation)
+        const sequence = generateLoop(compilation)
 
-        assert.deepStrictEqual(normalizeCodeForTests(ast), {
-            astType: 'Container',
+        assert.deepStrictEqual<AstSequence>(normalizeAstSequence(sequence), {
+            astType: 'Sequence',
             content: [
                 'for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n' + 
                 'node1_OUTS_0 = BLA\n' + 

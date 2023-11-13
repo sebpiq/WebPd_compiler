@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstContainer } from '../ast/types'
-import { CodeVariableName, Code } from '../ast/types'
+import { AstSequence } from '../ast/types'
+import { VariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 
 // -------------------------------- COMPILATION -------------------------------- //
@@ -63,10 +63,10 @@ export interface Compilation {
 
 // -------------------------------- CODE GENERATION -------------------------------- //
 export interface NodeVariableNames {
-    outs: { [portletId: DspGraph.PortletId]: CodeVariableName }
-    snds: { [portletId: DspGraph.PortletId]: CodeVariableName }
-    rcvs: { [portletId: DspGraph.PortletId]: CodeVariableName }
-    state: { [key: string]: CodeVariableName }
+    outs: { [portletId: DspGraph.PortletId]: VariableName }
+    snds: { [portletId: DspGraph.PortletId]: VariableName }
+    rcvs: { [portletId: DspGraph.PortletId]: VariableName }
+    state: { [key: string]: VariableName }
 }
 
 /**
@@ -97,23 +97,23 @@ export interface CodeVariableNames {
     /** Namespace for inlet callers */
     inletCallers: {
         [nodeId: DspGraph.NodeId]: {
-            [outletId: DspGraph.PortletId]: CodeVariableName
+            [outletId: DspGraph.PortletId]: VariableName
         }
     }
 
     /** Namespace for outlet listeners callbacks */
     outletListeners: {
         [nodeId: DspGraph.NodeId]: {
-            [outletId: DspGraph.PortletId]: CodeVariableName
+            [outletId: DspGraph.PortletId]: VariableName
         }
     }
 }
 
 export interface PrecompiledNodeCode {
-    outs: { [portletId: DspGraph.PortletId]: CodeVariableName }
-    snds: { [portletId: DspGraph.PortletId]: CodeVariableName }
-    rcvs: { [portletId: DspGraph.PortletId]: CodeVariableName }
-    ins: { [portletId: DspGraph.PortletId]: CodeVariableName }
+    outs: { [portletId: DspGraph.PortletId]: VariableName }
+    snds: { [portletId: DspGraph.PortletId]: VariableName }
+    rcvs: { [portletId: DspGraph.PortletId]: VariableName }
+    ins: { [portletId: DspGraph.PortletId]: VariableName }
 }
 
 /**
@@ -130,12 +130,12 @@ export interface GlobalCodeGeneratorContext {
 }
 
 /** Simplest form of generator for global code */
-export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => AstContainer
+export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => AstSequence
 
 export interface GlobalCodeDefinitionImport {
     name: string
-    args: Array<[CodeVariableName, CodeVariableName]>
-    returns: CodeVariableName
+    args: Array<[VariableName, VariableName]>
+    returns: VariableName
 }
 
 export interface GlobalCodeDefinitionExport {
@@ -177,7 +177,7 @@ export interface NodeImplementation<
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
-    }) => AstContainer
+    }) => AstSequence
 
     /**
      * Generates the code that will be ran each iteration of the loop for that node instance.
@@ -193,7 +193,7 @@ export interface NodeImplementation<
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
-    }) => AstContainer
+    }) => AstSequence
 
     /**
      * Generates the code that will be ran each iteration of the loop for that node instance.
@@ -221,7 +221,7 @@ export interface NodeImplementation<
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => {
-        [inletId: DspGraph.PortletId]: AstContainer
+        [inletId: DspGraph.PortletId]: AstSequence
     }
 
     /** List of dependencies for this node type */

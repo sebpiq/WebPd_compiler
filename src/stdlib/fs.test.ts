@@ -29,7 +29,7 @@ import {
 import { bufCore, bufPushPull } from './buf'
 import { core } from './core'
 import { msg } from './msg'
-import { AstRaw, ConstVar, Func, Var } from '../ast/declare'
+import { Sequence, ConstVar, Func, Var } from '../ast/declare'
 
 describe('fs', () => {
     runTestSuite(
@@ -646,7 +646,7 @@ describe('fs', () => {
             fsSoundStreamCore.codeGenerator,
             fsReadSoundStream.codeGenerator,
             fsWriteSoundStream.codeGenerator,
-            () => AstRaw([
+            () => Sequence([
                 // Global test variables
                 Var('Array<string>', 'calls', '[]'),
                 Var('Array<fs_OperationId>', 'id_received', '[]'),

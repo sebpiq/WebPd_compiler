@@ -21,10 +21,10 @@
 import { getNodeImplementation } from './compile-helpers'
 import { getters } from '../dsp-graph'
 import { Compilation } from './types'
-import { AstContainer } from '../ast/types'
-import { AstRaw, Func, Var } from '../ast/declare'
+import { AstSequence } from '../ast/types'
+import { Sequence, Func, Var } from '../ast/declare'
 
-export default (compilation: Compilation): AstContainer => {
+export default (compilation: Compilation): AstSequence => {
     const {
         graph,
         graphTraversalDeclare,
@@ -40,7 +40,7 @@ export default (compilation: Compilation): AstContainer => {
     const { globs } = codeVariableNames
 
     // prettier-ignore
-    return AstRaw([
+    return Sequence([
         graphTraversalNodes.map(node => {
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
             const nodeVariableNames = codeVariableNames.nodes[node.id]

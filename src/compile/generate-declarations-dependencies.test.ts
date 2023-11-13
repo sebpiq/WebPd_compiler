@@ -24,15 +24,15 @@ import generateDeclarationsDependencies, {
     _flattenDependencies,
 } from './generate-declarations-dependencies'
 import { makeCompilation } from '../test-helpers'
-import { Ast } from '../ast/declare'
+import { ast } from '../ast/declare'
 
 describe('generate-declarations-dependencies', () => {
     const COMPILATION = makeCompilation({})
 
     describe('default', () => {
         it('should compile the global code, removing duplicates', () => {
-            const bli = Ast`"bli"`
-            const blo = Ast`"blo"`
+            const bli = ast`"bli"`
+            const blo = ast`"blo"`
             const bloGenerator: GlobalCodeGenerator = () => blo
             const generated = generateDeclarationsDependencies(COMPILATION, [
                 bloGenerator,
@@ -49,12 +49,12 @@ describe('generate-declarations-dependencies', () => {
 
     describe('_flattenDependencies', () => {
         it('should render code and dependencies recursively, dependencies should come first', () => {
-            const codeGenerator1 = () => Ast`"bla"`
-            const codeGenerator2 = () => Ast`"bli"`
-            const codeGenerator3 = () => Ast`"blo"`
-            const codeGenerator4 = () => Ast`"blu"`
-            const codeGenerator5 = () => Ast`"bly"`
-            const codeGenerator6 = () => Ast`"ble"`
+            const codeGenerator1 = () => ast`"bla"`
+            const codeGenerator2 = () => ast`"bli"`
+            const codeGenerator3 = () => ast`"blo"`
+            const codeGenerator4 = () => ast`"blu"`
+            const codeGenerator5 = () => ast`"bly"`
+            const codeGenerator6 = () => ast`"ble"`
 
             const codeDefinition1 = {
                 codeGenerator: codeGenerator2,

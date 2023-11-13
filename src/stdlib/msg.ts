@@ -19,7 +19,7 @@
  */
 
 import { GlobalCodeGeneratorWithSettings } from '../compile/types'
-import { AstRaw, Class, ConstVar, Func, Var } from '../ast/declare'
+import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 
 export const msg: GlobalCodeGeneratorWithSettings = {
     codeGenerator: ({ target }) => {
@@ -73,7 +73,7 @@ export const msg: GlobalCodeGeneratorWithSettings = {
             ], 'string')
         }
         if (target === 'assemblyscript') {
-            return AstRaw([
+            return Sequence([
                 `
                 type MessageFloatToken = Float
                 type MessageCharToken = Int
@@ -318,7 +318,7 @@ export const msg: GlobalCodeGeneratorWithSettings = {
                 `,
             ])
         } else if (target === 'javascript') {
-            return AstRaw([
+            return Sequence([
                 ConstVar('string', 'MSG_FLOAT_TOKEN', '"number"'),
                 ConstVar('string', 'MSG_STRING_TOKEN', '"string"'),
 

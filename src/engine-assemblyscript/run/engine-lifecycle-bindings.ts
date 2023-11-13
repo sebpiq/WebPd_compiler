@@ -20,7 +20,7 @@
 
 import { Bindings } from '../../run/types'
 import { mapArray, mapObject } from '../../functional-helpers'
-import { CodeVariableName } from '../../ast/types'
+import { VariableName } from '../../ast/types'
 import {
     Engine,
     EngineMetadata,
@@ -164,7 +164,7 @@ export const outletListenersImports = (
     metadata: EngineMetadata
 ) => {
     const wasmImports: {
-        [listenerName: CodeVariableName]: (
+        [listenerName: VariableName]: (
             messagePointer: MessagePointer
         ) => void
     } = {}
@@ -194,7 +194,7 @@ export const readMetadata = async (
 ): Promise<EngineMetadata> => {
     // In order to read metadata, we need to introspect the module to get the imports
     const inputImports: {
-        [listenerName: CodeVariableName]: () => void
+        [listenerName: VariableName]: () => void
     } = {}
     const wasmModule = WebAssembly.Module.imports(
         new WebAssembly.Module(wasmBuffer)

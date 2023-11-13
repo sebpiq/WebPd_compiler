@@ -35,7 +35,7 @@ import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
 import generateImportsExports from '../../compile/generate-imps-exps'
 import render from '../../ast/render'
 import macros from './macros'
-import { Ast } from '../../ast/declare'
+import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const { codeVariableNames, outletListenerSpecs, inletCallerSpecs } =
@@ -48,7 +48,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     ]
 
     // prettier-ignore
-    return render(macros, Ast`
+    return render(macros, ast`
         ${generateDeclarationsGlobals(compilation)}
         ${generateDeclarationsDependencies(compilation, dependencies)}
         ${generateDeclarationsNode(compilation)}
@@ -60,7 +60,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             variableName, 
             nodeId, 
             outletId
-        ) => Ast`const ${variableName} = (m) => {exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)}`)}
+        ) => ast`const ${variableName} = (m) => {exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)}`)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
@@ -76,7 +76,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
             outletListeners: {
                 ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
-                    Ast`${nodeId}: {
+                    ast`${nodeId}: {
                         ${outletIds.map(outletId => 
                             `"${outletId}": {onMessage: () => undefined},`)}
                     },`
@@ -84,7 +84,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             },
             inletCallers: {
                 ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
-                    Ast`${nodeId}: {
+                    ast`${nodeId}: {
                         ${inletIds.map(inletId => 
                             `"${inletId}": ${codeVariableNames.inletCallers[nodeId][inletId]},`)}
                     },`
@@ -95,11 +95,11 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         ${generateImportsExports(
             'javascript',
             dependencies,
-            ({ name }) => Ast`
+            ({ name }) => ast`
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)
             `, 
-            ({ name }) => Ast`exports.${name} = ${name}`
+            ({ name }) => ast`exports.${name} = ${name}`
         )}
     `)
 }

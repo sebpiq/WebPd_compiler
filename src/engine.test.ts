@@ -44,7 +44,7 @@ import {
     fsWriteSoundStream,
 } from './stdlib/fs'
 import { commonsArrays, commonsWaitEngineConfigure } from './stdlib/commons'
-import { Ast, AstRaw, ConstVar, Func, Var } from './ast/declare'
+import { ast, Sequence, ConstVar, Func, Var } from './ast/declare'
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
@@ -91,7 +91,7 @@ describe('Engine', () => {
                 },
             },
             nodeImplementations: {
-                DUMMY: { generateLoop: () => AstRaw([]) },
+                DUMMY: { generateLoop: () => Sequence([]) },
                 ...(extraCompilation.nodeImplementations || {}),
                 [dependenciesInjectorType]: {
                     dependencies: dependencies,
@@ -130,12 +130,12 @@ describe('Engine', () => {
                             },
                         }) =>
                             target === 'assemblyscript'
-                                ? Ast`
+                                ? ast`
                         for (let channel: Int = 0; channel < ${channelCount.out}; channel++) {
                             ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] = 2.0
                         }
                     `
-                                : Ast`
+                                : ast`
                         for (let channel = 0; channel < ${channelCount.out}; channel++) {
                             ${globs.output}[channel][${globs.iterFrame}] = 2.0
                         }
@@ -199,13 +199,13 @@ describe('Engine', () => {
                             },
                         }) =>
                             target === 'assemblyscript'
-                                ? Ast`
+                                ? ast`
                         for (let channel: Int = 0; channel < ${channelCount.in}; channel++) {
                             ${globs.output}[${globs.iterFrame} + ${globs.blockSize} * channel] 
                                 = ${globs.input}[${globs.iterFrame} + ${globs.blockSize} * channel]
                         }
                     `
-                                : Ast`
+                                : ast`
                         for (let channel = 0; channel < ${channelCount.in}; channel++) {
                             ${globs.output}[channel][${globs.iterFrame}] 
                                 = ${globs.input}[channel][${globs.iterFrame}]
@@ -273,7 +273,7 @@ describe('Engine', () => {
 
                 const nodeImplementations = {
                     DUMMY: {
-                        generateMessageReceivers: () => ({ blo: Ast`return` }),
+                        generateMessageReceivers: () => ({ blo: ast`return` }),
                     },
                 }
 
@@ -337,7 +337,7 @@ describe('Engine', () => {
                             generateDeclarations: ({
                                 globs,
                                 state,
-                            }) => AstRaw([
+                            }) => Sequence([
                                 Var('Float', state.configureCalled, '0'),
                                 `commons_waitEngineConfigure(() => {${state.configureCalled} = ${globs.sampleRate}})`
                             ]),
@@ -347,8 +347,8 @@ describe('Engine', () => {
                                 compilation: { target },
                             }) =>
                                 target === 'assemblyscript'
-                                    ? Ast`${globs.output}[0] = ${state.configureCalled}`
-                                    : Ast`${globs.output}[0][0] = ${state.configureCalled}`,
+                                    ? ast`${globs.output}[0] = ${state.configureCalled}`
+                                    : ast`${globs.output}[0][0] = ${state.configureCalled}`,
 
                             stateVariables: { configureCalled: 1 },
                         },
@@ -393,7 +393,7 @@ describe('Engine', () => {
                 'should get the array %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: GlobalCodeDefinition = () => Ast`
+                    const testCode: GlobalCodeDefinition = () => ast`
                         const array = createFloatArray(4)
                         array[0] = 123
                         array[1] = 456
@@ -421,7 +421,7 @@ describe('Engine', () => {
                 'should set the array %s',
                 async ({ target, bitDepth }) => {
                     const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: () => AstRaw([
+                        codeGenerator: () => Sequence([
                             Func('testReadArray1', [
                                 Var('Int', 'index')
                             ], 'Float') `
@@ -516,7 +516,7 @@ describe('Engine', () => {
     describe('fs', () => {
         describe('read sound file', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([
+                codeGenerator: () => Sequence([
                     Var('fs_OperationId', 'receivedId', '-1'),
                     Var('fs_OperationStatus', 'receivedStatus', '-1'),
                     Var('FloatArray[]', 'receivedSound', '[]'),
@@ -573,7 +573,7 @@ describe('Engine', () => {
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: () => AstRaw([
+                        codeGenerator: () => Sequence([
                             Func('testReceivedSound', [], 'boolean')`
                                 return receivedSound[0][0] === -1
                                     && receivedSound[0][1] === -2
@@ -640,7 +640,7 @@ describe('Engine', () => {
 
         describe('read sound stream', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([
+                codeGenerator: () => Sequence([
                     Var('fs_OperationId', 'receivedId', '-1'),
                     Var('fs_OperationStatus', 'receivedStatus', '-1'),
                     ConstVar('Int', 'channelCount', '3'),
@@ -707,7 +707,7 @@ describe('Engine', () => {
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
                     const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: () => AstRaw([
+                        codeGenerator: () => Sequence([
                             Func('testReceivedSound', [
                                 Var('fs_OperationId', 'id')
                             ], 'boolean')`
@@ -796,7 +796,7 @@ describe('Engine', () => {
 
         describe('write sound stream', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([
+                codeGenerator: () => Sequence([
                     Var('fs_OperationId', 'receivedId', '-1'),
                     Var('fs_OperationStatus', 'receivedStatus', '-1'),
                     ConstVar('Int', 'channelCount', '3'),
@@ -954,7 +954,7 @@ describe('Engine', () => {
 
         describe('write sound file', () => {
             const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => AstRaw([
+                codeGenerator: () => Sequence([
                     Var('fs_OperationId', 'receivedId', '-1'),
                     Var('fs_OperationStatus', 'receivedStatus', '-1'),
                     ConstVar('FloatArray[]', 'sound', `[
@@ -1093,7 +1093,7 @@ describe('Engine', () => {
                 }
 
                 const testCode: GlobalCodeGeneratorWithSettings = {
-                    codeGenerator: () => AstRaw([
+                    codeGenerator: () => Sequence([
                         ConstVar(
                             'Message',
                             'm1',
@@ -1199,14 +1199,14 @@ describe('Engine', () => {
                             globs,
                             node: { id },
                         }) => ({
-                            someInlet1: Ast`received.get('${id}:1').push(${globs.m});return`,
-                            someInlet2: Ast`received.get('${id}:2').push(${globs.m});return`,
+                            someInlet1: ast`received.get('${id}:1').push(${globs.m});return`,
+                            someInlet2: ast`received.get('${id}:2').push(${globs.m});return`,
                         }),
                     },
                 }
 
                 const testCode: GlobalCodeGeneratorWithSettings = {
-                    codeGenerator: () => AstRaw([
+                    codeGenerator: () => Sequence([
                         ConstVar(
                             'Map<string, Array<Message>>',
                             'received',
@@ -1316,8 +1316,8 @@ describe('Engine', () => {
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
                         generateMessageReceivers: ({ globs, snds }) => ({
-                            '0': Ast`${snds['0']}(${globs.m});return`,
-                            '1': Ast`${snds['1']}(${globs.m});return`,
+                            '0': ast`${snds['0']}(${globs.m});return`,
+                            '1': ast`${snds['1']}(${globs.m});return`,
                         }),
                     },
                 }
@@ -1367,7 +1367,7 @@ describe('Engine', () => {
                     someNodeType: {
                         generateMessageReceivers: () => ({
                             // No return so an error will be thrown
-                            someInlet: Ast``,
+                            someInlet: ast``,
                         }),
                     },
                 }

@@ -18,13 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstRaw, Class, ConstVar, Func, Var } from '../ast/declare'
+import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 import {
     GlobalCodeGenerator,
     GlobalCodeGeneratorWithSettings,
 } from '../compile/types'
 
-export const bufCore: GlobalCodeGenerator = () => AstRaw([
+export const bufCore: GlobalCodeGenerator = () => Sequence([
     /**
      * Ring buffer 
      */
@@ -56,7 +56,7 @@ export const bufCore: GlobalCodeGenerator = () => AstRaw([
 ])
 
 export const bufPushPull: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         /**
          * Pushes a block to the buffer, throwing an error if the buffer is full. 
          * If the block is written successfully, {@link buf_SoundBuffer#writeCursor} 
@@ -112,7 +112,7 @@ export const bufPushPull: GlobalCodeGeneratorWithSettings = {
 }
 
 export const bufWriteRead: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => AstRaw([
+    codeGenerator: () => Sequence([
         /**
          * Writes a sample at \`@link writeCursor\` and increments \`writeCursor\` by one.
          */
