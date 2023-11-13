@@ -70,6 +70,21 @@ export const Func =
             body: ast(strings, ...content),
         })
 
+export const AnonFunc =
+    (args: Array<AstVar>, returnType: Code) =>
+    (
+        strings: ReadonlyArray<Code>,
+        ...content: AstContentRawNested
+    ): AstFunc =>
+        _preventToString({
+            astType: 'Func',
+            name: null,
+            args,
+            returnType,
+            body: ast(strings, ...content),
+        })
+    
+
 export const Class = (
     name: string,
     members: Array<AstVar>

@@ -106,8 +106,6 @@ export interface VariableNamesIndex {
         input: string
         nullMessageReceiver: string
         nullSignal: string
-        /** Input argument for message receiver functions @todo : not a glob */
-        m: string
     }
 
     /** Namespace for inlet callers */
@@ -124,7 +122,6 @@ export interface VariableNamesIndex {
         }
     }
 }
-
 
 export interface GlobalCodeGeneratorContext {
     target: CompilerTarget
@@ -217,7 +214,7 @@ export interface NodeImplementation<
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => {
-        [inletId: DspGraph.PortletId]: AstSequence
+        [inletId: DspGraph.PortletId]: AstFunc
     }
 
     /** List of dependencies for this node type */

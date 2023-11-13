@@ -39,42 +39,56 @@ export default (compilation: Compilation): AstSequence => {
     )
     const { globs } = variableNamesIndex
 
-    // prettier-ignore
     return Sequence([
-        graphTraversalNodes.map(node => {
-            const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
+        graphTraversalNodes.map((node) => {
+            const nodeImplementation = getNodeImplementation(
+                nodeImplementations,
+                node.type
+            )
             const nodeVariableNames = variableNamesIndex.nodes[node.id]
             const nodePrecompilation = precompilation[node.id]
-            const nodeMessageReceivers = nodeImplementation.generateMessageReceivers ? 
-                nodeImplementation.generateMessageReceivers({
-                    globs,
-                    state: nodeVariableNames.state,
-                    snds: nodePrecompilation.snds,
-                    node,
-                    compilation,
-                }): {}
+            const nodeMessageReceivers =
+                nodeImplementation.generateMessageReceivers
+                    ? nodeImplementation.generateMessageReceivers({
+                          globs,
+                          state: nodeVariableNames.state,
+                          snds: nodePrecompilation.snds,
+                          node,
+                          compilation,
+                      })
+                    : {}
 
             return [
                 // 1. Declares signal outlets
-                Object.values(nodeVariableNames.outs).map(
-                    (outName) => Var('Float', outName, '0')
+                Object.values(nodeVariableNames.outs).map((outName) =>
+                    Var('Float', outName, '0')
                 ),
 
                 // 2. Declares message receivers for all message inlets.
                 Object.values(node.inlets)
                     .filter((inlet) => inlet.id in nodeVariableNames.rcvs)
                     .map((inlet) => {
-                        if (!nodeMessageReceivers[inlet.id]) {
+                        const astFunc = nodeMessageReceivers[inlet.id]
+                        if (!astFunc) {
                             throw new Error(
                                 `Message receiver for inlet "${inlet.id}" of node type "${node.type}" is not implemented`
                             )
+                        } else if (
+                            typeof astFunc !== 'object' ||
+                            astFunc.astType !== 'Func' ||
+                            astFunc.args.length !== 1 ||
+                            astFunc.args[0].type !== 'Message' ||
+                            astFunc.returnType !== 'void'
+                        ) {
+                            throw new Error(
+                                `receiver for inlet "${inlet.id}" of node type "${node.type}" should be have signature (m: Message): void`
+                            )
                         }
+
                         // prettier-ignore
-                        return Func(nodeVariableNames.rcvs[inlet.id], [
-                                Var('Message', globs.m)
-                            ], 'void')`
-                            ${nodeMessageReceivers[inlet.id]}
-                            throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${globs.m})${
+                        return Func(nodeVariableNames.rcvs[inlet.id], astFunc.args, 'void')`
+                            ${astFunc.body}
+                            throw new Error('[${node.type}], id "${node.id}", inlet "${inlet.id}", unsupported message : ' + msg_display(${astFunc.args[0].name})${
                                 debug
                                     ? " + '\\nDEBUG : remember, you must return from message receiver'"
                                     : ''})
@@ -82,13 +96,15 @@ export default (compilation: Compilation): AstSequence => {
                     }),
 
                 // 3. Custom declarations for the node
-                nodeImplementation.generateDeclarations ? nodeImplementation.generateDeclarations({
-                    globs,
-                    state: nodeVariableNames.state,
-                    snds: nodePrecompilation.snds,
-                    node,
-                    compilation,
-                }): null,
+                nodeImplementation.generateDeclarations
+                    ? nodeImplementation.generateDeclarations({
+                          globs,
+                          state: nodeVariableNames.state,
+                          snds: nodePrecompilation.snds,
+                          node,
+                          compilation,
+                      })
+                    : null,
             ]
         }),
 
@@ -96,27 +112,29 @@ export default (compilation: Compilation): AstSequence => {
         // This needs to come after all message receivers are declared since we reference them here.
         // If there are outlets listeners declared we also inject the code here.
         // Senders that don't appear in precompilation are not declared.
-        graphTraversalNodes.map(node => {
+        graphTraversalNodes.map((node) => {
             const nodeVariableNames = variableNamesIndex.nodes[node.id]
             const nodeOutletListeners = outletListenerSpecs[node.id] || []
             return Object.values(node.outlets)
-                .filter(outlet => outlet.id in nodeVariableNames.snds)
-                .map(outlet => {
-                    const hasOutletListener = nodeOutletListeners.includes(outlet.id)
+                .filter((outlet) => outlet.id in nodeVariableNames.snds)
+                .map((outlet) => {
+                    const hasOutletListener = nodeOutletListeners.includes(
+                        outlet.id
+                    )
                     const outletSinks = getters.getSinks(node, outlet.id)
                     // prettier-ignore
                     return Func(nodeVariableNames.snds[outlet.id], [
-                            Var('Message', globs.m)
+                            Var('Message', 'm')
                         ], 'void')`
                         ${[
                             hasOutletListener ? 
-                                `${variableNamesIndex.outletListeners[node.id][outlet.id]}(${globs.m})` : '',
+                                `${variableNamesIndex.outletListeners[node.id][outlet.id]}(m)` : '',
                             outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
-                                `${precompilation[sinkNodeId].rcvs[inletId]}(${globs.m})`
+                                `${precompilation[sinkNodeId].rcvs[inletId]}(m)`
                             )
                         ]}
                     `
                 })
-        })
+        }),
     ])
 }

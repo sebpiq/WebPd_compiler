@@ -34,7 +34,7 @@ import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import { commonsArrays } from './stdlib'
-import { ast, Sequence, Var } from './ast/declare'
+import { AnonFunc, ast, Sequence, Var } from './ast/declare'
 export { makeCompilation } from './test-helpers'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
@@ -158,15 +158,15 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     )
             ),
 
-            generateMessageReceivers: ({ globs, snds, state }) =>
+            generateMessageReceivers: ({ snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
                     if (fakeSourceNode.outlets[outletId].type === 'message') {
-                        return ast`${snds[outletId]}(${globs.m});return`
+                        return AnonFunc([Var('Message', 'm')], 'void')`${snds[outletId]}(m);return`
 
                         // Messages received for signal outlets are written to the loop
                     } else {
-                        return ast`${state[`VALUE_${outletId}`]} = msg_readFloatToken(${globs.m}, 0);return`
+                        return AnonFunc([Var('Message', 'm')], 'void')`${state[`VALUE_${outletId}`]} = msg_readFloatToken(m, 0);return`
                     }
                 }),
 
@@ -207,7 +207,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
             ),
 
             // Take incoming messages and directly proxy them
-            generateMessageReceivers: ({ globs, snds }) =>
+            generateMessageReceivers: ({ snds }) =>
                 mapArray(
                     Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>
@@ -215,7 +215,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     ),
                     (inletId) => [
                         inletId,
-                        ast`${snds[inletId]}(${globs.m});return`,
+                        AnonFunc([Var('Message', 'm')], 'void')`${snds[inletId]}(m);return`,
                     ]
                 ),
         },

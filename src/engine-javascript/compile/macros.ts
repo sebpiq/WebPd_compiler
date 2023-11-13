@@ -28,9 +28,9 @@ const ConstVar = (declaration: AstConstVar, renderedValue: Code) =>
     `const ${declaration.name} = ${renderedValue}`
 
 const Func = (declaration: AstFunc, renderedBody: Code) => 
-    `function ${declaration.name}(${declaration.args.map(arg => arg.name).join(', ')}) {${renderedBody}}`
+    `function ${declaration.name !== null ? declaration.name: ''}(${declaration.args.map(arg => arg.name).join(', ')}) {${renderedBody}}`
 
-const Class = (declaration: AstClass) => 
+const Class = () => 
     ``
 
 const macros: CodeMacros = {

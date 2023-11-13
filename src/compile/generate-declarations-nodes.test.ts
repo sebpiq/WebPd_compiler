@@ -24,7 +24,7 @@ import { makeCompilation } from '../test-helpers'
 import generateDeclarationsNodes from './generate-declarations-nodes'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import precompile from './precompile'
-import { ast, Var } from '../ast/declare'
+import { AnonFunc, ast, Var } from '../ast/declare'
 import { assertAstSequencesAreEqual } from '../ast/test-helpers'
 
 describe('generateDeclarationsNodes', () => {
@@ -117,8 +117,8 @@ describe('generateDeclarationsNodes', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': ast`// [type1] message receiver 0`,
-                    '1': ast`// [type1] message receiver 1`,
+                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type1] message receiver 0`,
+                    '1': AnonFunc([Var('Message', 'm')], 'void')`// [type1] message receiver 1`,
                 }),
             },
         }
@@ -173,7 +173,7 @@ describe('generateDeclarationsNodes', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': ast`// [type1] message receiver`,
+                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type1] message receiver`,
                 }),
             },
         }
@@ -255,7 +255,7 @@ describe('generateDeclarationsNodes', () => {
 
         const nodeImplementations: NodeImplementations = {
             type1: {
-                generateMessageReceivers: () => ({ '0': ast`` }),
+                generateMessageReceivers: () => ({ '0': AnonFunc([Var('Message', 'm')], 'void')`` }),
             },
         }
 
@@ -304,7 +304,7 @@ describe('generateDeclarationsNodes', () => {
             type1: {},
             type2: {
                 generateMessageReceivers: () => ({
-                    '0': ast`// [type2] message receiver`,
+                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type2] message receiver`,
                 }),
             },
         }
@@ -409,7 +409,7 @@ describe('generateDeclarationsNodes', () => {
             type1: {},
             type2: {
                 generateMessageReceivers: () => ({
-                    '0': ast`// [type2] message receiver`,
+                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type2] message receiver`,
                 }),
             },
         }

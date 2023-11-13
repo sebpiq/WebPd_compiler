@@ -24,7 +24,7 @@ import { NodeImplementations } from './types'
 import generateInletCallers from './generate-inlet-callers'
 import precompile from './precompile'
 import { AstSequence } from '../ast/types'
-import { ast } from '../ast/declare'
+import { AnonFunc, Var } from '../ast/declare'
 
 describe('generateInletCallers', () => {
     it('should compile declared inlet callers', () => {
@@ -40,7 +40,9 @@ describe('generateInletCallers', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': ast`// [type1] message receiver`,
+                    '0': AnonFunc([
+                        Var('Message', 'm')
+                    ], 'void')`// [type1] message receiver`,
                 }),
             },
         }

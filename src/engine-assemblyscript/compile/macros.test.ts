@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { Class, ConstVar, Func, Var } from '../../ast/declare'
+import { AnonFunc, Class, ConstVar, Func, Var } from '../../ast/declare'
 import macros from './macros'
 
 describe('macros', () => {
@@ -44,6 +44,17 @@ describe('macros', () => {
         assert.strictEqual(
             macros.Func(func1, 'return (a + 1).toString()'),
             'function myFunc(a: Int): string {return (a + 1).toString()}'
+        )
+    })
+
+    it('should generate an anonymous Func declaration', () => {
+        const func1 = AnonFunc(
+            [Var('Int', 'a')],
+            'string'
+        )`return (a + 1).toString()`
+        assert.strictEqual(
+            macros.Func(func1, 'return (a + 1).toString()'),
+            'function (a: Int): string {return (a + 1).toString()}'
         )
     })
 

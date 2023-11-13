@@ -65,7 +65,7 @@ export interface AstConstVar extends AstVarBase {
 
 export interface AstFunc extends AstElementBase {
     astType: 'Func'
-    name: VariableName
+    name: VariableName | null
     args: Array<AstVar>
     returnType: TypeName
     body: AstSequence

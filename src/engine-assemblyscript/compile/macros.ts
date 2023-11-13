@@ -28,7 +28,7 @@ const ConstVar = (declaration: AstConstVar, renderedValue: Code) =>
     `const ${declaration.name}: ${declaration.type} = ${renderedValue}`
 
 const Func = (declaration: AstFunc, renderedBody: Code) => 
-    `function ${declaration.name}(${declaration.args.map(arg => `${arg.name}: ${arg.type}`).join(', ')}): ${declaration.returnType} {${renderedBody}}`
+    `function ${declaration.name !== null ? declaration.name: ''}(${declaration.args.map(arg => `${arg.name}: ${arg.type}`).join(', ')}): ${declaration.returnType} {${renderedBody}}`
 
 const Class = (declaration: AstClass) => 
 `class ${declaration.name} {

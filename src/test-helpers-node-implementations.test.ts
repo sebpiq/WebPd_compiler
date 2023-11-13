@@ -24,7 +24,7 @@ import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
 import { CompilerTarget, NodeImplementation } from './compile/types'
-import { ast } from './ast/declare'
+import { AnonFunc, Var, ast } from './ast/declare'
 
 const TEST_PARAMETERS: Array<{ target: CompilerTarget }> = [
     { target: 'javascript' },
@@ -65,15 +65,13 @@ describe('test-helpers-node-implementations', () => {
             'should work with message inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    generateMessageReceivers: ({ globs, snds }) => ({
-                        '0': ast`
-                        ${snds.$0}(
-                            msg_floats([
-                                msg_readFloatToken(${globs.m}, 0) + 0.1
-                            ])
-                        )
-                        return
-                    `,
+                    generateMessageReceivers: ({ snds }) => ({
+                        '0': AnonFunc([
+                            Var('Message', 'm')
+                        ], 'void')`
+                            ${snds.$0}(msg_floats([ msg_readFloatToken(m, 0) + 0.1 ]))
+                            return
+                        `,
                     }),
                 }
 
@@ -102,10 +100,10 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateMessageReceivers: ({ globs, snds }) => ({
-                        '0': ast`
-                        ${snds.$0}(
-                            msg_floats([toFloat(${globs.frame})])
-                        )
+                        '0': AnonFunc([
+                            Var('Message', 'm')
+                        ], 'void')`
+                        ${snds.$0}(msg_floats([toFloat(${globs.frame})]))
                         return
                     `,
                     }),
@@ -136,17 +134,19 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateMessageReceivers: ({}) => ({
-                        '0': ast`
-                        fs_readSoundFile('/bla', {
-                            channelCount: 11,
-                            sampleRate: 666,
-                            bitDepth: 12,
-                            encodingFormat: 'bla',
-                            endianness: 'l',
-                            extraOptions: 'bli',
-                        }, () => {})
-                        return
-                    `,
+                        '0': AnonFunc([
+                            Var('Message', 'm')
+                        ], 'void')`
+                            fs_readSoundFile('/bla', {
+                                channelCount: 11,
+                                sampleRate: 666,
+                                bitDepth: 12,
+                                encodingFormat: 'bla',
+                                endianness: 'l',
+                                extraOptions: 'bli',
+                            }, () => {})
+                            return
+                        `,
                     }),
                     dependencies: [fsReadSoundFile],
                 }
@@ -185,10 +185,12 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     generateMessageReceivers: () => ({
-                        '0': ast`
-                        commons_getArray('array1')[0] = 666
-                        return
-                    `,
+                        '0': AnonFunc([
+                            Var('Message', 'm')
+                        ], 'void')`
+                            commons_getArray('array1')[0] = 666
+                            return
+                        `,
                     }),
                     dependencies: [commonsArrays],
                 }
