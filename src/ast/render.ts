@@ -7,10 +7,9 @@ import { AstContainer, Code, CodeMacros } from './types'
  * If a code line inserted in the template is falsy (null / undefined), it is ignored.
  * @todo : should not have to check for falsy codeLine has it should be typechecked.
  */
-const render = (macros: CodeMacros, node: AstContainer): Code => {
-    return node.content
+const render = (macros: CodeMacros, ast: AstContainer): Code => {
+    return ast.content
         .map((element) => {
-            if (!element) {debugger}
             if (typeof element === 'string') {
                 return element
             } else if (element.astType === 'Var') {

@@ -28,12 +28,10 @@ const ConstVar = (declaration: ConstVarDeclaration, renderedValue: Code) =>
     `const ${declaration.name} = ${renderedValue}`
 
 const Func = (declaration: FuncDeclaration, renderedBody: Code) => 
-    `function ${declaration.name} (${declaration.args.map(arg => arg.name).join(', ')}) {
-${renderedBody}
-}`
+    `function ${declaration.name}(${declaration.args.map(arg => arg.name).join(', ')}) {${renderedBody}}`
 
 const Class = (declaration: ClassDeclaration) => 
-    `class ${declaration.name} {}`
+    ``
 
 const macros: CodeMacros = {
     Var,
