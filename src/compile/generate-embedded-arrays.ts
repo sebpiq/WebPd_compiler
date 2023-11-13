@@ -17,22 +17,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { getFloatArrayType } from '../run/run-helpers'
 import { Compilation } from './types'
-import { ast } from '../ast/declare'
+import { Sequence } from '../ast/declare'
 
 /**
  * Embed arrays passed to the compiler in the compiled module.
  */
-export default (compilation: Compilation) => ast`
-    ${Object.entries(compilation.arrays).map(
-        ([arrayName, array]) => `
-        commons_setArray("${arrayName}", new ${
-            getFloatArrayType(compilation.audioSettings.bitDepth).name
-        }(${array.length}))
-        commons_getArray("${arrayName}").set(${JSON.stringify(
-            Array.from(array)
-        )})
-    `
-    )}
-`
+export default (compilation: Compilation) =>
+    Sequence(
+        Object.entries(compilation.arrays).map(([arrayName, array]) =>
+            Sequence([
+                `commons_setArray("${arrayName}", createFloatArray(${array.length}))`,
+                `commons_getArray("${arrayName}").set(${JSON.stringify(
+                    Array.from(array)
+                )})`,
+            ])
+        )
+    )

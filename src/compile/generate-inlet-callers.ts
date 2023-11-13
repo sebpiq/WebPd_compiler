@@ -24,7 +24,7 @@ import { Compilation } from './types'
 
 export default ({
     inletCallerSpecs,
-    codeVariableNames,
+    variableNamesIndex,
 }: Compilation): AstSequence =>
     // Here not possible to assign directly the receiver because otherwise assemblyscript
     // doesn't export a function but a global instead.
@@ -33,10 +33,10 @@ export default ({
             inletIds.map(
                 (inletId) =>
                     Func(
-                        codeVariableNames.inletCallers[nodeId][inletId],
+                        variableNamesIndex.inletCallers[nodeId][inletId],
                         [Var('Message', 'm')],
                         'void'
-                    )`${codeVariableNames.nodes[nodeId].rcvs[inletId]}(m)`
+                    )`${variableNamesIndex.nodes[nodeId].rcvs[inletId]}(m)`
             )
         )
     )

@@ -38,9 +38,9 @@ import macros from './macros'
 import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletCallerSpecs, codeVariableNames } = compilation
+    const { audioSettings, inletCallerSpecs, variableNamesIndex } = compilation
     const { channelCount } = audioSettings
-    const globs = compilation.codeVariableNames.globs
+    const globs = compilation.variableNamesIndex.globs
     const metadata = buildMetadata(compilation)
     const dependencies = [
         ...engineMinimalDependencies(),
@@ -83,7 +83,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             metadata,
             ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 
                 inletIds.map(inletId => 
-                    codeVariableNames.inletCallers[nodeId][inletId] + ','
+                    variableNamesIndex.inletCallers[nodeId][inletId] + ','
                 )
             )}
         }
@@ -91,9 +91,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         ${generateImportsExports(
             'assemblyscript',
             dependencies,
-            ({ name, args, returns }) => ast`export declare function ${name} (${
-                args.map((a) => `${a[0]}: ${a[1]}`).join(',')
-            }): ${returns}`, 
+            ({ name, args, returnType }) => ast`export declare function ${name} (${
+                args.map((a) => `${a.name}: ${a.type}`).join(',')
+            }): ${returnType}`, 
             ({ name }) => ast`export { ${name} }`
         )}
     `)

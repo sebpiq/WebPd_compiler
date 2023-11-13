@@ -28,7 +28,6 @@ import {
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
-    GlobalCodeDefinitionImport,
     GlobalCodeGeneratorContext,
     GlobalCodeGeneratorWithSettings,
     NodeImplementation,
@@ -36,7 +35,7 @@ import {
     PortletsIndex,
 } from './types'
 import { EngineMetadata } from '../run/types'
-import { CodeMacros } from '../ast/types'
+import { AstFunc, CodeMacros } from '../ast/types'
 
 /** Helper to get code macros from compile target. */
 export const getMacros = (target: CompilerTarget): CodeMacros =>
@@ -64,7 +63,7 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
         audioSettings,
         inletCallerSpecs,
         outletListenerSpecs,
-        codeVariableNames,
+        variableNamesIndex,
     } = compilation
     return {
         audioSettings: {
@@ -76,9 +75,9 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
         compilation: {
             inletCallerSpecs,
             outletListenerSpecs,
-            codeVariableNames: {
-                inletCallers: codeVariableNames.inletCallers,
-                outletListeners: codeVariableNames.outletListeners,
+            variableNamesIndex: {
+                inletCallers: variableNamesIndex.inletCallers,
+                outletListeners: variableNamesIndex.outletListeners,
             },
         },
     }
@@ -174,9 +173,9 @@ export const collectExports = (
 
 export const collectImports = (
     dependencies: Array<GlobalCodeDefinition>
-): Array<GlobalCodeDefinitionImport> =>
+): Array<AstFunc> =>
     _collectImportsRecursive(dependencies).reduce<
-        Array<GlobalCodeDefinitionImport>
+        Array<AstFunc>
     >(
         // De-duplicate imports
         (imports, imprt) =>
@@ -208,7 +207,7 @@ const _collectImportsRecursive = (dependencies: Array<GlobalCodeDefinition>) =>
         .flatMap(
             (
                 globalCodeDefinition: GlobalCodeGeneratorWithSettings
-            ): Array<GlobalCodeDefinitionImport> => [
+            ): Array<AstFunc> => [
                 ...(globalCodeDefinition.dependencies
                     ? _collectImportsRecursive(
                           globalCodeDefinition.dependencies

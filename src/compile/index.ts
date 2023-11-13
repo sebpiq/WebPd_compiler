@@ -61,7 +61,7 @@ export default (
         debug,
     } = validateSettings(settings)
     const precompilation = initializePrecompilation(graph)
-    const codeVariableNames = generateCodeVariableNames(
+    const variableNamesIndex = generateCodeVariableNames(
         nodeImplementations,
         graph,
         debug
@@ -85,7 +85,7 @@ export default (
             arrays,
             inletCallerSpecs,
             outletListenerSpecs,
-            codeVariableNames,
+            variableNamesIndex,
             debug,
             precompilation,
         }),

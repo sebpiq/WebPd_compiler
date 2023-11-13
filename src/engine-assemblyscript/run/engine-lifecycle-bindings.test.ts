@@ -51,11 +51,11 @@ describe('engine-lifecycle-bindings', () => {
                     sampleRate: 0,
                 },
                 compilation: {
-                    codeVariableNames: {
+                    variableNamesIndex: {
                         inletCallers:
-                            compilation.codeVariableNames.inletCallers,
+                            compilation.variableNamesIndex.inletCallers,
                         outletListeners:
-                            compilation.codeVariableNames.outletListeners,
+                            compilation.variableNamesIndex.outletListeners,
                     },
                     inletCallerSpecs: {},
                     outletListenerSpecs: {},

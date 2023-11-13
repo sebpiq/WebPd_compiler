@@ -27,18 +27,18 @@ export default (compilation: Compilation) => {
     const {
         graph,
         graphTraversalLoop,
-        codeVariableNames,
+        variableNamesIndex,
         precompilation,
         nodeImplementations,
     } = compilation
-    const { globs } = codeVariableNames
+    const { globs } = variableNamesIndex
 
     // prettier-ignore
     return ast`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
             ${graphTraversalLoop.map((nodeId) => {
-                const { state } = codeVariableNames.nodes[nodeId]
+                const { state } = variableNamesIndex.nodes[nodeId]
                 const { outs, ins, snds } = precompilation[nodeId]
                 const node = getters.getNode(graph, nodeId)
                 const nodeImplementation = getNodeImplementation(

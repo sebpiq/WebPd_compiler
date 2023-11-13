@@ -24,12 +24,12 @@ import {
     GlobalCodeGenerator,
     GlobalCodeGeneratorContext,
 } from './types'
-import { AstSequence } from '../ast/types'
+import { AstElement } from '../ast/types'
 
 export default (
     context: GlobalCodeGeneratorContext,
     dependencies: Array<GlobalCodeDefinition>
-): Array<AstSequence> =>
+): Array<AstElement> =>
     // De-duplicate code
     _flattenDependencies(dependencies)
         .reduce<Array<GlobalCodeDefinition>>(

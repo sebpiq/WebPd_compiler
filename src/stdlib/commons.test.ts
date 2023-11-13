@@ -80,9 +80,7 @@ describe('commons', () => {
             commonsArrays.codeGenerator,
             commonsWaitEngineConfigure,
             commonsWaitFrame,
-            () => Sequence([
-                Var('Int', 'callbackCallCounter', '0'),
-            ])
+            () => Var('Int', 'callbackCallCounter', '0')
         ]
     )
 })

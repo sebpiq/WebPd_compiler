@@ -24,7 +24,7 @@ import {
     attachOutletListenersAndInletCallers,
     generateCodeVariableNames,
 } from './code-variable-names'
-import { CodeVariableNames, NodeImplementations } from '../compile/types'
+import { VariableNamesIndex, NodeImplementations } from '../compile/types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 
@@ -155,7 +155,7 @@ describe('code-variable-names', () => {
 
             const compilation = makeCompilation({
                 nodeImplementations,
-                codeVariableNames: variableNames,
+                variableNamesIndex: variableNames,
                 graph,
             })
 
@@ -214,7 +214,7 @@ describe('code-variable-names', () => {
 
             const compilation = makeCompilation({
                 nodeImplementations,
-                codeVariableNames: variableNames,
+                variableNamesIndex: variableNames,
                 debug: true,
                 graph,
             })
@@ -250,9 +250,9 @@ describe('code-variable-names', () => {
             const compilation = makeCompilation({ graph })
 
             attachNodePortlet(compilation, 'rcvs', 'node1', '0')
-            assert.strictEqual(compilation.codeVariableNames.nodes.node1.rcvs.$0, 'node1_RCVS_0')
+            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.rcvs.$0, 'node1_RCVS_0')
             assert.doesNotThrow(() => attachNodePortlet(compilation, 'rcvs', 'node1', '0'))
-            assert.strictEqual(compilation.codeVariableNames.nodes.node1.rcvs.$0, 'node1_RCVS_0')
+            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.rcvs.$0, 'node1_RCVS_0')
         })
     })
 
@@ -281,7 +281,7 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const codeVariableNames: CodeVariableNames = generateCodeVariableNames(
+            const variableNamesIndex: VariableNamesIndex = generateCodeVariableNames(
                 NODE_IMPLEMENTATIONS,
                 graph,
                 false
@@ -297,16 +297,16 @@ describe('code-variable-names', () => {
                 graph,
                 outletListenerSpecs,
                 inletCallerSpecs,
-                codeVariableNames,
+                variableNamesIndex,
             })
 
             attachOutletListenersAndInletCallers(compilation)
-            assert.deepStrictEqual(codeVariableNames.outletListeners, {
+            assert.deepStrictEqual(variableNamesIndex.outletListeners, {
                 node1: {
                     outlet1: 'outletListeners_node1_outlet1',
                 },
             })
-            assert.deepStrictEqual(codeVariableNames.inletCallers, {
+            assert.deepStrictEqual(variableNamesIndex.inletCallers, {
                 node1: {
                     inlet1: 'inletCallers_node1_inlet1',
                 },

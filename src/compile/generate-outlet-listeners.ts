@@ -24,18 +24,18 @@ import { AstSequence, VariableName } from '../ast/types'
 import { Sequence } from '../ast/declare'
 
 export default (
-    { outletListenerSpecs, codeVariableNames }: Compilation,
+    { outletListenerSpecs, variableNamesIndex }: Compilation,
     generateOutletListener: (
         variableName: VariableName,
         nodeId: DspGraph.NodeId,
         outletId: DspGraph.PortletId
     ) => AstSequence
 ) =>
-    Sequence([
+    Sequence(
         Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
             outletIds.map((outletId) => {
                 const listenerVariableName =
-                    codeVariableNames.outletListeners[nodeId][outletId]
+                    variableNamesIndex.outletListeners[nodeId][outletId]
                 return generateOutletListener(
                     listenerVariableName,
                     nodeId,
@@ -43,4 +43,4 @@ export default (
                 )
             })
         ),
-    ])
+    )

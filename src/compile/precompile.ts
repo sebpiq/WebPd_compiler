@@ -46,7 +46,7 @@ export const initializePrecompilation = (
 
 export default (compilation: Compilation) => {
     const {
-        codeVariableNames,
+        variableNamesIndex,
         precompilation,
         graphTraversalDeclare,
         graphTraversalLoop,
@@ -118,7 +118,7 @@ export default (compilation: Compilation) => {
     )
 
     // Copy code variable names over to precompilation object.
-    Object.entries(codeVariableNames.nodes).forEach(
+    Object.entries(variableNamesIndex.nodes).forEach(
         ([nodeId, nodeVariableNames]) => {
             ;(['outs', 'snds', 'rcvs'] as const).forEach((ns) => {
                 Object.keys(nodeVariableNames[ns]).forEach((portletId) => {
@@ -170,7 +170,7 @@ const _precompileMessageOutlet = (
     outletId: DspGraph.PortletId
 ) => {
     const outletSinks = getters.getSinks(sourceNode, outletId)
-    const { codeVariableNames, precompilation, outletListenerSpecs } =
+    const { variableNamesIndex, precompilation, outletListenerSpecs } =
         compilation
     const nodeOutletListenerSpecs = outletListenerSpecs[sourceNode.id] || []
 
@@ -206,7 +206,7 @@ const _precompileMessageOutlet = (
         nodeOutletListenerSpecs.includes(outletId)
     ) {
         precompilation[sourceNode.id].snds[outletId] =
-            codeVariableNames.outletListeners[sourceNode.id][outletId]
+            variableNamesIndex.outletListeners[sourceNode.id][outletId]
 
         // If no sink, no message receiver, we assign the node SND
         // a function that does nothing
@@ -215,7 +215,7 @@ const _precompileMessageOutlet = (
         !nodeOutletListenerSpecs.includes(outletId)
     ) {
         precompilation[sourceNode.id].snds[outletId] =
-            compilation.codeVariableNames.globs.nullMessageReceiver
+            compilation.variableNamesIndex.globs.nullMessageReceiver
 
         // Otherwise, there are several sinks, we then need to generate
         // a function to send messages to all sinks, e.g. :
@@ -235,11 +235,11 @@ const _precompileSignalInlet = (
     sinkNode: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const { precompilation, codeVariableNames } = compilation
+    const { precompilation, variableNamesIndex } = compilation
     if (getters.getSources(sinkNode, inletId).length === 0) {
         // If signal inlet has no source, we assign it a constant value of 0.
         precompilation[sinkNode.id].ins[inletId] =
-            codeVariableNames.globs.nullSignal
+            variableNamesIndex.globs.nullSignal
     } else {
         // No need to declare ins if node has source as it should be precompiled
         // from source's connected out.

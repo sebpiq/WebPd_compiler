@@ -146,7 +146,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            generateDeclarations: ({ state }) => Sequence([
+            generateDeclarations: ({ state }) => Sequence(
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -156,7 +156,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                         (outletId) =>
                             Var('Float', state[`VALUE_${outletId}`], '0')
                     )
-            ]),
+            ),
 
             generateMessageReceivers: ({ globs, snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
@@ -170,7 +170,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     }
                 }),
 
-            generateLoop: ({ outs, state }) => Sequence([
+            generateLoop: ({ outs, state }) => Sequence(
                 Object.keys(fakeSourceNode.outlets)
                     .filter(
                         (outletId) =>
@@ -180,7 +180,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                         (outletId) =>
                             `${outs[outletId]} = ${state[`VALUE_${outletId}`]}`
                     )
-            ]),
+            ),
 
             stateVariables: mapArray(
                 Object.keys(fakeSourceNode.outlets).filter(
@@ -193,7 +193,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            generateLoop: ({ ins, snds }) => Sequence([
+            generateLoop: ({ ins, snds }) => Sequence(
                 Object.keys(testNode.sinks)
                 .filter(
                     (outletId) =>
@@ -204,7 +204,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                         // prettier-ignore
                         `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
                 )
-            ]),
+            ),
 
             // Take incoming messages and directly proxy them
             generateMessageReceivers: ({ globs, snds }) =>

@@ -23,23 +23,20 @@
 
 import { collectImports, collectExports } from './compile-helpers'
 import {
-    GlobalCodeDefinitionImport,
     GlobalCodeDefinition,
     CompilerTarget,
+    GlobalCodeDefinitionExport,
 } from './types'
-import { AstSequence } from '../ast/types'
-import { ast } from '../ast/declare'
-
-type GenerateImportExportFunction = (imprt: GlobalCodeDefinitionImport) => AstSequence
+import { AstFunc, AstSequence } from '../ast/types'
+import { Sequence } from '../ast/declare'
 
 export default (
     target: CompilerTarget,
     dependencies: Array<GlobalCodeDefinition>,
-    generateImport: GenerateImportExportFunction,
-    generateExport: GenerateImportExportFunction
+    generateImport: (imprt: AstFunc) => AstSequence,
+    generateExport: (xprt: GlobalCodeDefinitionExport) => AstSequence
 ): AstSequence =>
-    // prettier-ignore
-    ast`
-        ${collectImports(dependencies).map(generateImport)}
-        ${collectExports(target, dependencies).map(generateExport)}
-    `
+    Sequence([
+        collectImports(dependencies).map(generateImport),
+        collectExports(target, dependencies).map(generateExport)
+    ])

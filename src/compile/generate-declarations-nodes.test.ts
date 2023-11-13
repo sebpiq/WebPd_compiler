@@ -93,7 +93,7 @@ describe('generateDeclarationsNodes', () => {
             nodeImplementations,
         })
 
-        compilation.codeVariableNames.nodes.node1.outs['0'] = 'node1_OUTS_0'
+        compilation.variableNamesIndex.nodes.node1.outs['0'] = 'node1_OUTS_0'
 
         const sequence = generateDeclarationsNodes(compilation)
 
@@ -129,7 +129,7 @@ describe('generateDeclarationsNodes', () => {
             nodeImplementations,
         })
 
-        compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
+        compilation.variableNamesIndex.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
         const sequence = generateDeclarationsNodes(compilation)
 
@@ -185,7 +185,7 @@ describe('generateDeclarationsNodes', () => {
             nodeImplementations,
         })
 
-        compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
+        compilation.variableNamesIndex.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
         const sequence = generateDeclarationsNodes(compilation)
 
@@ -238,7 +238,7 @@ describe('generateDeclarationsNodes', () => {
             nodeImplementations,
         })
 
-        compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
+        compilation.variableNamesIndex.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
         assert.throws(() => generateDeclarationsNodes(compilation))
     })
@@ -265,7 +265,7 @@ describe('generateDeclarationsNodes', () => {
             nodeImplementations,
         })
 
-        compilation.codeVariableNames.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
+        compilation.variableNamesIndex.nodes.node1.rcvs['0'] = 'node1_RCVS_0'
 
         assert.doesNotThrow(() => generateDeclarationsNodes(compilation))
     })
@@ -315,10 +315,10 @@ describe('generateDeclarationsNodes', () => {
             nodeImplementations,
         })
 
-        compilation.codeVariableNames.nodes.node1.snds['0'] = 'node1_SNDS_0'
-        compilation.codeVariableNames.nodes.node2.rcvs['0'] = 'node2_RCVS_0'
+        compilation.variableNamesIndex.nodes.node1.snds['0'] = 'node1_SNDS_0'
+        compilation.variableNamesIndex.nodes.node2.rcvs['0'] = 'node2_RCVS_0'
         compilation.precompilation.node2.rcvs['0'] = 'node2_RCVS_0'
-        compilation.codeVariableNames.nodes.node3.rcvs['0'] = 'node3_RCVS_0'
+        compilation.variableNamesIndex.nodes.node3.rcvs['0'] = 'node3_RCVS_0'
         compilation.precompilation.node3.rcvs['0'] = 'node3_RCVS_0'
 
         const sequence = generateDeclarationsNodes(compilation)
@@ -423,14 +423,14 @@ describe('generateDeclarationsNodes', () => {
             outletListenerSpecs,
         })
 
-        compilation.codeVariableNames.nodes.node1.snds['0'] = 'node1_SNDS_0'
-        compilation.codeVariableNames.nodes.node1.snds['1'] = 'node1_SNDS_1'
-        compilation.codeVariableNames.nodes.node2.rcvs['0'] = 'node2_RCVS_0'
+        compilation.variableNamesIndex.nodes.node1.snds['0'] = 'node1_SNDS_0'
+        compilation.variableNamesIndex.nodes.node1.snds['1'] = 'node1_SNDS_1'
+        compilation.variableNamesIndex.nodes.node2.rcvs['0'] = 'node2_RCVS_0'
         compilation.precompilation.node2.rcvs['0'] = 'node2_RCVS_0'
-        compilation.codeVariableNames.outletListeners.node1 = {}
-        compilation.codeVariableNames.outletListeners.node1['0'] =
+        compilation.variableNamesIndex.outletListeners.node1 = {}
+        compilation.variableNamesIndex.outletListeners.node1['0'] =
             'outletListener_node1_0'
-        compilation.codeVariableNames.outletListeners.node1['1'] =
+        compilation.variableNamesIndex.outletListeners.node1['1'] =
             'outletListener_node1_1'
 
         const sequence = generateDeclarationsNodes(compilation)

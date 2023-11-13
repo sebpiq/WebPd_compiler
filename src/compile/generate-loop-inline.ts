@@ -34,16 +34,16 @@ export default (
 ): Code => {
     const {
         precompilation,
-        codeVariableNames,
+        variableNamesIndex,
         nodeImplementations,
         graph,
     } = compilation
-    const { globs } = codeVariableNames
+    const { globs } = variableNamesIndex
     const leafNodeId = inlineTraversal.slice(-1)[0]
 
     const inlinedNodes = inlineTraversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
-            const { state } = codeVariableNames.nodes[nodeId]
+            const { state } = variableNamesIndex.nodes[nodeId]
             const { ins } = precompilation[nodeId]
             const node = getters.getNode(graph, nodeId)
             const nodeImplementation = getNodeImplementation(

@@ -145,15 +145,15 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
     ],
 
     imports: [
-        {
-            name: 'i_fs_readSoundFile',
-            args: [
-                ['id', 'fs_OperationId'],
-                ['url', 'fs_Url'],
-                ['info', 'Message'],
+        Func(
+            'i_fs_readSoundFile',
+            [
+                Var('fs_OperationId', 'id'),
+                Var('fs_Url', 'url'),
+                Var('Message', 'info'),
             ],
-            returns: 'void',
-        },
+            'void',
+        )``,
     ],
 
     dependencies: [fsCore],
@@ -193,16 +193,16 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
     ],
 
     imports: [
-        {
-            name: 'i_fs_writeSoundFile',
-            args: [
-                ['id', 'fs_OperationId'],
-                ['sound', 'FloatArray[]'],
-                ['url', 'fs_Url'],
-                ['info', 'Message'],
+        Func(
+            'i_fs_writeSoundFile',
+            [
+                Var('fs_OperationId', 'id'),
+                Var('FloatArray[]', 'sound'),
+                Var('fs_Url', 'url'),
+                Var('Message', 'info'),
             ],
-            returns: 'void',
-        },
+            'void',
+        )``,
     ],
 
     dependencies: [fsCore],
@@ -256,14 +256,14 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
     ],
 
     imports: [
-        {
-            name: 'i_fs_closeSoundStream',
-            args: [
-                ['id', 'fs_OperationId'],
-                ['status', 'fs_OperationStatus'],
+        Func(
+            'i_fs_closeSoundStream',
+            [
+                Var('fs_OperationId', 'id'),
+                Var('fs_OperationStatus', 'status'),
             ],
-            returns: 'void',
-        },
+            'void',
+        )``,
     ],
 
     dependencies: [bufCore, fsCore],
@@ -307,15 +307,15 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
     ],
 
     imports: [
-        {
-            name: 'i_fs_openSoundReadStream',
-            args: [
-                ['id', 'fs_OperationId'],
-                ['url', 'fs_Url'],
-                ['info', 'Message'],
+        Func(
+            'i_fs_openSoundReadStream',
+            [
+                Var('fs_OperationId', 'id'),
+                Var('fs_Url', 'url'),
+                Var('Message', 'info'),
             ],
-            returns: 'void',
-        },
+            'void',
+        )``,
     ],
 
     dependencies: [fsSoundStreamCore, bufPushPull],
@@ -347,23 +347,23 @@ export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
     ]),
 
     imports: [
-        {
-            name: 'i_fs_openSoundWriteStream',
-            args: [
-                ['id', 'fs_OperationId'],
-                ['url', 'fs_Url'],
-                ['info', 'Message'],
+        Func(
+            'i_fs_openSoundWriteStream',
+            [
+                Var('fs_OperationId', 'id'),
+                Var('fs_Url', 'url'),
+                Var('Message', 'info'),
             ],
-            returns: 'void',
-        },
-        {
-            name: 'i_fs_sendSoundStreamData',
-            args: [
-                ['id', 'fs_OperationId'],
-                ['block', 'FloatArray[]'],
+            'void',
+        )``,
+        Func(
+            'i_fs_sendSoundStreamData',
+            [
+                Var('fs_OperationId', 'id'),
+                Var('FloatArray[]', 'block'),
             ],
-            returns: 'void',
-        },
+            'void',
+        )``,
     ],
 
     dependencies: [fsSoundStreamCore],

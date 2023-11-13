@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstSequence } from '../ast/types'
+import { AstElement, AstFunc, AstSequence } from '../ast/types'
 import { VariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 
@@ -56,10 +56,26 @@ export interface Compilation {
     readonly arrays: DspGraph.Arrays
     readonly outletListenerSpecs: PortletsIndex
     readonly inletCallerSpecs: PortletsIndex
-    readonly codeVariableNames: CodeVariableNames
+    readonly variableNamesIndex: VariableNamesIndex
     readonly precompilation: Precompilation
     readonly debug: boolean
 }
+
+export interface PrecompiledNodeCode {
+    outs: { [portletId: DspGraph.PortletId]: VariableName }
+    snds: { [portletId: DspGraph.PortletId]: VariableName }
+    rcvs: { [portletId: DspGraph.PortletId]: VariableName }
+    ins: { [portletId: DspGraph.PortletId]: VariableName }
+}
+
+/**
+ * Precompilation for a graph, allowing mostly to implement various optimizations.
+ * This map is then used in code generation to replace variables with their precompiled counterparts.
+ */
+export type Precompilation = {
+    [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
+}
+
 
 // -------------------------------- CODE GENERATION -------------------------------- //
 export interface NodeVariableNames {
@@ -74,7 +90,7 @@ export interface NodeVariableNames {
  *
  * @todo : for the sake of completeness, this should include also all global variables dependencies, etc ...
  */
-export interface CodeVariableNames {
+export interface VariableNamesIndex {
     /** Namespace for individual nodes */
     nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
@@ -109,20 +125,6 @@ export interface CodeVariableNames {
     }
 }
 
-export interface PrecompiledNodeCode {
-    outs: { [portletId: DspGraph.PortletId]: VariableName }
-    snds: { [portletId: DspGraph.PortletId]: VariableName }
-    rcvs: { [portletId: DspGraph.PortletId]: VariableName }
-    ins: { [portletId: DspGraph.PortletId]: VariableName }
-}
-
-/**
- * Precompilation for a graph, allowing mostly to implement various optimizations.
- * This map is then used in code generation to replace variables with their precompiled counterparts.
- */
-export type Precompilation = {
-    [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
-}
 
 export interface GlobalCodeGeneratorContext {
     target: CompilerTarget
@@ -130,16 +132,10 @@ export interface GlobalCodeGeneratorContext {
 }
 
 /** Simplest form of generator for global code */
-export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => AstSequence
-
-export interface GlobalCodeDefinitionImport {
-    name: string
-    args: Array<[VariableName, VariableName]>
-    returns: VariableName
-}
+export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => AstElement
 
 export interface GlobalCodeDefinitionExport {
-    name: string
+    name: VariableName
     targets?: Array<CompilerTarget>
 }
 
@@ -147,7 +143,7 @@ export interface GlobalCodeDefinitionExport {
 export interface GlobalCodeGeneratorWithSettings {
     codeGenerator: GlobalCodeGenerator
     exports?: Array<GlobalCodeDefinitionExport>
-    imports?: Array<GlobalCodeDefinitionImport>
+    imports?: Array<AstFunc>
     dependencies?: Array<GlobalCodeDefinition>
 }
 
@@ -172,7 +168,7 @@ export interface NodeImplementation<
      * This is typically used to declare and initialize state variables.
      */
     generateDeclarations?: (context: {
-        globs: CodeVariableNames['globs']
+        globs: VariableNamesIndex['globs']
         state: { [Parameter in keyof NodeState]: string }
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
@@ -186,7 +182,7 @@ export interface NodeImplementation<
      * @see generateInlineLoop for more complexe loop code generation.
      */
     generateLoop?: (context: {
-        globs: CodeVariableNames['globs']
+        globs: VariableNamesIndex['globs']
         state: { [Parameter in keyof NodeState]: string }
         ins: PrecompiledNodeCode['ins']
         outs: PrecompiledNodeCode['outs']
@@ -204,7 +200,7 @@ export interface NodeImplementation<
      * @see generateLoop for more complexe loop code generation.
      */
     generateLoopInline?: (context: {
-        globs: CodeVariableNames['globs']
+        globs: VariableNamesIndex['globs']
         state: { [Parameter in keyof NodeState]: string }
         ins: PrecompiledNodeCode['ins']
         node: DspGraph.Node<NodeArgsType>
@@ -215,7 +211,7 @@ export interface NodeImplementation<
      * Generate code for message receivers for a given node instance.
      */
     generateMessageReceivers?: (context: {
-        globs: CodeVariableNames['globs']
+        globs: VariableNamesIndex['globs']
         state: { [Parameter in keyof NodeState]: string }
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>

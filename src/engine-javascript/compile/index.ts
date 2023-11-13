@@ -38,9 +38,9 @@ import macros from './macros'
 import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { codeVariableNames, outletListenerSpecs, inletCallerSpecs } =
+    const { variableNamesIndex, outletListenerSpecs, inletCallerSpecs } =
         compilation
-    const globs = compilation.codeVariableNames.globs
+    const globs = compilation.variableNamesIndex.globs
     const metadata = buildMetadata(compilation)
     const dependencies = [
         ...engineMinimalDependencies(),
@@ -86,7 +86,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
                     ast`${nodeId}: {
                         ${inletIds.map(inletId => 
-                            `"${inletId}": ${codeVariableNames.inletCallers[nodeId][inletId]},`)}
+                            `"${inletId}": ${variableNamesIndex.inletCallers[nodeId][inletId]},`)}
                     },`
                 )}
             },

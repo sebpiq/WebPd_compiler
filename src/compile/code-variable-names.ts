@@ -24,7 +24,7 @@ import { mapObject } from '../functional-helpers'
 import { createNamespace, nodeNamespaceLabel } from './namespace'
 import {
     NodeImplementations,
-    CodeVariableNames,
+    VariableNamesIndex,
     Compilation,
 } from '../compile/types'
 
@@ -39,8 +39,8 @@ export const generateCodeVariableNames = (
     nodeImplementations: NodeImplementations,
     graph: DspGraph.Graph,
     debug: boolean
-): CodeVariableNames =>
-    createNamespace('codeVariableNames', {
+): VariableNamesIndex =>
+    createNamespace('variableNamesIndex', {
         nodes: createNamespace(
             'n',
             mapObject(graph, (node) => {
@@ -88,8 +88,8 @@ export const attachNodePortlet = (
     nodeId: DspGraph.NodeId,
     portletId: DspGraph.PortletId
 ) => {
-    const { graph, codeVariableNames, debug } = compilation
-    const nodeVariableNames = codeVariableNames.nodes[nodeId]
+    const { graph, variableNamesIndex, debug } = compilation
+    const nodeVariableNames = variableNamesIndex.nodes[nodeId]
     const sinkNode = getters.getNode(graph, nodeId)
     const prefix = _namePrefix(debug, sinkNode)
     // Shouldnt throw an error if the variable already exists, as precompile might try to 
@@ -105,11 +105,11 @@ export const attachNodePortlet = (
 }
 
 /**
- * Helper that attaches to the generated `codeVariableNames` the names of specified outlet listeners
+ * Helper that attaches to the generated `variableNamesIndex` the names of specified outlet listeners
  * and inlet callers.
  */
 export const attachOutletListenersAndInletCallers = ({
-    codeVariableNames,
+    variableNamesIndex,
     outletListenerSpecs,
     inletCallerSpecs,
     graph,
@@ -121,12 +121,12 @@ export const attachOutletListenersAndInletCallers = ({
                 : outletListenerSpecs
         Object.entries(specs).forEach(([nodeId, outletIds]) => {
             const node = getters.getNode(graph, nodeId)
-            codeVariableNames[nsKey][nodeId] = createNamespace(
+            variableNamesIndex[nsKey][nodeId] = createNamespace(
                 nodeNamespaceLabel(node, nsKey),
                 {}
             )
             outletIds.forEach((outletId) => {
-                codeVariableNames[nsKey][nodeId][
+                variableNamesIndex[nsKey][nodeId][
                     outletId
                 ] = `${nsKey}_${nodeId}_${outletId}`
             })

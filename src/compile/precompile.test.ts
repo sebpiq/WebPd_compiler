@@ -60,7 +60,7 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node1.outs['0'],
+                compilation.variableNamesIndex.nodes.node1.outs['0'],
                 'node1_OUTS_0'
             )
 
@@ -90,7 +90,7 @@ describe('precompile', () => {
             // Precompilation
             assert.strictEqual(
                 compilation.precompilation.node1.ins['0'],
-                compilation.codeVariableNames.globs.nullSignal
+                compilation.variableNamesIndex.globs.nullSignal
             )
         })
     })
@@ -130,7 +130,7 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node1.snds['0'],
+                compilation.variableNamesIndex.nodes.node1.snds['0'],
                 'node1_SNDS_0'
             )
 
@@ -167,10 +167,10 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node2.rcvs['0'],
+                compilation.variableNamesIndex.nodes.node2.rcvs['0'],
                 'node2_RCVS_0'
             )
-            assert.ok(!('0' in compilation.codeVariableNames.nodes.node1.snds))
+            assert.ok(!('0' in compilation.variableNamesIndex.nodes.node1.snds))
 
             // Precompilation
             assert.strictEqual(
@@ -208,7 +208,7 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node1.snds['0'],
+                compilation.variableNamesIndex.nodes.node1.snds['0'],
                 'node1_SNDS_0'
             )
 
@@ -240,14 +240,14 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.outletListeners.node1['0'],
+                compilation.variableNamesIndex.outletListeners.node1['0'],
                 'outletListeners_node1_0'
             )
 
             // Precompilation
             assert.strictEqual(
                 compilation.precompilation.node1.snds['0'],
-                compilation.codeVariableNames.outletListeners.node1['0']
+                compilation.variableNamesIndex.outletListeners.node1['0']
             )
         })
 
@@ -270,7 +270,7 @@ describe('precompile', () => {
             // Precompilation
             assert.strictEqual(
                 compilation.precompilation.node1.snds['0'],
-                compilation.codeVariableNames.globs.nullMessageReceiver
+                compilation.variableNamesIndex.globs.nullMessageReceiver
             )
         })
     })
@@ -312,11 +312,11 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node2.rcvs['0'],
+                compilation.variableNamesIndex.nodes.node2.rcvs['0'],
                 'node2_RCVS_0'
             )
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node3.rcvs['0'],
+                compilation.variableNamesIndex.nodes.node3.rcvs['0'],
                 'node3_RCVS_0'
             )
 
@@ -365,11 +365,11 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node2.rcvs['0'],
+                compilation.variableNamesIndex.nodes.node2.rcvs['0'],
                 'node2_RCVS_0'
             )
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node3.rcvs['0'],
+                compilation.variableNamesIndex.nodes.node3.rcvs['0'],
                 'node3_RCVS_0'
             )
 
@@ -401,7 +401,7 @@ describe('precompile', () => {
             precompile(compilation)
 
             // Variable declarations
-            assert.ok(!('0' in compilation.codeVariableNames.nodes.node1.rcvs))
+            assert.ok(!('0' in compilation.variableNamesIndex.nodes.node1.rcvs))
         })
 
         it('should keep message inlet when inlet caller is declared', () => {
@@ -423,7 +423,7 @@ describe('precompile', () => {
 
             // Variable declarations
             assert.strictEqual(
-                compilation.codeVariableNames.nodes.node1.rcvs['0'],
+                compilation.variableNamesIndex.nodes.node1.rcvs['0'],
                 'node1_RCVS_0'
             )
 

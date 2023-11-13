@@ -34,7 +34,7 @@ import {
     NodeImplementation,
     NodeImplementations,
 } from './types'
-import { Sequence } from '../ast/declare'
+import { Func, Sequence } from '../ast/declare'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
@@ -288,8 +288,8 @@ describe('compile-helpers', () => {
             const codeDefinition1: GlobalCodeGeneratorWithSettings = {
                 codeGenerator: () => Sequence([]),
                 imports: [
-                    { name: 'ex1', args: [], returns: 'void' },
-                    { name: 'ex3', args: [], returns: 'void' },
+                    Func('ex1', [], 'void')``,
+                    Func('ex3', [], 'void')``,
                 ],
             }
             const codeDefinition2: GlobalCodeGeneratorWithSettings = {
@@ -299,7 +299,7 @@ describe('compile-helpers', () => {
             }
             const codeDefinition3: GlobalCodeGeneratorWithSettings = {
                 codeGenerator: () => Sequence([]),
-                imports: [{ name: 'ex4', args: [], returns: 'void' }],
+                imports: [Func('ex4', [], 'void')``],
                 dependencies: [codeDefinition2],
             }
             const dependencies: Array<GlobalCodeDefinition> = [
@@ -308,9 +308,9 @@ describe('compile-helpers', () => {
             ]
 
             assert.deepStrictEqual(collectImports(dependencies), [
-                { name: 'ex1', args: [], returns: 'void' },
-                { name: 'ex3', args: [], returns: 'void' },
-                { name: 'ex4', args: [], returns: 'void' },
+                Func('ex1', [], 'void')``,
+                Func('ex3', [], 'void')``,
+                Func('ex4', [], 'void')``,
             ])
         })
     })

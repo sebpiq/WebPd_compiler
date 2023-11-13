@@ -106,8 +106,8 @@ export const makeCompilation = (
         compilation.graphTraversalLoop || buildGraphTraversalLoop(graph)
     const precompilation =
         compilation.precompilation || initializePrecompilation(graph)
-    const codeVariableNames =
-        compilation.codeVariableNames ||
+    const variableNamesIndex =
+        compilation.variableNamesIndex ||
         generateCodeVariableNames(nodeImplementations, graph, debug)
     const audioSettings = compilation.audioSettings || {
         bitDepth: 32,
@@ -124,7 +124,7 @@ export const makeCompilation = (
         arrays,
         outletListenerSpecs,
         inletCallerSpecs,
-        codeVariableNames,
+        variableNamesIndex,
         debug,
         precompilation,
     }
@@ -233,9 +233,7 @@ export const runTestSuite = (
 
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
                 tests.map(({ testFunction }, i) => ({
-                    codeGenerator: () => Sequence([
-                        testFunction(Func(testFunctionNames[i], [], 'void'), target)
-                    ]),
+                    codeGenerator: () => testFunction(Func(testFunctionNames[i], [], 'void'), target),
                     exports: [{ name: testFunctionNames[i] }],
                 }))
 

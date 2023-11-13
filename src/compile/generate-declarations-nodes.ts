@@ -28,7 +28,7 @@ export default (compilation: Compilation): AstSequence => {
     const {
         graph,
         graphTraversalDeclare,
-        codeVariableNames,
+        variableNamesIndex,
         nodeImplementations,
         outletListenerSpecs,
         precompilation,
@@ -37,13 +37,13 @@ export default (compilation: Compilation): AstSequence => {
     const graphTraversalNodes = graphTraversalDeclare.map((nodeId) =>
         getters.getNode(graph, nodeId)
     )
-    const { globs } = codeVariableNames
+    const { globs } = variableNamesIndex
 
     // prettier-ignore
     return Sequence([
         graphTraversalNodes.map(node => {
             const nodeImplementation = getNodeImplementation(nodeImplementations, node.type)
-            const nodeVariableNames = codeVariableNames.nodes[node.id]
+            const nodeVariableNames = variableNamesIndex.nodes[node.id]
             const nodePrecompilation = precompilation[node.id]
             const nodeMessageReceivers = nodeImplementation.generateMessageReceivers ? 
                 nodeImplementation.generateMessageReceivers({
@@ -97,7 +97,7 @@ export default (compilation: Compilation): AstSequence => {
         // If there are outlets listeners declared we also inject the code here.
         // Senders that don't appear in precompilation are not declared.
         graphTraversalNodes.map(node => {
-            const nodeVariableNames = codeVariableNames.nodes[node.id]
+            const nodeVariableNames = variableNamesIndex.nodes[node.id]
             const nodeOutletListeners = outletListenerSpecs[node.id] || []
             return Object.values(node.outlets)
                 .filter(outlet => outlet.id in nodeVariableNames.snds)
@@ -110,7 +110,7 @@ export default (compilation: Compilation): AstSequence => {
                         ], 'void')`
                         ${[
                             hasOutletListener ? 
-                                `${codeVariableNames.outletListeners[node.id][outlet.id]}(${globs.m})` : '',
+                                `${variableNamesIndex.outletListeners[node.id][outlet.id]}(${globs.m})` : '',
                             outletSinks.map(({ nodeId: sinkNodeId, portletId: inletId }) => 
                                 `${precompilation[sinkNodeId].rcvs[inletId]}(${globs.m})`
                             )

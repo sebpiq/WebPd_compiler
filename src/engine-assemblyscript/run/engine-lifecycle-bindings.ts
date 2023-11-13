@@ -134,7 +134,7 @@ export const createInletCallersBindings = (
                 (message: Message) => {
                     const messagePointer = lowerMessage(rawModule, message)
                     ;(rawModule as any)[
-                        engineData.metadata.compilation.codeVariableNames
+                        engineData.metadata.compilation.variableNamesIndex
                             .inletCallers[nodeId][inletId]
                     ](messagePointer)
                 },
@@ -168,12 +168,12 @@ export const outletListenersImports = (
             messagePointer: MessagePointer
         ) => void
     } = {}
-    const { codeVariableNames } = metadata.compilation
+    const { variableNamesIndex } = metadata.compilation
     Object.entries(metadata.compilation.outletListenerSpecs).forEach(
         ([nodeId, outletIds]) => {
             outletIds.forEach((outletId) => {
                 const listenerName =
-                    codeVariableNames.outletListeners[nodeId][outletId]
+                    variableNamesIndex.outletListeners[nodeId][outletId]
                 wasmImports[listenerName] = (messagePointer) => {
                     const message = liftMessage(
                         forwardReferences.rawModule,

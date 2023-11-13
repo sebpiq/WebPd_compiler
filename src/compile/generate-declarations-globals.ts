@@ -23,7 +23,7 @@ import { AstSequence } from '../ast/types'
 import { Sequence, Func, Var } from '../ast/declare'
 
 export default ({
-    codeVariableNames: { globs },
+    variableNamesIndex: { globs },
 }: Compilation): AstSequence =>
     // prettier-ignore
     Sequence([

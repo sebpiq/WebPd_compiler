@@ -303,12 +303,12 @@ describe('Engine', () => {
                     compilation: {
                         inletCallerSpecs: { bla: ['blo'] },
                         outletListenerSpecs: { bli: ['blu'] },
-                        codeVariableNames:
-                            engine.metadata.compilation.codeVariableNames,
+                        variableNamesIndex:
+                            engine.metadata.compilation.variableNamesIndex,
                     },
                 })
                 assert.ok(
-                    Object.keys(engine.metadata.compilation.codeVariableNames)
+                    Object.keys(engine.metadata.compilation.variableNamesIndex)
                         .length
                 )
 
