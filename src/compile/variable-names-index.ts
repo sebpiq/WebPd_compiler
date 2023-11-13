@@ -26,7 +26,7 @@ import {
     NodeImplementations,
     VariableNamesIndex,
     Compilation,
-} from '../compile/types'
+} from './types'
 
 /**
  * Generates the whole set of variable names for a compilation for a given graph.
@@ -35,7 +35,7 @@ import {
  * @param graph
  * @returns
  */
-export const generateCodeVariableNames = (
+export const generateVariableNamesIndex = (
     nodeImplementations: NodeImplementations,
     graph: DspGraph.Graph,
     debug: boolean
@@ -75,8 +75,6 @@ export const generateCodeVariableNames = (
             input: 'INPUT',
             nullMessageReceiver: 'SND_TO_NULL',
             nullSignal: 'NULL_SIGNAL',
-            // TODO : not a glob
-            m: 'm',
         }),
         outletListeners: createNamespace('outletListeners', {}),
         inletCallers: createNamespace('inletCallers', {}),

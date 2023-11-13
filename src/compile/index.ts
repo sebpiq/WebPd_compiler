@@ -27,7 +27,7 @@ import compileToJavascript from '../engine-javascript/compile'
 import compileToAssemblyscript from '../engine-assemblyscript/compile'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/compile/types'
-import { generateCodeVariableNames } from './code-variable-names'
+import { generateVariableNamesIndex } from './variable-names-index'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
@@ -61,7 +61,7 @@ export default (
         debug,
     } = validateSettings(settings)
     const precompilation = initializePrecompilation(graph)
-    const variableNamesIndex = generateCodeVariableNames(
+    const variableNamesIndex = generateVariableNamesIndex(
         nodeImplementations,
         graph,
         debug

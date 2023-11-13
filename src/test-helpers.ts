@@ -30,7 +30,7 @@ import {
 import { AstSequence, Code, AstFunc } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
 import { Engine, Module, RawModule } from './run/types'
-import { generateCodeVariableNames } from './compile/code-variable-names'
+import { generateVariableNamesIndex } from './compile/variable-names-index'
 import { writeFile } from 'fs/promises'
 import {
     buildGraphTraversalDeclare,
@@ -108,7 +108,7 @@ export const makeCompilation = (
         compilation.precompilation || initializePrecompilation(graph)
     const variableNamesIndex =
         compilation.variableNamesIndex ||
-        generateCodeVariableNames(nodeImplementations, graph, debug)
+        generateVariableNamesIndex(nodeImplementations, graph, debug)
     const audioSettings = compilation.audioSettings || {
         bitDepth: 32,
         channelCount: { in: 2, out: 2 },

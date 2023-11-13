@@ -22,9 +22,9 @@ import {
     assertValidNamePart,
     attachNodePortlet,
     attachOutletListenersAndInletCallers,
-    generateCodeVariableNames,
-} from './code-variable-names'
-import { VariableNamesIndex, NodeImplementations } from '../compile/types'
+    generateVariableNamesIndex,
+} from './variable-names-index'
+import { VariableNamesIndex, NodeImplementations } from './types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 
@@ -65,10 +65,10 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNames = generateCodeVariableNames(nodeImplementations, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, false)
 
             assert.deepStrictEqual(
-                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
+                JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
                     myOsc: {
                         outs: {},
@@ -109,19 +109,19 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNames = generateCodeVariableNames(nodeImplementations, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, false)
 
-            assert.throws(() => variableNames.nodes.unknownNode)
+            assert.throws(() => variableNamesIndex.nodes.unknownNode)
             assert.throws(
-                () => variableNames.nodes.myOsc.rcvs['unknown receiver']
+                () => variableNamesIndex.nodes.myOsc.rcvs['unknown receiver']
             )
             assert.throws(
-                () => variableNames.nodes.myOsc.outs['unknown portlet']
+                () => variableNamesIndex.nodes.myOsc.outs['unknown portlet']
             )
             assert.throws(
-                () => variableNames.nodes.myOsc.snds['unknown sender']
+                () => variableNamesIndex.nodes.myOsc.snds['unknown sender']
             )
-            assert.throws(() => variableNames.nodes.myOsc.state['unknown var'])
+            assert.throws(() => variableNamesIndex.nodes.myOsc.state['unknown var'])
         })
     })
 
@@ -151,11 +151,11 @@ describe('code-variable-names', () => {
                 }
             })
 
-            const variableNames = generateCodeVariableNames(nodeImplementations, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, false)
 
             const compilation = makeCompilation({
                 nodeImplementations,
-                variableNamesIndex: variableNames,
+                variableNamesIndex: variableNamesIndex,
                 graph,
             })
 
@@ -166,7 +166,7 @@ describe('code-variable-names', () => {
             attachNodePortlet(compilation, 'rcvs', 'node1', '1')
 
             assert.deepStrictEqual(
-                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
+                JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
                     node1: {
                         outs: {
@@ -210,11 +210,11 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNames = generateCodeVariableNames(nodeImplementations, graph, true)
+            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, true)
 
             const compilation = makeCompilation({
                 nodeImplementations,
-                variableNamesIndex: variableNames,
+                variableNamesIndex: variableNamesIndex,
                 debug: true,
                 graph,
             })
@@ -224,7 +224,7 @@ describe('code-variable-names', () => {
             attachNodePortlet(compilation, 'rcvs', 'someObj', '2')
 
             assert.deepStrictEqual(
-                JSON.parse(JSON.stringify({ ...variableNames.nodes })),
+                JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
                     someObj: {
                         outs: {
@@ -281,7 +281,7 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNamesIndex: VariableNamesIndex = generateCodeVariableNames(
+            const variableNamesIndex: VariableNamesIndex = generateVariableNamesIndex(
                 NODE_IMPLEMENTATIONS,
                 graph,
                 false

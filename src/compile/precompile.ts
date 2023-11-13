@@ -23,7 +23,7 @@ import { mapObject } from '../functional-helpers'
 import {
     attachNodePortlet,
     attachOutletListenersAndInletCallers,
-} from './code-variable-names'
+} from './variable-names-index'
 import { getNodeImplementation } from './compile-helpers'
 import generateLoopInline from './generate-loop-inline'
 import { createNamespace, nodeNamespaceLabel } from './namespace'
