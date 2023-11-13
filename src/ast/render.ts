@@ -9,8 +9,8 @@ import { AstContainer, Code, CodeMacros } from './types'
  */
 const render = (macros: CodeMacros, node: AstContainer): Code => {
     return node.content
-        .filter((line) => line !== null)
         .map((element) => {
+            if (!element) {debugger}
             if (typeof element === 'string') {
                 return element
             } else if (element.astType === 'Var') {
@@ -31,7 +31,6 @@ const render = (macros: CodeMacros, node: AstContainer): Code => {
                 throw new Error(`Unexpected element in AST ${element}`)
             }
         })
-        .filter((line) => line.length)
         .join('')
 }
 

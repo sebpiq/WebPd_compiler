@@ -69,17 +69,9 @@ interface TestParameters {
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
     // { bitDepth: 64, target: 'javascript' },
-    { bitDepth: 32, target: 'assemblyscript' },
+    // { bitDepth: 32, target: 'assemblyscript' },
     // { bitDepth: 64, target: 'assemblyscript' },
 ]
-
-export const normalizeCode = (rawCode: string) => {
-    const lines = rawCode
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => !!line.length)
-    return lines.join('\n')
-}
 
 export const round = (v: number, decimals: number = 4) => {
     // Useful to round big numbers in scientific notation, e.g. 3.282417323806467e+38

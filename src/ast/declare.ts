@@ -1,3 +1,4 @@
+import { countTo } from '../functional-helpers'
 import { AstContent, AstElement, Code, CodeVariableName } from './types'
 import {
     TypeName,
@@ -10,151 +11,153 @@ import {
 
 type AstContentRaw = AstContent | AstContainer | null | number
 
-type AstContentNested = Array<AstContentNested | AstContentRaw>
+type AstContentRawNested = Array<AstContentRawNested | AstContentRaw>
 
 export const Var = (
     typeName: TypeName,
     name: CodeVariableName,
     value?: Code | AstContainer
-): VarDeclaration => _preventToString({
-    astType: 'Var',
-    name,
-    type: typeName,
-    value: typeof value === 'string' ? AstRaw([value]): value,
-})
+): VarDeclaration =>
+    _preventToString({
+        astType: 'Var',
+        name,
+        type: typeName,
+        value: typeof value === 'string' ? AstRaw([value]) : value,
+    })
 
 export const ConstVar = (
     typeName: TypeName,
     name: CodeVariableName,
     value?: Code | AstContainer
-): ConstVarDeclaration => _preventToString({
-    astType: 'ConstVar',
-    name,
-    type: typeName,
-    value: typeof value === 'string' ? AstRaw([value]): value,
-})
+): ConstVarDeclaration =>
+    _preventToString({
+        astType: 'ConstVar',
+        name,
+        type: typeName,
+        value: typeof value === 'string' ? AstRaw([value]) : value,
+    })
 
 export const Func =
     (name: string, args: Array<VarDeclaration>, returnType: Code) =>
     (
         strings: ReadonlyArray<Code>,
-        ...content: AstContentNested
-    ): FuncDeclaration => _preventToString({
-        astType: 'Func',
-        name,
-        args,
-        returnType,
-        body: Ast(strings, ...content),
-    })
+        ...content: AstContentRawNested
+    ): FuncDeclaration =>
+        _preventToString({
+            astType: 'Func',
+            name,
+            args,
+            returnType,
+            body: Ast(strings, ...content),
+        })
 
 export const Class = (
     name: string,
     members: Array<VarDeclaration>
-): ClassDeclaration => _preventToString({
-    astType: 'Class',
-    name,
-    members,
-})
+): ClassDeclaration =>
+    _preventToString({
+        astType: 'Class',
+        name,
+        members,
+    })
 
 export const Ast = (
     strings: ReadonlyArray<Code>,
-    ...content: AstContentNested
-): AstContainer => {
-    let combinedContent: Array<AstContent> = []
+    ...content: AstContentRawNested
+): AstContainer =>
+    _preventToString({
+        astType: 'Container',
+        content: _processRawContent(_intersperse(strings, content)),
+    })
 
-    // TODO : why not using _combineStrings ?
-    let currentString = ''
-    for (let i = 0; i < strings.length; i++) {
-        currentString += strings[i]
-        if (i >= content.length) {
-            combinedContent.push(currentString)
-            break
-        }
-        const element = content[i]
+export const AstRaw = (content: AstContentRawNested): AstContainer => ({
+    astType: 'Container',
+    content: _processRawContent(
+        _intersperse(
+            content,
+            countTo(content.length - 1).map(() => '\n')
+        )
+    ),
+})
 
+export const _processRawContent = (
+    content: AstContentRawNested
+): Array<AstContent> => {
+    // 1. Flatten arrays and AstContainer, filter out nulls, and convert numbers to strings
+    // Basically converts input to an Array<AstContent>.
+    const flattenedAndFiltered = content.flatMap((element) => {
         if (typeof element === 'string') {
-            currentString += element
+            return [element]
         } else if (typeof element === 'number') {
-            currentString += element.toString()
+            return [element.toString()]
         } else {
-            combinedContent.push(currentString)
-            currentString = ''
-
-            if (Array.isArray(element)) {
-                combinedContent = [
-                    ...combinedContent,
-                    ..._flattenAndFilter(element),
-                ]
+            if (element === null) {
+                return []
+            } else if (Array.isArray(element)) {
+                return _processRawContent(
+                    _intersperse(
+                        element,
+                        countTo(element.length - 1).map(() => '\n')
+                    )
+                )
             } else if (
                 typeof element === 'object' &&
                 element.astType === 'Container'
             ) {
-                combinedContent = [...combinedContent, ...element.content]
-            
-            } else if (element === null) {
-                // Do nothing
+                return element.content
             } else {
-                combinedContent.push(element)
+                return [element]
             }
         }
-    }
-
-    return _preventToString({
-        astType: 'Container',
-        content: combinedContent,
     })
+
+    // 2. Combine adjacent strings
+    const [combinedContent, remainingString] = flattenedAndFiltered.reduce<
+        [Array<AstContent>, string]
+    >(
+        ([combinedContent, currentString], element) => {
+            if (typeof element === 'string') {
+                return [combinedContent, currentString + element]
+            } else {
+                if (currentString.length) {
+                    return [[...combinedContent, currentString, element], '']
+                } else {
+                    return [[...combinedContent, element], '']
+                }
+            }
+        },
+        [[], '']
+    )
+    if (remainingString.length) {
+        combinedContent.push(remainingString)
+    }
+
+    return combinedContent
 }
 
-export const AstRaw = (content: AstContentNested): AstContainer => ({
-    astType: 'Container',
-    content: _combineStrings(_flattenAndFilter(content)),
-})
-
-const _flattenAndFilter = (content: AstContentNested): Array<AstContent> => {
-    // 1. flatten arrays
-    // Problem with TS and Array.flat(Infinity) :
-    // REF : https://stackoverflow.com/a/61420611/312598
-    const flattened = (
-        content.flat(Infinity as 1) as Array<AstContentRaw>
-    )
-        // 2. remove nulls
-        .filter((element) => element !== null)
-        .map(element => typeof element === 'number' ? element.toString() : element)
-        // 3. flatten AstContainer
-        .flatMap((element) =>
-            typeof element === 'object' && element.astType === 'Container'
-                ? element.content
-                : [element]
+/**
+ * Intersperse content from array1 with content from array2.
+ * `array1.length` must be equal to `array2.length + 1`.
+ */
+const _intersperse = (
+    array1: Readonly<AstContentRawNested>,
+    array2: Readonly<AstContentRawNested>
+): AstContentRawNested => {
+    if (array1.length === 0) {
+        return []
+    }
+    return array1
+        .slice(1)
+        .reduce<AstContentRawNested>(
+            (combinedContent, element, i) =>
+                combinedContent.concat([array2[i], element]),
+            [array1[0]]
         )
-    // 4. add newlines between elements
-    return flattened.flatMap((element, i) =>
-        i < flattened.length - 1 ? [element, '\n'] : [element]
-    )
 }
 
-const _combineStrings = (content: Array<AstContent>) => {
-    let combinedContent: Array<AstContent> = []
-    let currentString = ''
-    for (let i = 0; i < content.length; i++) {
-        if (typeof content[i] === 'string') {
-            currentString += content[i]
-        } else {
-            combinedContent.push(currentString)
-            currentString = ''
-            combinedContent.push(content[i])
-        }
-    }
-    if (currentString.length) {
-        combinedContent.push(currentString)
-    }
-    return combinedContent.filter((element) =>
-        typeof element === 'string' ? element.length > 0 : true
-    )
-}
-
-const _preventToString = <T extends AstElement>(element : T): T => ({
+const _preventToString = <T extends AstElement>(element: T): T => ({
     ...element,
-    // toString: () => { 
-    //     throw new Error(`Rendering element ${element.astType} as string is probably an error`) 
+    // toString: () => {
+    //     throw new Error(`Rendering element ${element.astType} as string is probably an error`)
     // }
 })

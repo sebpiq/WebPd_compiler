@@ -63,7 +63,7 @@ describe('generateDeclarationsNodes', () => {
 
         const ast = generateDeclarationsNodes(compilation)
 
-        assert.deepStrictEqual<AstContainer>(ast, {
+        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
             astType: 'Container',
             content: ['// [type1] arg1 440\n// [type2] channelCount 2'],
         })
@@ -98,7 +98,7 @@ describe('generateDeclarationsNodes', () => {
 
         const ast = generateDeclarationsNodes(compilation)
 
-        assert.deepStrictEqual<AstContainer>(ast, {
+        assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
             astType: 'Container',
             content: [Var('Float', 'node1_OUTS_0', '0')],
         })
@@ -152,8 +152,8 @@ describe('generateDeclarationsNodes', () => {
                     body: {
                         astType: 'Container',
                         content: [
-                            '// [type1] message receiver 0',
-                                `throw new Error('[type1], id "node1", inlet "0", unsupported message : ' + msg_display(m))`,
+                            '// [type1] message receiver 0\n'
+                                + `throw new Error('[type1], id "node1", inlet "0", unsupported message : ' + msg_display(m))`,
                         ],
                     },
                 },
@@ -208,7 +208,7 @@ describe('generateDeclarationsNodes', () => {
                     body: {
                         astType: 'Container',
                         content: [
-                            '// [type1] message receiver',
+                            '// [type1] message receiver\n' +
                                 `throw new Error('[type1], id "node1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
                         ],
                     },
@@ -342,7 +342,7 @@ describe('generateDeclarationsNodes', () => {
                     body: {
                         astType: 'Container',
                         content: [
-                            '// [type2] message receiver',
+                            '// [type2] message receiver\n' + 
                                 `throw new Error('[type2], id "node2", inlet "0", unsupported message : ' + msg_display(m))`,
                         ],
                     },
@@ -362,7 +362,7 @@ describe('generateDeclarationsNodes', () => {
                     body: {
                         astType: 'Container',
                         content: [
-                            '// [type2] message receiver',
+                            '// [type2] message receiver\n' + 
                                 `throw new Error('[type2], id "node3", inlet "0", unsupported message : ' + msg_display(m))`,
                         ],
                     },
@@ -381,7 +381,7 @@ describe('generateDeclarationsNodes', () => {
                     returnType: 'void',
                     body: {
                         astType: 'Container',
-                        content: ['node2_RCVS_0(m)','node3_RCVS_0(m)'],
+                        content: ['node2_RCVS_0(m)\nnode3_RCVS_0(m)'],
                     },
                 },
             ],
@@ -454,7 +454,7 @@ describe('generateDeclarationsNodes', () => {
                     body: {
                         astType: 'Container',
                         content: [
-                            '// [type2] message receiver',
+                            '// [type2] message receiver\n' + 
                                 `throw new Error('[type2], id "node2", inlet "0", unsupported message : ' + msg_display(m))`,
                         ],
                     },
@@ -490,7 +490,7 @@ describe('generateDeclarationsNodes', () => {
                     returnType: 'void',
                     body: {
                         astType: 'Container',
-                        content: ['outletListener_node1_1(m)','node2_RCVS_0(m)'],
+                        content: ['outletListener_node1_1(m)\nnode2_RCVS_0(m)'],
                     },
                 },
             ],

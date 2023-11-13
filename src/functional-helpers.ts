@@ -72,11 +72,11 @@ export const mapArray = <SrcType, DestType>(
 export const renderSwitch = (
     ...routes: Array<[boolean, Code | Array<Code>]>
 ) => {
-    const route = routes.find(([test]) => test)
-    if (!route) {
+    const matchedRoute = routes.find(([test]) => test)
+    if (!matchedRoute) {
         throw new Error(`no route found`)
     }
-    return route[1]
+    return matchedRoute[1]
 }
 
 /** Renders `code` only if `test` is truthy. */

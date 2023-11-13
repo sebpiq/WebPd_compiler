@@ -21,7 +21,6 @@
 import assert from 'assert'
 import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
-import { normalizeCode } from '../test-helpers'
 import generateLoop from './generate-loop'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { Ast } from '../ast/declare'
@@ -103,10 +102,10 @@ describe('generateLoop', () => {
         assert.deepStrictEqual<AstContainer>(normalizeCodeForTests(ast), {
             astType: 'Container',
             content: [
-                `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)`,
-                '// [osc~] : frequency 440',
-                '// [+~] : value 110',
-                '// [dac~] : channelCount 2',
+                `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
+                '// [osc~] : frequency 440\n' +
+                '// [+~] : value 110\n' +
+                '// [dac~] : channelCount 2\n' +
                 `FRAME++\n}`,
             ],
         })
@@ -139,9 +138,9 @@ describe('generateLoop', () => {
         assert.deepStrictEqual(normalizeCodeForTests(ast), {
             astType: 'Container',
             content: [
-                'for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)',
-                'node1_OUTS_0 = BLA',
-                'FRAME++\n}',
+                'for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n' + 
+                'node1_OUTS_0 = BLA\n' + 
+                'FRAME++\n}'
             ],
         })
     })
