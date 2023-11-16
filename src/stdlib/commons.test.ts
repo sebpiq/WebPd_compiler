@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { ast, Sequence, ConstVar, Func, Var } from '../ast/declare'
+import { AnonFunc, ast, ConstVar, Func, Var } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import {
     commonsCore,
@@ -34,7 +34,7 @@ describe('commons', () => {
             {
                 description:
                     'setArray > should set the array and notifiy the subscribers hooks %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     callbackCallCounter = 0
 
                     ${ConstVar(

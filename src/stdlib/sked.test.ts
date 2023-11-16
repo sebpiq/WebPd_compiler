@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { Sequence, ConstVar, Func, Var } from '../ast/declare'
+import { Sequence, ConstVar, Func, Var, AnonFunc } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import { core } from './core'
 import { sked } from './sked'
@@ -28,7 +28,7 @@ describe('sked', () => {
             {
                 description:
                     'wait / emit > should not have to wait if event already resolved %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(true)
 
@@ -48,7 +48,7 @@ describe('sked', () => {
             {
                 description:
                     'wait / emit > should call waits callbacks when resolving %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(true)
 
@@ -73,7 +73,7 @@ describe('sked', () => {
             {
                 description:
                     'wait / emit > should not call callbacks again when resolving several times %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(true)
                     ${Var('SkedId', 'skedId', 'SKED_ID_NULL')}
@@ -98,7 +98,7 @@ describe('sked', () => {
 
             {
                 description: 'wait / emit > should cancel wait %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(true)
                     ${ConstVar(
@@ -115,7 +115,7 @@ describe('sked', () => {
             {
                 description:
                     'wait future / emit > should call waits callbacks when resolving %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(false)
 
@@ -139,7 +139,7 @@ describe('sked', () => {
             {
                 description:
                     'wait future / emit > should not call callbacks again when resolving several times %s',
-                testFunction: (declareTestFunction) => declareTestFunction`            
+                testFunction: () => AnonFunc([], 'void')`            
                     initializeTests()
                     const skeduler = sked_create(false)
 
@@ -158,7 +158,7 @@ describe('sked', () => {
 
             {
                 description: 'wait future / emit > should cancel wait %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(false)
                     ${Var('SkedId', 'skedId', `sked_wait_future(
@@ -175,7 +175,7 @@ describe('sked', () => {
             {
                 description:
                     'subscribe / emit > emit should trigger existing listeners %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(false)
 
@@ -204,7 +204,7 @@ describe('sked', () => {
 
             {
                 description: 'subscribe / emit > should cancel listeners %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(false)
 
@@ -231,7 +231,7 @@ describe('sked', () => {
             {
                 description:
                     'cancel > should not throw when cancelling an listener that is already cancelled %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(false)
                     ${ConstVar('SkedId', 'skedId', `sked_subscribe(
@@ -248,7 +248,7 @@ describe('sked', () => {
             {
                 description:
                     'cancel > should not throw when cancelling an listener with id NULL %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTests()
                     const skeduler = sked_create(false)
                     sked_cancel(skeduler, SKED_ID_NULL)

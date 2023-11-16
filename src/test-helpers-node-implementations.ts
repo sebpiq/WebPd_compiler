@@ -264,7 +264,6 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     })
 
     const blockSize = 1
-    let configured = false
     const outputFrames: Array<FrameNodeOut> = []
     const engineInput = buildEngineBlock(
         bitDepth,
@@ -341,10 +340,7 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
 
         // We make sure we configure AFTER assigning the outletListeners,
         // so we can receive messages sent during configure.
-        if (configured === false) {
-            engine.configure(nodeTestSettings.sampleRate, blockSize)
-            configured = true
-        }
+        engine.configure(nodeTestSettings.sampleRate, blockSize)
 
         // Send in fs commands
         if (inputFrame.fs) {

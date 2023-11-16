@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { ConstVar, Var } from '../ast/declare'
+import { AnonFunc, ConstVar, Var } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import { bufCore, bufPushPull, bufWriteRead } from './buf'
 import { core } from './core'
@@ -29,7 +29,7 @@ describe('buf', () => {
             {
                 description:
                     'common > should clear content when calling buf_clear %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     ${ConstVar('buf_SoundBuffer', 'soundBuffer', 'buf_create(5)')}
                     ${ConstVar('FloatArray', 'data', 'createFloatArray(4)')}
                     data.set([11, 22, 33, 44])
@@ -48,7 +48,7 @@ describe('buf', () => {
             {
                 description:
                     'push / pull mode > should be able to push and pull from SoundBuffer %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     const soundBuffer = buf_create(5)
                     ${Var('Int', 'availableLength', '-1')}
                     let data3 = createFloatArray(3)
@@ -90,7 +90,7 @@ describe('buf', () => {
             {
                 description:
                     'push / pull mode > should return 0 when pulling from empty buffer %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     const soundBuffer = buf_create(5)
                     assert_floatsEqual(buf_pullSample(soundBuffer), 0)
                     assert_floatsEqual(buf_pullSample(soundBuffer), 0)
@@ -100,7 +100,7 @@ describe('buf', () => {
             {
                 description:
                     'read / write mode > should return 0 when reading from an empty buffer %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     const soundBuffer = buf_create(5)
                     assert_floatsEqual(buf_readSample(soundBuffer, 0), 0)
                 `,
@@ -109,7 +109,7 @@ describe('buf', () => {
             {
                 description:
                     'read / write mode > should write a sample to the buffer %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     const soundBuffer = buf_create(3)
                     buf_writeSample(soundBuffer, 11)
                     buf_writeSample(soundBuffer, 22)
@@ -123,7 +123,7 @@ describe('buf', () => {
             {
                 description:
                     'read / write mode > should not throw an error with wrong values for read offset %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     const soundBuffer = buf_create(3)
                     buf_writeSample(soundBuffer, 11)
                     buf_writeSample(soundBuffer, 22)

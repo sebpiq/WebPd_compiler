@@ -22,12 +22,17 @@ import { AnonFunc, Class, ConstVar, Func, Var } from '../../ast/declare'
 import macros from './macros'
 
 describe('macros', () => {
-    it('should generate a Var declaration', () => {
+    it('should render a Var declaration', () => {
         const var1 = Var('Int', 'a')
         assert.strictEqual(macros.Var(var1, '1'), 'let a: Int = 1')
     })
 
-    it('should generate a ConstVar declaration', () => {
+    it('should render a Var declaration with undefined value', () => {
+        const var1 = Var('Int', 'a')
+        assert.strictEqual(macros.Var(var1, undefined), 'let a: Int')
+    })
+
+    it('should render a ConstVar declaration', () => {
         const var1 = ConstVar('string', 'a', 'BLOOOOoo')
         assert.strictEqual(
             macros.ConstVar(var1, '"bla"'),
@@ -35,7 +40,7 @@ describe('macros', () => {
         )
     })
 
-    it('should generate a Func declaration', () => {
+    it('should render a Func declaration', () => {
         const func1 = Func(
             'myFunc',
             [Var('Int', 'a')],
@@ -47,7 +52,7 @@ describe('macros', () => {
         )
     })
 
-    it('should generate an anonymous Func declaration', () => {
+    it('should render an anonymous Func declaration', () => {
         const func1 = AnonFunc(
             [Var('Int', 'a')],
             'string'
@@ -58,7 +63,7 @@ describe('macros', () => {
         )
     })
 
-    it('should generate a Class declaration', () => {
+    it('should render a Class declaration', () => {
         const class1 = Class('MyClass', [Var('Int', 'a'), Var('Float', 'b')])
         assert.strictEqual(
             macros.Class(class1),

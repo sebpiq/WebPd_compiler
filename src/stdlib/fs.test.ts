@@ -29,7 +29,7 @@ import {
 import { bufCore, bufPushPull } from './buf'
 import { core } from './core'
 import { msg } from './msg'
-import { Sequence, ConstVar, Func, Var } from '../ast/declare'
+import { Sequence, ConstVar, Func, Var, AnonFunc } from '../ast/declare'
 
 describe('fs', () => {
     runTestSuite(
@@ -37,7 +37,7 @@ describe('fs', () => {
             {
                 description:
                     'sound info > should be able to convert fs_SoundInfo to Message %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${ConstVar('fs_SoundInfo', 'soundInfo', `{
                         channelCount: 2,
@@ -63,7 +63,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_readSoundFile > should create the operation %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${ConstVar(
                         'fs_OperationId',
@@ -100,7 +100,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendReadSoundFileResponse > should register the operation success and call the callback %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     // 1. Create the operation
                     ${ConstVar(
@@ -150,7 +150,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendReadSoundFileResponse > should register the operation failure %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${ConstVar(
                         'fs_OperationId',
@@ -185,7 +185,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_openSoundReadStream > should create the operation %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${ConstVar('Int', 'channelCount', '22')}
                     ${ConstVar(
@@ -226,7 +226,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_onSoundStreamData > should push data to the buffer %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${Var('Int', 'availableFrameCount', '0')}
                     ${Var('FloatArray[]', 'data', '[]')}
@@ -298,7 +298,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_closeSoundStream > should close the read stream and call the callback %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${Var('FloatArray[]', 'data', '[]')}
 
@@ -350,7 +350,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_openSoundWriteStream > should create the operation %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${ConstVar(
                         'fs_OperationId',
@@ -388,7 +388,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendSoundStreamData > should push data to the buffer %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${Var('Float', 'counter', '0')}
                     ${Var('FloatArray[]', 'data', '[]')}
@@ -463,7 +463,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_closeSoundStream > should close the write stream and call the callback %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
                     ${Func('testSendSoundStreamData', [
                         Var('fs_OperationId', 'id')
@@ -516,7 +516,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_writeSoundFile > should create the operation %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
 
                     ${ConstVar('FloatArray[]', 'sound', `[
@@ -559,7 +559,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendWriteSoundFileResponse > should register the operation success and call the callback %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
 
                     ${ConstVar('FloatArray[]', 'sound', `[
@@ -603,7 +603,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendWriteSoundFileResponse > should register the operation failure %s',
-                testFunction: (declareTestFunction) => declareTestFunction`
+                testFunction: () => AnonFunc([], 'void')`
                     initializeTest()
 
                     ${ConstVar('FloatArray[]', 'sound', `[

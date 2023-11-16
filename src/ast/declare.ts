@@ -35,33 +35,30 @@ type AstContentRawNested = Array<AstContentRawNested | AstContentRaw>
 export const Var = (
     typeName: TypeName,
     name: VariableName,
-    value?: Code | AstSequence
+    value?: Code | AstSequence | number
 ): AstVar =>
     _preventToString({
         astType: 'Var',
         name,
         type: typeName,
-        value: typeof value === 'string' ? Sequence([value]) : value,
+        value: _prepareVarValue(value),
     })
 
 export const ConstVar = (
     typeName: TypeName,
     name: VariableName,
-    value?: Code | AstSequence
+    value: Code | AstSequence | number
 ): AstConstVar =>
     _preventToString({
         astType: 'ConstVar',
         name,
         type: typeName,
-        value: typeof value === 'string' ? Sequence([value]) : value,
+        value: _prepareVarValue(value),
     })
 
 export const Func =
     (name: string, args: Array<AstVar>, returnType: Code) =>
-    (
-        strings: ReadonlyArray<Code>,
-        ...content: AstContentRawNested
-    ): AstFunc =>
+    (strings: ReadonlyArray<Code>, ...content: AstContentRawNested): AstFunc =>
         _preventToString({
             astType: 'Func',
             name,
@@ -72,10 +69,7 @@ export const Func =
 
 export const AnonFunc =
     (args: Array<AstVar>, returnType: Code) =>
-    (
-        strings: ReadonlyArray<Code>,
-        ...content: AstContentRawNested
-    ): AstFunc =>
+    (strings: ReadonlyArray<Code>, ...content: AstContentRawNested): AstFunc =>
         _preventToString({
             astType: 'Func',
             name: null,
@@ -83,12 +77,8 @@ export const AnonFunc =
             returnType,
             body: ast(strings, ...content),
         })
-    
 
-export const Class = (
-    name: string,
-    members: Array<AstVar>
-): AstClass =>
+export const Class = (name: string, members: Array<AstVar>): AstClass =>
     _preventToString({
         astType: 'Class',
         name,
@@ -190,8 +180,8 @@ const _intersperse = (
 }
 
 /**
- * Prevents AST elements from being rendered as a string, as this is 
- * most likely an error due to unproper use of `ast`. 
+ * Prevents AST elements from being rendered as a string, as this is
+ * most likely an error due to unproper use of `ast`.
  * Deacivated. Activate for debugging by uncommenting the line below.
  */
 const _preventToString = <T extends AstElement>(element: T): T => ({
@@ -199,3 +189,13 @@ const _preventToString = <T extends AstElement>(element: T): T => ({
     // Uncomment this to activate
     // toString: () => { throw new Error(`Rendering element ${elemennt.astType} as string is probably an error`) }
 })
+
+const _prepareVarValue = (value?: Code | AstSequence | number) => {
+    if (typeof value === 'number') {
+        return Sequence([value.toString()])
+    } else if (typeof value === 'string') {
+        return Sequence([value])
+    } else {
+        return value
+    }
+}

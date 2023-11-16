@@ -68,9 +68,9 @@ interface TestParameters {
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
-    // { bitDepth: 64, target: 'javascript' },
-    // { bitDepth: 32, target: 'assemblyscript' },
-    // { bitDepth: 64, target: 'assemblyscript' },
+    { bitDepth: 64, target: 'javascript' },
+    { bitDepth: 32, target: 'assemblyscript' },
+    { bitDepth: 64, target: 'assemblyscript' },
 ]
 
 export const round = (v: number, decimals: number = 4) => {
@@ -212,7 +212,7 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
 export const runTestSuite = (
     tests: Array<{
         description: string
-        testFunction: (declareTestFunction: ReturnType<typeof Func>, target: CompilerTarget) => AstFunc
+        testFunction: (target: CompilerTarget) => AstFunc
     }>,
     dependencies: Array<GlobalCodeDefinition> = []
 ) => {
@@ -232,10 +232,13 @@ export const runTestSuite = (
             }
 
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
-                tests.map(({ testFunction }, i) => ({
-                    codeGenerator: () => testFunction(Func(testFunctionNames[i], [], 'void'), target),
-                    exports: [{ name: testFunctionNames[i] }],
-                }))
+                tests.map(({ testFunction }, i) => {
+                    const astTestFunc = testFunction(target)
+                    return ({
+                        codeGenerator: () => ({...astTestFunc, name: testFunctionNames[i] }),
+                        exports: [{ name: testFunctionNames[i] }],
+                    })
+                })
 
             let sequence = Sequence([
                 Func('reportTestFailure', [

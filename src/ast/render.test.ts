@@ -30,6 +30,7 @@ describe('render', () => {
 
     it('should render Var and ConstVar properly', () => {
         assert.strictEqual(render(macros, Var('number', 'a', '1')), `let a: number = 1`)
+        assert.strictEqual(render(macros, Var('number', 'a')), `let a: number`)
         assert.strictEqual(render(macros, ConstVar('string', 'b', '"HELLO"')), `const b: string = "HELLO"`)
     })
 

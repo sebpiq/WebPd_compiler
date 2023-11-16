@@ -75,13 +75,17 @@ export default (compilation: Compilation): AstSequence => {
                             )
                         } else if (
                             typeof astFunc !== 'object' ||
-                            astFunc.astType !== 'Func' ||
+                            astFunc.astType !== 'Func'
+                        ) {
+                            throw new Error(`Expected an ast Func`)
+                        } else if (
                             astFunc.args.length !== 1 ||
                             astFunc.args[0].type !== 'Message' ||
                             astFunc.returnType !== 'void'
                         ) {
                             throw new Error(
-                                `receiver for inlet "${inlet.id}" of node type "${node.type}" should be have signature (m: Message): void`
+                                `receiver for inlet "${inlet.id}" of node type "${node.type}" should be have signature <(m: Message): void>`
+                                + ` got instead <(${astFunc.args.map(arg => `${arg.name}: ${arg.type}`).join(', ')}): ${astFunc.returnType}>`
                             )
                         }
 

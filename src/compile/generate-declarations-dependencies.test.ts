@@ -33,17 +33,25 @@ describe('generate-declarations-dependencies', () => {
         it('should compile the global code, removing duplicates', () => {
             const bli = ast`"bli"`
             const blo = ast`"blo"`
+            const bla1 = ast`"bla"`
+            const bla2 = ast`"bla"`
+
             const bloGenerator: GlobalCodeGenerator = () => blo
+            const blaGenerator1: GlobalCodeGenerator = () => bla1
+            const blaGenerator2: GlobalCodeGenerator = () => bla2
             const generated = generateDeclarationsDependencies(COMPILATION, [
                 bloGenerator,
+                blaGenerator1,
                 {
                     codeGenerator: () => bli,
                     dependencies: [bloGenerator],
                 },
+                blaGenerator2,
             ])
-            assert.strictEqual(generated.length, 2)
+            assert.strictEqual(generated.length, 3)
             assert.strictEqual(generated[0], blo)
-            assert.strictEqual(generated[1], bli)
+            assert.strictEqual(generated[1], bla1)
+            assert.strictEqual(generated[2], bli)
         })
     })
 

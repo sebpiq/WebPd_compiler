@@ -25,6 +25,7 @@ import {
     GlobalCodeGeneratorContext,
 } from './types'
 import { AstElement } from '../ast/types'
+import deepEqual from 'deep-equal'
 
 export default (
     context: GlobalCodeGeneratorContext,
@@ -32,17 +33,16 @@ export default (
 ): Array<AstElement> =>
     // De-duplicate code
     _flattenDependencies(dependencies)
-        .reduce<Array<GlobalCodeDefinition>>(
-            (codeDefinitions, codeDefinition) =>
-                !codeDefinitions.includes(codeDefinition)
-                    ? [...codeDefinitions, codeDefinition]
-                    : codeDefinitions,
+        .map((codeGenerator) => codeGenerator(context))
+        .reduce<Array<AstElement>>(
+            (astElements, astElement) =>
+                astElements.every(
+                    (otherElement) =>
+                        !deepEqual(otherElement, astElement, { strict: true })
+                )
+                    ? [...astElements, astElement]
+                    : astElements,
             []
-        )
-        .map((codeDefinition) =>
-            isGlobalDefinitionWithSettings(codeDefinition)
-                ? codeDefinition.codeGenerator(context)
-                : codeDefinition(context)
         )
 
 export const _flattenDependencies = (

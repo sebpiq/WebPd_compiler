@@ -18,11 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstClass, CodeMacros, AstConstVar, AstFunc, AstVar } from '../../ast/types'
+import { CodeMacros, AstConstVar, AstFunc, AstVar } from '../../ast/types'
 import { Code } from '../../ast/types'
 
-const Var = (declaration: AstVar, renderedValue: Code) =>
-    `let ${declaration.name} = ${renderedValue}`
+const Var = (declaration: AstVar, renderedValue?: Code) =>
+`let ${declaration.name}${renderedValue ? ` = ${renderedValue}` : ''}`
 
 const ConstVar = (declaration: AstConstVar, renderedValue: Code) =>
     `const ${declaration.name} = ${renderedValue}`

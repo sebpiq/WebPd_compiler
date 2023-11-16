@@ -241,4 +241,16 @@ describe('declare', () => {
             })
         })
     })
+
+    describe('Var', () => {
+        it('should accept value as number', () => {
+            const var1 = Var('Int', 'bla', 1)
+            assert.deepStrictEqual(var1, {
+                astType: 'Var',
+                name: 'bla',
+                type: 'Int',
+                value: { astType: 'Sequence', content: ['1'] },
+            })
+        })
+    })
 })

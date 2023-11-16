@@ -15,3 +15,12 @@ export * as functional from './src/functional-helpers'
 export * as dspGraph from './src/dsp-graph'
 export { DspGraph } from './src/dsp-graph'
 export * as stdlib from './src/stdlib'
+export {
+    Var,
+    ConstVar,
+    Func,
+    ast,
+    Class,
+    AnonFunc,
+    Sequence,
+} from './src/ast/declare'
