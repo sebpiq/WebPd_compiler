@@ -34,14 +34,14 @@ import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import { commonsArrays } from './stdlib'
-import { AnonFunc, ast, Sequence, Var } from './ast/declare'
+import { AnonFunc, Class, ConstVar, Sequence, Var, ast } from './ast/declare'
 export { makeCompilation } from './test-helpers'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
-interface NodeTestSettings<NodeArguments, NodeState> {
+interface NodeTestSettings<NodeArguments> {
     target: CompilerTarget
     node: DspGraph.Node
-    nodeImplementation: NodeImplementation<NodeArguments, NodeState>
+    nodeImplementation: NodeImplementation<NodeArguments>
     bitDepth: AudioSettings['bitDepth']
     sampleRate?: number
     arrays?: { [arrayName: string]: Array<number> }
@@ -69,8 +69,8 @@ export type FrameNodeOut = FrameNode & {
     sequence?: Array<string>
 }
 
-export const generateFramesForNode = async <NodeArguments, NodeState>(
-    nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
+export const generateFramesForNode = async <NodeArguments>(
+    nodeTestSettings: NodeTestSettings<NodeArguments>,
     inputFrames: Array<FrameNodeIn>
 ): Promise<Array<FrameNodeOut>> => {
     nodeTestSettings.sampleRate =
@@ -146,65 +146,78 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            generateDeclarations: ({ state }) => Sequence(
-                Object.keys(fakeSourceNode.outlets)
-                    .filter(
-                        (outletId) =>
-                            fakeSourceNode.outlets[outletId].type === 'signal'
-                    )
-                    .map(
-                        (outletId) =>
-                            Var('Float', state[`VALUE_${outletId}`], '0')
-                    )
-            ),
-
             generateMessageReceivers: ({ snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
                     if (fakeSourceNode.outlets[outletId].type === 'message') {
-                        return AnonFunc([Var('Message', 'm')], 'void')`${snds[outletId]}(m);return`
+                        return AnonFunc([Var('Message', 'm')])`
+                            ${snds[outletId]}(m)
+                            return
+                        `
 
                         // Messages received for signal outlets are written to the loop
                     } else {
-                        return AnonFunc([Var('Message', 'm')], 'void')`${state[`VALUE_${outletId}`]} = msg_readFloatToken(m, 0);return`
+                        return AnonFunc([Var('Message', 'm')])`
+                            ${state}.VALUE_${outletId} = msg_readFloatToken(m, 0)
+                            return
+                        `
                     }
                 }),
 
-            generateLoop: ({ outs, state }) => Sequence(
-                Object.keys(fakeSourceNode.outlets)
-                    .filter(
-                        (outletId) =>
-                            fakeSourceNode.outlets[outletId].type === 'signal'
-                    )
-                    .map(
-                        (outletId) =>
-                            `${outs[outletId]} = ${state[`VALUE_${outletId}`]}`
-                    )
-            ),
-
-            stateVariables: mapArray(
-                Object.keys(fakeSourceNode.outlets).filter(
-                    (outletId) =>
-                        fakeSourceNode.outlets[outletId].type === 'signal'
+            generateLoop: ({ outs, state }) =>
+                Sequence(
+                    Object.keys(fakeSourceNode.outlets)
+                        .filter(
+                            (outletId) =>
+                                fakeSourceNode.outlets[outletId].type ===
+                                'signal'
+                        )
+                        .map(
+                            (outletId) =>
+                                `${outs[outletId]} = ${state}.VALUE_${outletId}`
+                        )
                 ),
-                (outletId) => [`VALUE_${outletId}`, 1]
-            ),
+
+            generateInitialization: ({ state }) => ast`
+                ${ConstVar('TestHelperNodeFakeSourceNode', state, ast`{
+                    ${Object.keys(fakeSourceNode.outlets)
+                        .filter(
+                            (outletId) =>
+                                fakeSourceNode.outlets[outletId].type === 'signal'
+                        )
+                        .map((outletId) => `VALUE_${outletId}: 0,`)}
+                }`)}
+            `,
+
+            dependencies: [() =>                 
+                Class(
+                    'TestHelperNodeFakeSourceNode',
+                    Object.keys(fakeSourceNode.outlets)
+                        .filter(
+                            (outletId) =>
+                                fakeSourceNode.outlets[outletId].type ===
+                                'signal'
+                        )
+                        .map((outletId) => Var('Float', `VALUE_${outletId}`))
+                ),
+            ]
         },
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            generateLoop: ({ ins, snds }) => Sequence(
-                Object.keys(testNode.sinks)
-                .filter(
-                    (outletId) =>
-                        testNode.outlets[outletId].type === 'signal'
-                )
-                .map(
-                    (outletId) =>
-                        // prettier-ignore
-                        `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
-                )
-            ),
+            generateLoop: ({ ins, snds }) =>
+                Sequence(
+                    Object.keys(testNode.sinks)
+                        .filter(
+                            (outletId) =>
+                                testNode.outlets[outletId].type === 'signal'
+                        )
+                        .map(
+                            (outletId) =>
+                                // prettier-ignore
+                                `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
+                        )
+                ),
 
             // Take incoming messages and directly proxy them
             generateMessageReceivers: ({ snds }) =>
@@ -215,7 +228,10 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
                     ),
                     (inletId) => [
                         inletId,
-                        AnonFunc([Var('Message', 'm')], 'void')`${snds[inletId]}(m);return`,
+                        AnonFunc([Var('Message', 'm')])`
+                            ${snds[inletId]}(m)
+                            return
+                        `,
                     ]
                 ),
         },
@@ -408,8 +424,8 @@ export const generateFramesForNode = async <NodeArguments, NodeState>(
     return outputFrames
 }
 
-export const assertNodeOutput = async <NodeArguments, NodeState>(
-    nodeTestSettings: NodeTestSettings<NodeArguments, NodeState>,
+export const assertNodeOutput = async <NodeArguments>(
+    nodeTestSettings: NodeTestSettings<NodeArguments>,
     ...frames: Array<[FrameNodeIn, FrameNodeOut]>
 ): Promise<void> => {
     nodeTestSettings.sampleRate =

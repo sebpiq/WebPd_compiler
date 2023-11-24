@@ -53,7 +53,6 @@ describe('compile-helpers', () => {
 
         it('should fill-in all fields with default functions', () => {
             const referenceImplementation: NodeImplementation<any> = {
-                stateVariables: {},
                 dependencies: [],
             }
             const defaultImplementation = getNodeImplementation(
@@ -288,8 +287,8 @@ describe('compile-helpers', () => {
             const codeDefinition1: GlobalCodeGeneratorWithSettings = {
                 codeGenerator: () => Sequence([]),
                 imports: [
-                    Func('ex1', [], 'void')``,
-                    Func('ex3', [], 'void')``,
+                    Func('ex1')``,
+                    Func('ex3')``,
                 ],
             }
             const codeDefinition2: GlobalCodeGeneratorWithSettings = {
@@ -299,7 +298,7 @@ describe('compile-helpers', () => {
             }
             const codeDefinition3: GlobalCodeGeneratorWithSettings = {
                 codeGenerator: () => Sequence([]),
-                imports: [Func('ex4', [], 'void')``],
+                imports: [Func('ex4')``],
                 dependencies: [codeDefinition2],
             }
             const dependencies: Array<GlobalCodeDefinition> = [
@@ -308,9 +307,9 @@ describe('compile-helpers', () => {
             ]
 
             assert.deepStrictEqual(collectImports(dependencies), [
-                Func('ex1', [], 'void')``,
-                Func('ex3', [], 'void')``,
-                Func('ex4', [], 'void')``,
+                Func('ex1')``,
+                Func('ex3')``,
+                Func('ex4')``,
             ])
         })
     })

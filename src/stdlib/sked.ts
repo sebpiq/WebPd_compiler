@@ -53,11 +53,12 @@ export const sked: GlobalCodeGenerator = ({target}) => {
         Class('SkedRequest', [
             Var('SkedId', 'id'),
             Var('SkedMode', 'mode'),
+            Var('SkedCallback', 'callback'),
         ]),
 
         Class('Skeduler', [
-            Var('Map<SkedEvent, Array<SkedRequest>>', 'requests'),
-            Var('Map<SkedId, SkedCallback>', 'callbacks'),
+            Var('Map<SkedEvent, Array<SkedId>>', 'events'),
+            Var('Map<SkedId, SkedRequest>', 'requests'),
             Var('boolean', 'isLoggingEvents'),
             Var('Set<SkedEvent>', 'eventLog'),
             Var('SkedId', 'idCounter'),
@@ -69,8 +70,8 @@ export const sked: GlobalCodeGenerator = ({target}) => {
         ], 'Skeduler')`
             return {
                 eventLog: new Set(),
+                events: new Map(),
                 requests: new Map(),
-                callbacks: new Map(),
                 idCounter: SKED_ID_COUNTER_INIT,
                 isLoggingEvents,
             }
@@ -134,25 +135,21 @@ export const sked: GlobalCodeGenerator = ({target}) => {
             if (skeduler.isLoggingEvents === true) {
                 skeduler.eventLog.add(event)
             }
-            if (skeduler.requests.has(event)) {
-                ${ConstVar(
-                    'Array<SkedRequest>',
-                    'requests',
-                    'skeduler.requests.get(event)',
-                )}
-                ${ConstVar('Array<SkedRequest>', 'requestsStaying', '[]')}
-                for (${Var('Int', 'i', '0')}; i < requests.length; i++) {
-                    ${ConstVar('SkedRequest', 'request', 'requests[i]')}
-                    if (skeduler.callbacks.has(request.id)) {
-                        skeduler.callbacks.get(request.id)(event)
+            if (skeduler.events.has(event)) {
+                ${ConstVar('Array<SkedId>', 'skedIds', 'skeduler.events.get(event)')}
+                ${ConstVar('Array<SkedId>', 'skedIdsStaying', '[]')}
+                for (${Var('Int', 'i', '0')}; i < skedIds.length; i++) {
+                    if (skeduler.requests.has(skedIds[i])) {
+                        ${ConstVar('SkedRequest', 'request', 'skeduler.requests.get(skedIds[i])')}
+                        request.callback(event)
                         if (request.mode === _SKED_MODE_WAIT) {
-                            skeduler.callbacks.delete(request.id)
+                            skeduler.requests.delete(request.id)
                         } else {
-                            requestsStaying.push(request)
+                            skedIdsStaying.push(request.id)
                         }
                     }
                 }
-                skeduler.requests.set(event, requestsStaying)
+                skeduler.events.set(event, skedIdsStaying)
             }
         `,
 
@@ -161,7 +158,7 @@ export const sked: GlobalCodeGenerator = ({target}) => {
             Var('Skeduler', 'skeduler'), 
             Var('SkedId', 'id'),
         ], 'void')`
-            skeduler.callbacks.delete(id)
+            skeduler.requests.delete(id)
         `,
 
         // =========================== PRIVATE
@@ -172,12 +169,16 @@ export const sked: GlobalCodeGenerator = ({target}) => {
             Var('SkedMode', 'mode'),
         ], 'SkedId')`
             ${ConstVar('SkedId', 'id', '_sked_nextId(skeduler)')}
-            ${ConstVar('SkedRequest', 'request', '{id, mode}')}
-            skeduler.callbacks.set(id, callback)
-            if (!skeduler.requests.has(event)) {
-                skeduler.requests.set(event, [request])    
+            ${ConstVar('SkedRequest', 'request', `{
+                id, 
+                mode, 
+                callback,
+            }`)}
+            skeduler.requests.set(id, request)
+            if (!skeduler.events.has(event)) {
+                skeduler.events.set(event, [id])    
             } else {
-                skeduler.requests.get(event).push(request)
+                skeduler.events.get(event).push(id)
             }
             return id
         `,

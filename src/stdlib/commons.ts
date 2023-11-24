@@ -26,7 +26,7 @@ export const commonsCore: GlobalCodeGeneratorWithSettings = {
     codeGenerator: () => Sequence([
         ConstVar('Skeduler', '_commons_ENGINE_LOGGED_SKEDULER', 'sked_create(true)'),
         ConstVar('Skeduler', '_commons_FRAME_SKEDULER', 'sked_create(false)'),
-        Func('_commons_emitEngineConfigure', [], 'void')`
+        Func('_commons_emitEngineConfigure')`
             sked_emit(_commons_ENGINE_LOGGED_SKEDULER, 'configure')
         `,
         Func('_commons_emitFrame', [

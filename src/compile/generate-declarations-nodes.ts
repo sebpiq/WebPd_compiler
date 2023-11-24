@@ -46,13 +46,13 @@ export default (compilation: Compilation): AstSequence => {
                 node.type
             )
             const nodeVariableNames = variableNamesIndex.nodes[node.id]
-            const nodePrecompilation = precompilation[node.id]
+            const { state, snds } = precompilation[node.id]
             const nodeMessageReceivers =
                 nodeImplementation.generateMessageReceivers
                     ? nodeImplementation.generateMessageReceivers({
                           globs,
-                          state: nodeVariableNames.state,
-                          snds: nodePrecompilation.snds,
+                          state,
+                          snds,
                           node,
                           compilation,
                       })
@@ -98,21 +98,10 @@ export default (compilation: Compilation): AstSequence => {
                                     : ''})
                         `
                     }),
-
-                // 3. Custom declarations for the node
-                nodeImplementation.generateDeclarations
-                    ? nodeImplementation.generateDeclarations({
-                          globs,
-                          state: nodeVariableNames.state,
-                          snds: nodePrecompilation.snds,
-                          node,
-                          compilation,
-                      })
-                    : null,
             ]
         }),
 
-        // 4. Declares message senders for all message outlets.
+        // 3. Declares message senders for all message outlets.
         // This needs to come after all message receivers are declared since we reference them here.
         // If there are outlets listeners declared we also inject the code here.
         // Senders that don't appear in precompilation are not declared.

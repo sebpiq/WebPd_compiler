@@ -44,7 +44,7 @@ import {
     fsWriteSoundStream,
 } from './stdlib/fs'
 import { commonsArrays, commonsWaitEngineConfigure } from './stdlib/commons'
-import { ast, Sequence, ConstVar, Func, Var, AnonFunc } from './ast/declare'
+import { ast, Sequence, ConstVar, Func, Var, AnonFunc, Class } from './ast/declare'
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
@@ -339,21 +339,27 @@ describe('Engine', () => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const nodeImplementations: NodeImplementations = {
                         DUMMY: {
-                            generateDeclarations: ({ globs, state }) =>
-                                Sequence([
-                                    Var('Float', state.configureCalled, '0'),
-                                    `commons_waitEngineConfigure(() => {${state.configureCalled} = ${globs.sampleRate}})`,
-                                ]),
+                            generateInitialization: ({ globs, state }) => ast`
+                                ${ConstVar('DummyNodeState', state, `{
+                                    configureCalled: 0
+                                }`)}
+                                commons_waitEngineConfigure(() => {${state}.configureCalled = ${globs.sampleRate}})
+                            `,
                             generateLoop: ({
                                 globs,
                                 state,
                                 compilation: { target },
                             }) =>
                                 target === 'assemblyscript'
-                                    ? ast`${globs.output}[0] = ${state.configureCalled}`
-                                    : ast`${globs.output}[0][0] = ${state.configureCalled}`,
+                                    ? ast`${globs.output}[0] = ${state}.configureCalled`
+                                    : ast`${globs.output}[0][0] = ${state}.configureCalled`,
 
-                            stateVariables: { configureCalled: 1 },
+                            dependencies: [
+                                () => 
+                                    Class('DummyNodeState', [ 
+                                        Var('Float', 'configureCalled') 
+                                    ])
+                            ],
                         },
                     }
 
@@ -1156,16 +1162,15 @@ describe('Engine', () => {
                                 'msg_create([MSG_STRING_TOKEN, 3])'
                             ),
                             `
-                        msg_writeFloatToken(m1, 0, 11)
-                        msg_writeFloatToken(m1, 1, 22)
-                        msg_writeStringToken(m2, 0, 'bla')
-                        `,
-
-                            Func('testCallOutletListener', [], 'void')`
-                            outletListeners_someNode1_someOutlet1(m1)
-                            outletListeners_someNode1_someOutlet2(m2)
-                            outletListeners_someNode2_someOutlet1(m1)
-                        `,
+                            msg_writeFloatToken(m1, 0, 11)
+                            msg_writeFloatToken(m1, 1, 22)
+                            msg_writeStringToken(m2, 0, 'bla')
+                            `,
+                            Func('testCallOutletListener')`
+                                outletListeners_someNode1_someOutlet1(m1)
+                                outletListeners_someNode1_someOutlet2(m2)
+                                outletListeners_someNode2_someOutlet1(m1)
+                            `,
                         ]),
                     exports: [{ name: 'testCallOutletListener' }],
                 }

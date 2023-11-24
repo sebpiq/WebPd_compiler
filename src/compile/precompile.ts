@@ -24,13 +24,16 @@ import {
     attachNodePortlet,
     attachOutletListenersAndInletCallers,
 } from './variable-names-index'
-import { getNodeImplementation } from './compile-helpers'
+import {
+    getNodeImplementation,
+} from './compile-helpers'
 import generateLoopInline from './generate-loop-inline'
 import { createNamespace, nodeNamespaceLabel } from './namespace'
-import { Compilation, Precompilation } from './types'
+import { Compilation, Precompilation, VariableNamesIndex } from './types'
 
 export const initializePrecompilation = (
-    graph: DspGraph.Graph
+    graph: DspGraph.Graph,
+    variableNamesIndex: VariableNamesIndex
 ): Precompilation =>
     createNamespace(
         'precompilation',
@@ -40,6 +43,7 @@ export const initializePrecompilation = (
                 outs: createNamespace(nodeNamespaceLabel(node, 'outs'), {}),
                 snds: createNamespace(nodeNamespaceLabel(node, 'snds'), {}),
                 ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {}),
+                state: variableNamesIndex.nodes[node.id].state,
             })
         )
     )

@@ -19,7 +19,7 @@
  */
 import assert from "assert"
 import macros from "../engine-assemblyscript/compile/macros"
-import { ast, Var, ConstVar, Func, Class } from "./declare"
+import { ast, Var, ConstVar, Func, Class, AnonFunc } from "./declare"
 import render from "./render"
 
 describe('render', () => {
@@ -36,13 +36,16 @@ describe('render', () => {
 
     it('should render Func properly', () => {
         const func = Func('myFunc', [
-            Var('Int', 'arg1')
+            Var('Int', 'arg1'),
+            Var('Array<(a: Int) => void>', 'arg2', ast`[${
+                AnonFunc([Var('Int', 'a')])``
+            }]`),
         ], 'string')`
             ${Var('number', 'a', '1')}
             ${ConstVar('string', 'b', '"HELLO"')}
             return b + a.toString() + arg1.toString()
         `
-        assert.strictEqual(render(macros, func), `function myFunc(arg1: Int): string {
+        assert.strictEqual(render(macros, func), `function myFunc(arg1: Int, arg2: Array<(a: Int) => void>=[function (a: Int): void {}]): string {
             let a: number = 1
             const b: string = "HELLO"
             return b + a.toString() + arg1.toString()

@@ -28,7 +28,7 @@ describe('msg', () => {
         [
             {
                 description: 'msg_floats > should create floats message %s',
-                testFunction: () => AnonFunc([], 'void')`
+                testFunction: () => AnonFunc()`
                     ${ConstVar('Message', 'message', 'msg_floats([111, 222])')}
                     assert_integersEqual(msg_getLength(message), 2)
                     assert_floatsEqual(msg_readFloatToken(message, 0), 111)
@@ -39,7 +39,7 @@ describe('msg', () => {
             {
                 description:
                     'msg_floats > should create empty floats message %s',
-                testFunction: () => AnonFunc([], 'void')`
+                testFunction: () => AnonFunc()`
                     ${ConstVar('Message', 'message', 'msg_floats([])')}
                     assert_integersEqual(msg_getLength(message), 0)
                 `,
@@ -47,7 +47,7 @@ describe('msg', () => {
 
             {
                 description: 'msg_strings > should create strings message %s',
-                testFunction: () => AnonFunc([], 'void')`
+                testFunction: () => AnonFunc()`
                     ${ConstVar(
                         'Message',
                         'message',
@@ -63,7 +63,7 @@ describe('msg', () => {
             {
                 description:
                     'msg_strings > should create empty strings message %s',
-                testFunction: () => AnonFunc([], 'void')`
+                testFunction: () => AnonFunc()`
                     ${ConstVar('Message', 'message', 'msg_strings([])')}
                     assert_integersEqual(msg_getLength(message), 0)
                 `,
@@ -71,7 +71,7 @@ describe('msg', () => {
 
             {
                 description: 'msg_isMatching > should match given message %s',
-                testFunction: () => AnonFunc([], 'void')`
+                testFunction: () => AnonFunc()`
                     assert_booleansEqual(
                         msg_isMatching(
                             msg_create([MSG_FLOAT_TOKEN]), 
@@ -120,7 +120,7 @@ describe('msg', () => {
             {
                 description:
                     'msg_display > should return a display version of a message %s',
-                testFunction: (target) => AnonFunc([], 'void')`
+                testFunction: (target) => AnonFunc()`
                     ${ConstVar(
                         'Message',
                         'message',

@@ -34,7 +34,7 @@ describe('commons', () => {
             {
                 description:
                     'setArray > should set the array and notifiy the subscribers hooks %s',
-                testFunction: () => AnonFunc([], 'void')`
+                testFunction: () => AnonFunc()`
                     callbackCallCounter = 0
 
                     ${ConstVar(
@@ -42,7 +42,7 @@ describe('commons', () => {
                         'subscription',
                         ast`commons_subscribeArrayChanges(
                             'array1', 
-                            ${Func('callback', [], 'void')`
+                            ${Func('callback')`
                                 callbackCallCounter++
                             `}
                         )`

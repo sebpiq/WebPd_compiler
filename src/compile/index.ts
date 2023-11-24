@@ -18,11 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    Compilation,
-    CompilationSettings,
-    NodeImplementations,
-} from './types'
+import { Compilation, CompilationSettings, NodeImplementations } from './types'
 import compileToJavascript from '../engine-javascript/compile'
 import compileToAssemblyscript from '../engine-assemblyscript/compile'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
@@ -31,6 +27,8 @@ import { generateVariableNamesIndex } from './variable-names-index'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
+    collectDependenciesFromTraversal,
+    engineMinimalDependencies,
 } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
 import { traversal } from '../dsp-graph'
@@ -60,18 +58,27 @@ export default (
         target,
         debug,
     } = validateSettings(settings)
-    const precompilation = initializePrecompilation(graph)
     const variableNamesIndex = generateVariableNamesIndex(
         nodeImplementations,
         graph,
         debug
     )
+    const precompilation = initializePrecompilation(graph, variableNamesIndex)
     const graphTraversalDeclare = buildGraphTraversalDeclare(
         graph,
         inletCallerSpecs
     )
     const graphTraversalLoop = buildGraphTraversalLoop(graph)
     const trimmedGraph = traversal.trimGraph(graph, graphTraversalDeclare)
+
+    const engineDependencies = [
+        ...engineMinimalDependencies(),
+        ...collectDependenciesFromTraversal(
+            nodeImplementations,
+            graph,
+            graphTraversalDeclare
+        ),
+    ]
 
     return {
         status: 0,
@@ -81,6 +88,7 @@ export default (
             graphTraversalDeclare,
             graphTraversalLoop,
             nodeImplementations,
+            engineDependencies,
             audioSettings,
             arrays,
             inletCallerSpecs,

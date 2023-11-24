@@ -26,6 +26,7 @@ import {
     Func,
     Var,
     _processRawContent,
+    AnonFunc,
 } from './declare'
 import { AstSequence, AstFunc } from './types'
 
@@ -90,7 +91,7 @@ describe('declare', () => {
         it('should leave other AST elements untouched', () => {
             const var1 = Var('Int', 'bla')
             const var2 = Var('Int', 'blu')
-            const func1 = Func('myFunc', [], 'void')`
+            const func1 = Func('myFunc')`
                 ${var1}
                 ${var2}
             `
@@ -208,7 +209,7 @@ describe('declare', () => {
 
         it('should allow function body to declare functions', () => {
             const astFunc = Func('myFunc', [], 'string')`
-                ${Func('myFunc2', [], 'void')`
+                ${Func('myFunc2')`
                     return
                 `}
                 return 'hello'
@@ -237,6 +238,63 @@ describe('declare', () => {
                         },
                         "\n                return 'hello'\n            ",
                     ],
+                },
+            })
+        })
+
+        it('should have default values for args and returnType', () => {
+            const astFunc = Func('myFunc')``
+
+            assert.deepStrictEqual<AstFunc>(astFunc, {
+                astType: 'Func',
+                name: 'myFunc',
+                args: [],
+                returnType: 'void',
+                body: {
+                    astType: 'Sequence',
+                    content: [],
+                },
+            })
+        })
+    })
+
+    describe('AnonFunc', () => {
+        it('should allow to declare an anonymous function', () => {
+            const astFunc = AnonFunc(
+                [Var('number', 'arg1')],
+                'void'
+            )`const a = 1`
+
+            assert.deepStrictEqual<AstFunc>(astFunc, {
+                astType: 'Func',
+                name: null,
+                args: [
+                    {
+                        astType: 'Var',
+                        name: 'arg1',
+                        type: 'number',
+                        value: undefined,
+                    },
+                ],
+                returnType: 'void',
+                body: {
+                    astType: 'Sequence',
+                    content: ['const a = 1'],
+                },
+            })
+        })
+
+        it('should have default values for args and returnType', () => {
+            const astFunc = AnonFunc()``
+
+            assert.deepStrictEqual<AstFunc>(astFunc, {
+                astType: 'Func',
+                name: null,
+                args: [],
+                returnType: 'void',
+                body: {
+                    astType: 'Sequence',
+                    content: [],
                 },
             })
         })

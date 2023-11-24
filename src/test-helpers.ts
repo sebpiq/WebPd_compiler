@@ -24,7 +24,6 @@ import {
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
-    GlobalCodeGeneratorContext,
     GlobalCodeGeneratorWithSettings,
 } from './compile/types'
 import { AstSequence, Code, AstFunc } from './ast/types'
@@ -35,6 +34,8 @@ import { writeFile } from 'fs/promises'
 import {
     buildGraphTraversalDeclare,
     buildGraphTraversalLoop,
+    collectDependenciesFromTraversal,
+    engineMinimalDependencies,
     getMacros,
 } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
@@ -104,11 +105,21 @@ export const makeCompilation = (
         buildGraphTraversalDeclare(graph, inletCallerSpecs)
     const graphTraversalLoop =
         compilation.graphTraversalLoop || buildGraphTraversalLoop(graph)
-    const precompilation =
-        compilation.precompilation || initializePrecompilation(graph)
     const variableNamesIndex =
         compilation.variableNamesIndex ||
         generateVariableNamesIndex(nodeImplementations, graph, debug)
+    const precompilation =
+        compilation.precompilation || initializePrecompilation(graph, variableNamesIndex)
+    const engineDependencies =
+        compilation.engineDependencies ||
+        [
+            ...engineMinimalDependencies(),
+            ...collectDependenciesFromTraversal(
+                nodeImplementations,
+                graph,
+                graphTraversalDeclare
+            ),
+        ]
     const audioSettings = compilation.audioSettings || {
         bitDepth: 32,
         channelCount: { in: 2, out: 2 },
@@ -125,8 +136,9 @@ export const makeCompilation = (
         outletListenerSpecs,
         inletCallerSpecs,
         variableNamesIndex,
-        debug,
         precompilation,
+        engineDependencies,
+        debug,
     }
 }
 
@@ -223,13 +235,13 @@ export const runTestSuite = (
     beforeAll(async () => {
         for (let testParameters of TEST_PARAMETERS) {
             const { target, bitDepth } = testParameters
-            const codeGeneratorContext: GlobalCodeGeneratorContext = {
+            const compilation = makeCompilation({
                 target,
                 audioSettings: {
                     bitDepth,
                     channelCount: { in: 2, out: 2 },
                 },
-            }
+            })
 
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
                 tests.map(({ testFunction }, i) => {
@@ -305,7 +317,7 @@ export const runTestSuite = (
                     }
                 `,
 
-                generateDeclarationsDependencies(codeGeneratorContext, [
+                generateDeclarationsDependencies(compilation, [
                     ...dependencies,
                     ...testsCodeDefinitions,
                 ]),

@@ -33,6 +33,7 @@ import { FloatArrayPointer, InternalPointer } from './types'
 import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../ast/render'
+import { generateVariableNamesGlobs } from '../../compile/variable-names-index'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {
@@ -58,6 +59,7 @@ describe('core-bindings', () => {
         core.codeGenerator({
             target: 'assemblyscript',
             audioSettings: { bitDepth, channelCount: { in: 2, out: 2 } },
+            globs: generateVariableNamesGlobs(),
         }),
         core.exports.map(({ name }) => `export { ${name} }`)
     ]))

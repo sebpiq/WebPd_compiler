@@ -24,6 +24,7 @@ import { makeCompilation } from '../test-helpers'
 import generateLoopInline from './generate-loop-inline'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { initializePrecompilation } from './precompile'
+import { generateVariableNamesIndex } from './variable-names-index'
 
 describe('generateLoopInline', () => {
 
@@ -251,14 +252,19 @@ describe('generateLoopInline', () => {
                     `${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
             },
         }
-
-        const precompilation = initializePrecompilation(graph)
+        const variableNamesIndex = generateVariableNamesIndex(
+            nodeImplementations,
+            graph,
+            false
+        )
+        const precompilation = initializePrecompilation(graph, variableNamesIndex)
         precompilation.n2.ins.$1 = 'BLA'
 
         const compilation = makeCompilation({
             graph,
             nodeImplementations,
             precompilation,
+            variableNamesIndex,
         })
 
         assert.strictEqual(
@@ -307,14 +313,19 @@ describe('generateLoopInline', () => {
             },
             'signalType': {},
         }
-
-        const precompilation = initializePrecompilation(graph)
+        const variableNamesIndex = generateVariableNamesIndex(
+            nodeImplementations,
+            graph,
+            false
+        )
+        const precompilation = initializePrecompilation(graph, variableNamesIndex)
         precompilation.n1.ins.$0 = 'nonInline1_OUTS_0'
 
         const compilation = makeCompilation({
             graph,
             nodeImplementations,
             precompilation,
+            variableNamesIndex,
         })
 
         assert.strictEqual(

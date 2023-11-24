@@ -27,8 +27,11 @@ const Var = (declaration: AstVar, renderedValue?: Code) =>
 const ConstVar = (declaration: AstConstVar, renderedValue: Code) =>
     `const ${declaration.name}: ${declaration.type} = ${renderedValue}`
 
-const Func = (declaration: AstFunc, renderedBody: Code) => 
-    `function ${declaration.name !== null ? declaration.name: ''}(${declaration.args.map(arg => `${arg.name}: ${arg.type}`).join(', ')}): ${declaration.returnType} {${renderedBody}}`
+const Func = (declaration: AstFunc, renderedArgsValues: Array<Code | null>, renderedBody: Code) => 
+    `function ${declaration.name !== null ? declaration.name: ''}(${
+        declaration.args.map(
+            (arg, i) => `${arg.name}: ${arg.type}${renderedArgsValues[i] ? `=${renderedArgsValues[i]}`: ''}`).join(', ')
+    }): ${declaration.returnType} {${renderedBody}}`
 
 const Class = (declaration: AstClass) => 
 `class ${declaration.name} {

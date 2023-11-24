@@ -18,13 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    buildMetadata,
-    collectDependenciesFromTraversal,
-    engineMinimalDependencies,
-} from '../../compile/compile-helpers'
+import { buildMetadata } from '../../compile/compile-helpers'
 import generateDeclarationsNodes from '../../compile/generate-declarations-nodes'
 import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
+import generateInitializationsNodes from '../../compile/generate-initializations-nodes'
 import generateLoop from '../../compile/generate-loop'
 import { Compilation } from '../../compile/types'
 import { AssemblyScriptWasmEngineCode } from './types'
@@ -38,19 +35,20 @@ import macros from './macros'
 import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const { audioSettings, inletCallerSpecs, variableNamesIndex } = compilation
+    const {
+        audioSettings,
+        inletCallerSpecs,
+        variableNamesIndex,
+        engineDependencies,
+    } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.variableNamesIndex.globs
     const metadata = buildMetadata(compilation)
-    const dependencies = [
-        ...engineMinimalDependencies(),
-        ...collectDependenciesFromTraversal(compilation),
-    ]
 
     // prettier-ignore
     return render(macros, ast`
         ${generateDeclarationsGlobals(compilation)}
-        ${generateDeclarationsDependencies(compilation, dependencies)}
+        ${generateDeclarationsDependencies(compilation, engineDependencies)}
         ${generateDeclarationsNodes(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
@@ -62,7 +60,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         const metadata: string = '${JSON.stringify(metadata)}'
         let ${globs.input}: FloatArray = createFloatArray(0)
         let ${globs.output}: FloatArray = createFloatArray(0)
-        
+
+        ${generateInitializationsNodes(compilation)}
+
         export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
             ${globs.output} = createFloatArray(blockSize * ${channelCount.out.toString()})
@@ -90,7 +90,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
         ${generateImportsExports(
             'assemblyscript',
-            dependencies,
+            engineDependencies,
             ({ name, args, returnType }) => ast`export declare function ${name} (${
                 args.map((a) => `${a.name}: ${a.type}`).join(',')
             }): ${returnType}`, 

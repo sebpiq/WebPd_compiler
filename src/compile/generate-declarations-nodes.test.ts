@@ -24,49 +24,10 @@ import { makeCompilation } from '../test-helpers'
 import generateDeclarationsNodes from './generate-declarations-nodes'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import precompile from './precompile'
-import { AnonFunc, ast, Var } from '../ast/declare'
+import { AnonFunc, Var } from '../ast/declare'
 import { assertAstSequencesAreEqual } from '../ast/test-helpers'
 
 describe('generateDeclarationsNodes', () => {
-    it('should compile custom declarations', () => {
-        const graph = makeGraph({
-            node1: {
-                type: 'type1',
-                args: {
-                    arg1: 440,
-                },
-            },
-            node2: {
-                type: 'type2',
-            },
-        })
-
-        const nodeImplementations: NodeImplementations = {
-            type1: {
-                generateDeclarations: ({ node }) =>
-                    ast`// [type1] arg1 ${node.args.arg1.toString()}`,
-            },
-            type2: {
-                generateDeclarations: ({ compilation: { audioSettings } }) =>
-                    ast`// [type2] channelCount ${audioSettings.channelCount.out.toString()}`,
-            },
-        }
-
-        const compilation = makeCompilation({
-            graph,
-            graphTraversalDeclare: ['node1', 'node2'],
-            nodeImplementations,
-        })
-
-        precompile(compilation)
-
-        const sequence = generateDeclarationsNodes(compilation)
-
-        assertAstSequencesAreEqual(sequence, {
-            astType: 'Sequence',
-            content: ['// [type1] arg1 440\n// [type2] channelCount 2'],
-        })
-    })
 
     it('should compile declarations for signal outlets declared in variable names', () => {
         const graph = makeGraph({
@@ -117,8 +78,8 @@ describe('generateDeclarationsNodes', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type1] message receiver 0`,
-                    '1': AnonFunc([Var('Message', 'm')], 'void')`// [type1] message receiver 1`,
+                    '0': AnonFunc([Var('Message', 'm')])`// [type1] message receiver 0`,
+                    '1': AnonFunc([Var('Message', 'm')])`// [type1] message receiver 1`,
                 }),
             },
         }
@@ -173,7 +134,7 @@ describe('generateDeclarationsNodes', () => {
         const nodeImplementations: NodeImplementations = {
             type1: {
                 generateMessageReceivers: () => ({
-                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type1] message receiver`,
+                    '0': AnonFunc([Var('Message', 'm')])`// [type1] message receiver`,
                 }),
             },
         }
@@ -255,7 +216,7 @@ describe('generateDeclarationsNodes', () => {
 
         const nodeImplementations: NodeImplementations = {
             type1: {
-                generateMessageReceivers: () => ({ '0': AnonFunc([Var('Message', 'm')], 'void')`` }),
+                generateMessageReceivers: () => ({ '0': AnonFunc([Var('Message', 'm')])`` }),
             },
         }
 
@@ -304,7 +265,7 @@ describe('generateDeclarationsNodes', () => {
             type1: {},
             type2: {
                 generateMessageReceivers: () => ({
-                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type2] message receiver`,
+                    '0': AnonFunc([Var('Message', 'm')])`// [type2] message receiver`,
                 }),
             },
         }
@@ -409,7 +370,7 @@ describe('generateDeclarationsNodes', () => {
             type1: {},
             type2: {
                 generateMessageReceivers: () => ({
-                    '0': AnonFunc([Var('Message', 'm')], 'void')`// [type2] message receiver`,
+                    '0': AnonFunc([Var('Message', 'm')])`// [type2] message receiver`,
                 }),
             },
         }

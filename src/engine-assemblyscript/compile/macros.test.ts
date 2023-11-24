@@ -18,8 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { AnonFunc, Class, ConstVar, Func, Var } from '../../ast/declare'
+import { Class, ConstVar, Func, Var } from '../../ast/declare'
 import macros from './macros'
+import render from '../../ast/render'
 
 describe('macros', () => {
     it('should render a Var declaration', () => {
@@ -43,23 +44,18 @@ describe('macros', () => {
     it('should render a Func declaration', () => {
         const func1 = Func(
             'myFunc',
-            [Var('Int', 'a')],
+            [Var('Int', 'a'), Var('string', 'b', '"bla"')],
             'string'
-        )`return (a + 1).toString()`
-        assert.strictEqual(
-            macros.Func(func1, 'return (a + 1).toString()'),
-            'function myFunc(a: Int): string {return (a + 1).toString()}'
-        )
-    })
+        )`return (a + 1).toString() + b`
 
-    it('should render an anonymous Func declaration', () => {
-        const func1 = AnonFunc(
-            [Var('Int', 'a')],
-            'string'
-        )`return (a + 1).toString()`
+        const renderedArgsValues = func1.args.map((arg) =>
+            arg.value ? render(macros, arg.value) : null
+        )
+        const renderedBody = render(macros, func1.body)
+
         assert.strictEqual(
-            macros.Func(func1, 'return (a + 1).toString()'),
-            'function (a: Int): string {return (a + 1).toString()}'
+            macros.Func(func1, renderedArgsValues, renderedBody),
+            'function myFunc(a: Int, b: string="bla"): string {return (a + 1).toString() + b}'
         )
     })
 

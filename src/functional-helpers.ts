@@ -52,7 +52,7 @@ export const mapObject = <SrcType, DestType>(
  * applying `func` to each element in `src`.
  */
 export const mapArray = <SrcType, DestType>(
-    src: Array<SrcType>,
+    src: ReadonlyArray<SrcType>,
     func: (srcValue: SrcType, index: number) => [string, DestType]
 ): { [key: string]: DestType } => {
     const dest: { [key: string]: DestType } = {}

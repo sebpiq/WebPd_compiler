@@ -38,8 +38,7 @@ export default (compilation: Compilation) => {
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
             ${graphTraversalLoop.map((nodeId) => {
-                const { state } = variableNamesIndex.nodes[nodeId]
-                const { outs, ins, snds } = precompilation[nodeId]
+                const { outs, ins, snds, state } = precompilation[nodeId]
                 const node = getters.getNode(graph, nodeId)
                 const nodeImplementation = getNodeImplementation(
                     nodeImplementations,

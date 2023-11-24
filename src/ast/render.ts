@@ -40,7 +40,15 @@ const render = (macros: CodeMacros, element: AstElement | string): Code => {
             element.value ? render(macros, element.value) : undefined
         )
     } else if (element.astType === 'Func') {
-        return macros.Func(element, render(macros, element.body))
+        return macros.Func(
+            element, 
+            element.args.map(
+                arg => arg.value ? render(macros, arg.value): null),
+            render(
+                macros, 
+                element.body
+            )
+        )
     } else if (element.astType === 'Class') {
         return macros.Class(element)
     } else if (element.astType === 'Sequence') {

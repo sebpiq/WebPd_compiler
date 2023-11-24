@@ -28,78 +28,48 @@ import { VariableNamesIndex, NodeImplementations } from './types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 
-describe('code-variable-names', () => {
+describe('variable-names-index', () => {
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
-        DUMMY: {},
+        type1: {},
+        type2: {}
     }
 
     describe('generate', () => {
-        it('should create state variables for nodes', () => {
-            const nodeImplementations: NodeImplementations = {
-                'osc~': {
-                    stateVariables: {
-                        phase: 1,
-                        currentThing: 1,
-                        k: 1,
-                    },
-                },
-                'dac~': {},
-            }
-
+        it('should create state variable names for each node', () => {
             const graph = makeGraph({
-                myOsc: {
-                    type: 'osc~',
-                    inlets: {
-                        '0': { type: 'signal', id: '0' },
-                        '1': { type: 'message', id: '1' },
-                    },
-                    outlets: {
-                        '0': { type: 'signal', id: '0' },
-                        '1': { type: 'message', id: '1' },
-                        '2': { type: 'signal', id: '2' },
-                        '3': { type: 'message', id: '3' },
-                    },
+                node1: {
+                    type: 'type1',
                 },
-                myDac: {
-                    type: 'dac~',
+                node2: {
+                    type: 'type2',
                 },
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(NODE_IMPLEMENTATIONS, graph, false)
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
-                    myOsc: {
+                    node1: {
                         outs: {},
                         snds: {},
                         rcvs: {},
-                        state: {
-                            phase: 'myOsc_STATE_phase',
-                            currentThing: 'myOsc_STATE_currentThing',
-                            k: 'myOsc_STATE_k',
-                        },
+                        state: 'node1_STATE',
                     },
-                    myDac: {
+                    node2: {
                         outs: {},
                         rcvs: {},
                         snds: {},
-                        state: {},
+                        state: 'node2_STATE',
                     },
                 }
             )
         })
 
         it('should throw error for unknown namespaces', () => {
-            const nodeImplementations: NodeImplementations = {
-                'osc~': {
-                    stateVariables: { phase: 1 },
-                },
-            }
-
             const graph = makeGraph({
-                myOsc: {
-                    type: 'osc~',
+                node1: {
+                    type: 'type1',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -109,29 +79,23 @@ describe('code-variable-names', () => {
                 },
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(NODE_IMPLEMENTATIONS, graph, false)
 
             assert.throws(() => variableNamesIndex.nodes.unknownNode)
             assert.throws(
-                () => variableNamesIndex.nodes.myOsc.rcvs['unknown receiver']
+                () => variableNamesIndex.nodes.node1.rcvs['unknown receiver']
             )
             assert.throws(
-                () => variableNamesIndex.nodes.myOsc.outs['unknown portlet']
+                () => variableNamesIndex.nodes.node1.outs['unknown portlet']
             )
             assert.throws(
-                () => variableNamesIndex.nodes.myOsc.snds['unknown sender']
+                () => variableNamesIndex.nodes.node1.snds['unknown sender']
             )
-            assert.throws(() => variableNamesIndex.nodes.myOsc.state['unknown var'])
         })
     })
 
     describe('attachNodePortlet', () => {
         it('should attach portlet variable names for a node', () => {
-            const nodeImplementations: NodeImplementations = {
-                'type1': {},
-                'type2': {},
-            }
-
             const graph = makeGraph({
                 node1: {
                     type: 'type1',
@@ -151,10 +115,10 @@ describe('code-variable-names', () => {
                 }
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(NODE_IMPLEMENTATIONS, graph, false)
 
             const compilation = makeCompilation({
-                nodeImplementations,
+                nodeImplementations: NODE_IMPLEMENTATIONS,
                 variableNamesIndex: variableNamesIndex,
                 graph,
             })
@@ -180,13 +144,13 @@ describe('code-variable-names', () => {
                         rcvs: {
                             '1': 'node1_RCVS_1',
                         },
-                        state: {},
+                        state: 'node1_STATE',
                     },
                     node2: {
                         outs: {},
                         rcvs: {},
                         snds: {},
-                        state: {},
+                        state: 'node2_STATE',
                     },
                 }
             )
@@ -214,7 +178,7 @@ describe('code-variable-names', () => {
 
             const compilation = makeCompilation({
                 nodeImplementations,
-                variableNamesIndex: variableNamesIndex,
+                variableNamesIndex,
                 debug: true,
                 graph,
             })
@@ -236,7 +200,7 @@ describe('code-variable-names', () => {
                         rcvs: {
                             '2': 'dacblawow_someObj_RCVS_2',
                         },
-                        state: {},
+                        state: 'dacblawow_someObj_STATE',
                     },
                 }
             )
@@ -271,6 +235,7 @@ describe('code-variable-names', () => {
         it('should attach outlet listeners variable names', () => {
             const graph = makeGraph({
                 node1: {
+                    type: 'type1',
                     inlets: {
                         inlet1: { type: 'message', id: 'inlet1' },
                     },
@@ -298,6 +263,7 @@ describe('code-variable-names', () => {
                 outletListenerSpecs,
                 inletCallerSpecs,
                 variableNamesIndex,
+                nodeImplementations: NODE_IMPLEMENTATIONS,
             })
 
             attachOutletListenersAndInletCallers(compilation)

@@ -85,6 +85,6 @@ export interface AstClass extends AstElementBase {
 export type CodeMacros = {
     Var: (declaration: AstVar, renderedValue: Code) => Code
     ConstVar: (declaration: AstConstVar, renderedValue: Code) => Code
-    Func: (declaration: AstFunc, renderedBody: Code) => Code
+    Func: (declaration: AstFunc, renderedArgsValues: Array<Code | null>, renderedBody: Code) => Code
     Class: (declaration: AstClass) => Code
 }

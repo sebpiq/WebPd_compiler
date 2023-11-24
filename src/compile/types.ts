@@ -52,6 +52,7 @@ export interface Compilation {
     readonly graphTraversalDeclare: DspGraph.GraphTraversal
     readonly graphTraversalLoop: DspGraph.GraphTraversal
     readonly nodeImplementations: NodeImplementations
+    readonly engineDependencies: Array<GlobalCodeDefinition>
     readonly audioSettings: AudioSettings
     readonly arrays: DspGraph.Arrays
     readonly outletListenerSpecs: PortletsIndex
@@ -62,10 +63,11 @@ export interface Compilation {
 }
 
 export interface PrecompiledNodeCode {
-    outs: { [portletId: DspGraph.PortletId]: VariableName }
-    snds: { [portletId: DspGraph.PortletId]: VariableName }
-    rcvs: { [portletId: DspGraph.PortletId]: VariableName }
-    ins: { [portletId: DspGraph.PortletId]: VariableName }
+    outs: { [portletId: DspGraph.PortletId]: Code }
+    snds: { [portletId: DspGraph.PortletId]: Code }
+    rcvs: { [portletId: DspGraph.PortletId]: Code }
+    ins: { [portletId: DspGraph.PortletId]: Code }
+    state: VariableName
 }
 
 /**
@@ -76,13 +78,12 @@ export type Precompilation = {
     [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
 }
 
-
 // -------------------------------- CODE GENERATION -------------------------------- //
 export interface NodeVariableNames {
     outs: { [portletId: DspGraph.PortletId]: VariableName }
     snds: { [portletId: DspGraph.PortletId]: VariableName }
     rcvs: { [portletId: DspGraph.PortletId]: VariableName }
-    state: { [key: string]: VariableName }
+    state: VariableName
 }
 
 /**
@@ -93,6 +94,9 @@ export interface NodeVariableNames {
 export interface VariableNamesIndex {
     /** Namespace for individual nodes */
     nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
+
+    /** Namespace for class names for nodes' states */
+    nodeStateClassNames: { [nodeType: DspGraph.NodeType]: VariableName }
 
     /** Namespace for global variables */
     globs: {
@@ -126,10 +130,13 @@ export interface VariableNamesIndex {
 export interface GlobalCodeGeneratorContext {
     target: CompilerTarget
     audioSettings: AudioSettings
+    globs: VariableNamesIndex['globs']
 }
 
 /** Simplest form of generator for global code */
-export type GlobalCodeGenerator = (context: GlobalCodeGeneratorContext) => AstElement
+export type GlobalCodeGenerator = (
+    context: GlobalCodeGeneratorContext
+) => AstElement
 
 export interface GlobalCodeDefinitionExport {
     name: VariableName
@@ -149,24 +156,10 @@ export type GlobalCodeDefinition =
     | GlobalCodeGeneratorWithSettings
 
 /** Implementation of a graph node type */
-export interface NodeImplementation<
-    NodeArgsType,
-    NodeState = { [name: string]: string }
-> {
-    /**
-     * A map of state variables for the node type.
-     * Each state variable will be stored into a global variable
-     * which is assigned a unique name.
-     */
-    stateVariables?: NodeState
-
-    /**
-     * Generates code for variables declaration for a given node instance.
-     * This is typically used to declare and initialize state variables.
-     */
-    generateDeclarations?: (context: {
+export interface NodeImplementation<NodeArgsType> {
+    generateInitialization?: (context: {
         globs: VariableNamesIndex['globs']
-        state: { [Parameter in keyof NodeState]: string }
+        state: PrecompiledNodeCode['state']
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
@@ -175,12 +168,12 @@ export interface NodeImplementation<
     /**
      * Generates the code that will be ran each iteration of the loop for that node instance.
      * Typically reads from ins, runs some calculations, and write results to outs.
-     * 
+     *
      * @see generateInlineLoop for more complexe loop code generation.
      */
     generateLoop?: (context: {
         globs: VariableNamesIndex['globs']
-        state: { [Parameter in keyof NodeState]: string }
+        state: PrecompiledNodeCode['state']
         ins: PrecompiledNodeCode['ins']
         outs: PrecompiledNodeCode['outs']
         snds: PrecompiledNodeCode['snds']
@@ -190,15 +183,15 @@ export interface NodeImplementation<
 
     /**
      * Generates the code that will be ran each iteration of the loop for that node instance.
-     * This should only generate an expression without side effects : no variable declaration, 
-     * no variable assignment, ... Therefore, this can only be used if the node has a unique 
+     * This should only generate an expression without side effects : no variable declaration,
+     * no variable assignment, ... Therefore, this can only be used if the node has a unique
      * signal outlet.
-     * 
+     *
      * @see generateLoop for more complexe loop code generation.
      */
     generateLoopInline?: (context: {
         globs: VariableNamesIndex['globs']
-        state: { [Parameter in keyof NodeState]: string }
+        state: PrecompiledNodeCode['state']
         ins: PrecompiledNodeCode['ins']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
@@ -209,7 +202,7 @@ export interface NodeImplementation<
      */
     generateMessageReceivers?: (context: {
         globs: VariableNamesIndex['globs']
-        state: { [Parameter in keyof NodeState]: string }
+        state: PrecompiledNodeCode['state']
         snds: PrecompiledNodeCode['snds']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
@@ -222,5 +215,5 @@ export interface NodeImplementation<
 }
 
 export type NodeImplementations = {
-    [nodeType: string]: NodeImplementation<any, { [name: string]: any }>
+    [nodeType: string]: NodeImplementation<any>
 }

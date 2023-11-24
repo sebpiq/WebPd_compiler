@@ -32,10 +32,12 @@ type AstContentRaw = AstSequenceContent | AstSequence | null | number
 
 type AstContentRawNested = Array<AstContentRawNested | AstContentRaw>
 
+export type AstVarValue = Code | AstSequence | number
+
 export const Var = (
     typeName: TypeName,
     name: VariableName,
-    value?: Code | AstSequence | number
+    value?: AstVarValue
 ): AstVar =>
     _preventToString({
         astType: 'Var',
@@ -47,7 +49,7 @@ export const Var = (
 export const ConstVar = (
     typeName: TypeName,
     name: VariableName,
-    value: Code | AstSequence | number
+    value: AstVarValue
 ): AstConstVar =>
     _preventToString({
         astType: 'ConstVar',
@@ -57,7 +59,7 @@ export const ConstVar = (
     })
 
 export const Func =
-    (name: string, args: Array<AstVar>, returnType: Code) =>
+    (name: string, args: Array<AstVar> = [], returnType: Code = 'void') =>
     (strings: ReadonlyArray<Code>, ...content: AstContentRawNested): AstFunc =>
         _preventToString({
             astType: 'Func',
@@ -68,7 +70,7 @@ export const Func =
         })
 
 export const AnonFunc =
-    (args: Array<AstVar>, returnType: Code) =>
+    (args: Array<AstVar> = [], returnType: Code = 'void') =>
     (strings: ReadonlyArray<Code>, ...content: AstContentRawNested): AstFunc =>
         _preventToString({
             astType: 'Func',

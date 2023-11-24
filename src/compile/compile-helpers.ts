@@ -51,7 +51,6 @@ export const getNodeImplementation = (
         throw new Error(`node [${nodeType}] is not implemented`)
     }
     return {
-        stateVariables: {},
         dependencies: [],
         ...nodeImplementation,
     }
@@ -88,6 +87,7 @@ export const getGlobalCodeGeneratorContext = (
 ): GlobalCodeGeneratorContext => ({
     target: compilation.target,
     audioSettings: compilation.audioSettings,
+    globs: compilation.variableNamesIndex.globs,
 })
 
 /**
@@ -141,9 +141,10 @@ export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
 ]
 
 export const collectDependenciesFromTraversal = (
-    compilation: Compilation
+    nodeImplementations: NodeImplementations,
+    graph: DspGraph.Graph,
+    graphTraversalDeclare: DspGraph.GraphTraversal
 ): Array<GlobalCodeDefinition> => {
-    const { graphTraversalDeclare, graph, nodeImplementations } = compilation
     return graphTraversalDeclare.reduce<Array<GlobalCodeDefinition>>(
         (definitions, nodeId) => [
             ...definitions,
@@ -174,9 +175,7 @@ export const collectExports = (
 export const collectImports = (
     dependencies: Array<GlobalCodeDefinition>
 ): Array<AstFunc> =>
-    _collectImportsRecursive(dependencies).reduce<
-        Array<AstFunc>
-    >(
+    _collectImportsRecursive(dependencies).reduce<Array<AstFunc>>(
         // De-duplicate imports
         (imports, imprt) =>
             imports.some((otherImport) => imprt.name === otherImport.name)

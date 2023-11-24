@@ -18,22 +18,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { isGlobalDefinitionWithSettings } from './compile-helpers'
+import { getGlobalCodeGeneratorContext, isGlobalDefinitionWithSettings } from './compile-helpers'
 import {
+    Compilation,
     GlobalCodeDefinition,
     GlobalCodeGenerator,
-    GlobalCodeGeneratorContext,
 } from './types'
 import { AstElement } from '../ast/types'
 import deepEqual from 'deep-equal'
 
 export default (
-    context: GlobalCodeGeneratorContext,
+    compilation:Compilation,
     dependencies: Array<GlobalCodeDefinition>
-): Array<AstElement> =>
-    // De-duplicate code
-    _flattenDependencies(dependencies)
+): Array<AstElement> => {
+    const context = getGlobalCodeGeneratorContext(compilation)
+    return _flattenDependencies(dependencies)
         .map((codeGenerator) => codeGenerator(context))
+        // De-duplicate dependencies by comparing generated AST
         .reduce<Array<AstElement>>(
             (astElements, astElement) =>
                 astElements.every(
@@ -44,6 +45,7 @@ export default (
                     : astElements,
             []
         )
+}
 
 export const _flattenDependencies = (
     dependencies: Array<GlobalCodeDefinition>

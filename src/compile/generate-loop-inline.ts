@@ -43,8 +43,7 @@ export default (
 
     const inlinedNodes = inlineTraversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
-            const { state } = variableNamesIndex.nodes[nodeId]
-            const { ins } = precompilation[nodeId]
+            const { ins, state } = precompilation[nodeId]
             const node = getters.getNode(graph, nodeId)
             const nodeImplementation = getNodeImplementation(
                 nodeImplementations,

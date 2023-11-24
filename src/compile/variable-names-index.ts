@@ -18,15 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { getNodeImplementation } from './compile-helpers'
 import { DspGraph, getters } from '../dsp-graph'
-import { mapObject } from '../functional-helpers'
+import { mapArray, mapObject } from '../functional-helpers'
 import { createNamespace, nodeNamespaceLabel } from './namespace'
-import {
-    NodeImplementations,
-    VariableNamesIndex,
-    Compilation,
-} from './types'
+import { NodeImplementations, VariableNamesIndex, Compilation } from './types'
 
 /**
  * Generates the whole set of variable names for a compilation for a given graph.
@@ -42,42 +37,40 @@ export const generateVariableNamesIndex = (
 ): VariableNamesIndex =>
     createNamespace('variableNamesIndex', {
         nodes: createNamespace(
-            'n',
-            mapObject(graph, (node) => {
-                const nodeImplementation = getNodeImplementation(
-                    nodeImplementations,
-                    node.type
-                )
-                const prefix = _namePrefix(debug, node)
-                return createNamespace(nodeNamespaceLabel(node), {
+            'nodes',
+            mapObject(graph, (node) =>
+                createNamespace(nodeNamespaceLabel(node), {
                     // No need for `ins` here, as signal inlets will always directly be assigned
-                    // the outlet from their source node. 
+                    // the outlet from their source node.
                     rcvs: createNamespace(nodeNamespaceLabel(node, 'rcvs'), {}),
                     outs: createNamespace(nodeNamespaceLabel(node, 'outs'), {}),
                     snds: createNamespace(nodeNamespaceLabel(node, 'snds'), {}),
-                    state: createNamespace(
-                        nodeNamespaceLabel(node, 'state'),
-                        mapObject(
-                            nodeImplementation.stateVariables,
-                            (_, stateVariable) =>
-                                `${prefix}_STATE_${_v(stateVariable)}`
-                        )
-                    ),
+                    state: `${_namePrefix(debug, node)}_STATE`,
                 })
-            })
+            )
         ),
-        globs: createNamespace('g', {
-            iterFrame: 'F',
-            frame: 'FRAME',
-            blockSize: 'BLOCK_SIZE',
-            sampleRate: 'SAMPLE_RATE',
-            output: 'OUTPUT',
-            input: 'INPUT',
-            nullMessageReceiver: 'SND_TO_NULL',
-            nullSignal: 'NULL_SIGNAL',
-        }),
+        nodeStateClassNames: createNamespace(
+            'nodeStateClassNames',
+            mapArray(Object.keys(nodeImplementations), (nodeType) => [
+                nodeType,
+                `NodeState_${_nodeType(nodeType)}`,
+            ])
+        ),
+        globs: generateVariableNamesGlobs(),
         outletListeners: createNamespace('outletListeners', {}),
         inletCallers: createNamespace('inletCallers', {}),
+    })
+
+export const generateVariableNamesGlobs = () =>
+    createNamespace('globs', {
+        iterFrame: 'F',
+        frame: 'FRAME',
+        blockSize: 'BLOCK_SIZE',
+        sampleRate: 'SAMPLE_RATE',
+        output: 'OUTPUT',
+        input: 'INPUT',
+        nullMessageReceiver: 'SND_TO_NULL',
+        nullSignal: 'NULL_SIGNAL',
     })
 
 export const attachNodePortlet = (
@@ -90,14 +83,14 @@ export const attachNodePortlet = (
     const nodeVariableNames = variableNamesIndex.nodes[nodeId]
     const sinkNode = getters.getNode(graph, nodeId)
     const prefix = _namePrefix(debug, sinkNode)
-    // Shouldnt throw an error if the variable already exists, as precompile might try to 
-    // declare it several times. 
+    // Shouldnt throw an error if the variable already exists, as precompile might try to
+    // declare it several times.
     if (!(portletId in nodeVariableNames[nsKey])) {
-        nodeVariableNames[nsKey][portletId] = ({
-            'outs': `${prefix}_OUTS_${_v(portletId)}`,
-            'snds': `${prefix}_SNDS_${_v(portletId)}`,
-            'rcvs': `${prefix}_RCVS_${_v(portletId)}`,
-        })[nsKey]
+        nodeVariableNames[nsKey][portletId] = {
+            outs: `${prefix}_OUTS_${_v(portletId)}`,
+            snds: `${prefix}_SNDS_${_v(portletId)}`,
+            rcvs: `${prefix}_RCVS_${_v(portletId)}`,
+        }[nsKey]
     }
     return nodeVariableNames[nsKey][portletId]
 }
@@ -114,9 +107,7 @@ export const attachOutletListenersAndInletCallers = ({
 }: Compilation): void =>
     (['inletCallers', 'outletListeners'] as const).forEach((nsKey) => {
         const specs =
-            nsKey === 'inletCallers'
-                ? inletCallerSpecs
-                : outletListenerSpecs
+            nsKey === 'inletCallers' ? inletCallerSpecs : outletListenerSpecs
         Object.entries(specs).forEach(([nodeId, outletIds]) => {
             const node = getters.getNode(graph, nodeId)
             variableNamesIndex[nsKey][nodeId] = createNamespace(
@@ -131,11 +122,6 @@ export const attachOutletListenersAndInletCallers = ({
         })
     })
 
-const _namePrefix = (debug: boolean, node: DspGraph.Node) =>
-    debug
-        ? _v(`${node.type.replace(/[^a-zA-Z0-9_]/g, '')}_${node.id}`)
-        : _v(node.id)
-
 export const assertValidNamePart = (namePart: string) => {
     const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)
     if (isInvalid) {
@@ -146,5 +132,10 @@ export const assertValidNamePart = (namePart: string) => {
     return namePart
 }
 const _v = assertValidNamePart
+
+const _nodeType = (nodeType: string) => nodeType.replace(/[^a-zA-Z0-9_]/g, '')
+
+const _namePrefix = (debug: boolean, node: DspGraph.Node) =>
+    debug ? _v(`${_nodeType(node.type)}_${node.id}`) : _v(node.id)
 
 const VALID_NAME_PART_REGEXP = /^[a-zA-Z0-9_]+$/

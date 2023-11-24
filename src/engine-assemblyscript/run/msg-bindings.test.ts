@@ -35,6 +35,7 @@ import { MessagePointer } from './types'
 import { Sequence } from '../../ast/declare'
 import render from '../../ast/render'
 import macros from '../compile/macros'
+import { generateVariableNamesGlobs } from '../../compile/variable-names-index'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {
@@ -67,6 +68,7 @@ describe('msg-bindings', () => {
                 bitDepth,
                 channelCount: { in: 2, out: 2 },
             },
+            globs: generateVariableNamesGlobs(),
         }
         return render(macros, Sequence([
             core.codeGenerator(context),

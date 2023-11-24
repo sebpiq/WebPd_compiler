@@ -18,15 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    buildMetadata,
-    collectDependenciesFromTraversal,
-    engineMinimalDependencies,
-} from '../../compile/compile-helpers'
+import { buildMetadata } from '../../compile/compile-helpers'
 import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
 import generateDeclarationsNode from '../../compile/generate-declarations-nodes'
 import generateLoop from '../../compile/generate-loop'
 import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
+import generateInitializationsNodes from '../../compile/generate-initializations-nodes'
 import { Compilation } from '../../compile/types'
 import { JavaScriptEngineCode } from './types'
 import generateInletCallers from '../../compile/generate-inlet-callers'
@@ -38,19 +35,19 @@ import macros from './macros'
 import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
-    const { variableNamesIndex, outletListenerSpecs, inletCallerSpecs } =
-        compilation
+    const {
+        variableNamesIndex,
+        outletListenerSpecs,
+        inletCallerSpecs,
+        engineDependencies,
+    } = compilation
     const globs = compilation.variableNamesIndex.globs
     const metadata = buildMetadata(compilation)
-    const dependencies = [
-        ...engineMinimalDependencies(),
-        ...collectDependenciesFromTraversal(compilation),
-    ]
 
     // prettier-ignore
     return render(macros, ast`
         ${generateDeclarationsGlobals(compilation)}
-        ${generateDeclarationsDependencies(compilation, dependencies)}
+        ${generateDeclarationsDependencies(compilation, engineDependencies)}
         ${generateDeclarationsNode(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
@@ -61,6 +58,8 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             nodeId, 
             outletId
         ) => ast`const ${variableName} = (m) => {exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)}`)}
+
+        ${generateInitializationsNodes(compilation)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
@@ -94,7 +93,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
 
         ${generateImportsExports(
             'javascript',
-            dependencies,
+            engineDependencies,
             ({ name }) => ast`
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)
