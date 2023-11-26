@@ -78,15 +78,3 @@ export const renderSwitch = (
     }
     return matchedRoute[1]
 }
-
-/** Renders `code` only if `test` is truthy. */
-export const renderIf = (test: any, code: Code | (() => Code)) => {
-    if (!test) {
-        return ''
-    }
-    if (typeof code === 'function') {
-        return code()
-    } else {
-        return code
-    }
-}

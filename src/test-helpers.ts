@@ -45,7 +45,6 @@ import {
 } from './engine-assemblyscript/run/test-helpers'
 import {
     mapArray,
-    renderIf,
     renderSwitch,
 } from './functional-helpers'
 import {
@@ -322,7 +321,8 @@ export const runTestSuite = (
                     ...testsCodeDefinitions,
                 ]),
 
-                renderIf(target === 'javascript', '\nconst exports = {}\n'),
+                target === 'javascript' ? 
+                    'const exports = {}': null,
 
                 generateTestExports(
                     target,
