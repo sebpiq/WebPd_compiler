@@ -1,4 +1,4 @@
-export { default as default, executeCompilation } from './src/compile'
+export { default as default } from './src/compile'
 export {
     CompilationSettings,
     NodeImplementations,

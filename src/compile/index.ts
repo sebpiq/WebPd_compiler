@@ -58,22 +58,33 @@ export default (
         settings.inletCallerSpecs
     )
     const trimmedGraph = traversal.trimGraph(graph, graphTraversalAll)
-    const precompilation = initializePrecompilation(
-        trimmedGraph,
-        graphTraversalAll,
-        variableNamesIndex
-    )
+
+    const compilation: Compilation = {
+        graph: trimmedGraph,
+        nodeImplementations,
+        target,
+        settings,
+        variableNamesIndex,
+        precompilation: initializePrecompilation(
+            trimmedGraph,
+            graphTraversalAll,
+            variableNamesIndex
+        ),
+    }
+
+    precompile(compilation)
+    let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
+    if (compilation.target === 'javascript') {
+        code = compileToJavascript(compilation)
+    } else if (compilation.target === 'assemblyscript') {
+        code = compileToAssemblyscript(compilation)
+    } else {
+        throw new Error(`Invalid compilation.target ${compilation.target}`)
+    }
 
     return {
         status: 0,
-        code: executeCompilation({
-            graph: trimmedGraph,
-            nodeImplementations,
-            target,
-            settings,
-            variableNamesIndex,
-            precompilation,
-        }),
+        code,
     }
 }
 
@@ -98,18 +109,6 @@ export const validateSettings = (
         outletListenerSpecs,
         inletCallerSpecs,
         debug,
-    }
-}
-
-/** Helper to execute compilation */
-export const executeCompilation = (compilation: Compilation) => {
-    precompile(compilation)
-    if (compilation.target === 'javascript') {
-        return compileToJavascript(compilation)
-    } else if (compilation.target === 'assemblyscript') {
-        return compileToAssemblyscript(compilation)
-    } else {
-        throw new Error(`Invalid compilation.target ${compilation.target}`)
     }
 }
 

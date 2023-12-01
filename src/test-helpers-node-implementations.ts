@@ -19,9 +19,8 @@
  */
 
 import assert from 'assert'
-import compile, { executeCompilation } from './compile'
-export { executeCompilation } from './compile'
-import { makeCompilation, round, createTestEngine } from './test-helpers'
+import compile from './compile'
+import { round, createTestEngine } from './test-helpers'
 import {
     NodeImplementations,
     CompilerTarget,
