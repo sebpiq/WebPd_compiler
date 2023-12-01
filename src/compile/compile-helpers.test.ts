@@ -22,10 +22,8 @@ import { DspGraph } from '../dsp-graph/types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import assert from 'assert'
 import {
-    buildGraphTraversalDeclare,
-    buildGraphTraversalLoop,
-    collectExports,
-    collectImports,
+    buildGraphTraversalAll,
+    buildGraphTraversalSignal,
     getNodeImplementation,
 } from './compile-helpers'
 import {
@@ -39,15 +37,15 @@ import { Func, Sequence } from '../ast/declare'
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
-            someNodeType: { generateLoop: () => Sequence([]) },
+            someNodeType: { loop: () => Sequence([]) },
             boringNodeType: {},
         }
 
         it('should return node implementation if it exists', () => {
             assert.strictEqual(
                 getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType')
-                    .generateLoop,
-                NODE_IMPLEMENTATIONS['someNodeType'].generateLoop
+                    .loop,
+                NODE_IMPLEMENTATIONS['someNodeType'].loop
             )
         })
 
@@ -124,7 +122,7 @@ describe('compile-helpers', () => {
                     isPushingMessages: true,
                 },
             })
-            const traversal = buildGraphTraversalDeclare(graph, {})
+            const traversal = buildGraphTraversalAll(graph, {})
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
                 'n1',
                 'n2',
@@ -153,7 +151,7 @@ describe('compile-helpers', () => {
                     },
                 },
             })
-            const traversal = buildGraphTraversalDeclare(graph, {
+            const traversal = buildGraphTraversalAll(graph, {
                 n1: ['0'],
             })
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
@@ -207,109 +205,12 @@ describe('compile-helpers', () => {
                     },
                 },
             })
-            const traversal = buildGraphTraversalLoop(graph)
+            const traversal = buildGraphTraversalSignal(graph)
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal, [
                 'n1',
                 'n2',
                 'n3',
                 'n4',
-            ])
-        })
-    })
-
-    describe('collectExports', () => {
-        it('should collect exports recursively and remove duplicates', () => {
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
-                exports: [{ name: 'ex1' }, { name: 'ex3' }],
-            }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
-                // no exports here shouldnt break the chain
-                dependencies: [() => Sequence([]), codeDefinition1],
-            }
-            const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
-                exports: [{ name: 'ex4' }],
-                dependencies: [codeDefinition2],
-            }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                () => Sequence([]),
-                codeDefinition3,
-            ]
-
-            assert.deepStrictEqual(collectExports('javascript', dependencies), [
-                { name: 'ex1' },
-                { name: 'ex3' },
-                { name: 'ex4' },
-            ])
-        })
-
-        it('should keep only exports for specified target', () => {
-            const codeGenerator1 = () => Sequence([])
-            const codeGenerator2 = () => Sequence([])
-            const codeGenerator3 = () => Sequence([])
-
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: codeGenerator1,
-                exports: [
-                    { name: 'ex1' },
-                    { name: 'ex3', targets: ['javascript'] },
-                ],
-            }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: codeGenerator2,
-                exports: [
-                    { name: 'ex2', targets: ['javascript'] },
-                    { name: 'ex4', targets: ['assemblyscript'] },
-                    { name: 'ex3', targets: ['assemblyscript'] },
-                ],
-                dependencies: [codeGenerator3, codeDefinition1],
-            }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                codeGenerator1,
-                codeDefinition2,
-            ]
-
-            assert.deepStrictEqual(
-                collectExports('assemblyscript', dependencies),
-                [
-                    { name: 'ex1' },
-                    { name: 'ex4', targets: ['assemblyscript'] },
-                    { name: 'ex3', targets: ['assemblyscript'] },
-                ]
-            )
-        })
-    })
-
-    describe('collectImports', () => {
-        it('should collect imports recursively and remove duplicates', () => {
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
-                imports: [
-                    Func('ex1')``,
-                    Func('ex3')``,
-                ],
-            }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
-                // no imports here shouldnt break the chain
-                dependencies: [() => Sequence([]), codeDefinition1],
-            }
-            const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
-                imports: [Func('ex4')``],
-                dependencies: [codeDefinition2],
-            }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                () => Sequence([]),
-                codeDefinition3,
-            ]
-
-            assert.deepStrictEqual(collectImports(dependencies), [
-                Func('ex1')``,
-                Func('ex3')``,
-                Func('ex4')``,
             ])
         })
     })

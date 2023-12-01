@@ -72,13 +72,13 @@ export type SoundFileInfo = [
 export type Signal = number
 
 export interface EngineMetadata {
-    readonly audioSettings: Compilation['audioSettings'] & {
+    readonly audioSettings: Compilation['settings']['audio'] & {
         sampleRate: number
         blockSize: number
     }
     compilation: {
-        readonly inletCallerSpecs: Compilation['inletCallerSpecs']
-        readonly outletListenerSpecs: Compilation['outletListenerSpecs']
+        readonly inletCallerSpecs: Compilation['settings']['inletCallerSpecs']
+        readonly outletListenerSpecs: Compilation['settings']['outletListenerSpecs']
         readonly variableNamesIndex: {
             readonly inletCallers: Compilation['variableNamesIndex']['inletCallers']
             readonly outletListeners: Compilation['variableNamesIndex']['outletListeners']

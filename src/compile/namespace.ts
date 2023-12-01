@@ -35,12 +35,8 @@ export const createNamespace = <T extends Object>(
 ) => {
     return new Proxy<T>(namespace, {
         get: (target, k) => {
-            const key = String(k)
+            const key = _trimDollarKey(String(k))
             if (!target.hasOwnProperty(key)) {
-                if (key[0] === '$' && target.hasOwnProperty(key.slice(1))) {
-                    return (target as any)[key.slice(1)]
-                }
-
                 // Whitelist some fields that are undefined but accessed at
                 // some point or another by our code.
                 // TODO : find a better way to do this.
@@ -64,7 +60,7 @@ export const createNamespace = <T extends Object>(
         },
 
         set: (target, k, newValue) => {
-            const key = String(k) as keyof T
+            const key = _trimDollarKey(String(k)) as keyof T
             if (target.hasOwnProperty(key)) {
                 throw new Error(
                     `Key "${String(key)}" is protected and cannot be overwritten.`
@@ -81,3 +77,12 @@ export const nodeNamespaceLabel = (
     node: DspGraph.Node,
     namespaceName?: string
 ) => `${node.type}:${node.id}${namespaceName ? `:${namespaceName}` : ''}`
+
+const _trimDollarKey = (key: string) => {
+    const match = /\$(.*)/.exec(key)
+    if (!match) {
+        return key
+    } else {
+        return match[1]
+    }
+}

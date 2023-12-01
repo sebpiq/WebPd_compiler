@@ -25,6 +25,17 @@ import { DspGraph } from './types'
 type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]
 
 /**
+ * Simple helper to get a list of nodes from a traversal (which is simply node ids).
+ */
+export const toNodes = (
+    graph: DspGraph.Graph,
+    traversal: DspGraph.GraphTraversal
+) =>
+    traversal.map<DspGraph.Node>((nodeId) =>
+        getNode(graph, nodeId)
+    )
+
+/**
  * Breadth first traversal for signal in the graph.
  * Traversal path is calculated by pulling incoming connections from
  * {@link nodesPullingSignal}.

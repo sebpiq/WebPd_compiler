@@ -17,9 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { commonsCore } from '../stdlib/commons'
-import { core } from '../stdlib/core'
-import { msg } from '../stdlib/msg'
 import { DspGraph, getters, traversal } from '../dsp-graph'
 import jsMacros from '../engine-javascript/compile/macros'
 import ascMacros from '../engine-assemblyscript/compile/macros'
@@ -27,7 +24,6 @@ import {
     Compilation,
     CompilerTarget,
     GlobalCodeDefinition,
-    GlobalCodeDefinitionExport,
     GlobalCodeGeneratorContext,
     GlobalCodeGeneratorWithSettings,
     NodeImplementation,
@@ -35,7 +31,7 @@ import {
     PortletsIndex,
 } from './types'
 import { EngineMetadata } from '../run/types'
-import { AstFunc, CodeMacros } from '../ast/types'
+import { CodeMacros } from '../ast/types'
 
 /** Helper to get code macros from compile target. */
 export const getMacros = (target: CompilerTarget): CodeMacros =>
@@ -59,9 +55,11 @@ export const getNodeImplementation = (
 /** Helper to build engine metadata from compilation object */
 export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     const {
-        audioSettings,
-        inletCallerSpecs,
-        outletListenerSpecs,
+        settings: {
+            audio: audioSettings,
+            inletCallerSpecs,
+            outletListenerSpecs,
+        },
         variableNamesIndex,
     } = compilation
     return {
@@ -82,22 +80,14 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     }
 }
 
-export const getGlobalCodeGeneratorContext = (
-    compilation: Compilation
-): GlobalCodeGeneratorContext => ({
-    target: compilation.target,
-    audioSettings: compilation.audioSettings,
-    globs: compilation.variableNamesIndex.globs,
-})
-
 /**
- * Build graph traversal for declaring nodes.
+ * Build graph traversal for all nodes.
  * This should be exhaustive so that all nodes that are connected
  * to an input or output of the graph are declared correctly.
  * Order of nodes doesn't matter.
  * @TODO : outletListeners should also be included ?
  */
-export const buildGraphTraversalDeclare = (
+export const buildGraphTraversalAll = (
     graph: DspGraph.Graph,
     inletCallerSpecs: PortletsIndex
 ): DspGraph.GraphTraversal => {
@@ -125,7 +115,7 @@ export const buildGraphTraversalDeclare = (
 /**
  * Build graph traversal for generating the loop.
  */
-export const buildGraphTraversalLoop = (
+export const buildGraphTraversalSignal = (
     graph: DspGraph.Graph
 ): DspGraph.GraphTraversal => {
     const nodesPullingSignal = Object.values(graph).filter(
@@ -133,88 +123,6 @@ export const buildGraphTraversalLoop = (
     )
     return traversal.signalNodes(graph, nodesPullingSignal)
 }
-
-export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
-    core,
-    commonsCore,
-    msg,
-]
-
-export const collectDependenciesFromTraversal = (
-    nodeImplementations: NodeImplementations,
-    graph: DspGraph.Graph,
-    graphTraversalDeclare: DspGraph.GraphTraversal
-): Array<GlobalCodeDefinition> => {
-    return graphTraversalDeclare.reduce<Array<GlobalCodeDefinition>>(
-        (definitions, nodeId) => [
-            ...definitions,
-            ...getNodeImplementation(
-                nodeImplementations,
-                getters.getNode(graph, nodeId).type
-            ).dependencies,
-        ],
-        []
-    )
-}
-
-export const collectExports = (
-    target: CompilerTarget,
-    dependencies: Array<GlobalCodeDefinition>
-): Array<GlobalCodeDefinitionExport> =>
-    _collectExportsRecursive(dependencies)
-        .filter((xprt) => !xprt.targets || xprt.targets.includes(target))
-        .reduce<Array<GlobalCodeDefinitionExport>>(
-            // De-duplicate exports
-            (exports, xprt) =>
-                exports.some((otherExport) => xprt.name === otherExport.name)
-                    ? exports
-                    : [...exports, xprt],
-            []
-        )
-
-export const collectImports = (
-    dependencies: Array<GlobalCodeDefinition>
-): Array<AstFunc> =>
-    _collectImportsRecursive(dependencies).reduce<Array<AstFunc>>(
-        // De-duplicate imports
-        (imports, imprt) =>
-            imports.some((otherImport) => imprt.name === otherImport.name)
-                ? imports
-                : [...imports, imprt],
-        []
-    )
-
-const _collectExportsRecursive = (dependencies: Array<GlobalCodeDefinition>) =>
-    dependencies
-        .filter(isGlobalDefinitionWithSettings)
-        .flatMap(
-            (
-                globalCodeDefinition: GlobalCodeGeneratorWithSettings
-            ): Array<GlobalCodeDefinitionExport> => [
-                ...(globalCodeDefinition.dependencies
-                    ? _collectExportsRecursive(
-                          globalCodeDefinition.dependencies
-                      )
-                    : []),
-                ...(globalCodeDefinition.exports || []),
-            ]
-        )
-
-const _collectImportsRecursive = (dependencies: Array<GlobalCodeDefinition>) =>
-    dependencies
-        .filter(isGlobalDefinitionWithSettings)
-        .flatMap(
-            (
-                globalCodeDefinition: GlobalCodeGeneratorWithSettings
-            ): Array<AstFunc> => [
-                ...(globalCodeDefinition.dependencies
-                    ? _collectImportsRecursive(
-                          globalCodeDefinition.dependencies
-                      )
-                    : []),
-                ...(globalCodeDefinition.imports || []),
-            ]
-        )
 
 export const isGlobalDefinitionWithSettings = (
     globalCodeDefinition: GlobalCodeDefinition

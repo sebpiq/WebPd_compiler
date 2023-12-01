@@ -91,6 +91,12 @@ describe('code-variable-names', () => {
                 )
                 assert.throws(() => (namespace.bla = '2'))
             })
+            it('should allow setting a number key using dollar syntax', () => {
+                const namespace: { [key: string]: string } = createNamespace('', {})
+                namespace.$0 = 'bla'
+                assert.strictEqual(namespace['0'], 'bla')
+                assert.strictEqual(namespace.$0, 'bla')
+            })
         })
     })
 })

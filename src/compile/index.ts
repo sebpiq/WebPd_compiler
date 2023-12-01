@@ -18,18 +18,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Compilation, CompilationSettings, NodeImplementations } from './types'
+import {
+    Compilation,
+    CompilationSettings,
+    CompilerTarget,
+    NodeImplementations,
+} from './types'
 import compileToJavascript from '../engine-javascript/compile'
 import compileToAssemblyscript from '../engine-assemblyscript/compile'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/compile/types'
 import { generateVariableNamesIndex } from './variable-names-index'
-import {
-    buildGraphTraversalDeclare,
-    buildGraphTraversalLoop,
-    collectDependenciesFromTraversal,
-    engineMinimalDependencies,
-} from './compile-helpers'
+import { buildGraphTraversalAll } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
 import { traversal } from '../dsp-graph'
 import precompile, { initializePrecompilation } from './precompile'
@@ -48,71 +48,52 @@ type CompilationResult = CompilationSuccess | CompilationFailure
 export default (
     graph: DspGraph.Graph,
     nodeImplementations: NodeImplementations,
-    settings: CompilationSettings
+    target: CompilerTarget,
+    compilationSettings: CompilationSettings
 ): CompilationResult => {
-    const {
-        audioSettings,
-        arrays,
-        inletCallerSpecs,
-        outletListenerSpecs,
-        target,
-        debug,
-    } = validateSettings(settings)
-    const variableNamesIndex = generateVariableNamesIndex(
-        nodeImplementations,
+    const settings = validateSettings(compilationSettings)
+    const variableNamesIndex = generateVariableNamesIndex(graph, settings.debug)
+    const graphTraversalAll = buildGraphTraversalAll(
         graph,
-        debug
+        settings.inletCallerSpecs
     )
-    const precompilation = initializePrecompilation(graph, variableNamesIndex)
-    const graphTraversalDeclare = buildGraphTraversalDeclare(
-        graph,
-        inletCallerSpecs
+    const trimmedGraph = traversal.trimGraph(graph, graphTraversalAll)
+    const precompilation = initializePrecompilation(
+        trimmedGraph,
+        graphTraversalAll,
+        variableNamesIndex
     )
-    const graphTraversalLoop = buildGraphTraversalLoop(graph)
-    const trimmedGraph = traversal.trimGraph(graph, graphTraversalDeclare)
-
-    const engineDependencies = [
-        ...engineMinimalDependencies(),
-        ...collectDependenciesFromTraversal(
-            nodeImplementations,
-            graph,
-            graphTraversalDeclare
-        ),
-    ]
 
     return {
         status: 0,
         code: executeCompilation({
-            target,
             graph: trimmedGraph,
-            graphTraversalDeclare,
-            graphTraversalLoop,
             nodeImplementations,
-            engineDependencies,
-            audioSettings,
-            arrays,
-            inletCallerSpecs,
-            outletListenerSpecs,
+            target,
+            settings,
             variableNamesIndex,
-            debug,
             precompilation,
         }),
     }
 }
 
-/** Asserts settings are valid (or throws error) and sets default values. */
+/** Asserts user provided settings are valid (or throws error) and sets default values. */
 export const validateSettings = (
-    settings: CompilationSettings
-): CompilationSettings => {
-    const arrays = settings.arrays || {}
-    const inletCallerSpecs = settings.inletCallerSpecs || {}
-    const outletListenerSpecs = settings.outletListenerSpecs || {}
-    const debug = settings.debug || false
-    if (![32, 64].includes(settings.audioSettings.bitDepth)) {
+    compilationSettings: CompilationSettings
+): Compilation['settings'] => {
+    const arrays = compilationSettings.arrays || {}
+    const inletCallerSpecs = compilationSettings.inletCallerSpecs || {}
+    const outletListenerSpecs = compilationSettings.outletListenerSpecs || {}
+    const debug = compilationSettings.debug || false
+    const audio = compilationSettings.audio || {
+        channelCount: { in: 2, out: 2 },
+        bitDepth: 64,
+    }
+    if (![32, 64].includes(audio.bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }
     return {
-        ...settings,
+        audio,
         arrays,
         outletListenerSpecs,
         inletCallerSpecs,

@@ -38,8 +38,7 @@ export interface AudioSettings {
 }
 
 export interface CompilationSettings {
-    audioSettings: AudioSettings
-    target: CompilerTarget
+    audio?: AudioSettings
     arrays?: DspGraph.Arrays
     inletCallerSpecs?: PortletsIndex
     outletListenerSpecs?: PortletsIndex
@@ -47,27 +46,14 @@ export interface CompilationSettings {
 }
 
 export interface Compilation {
+    readonly settings: {
+        [Property in keyof CompilationSettings]-?: CompilationSettings[Property]
+    }
     readonly target: CompilerTarget
     readonly graph: DspGraph.Graph
-    readonly graphTraversalDeclare: DspGraph.GraphTraversal
-    readonly graphTraversalLoop: DspGraph.GraphTraversal
     readonly nodeImplementations: NodeImplementations
-    readonly engineDependencies: Array<GlobalCodeDefinition>
-    readonly audioSettings: AudioSettings
-    readonly arrays: DspGraph.Arrays
-    readonly outletListenerSpecs: PortletsIndex
-    readonly inletCallerSpecs: PortletsIndex
     readonly variableNamesIndex: VariableNamesIndex
     readonly precompilation: Precompilation
-    readonly debug: boolean
-}
-
-export interface PrecompiledNodeCode {
-    outs: { [portletId: DspGraph.PortletId]: Code }
-    snds: { [portletId: DspGraph.PortletId]: Code }
-    rcvs: { [portletId: DspGraph.PortletId]: Code }
-    ins: { [portletId: DspGraph.PortletId]: Code }
-    state: VariableName
 }
 
 /**
@@ -75,14 +61,45 @@ export interface PrecompiledNodeCode {
  * This map is then used in code generation to replace variables with their precompiled counterparts.
  */
 export type Precompilation = {
-    [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
+    nodes: {
+        [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
+    }
+    dependencies: {
+        imports: NonNullable<GlobalCodeGeneratorWithSettings['imports']>
+        exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
+        ast: AstSequence
+    }
+    traversals: {
+        loop: DspGraph.GraphTraversal
+        all: DspGraph.GraphTraversal
+    }
+}
+
+export interface PrecompiledNodeCode {
+    generationContext: {
+        signalOuts: { [portletId: DspGraph.PortletId]: Code }
+        messageSenders: { [portletId: DspGraph.PortletId]: Code }
+        messageReceivers: { [portletId: DspGraph.PortletId]: Code }
+        signalIns: { [portletId: DspGraph.PortletId]: Code }
+        state: VariableName
+    }
+    messageReceivers: { [inletId: DspGraph.PortletId]: AstFunc }
+    messageSenders: {
+        [outletId: DspGraph.PortletId]: {
+            messageSenderName: VariableName
+            messageReceiverNames: Array<VariableName>
+        }
+    }
+    signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
+    initialization: AstElement
+    loop: AstElement
 }
 
 // -------------------------------- CODE GENERATION -------------------------------- //
 export interface NodeVariableNames {
-    outs: { [portletId: DspGraph.PortletId]: VariableName }
-    snds: { [portletId: DspGraph.PortletId]: VariableName }
-    rcvs: { [portletId: DspGraph.PortletId]: VariableName }
+    signalOuts: { [portletId: DspGraph.PortletId]: VariableName }
+    messageSenders: { [portletId: DspGraph.PortletId]: VariableName }
+    messageReceivers: { [portletId: DspGraph.PortletId]: VariableName }
     state: VariableName
 }
 
@@ -94,9 +111,6 @@ export interface NodeVariableNames {
 export interface VariableNamesIndex {
     /** Namespace for individual nodes */
     nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
-
-    /** Namespace for class names for nodes' states */
-    nodeStateClassNames: { [nodeType: DspGraph.NodeType]: VariableName }
 
     /** Namespace for global variables */
     globs: {
@@ -157,10 +171,10 @@ export type GlobalCodeDefinition =
 
 /** Implementation of a graph node type */
 export interface NodeImplementation<NodeArgsType> {
-    generateInitialization?: (context: {
+    initialization?: (context: {
         globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['state']
-        snds: PrecompiledNodeCode['snds']
+        state: PrecompiledNodeCode['generationContext']['state']
+        snds: PrecompiledNodeCode['generationContext']['messageSenders']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => AstSequence
@@ -171,12 +185,12 @@ export interface NodeImplementation<NodeArgsType> {
      *
      * @see generateInlineLoop for more complexe loop code generation.
      */
-    generateLoop?: (context: {
+    loop?: (context: {
         globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['state']
-        ins: PrecompiledNodeCode['ins']
-        outs: PrecompiledNodeCode['outs']
-        snds: PrecompiledNodeCode['snds']
+        state: PrecompiledNodeCode['generationContext']['state']
+        ins: PrecompiledNodeCode['generationContext']['signalIns']
+        outs: PrecompiledNodeCode['generationContext']['signalOuts']
+        snds: PrecompiledNodeCode['generationContext']['messageSenders']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => AstSequence
@@ -187,23 +201,23 @@ export interface NodeImplementation<NodeArgsType> {
      * no variable assignment, ... Therefore, this can only be used if the node has a unique
      * signal outlet.
      *
-     * @see generateLoop for more complexe loop code generation.
+     * @see loop for more complexe loop code generation.
      */
-    generateLoopInline?: (context: {
+    inlineLoop?: (context: {
         globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['state']
-        ins: PrecompiledNodeCode['ins']
+        state: PrecompiledNodeCode['generationContext']['state']
+        ins: PrecompiledNodeCode['generationContext']['signalIns']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
-    }) => Code
+    }) => AstSequence
 
     /**
      * Generate code for message receivers for a given node instance.
      */
-    generateMessageReceivers?: (context: {
+    messageReceivers?: (context: {
         globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['state']
-        snds: PrecompiledNodeCode['snds']
+        state: PrecompiledNodeCode['generationContext']['state']
+        snds: PrecompiledNodeCode['generationContext']['messageSenders']
         node: DspGraph.Node<NodeArgsType>
         compilation: Compilation
     }) => {

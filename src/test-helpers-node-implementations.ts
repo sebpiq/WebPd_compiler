@@ -19,7 +19,7 @@
  */
 
 import assert from 'assert'
-import { executeCompilation } from './compile'
+import compile, { executeCompilation } from './compile'
 export { executeCompilation } from './compile'
 import { makeCompilation, round, createTestEngine } from './test-helpers'
 import {
@@ -146,7 +146,7 @@ export const generateFramesForNode = async <NodeArguments>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            generateMessageReceivers: ({ snds, state }) =>
+            messageReceivers: ({ snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
                     if (fakeSourceNode.outlets[outletId].type === 'message') {
@@ -164,7 +164,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     }
                 }),
 
-            generateLoop: ({ outs, state }) =>
+            loop: ({ outs, state }) =>
                 Sequence(
                     Object.keys(fakeSourceNode.outlets)
                         .filter(
@@ -178,7 +178,7 @@ export const generateFramesForNode = async <NodeArguments>(
                         )
                 ),
 
-            generateInitialization: ({ state }) => ast`
+            initialization: ({ state }) => ast`
                 ${ConstVar('TestHelperNodeFakeSourceNode', state, ast`{
                     ${Object.keys(fakeSourceNode.outlets)
                         .filter(
@@ -205,7 +205,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            generateLoop: ({ ins, snds }) =>
+            loop: ({ ins, snds }) =>
                 Sequence(
                     Object.keys(testNode.sinks)
                         .filter(
@@ -220,7 +220,7 @@ export const generateFramesForNode = async <NodeArguments>(
                 ),
 
             // Take incoming messages and directly proxy them
-            generateMessageReceivers: ({ snds }) =>
+            messageReceivers: ({ snds }) =>
                 mapArray(
                     Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>
@@ -238,23 +238,27 @@ export const generateFramesForNode = async <NodeArguments>(
     }
 
     // --------------- Compile code & engine
-    const compilation = makeCompilation({
-        target,
-        graph,
+    const compileResult = compile(graph,
         nodeImplementations,
-        inletCallerSpecs: {
-            fakeSourceNode: Object.keys(fakeSourceNode.inlets),
-        },
-        outletListenerSpecs: {
-            fakeSinkNode: Object.keys(fakeSinkNode.outlets),
-        },
-        audioSettings: {
-            channelCount: ENGINE_DSP_PARAMS.channelCount,
-            bitDepth,
-        },
-    })
-    const code = executeCompilation(compilation)
-    const engine = await createTestEngine(target, bitDepth, code, [
+        target,
+        {
+            inletCallerSpecs: {
+                fakeSourceNode: Object.keys(fakeSourceNode.inlets),
+            },
+            outletListenerSpecs: {
+                fakeSinkNode: Object.keys(fakeSinkNode.outlets),
+            },
+            audio: {
+                channelCount: ENGINE_DSP_PARAMS.channelCount,
+                bitDepth,
+            },
+        })
+
+    if (compileResult.status !== 0) {
+        throw new Error('Compilation failed')
+    }
+    
+    const engine = await createTestEngine(target, bitDepth, compileResult.code, [
         commonsArrays,
     ])
 

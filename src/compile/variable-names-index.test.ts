@@ -24,42 +24,34 @@ import {
     attachOutletListenersAndInletCallers,
     generateVariableNamesIndex,
 } from './variable-names-index'
-import { VariableNamesIndex, NodeImplementations } from './types'
+import { VariableNamesIndex } from './types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 
 describe('variable-names-index', () => {
-    const NODE_IMPLEMENTATIONS: NodeImplementations = {
-        type1: {},
-        type2: {}
-    }
 
     describe('generate', () => {
         it('should create state variable names for each node', () => {
             const graph = makeGraph({
-                node1: {
-                    type: 'type1',
-                },
-                node2: {
-                    type: 'type2',
-                },
+                node1: {},
+                node2: {},
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(NODE_IMPLEMENTATIONS, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(graph, false)
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
                     node1: {
-                        outs: {},
-                        snds: {},
-                        rcvs: {},
+                        signalOuts: {},
+                        messageSenders: {},
+                        messageReceivers: {},
                         state: 'node1_STATE',
                     },
                     node2: {
-                        outs: {},
-                        rcvs: {},
-                        snds: {},
+                        signalOuts: {},
+                        messageReceivers: {},
+                        messageSenders: {},
                         state: 'node2_STATE',
                     },
                 }
@@ -68,28 +60,20 @@ describe('variable-names-index', () => {
 
         it('should throw error for unknown namespaces', () => {
             const graph = makeGraph({
-                node1: {
-                    type: 'type1',
-                    inlets: {
-                        '0': { type: 'signal', id: '0' },
-                    },
-                    outlets: {
-                        '0': { type: 'signal', id: '0' },
-                    },
-                },
+                node1: {},
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(NODE_IMPLEMENTATIONS, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(graph, false)
 
             assert.throws(() => variableNamesIndex.nodes.unknownNode)
             assert.throws(
-                () => variableNamesIndex.nodes.node1.rcvs['unknown receiver']
+                () => variableNamesIndex.nodes.node1.messageReceivers['unknown receiver']
             )
             assert.throws(
-                () => variableNamesIndex.nodes.node1.outs['unknown portlet']
+                () => variableNamesIndex.nodes.node1.signalOuts['unknown portlet']
             )
             assert.throws(
-                () => variableNamesIndex.nodes.node1.snds['unknown sender']
+                () => variableNamesIndex.nodes.node1.messageSenders['unknown sender']
             )
         })
     })
@@ -98,7 +82,6 @@ describe('variable-names-index', () => {
         it('should attach portlet variable names for a node', () => {
             const graph = makeGraph({
                 node1: {
-                    type: 'type1',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                         '1': { type: 'message', id: '1' },
@@ -110,46 +93,43 @@ describe('variable-names-index', () => {
                         '3': { type: 'message', id: '3' },
                     },
                 },
-                node2: {
-                    type: 'type2',
-                }
+                node2: {}
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(NODE_IMPLEMENTATIONS, graph, false)
+            const variableNamesIndex = generateVariableNamesIndex(graph, false)
 
             const compilation = makeCompilation({
-                nodeImplementations: NODE_IMPLEMENTATIONS,
-                variableNamesIndex: variableNamesIndex,
+                variableNamesIndex,
                 graph,
             })
 
-            attachNodePortlet(compilation, 'outs', 'node1', '0')
-            attachNodePortlet(compilation, 'outs', 'node1', '2')
-            attachNodePortlet(compilation, 'snds', 'node1', '1')
-            attachNodePortlet(compilation, 'snds', 'node1', '3')
-            attachNodePortlet(compilation, 'rcvs', 'node1', '1')
+            attachNodePortlet(compilation, 'signalOuts', 'node1', '0')
+            attachNodePortlet(compilation, 'signalOuts', 'node1', '2')
+            attachNodePortlet(compilation, 'messageSenders', 'node1', '1')
+            attachNodePortlet(compilation, 'messageSenders', 'node1', '3')
+            attachNodePortlet(compilation, 'messageReceivers', 'node1', '1')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
                     node1: {
-                        outs: {
+                        signalOuts: {
                             '0': 'node1_OUTS_0',
                             '2': 'node1_OUTS_2',
                         },
-                        snds: {
+                        messageSenders: {
                             '1': 'node1_SNDS_1',
                             '3': 'node1_SNDS_3',
                         },
-                        rcvs: {
+                        messageReceivers: {
                             '1': 'node1_RCVS_1',
                         },
                         state: 'node1_STATE',
                     },
                     node2: {
-                        outs: {},
-                        rcvs: {},
-                        snds: {},
+                        signalOuts: {},
+                        messageReceivers: {},
+                        messageSenders: {},
                         state: 'node2_STATE',
                     },
                 }
@@ -157,10 +137,6 @@ describe('variable-names-index', () => {
         })
 
         it('should create more verbose variable names if debug is true', () => {
-            const nodeImplementations: NodeImplementations = {
-                'dac~bla*wow!': {},
-            }
-
             const graph = makeGraph({
                 someObj: {
                     inlets: {
@@ -174,30 +150,31 @@ describe('variable-names-index', () => {
                 },
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(nodeImplementations, graph, true)
+            const variableNamesIndex = generateVariableNamesIndex(graph, true)
 
             const compilation = makeCompilation({
-                nodeImplementations,
-                variableNamesIndex,
-                debug: true,
                 graph,
+                variableNamesIndex,
+                settings: {
+                    debug: true,
+                },
             })
 
-            attachNodePortlet(compilation, 'outs', 'someObj', '0')
-            attachNodePortlet(compilation, 'snds', 'someObj', '1')
-            attachNodePortlet(compilation, 'rcvs', 'someObj', '2')
+            attachNodePortlet(compilation, 'signalOuts', 'someObj', '0')
+            attachNodePortlet(compilation, 'messageSenders', 'someObj', '1')
+            attachNodePortlet(compilation, 'messageReceivers', 'someObj', '2')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
                     someObj: {
-                        outs: {
+                        signalOuts: {
                             '0': 'dacblawow_someObj_OUTS_0',
                         },
-                        snds: {
+                        messageSenders: {
                             '1': 'dacblawow_someObj_SNDS_1',
                         },
-                        rcvs: {
+                        messageReceivers: {
                             '2': 'dacblawow_someObj_RCVS_2',
                         },
                         state: 'dacblawow_someObj_STATE',
@@ -213,10 +190,10 @@ describe('variable-names-index', () => {
 
             const compilation = makeCompilation({ graph })
 
-            attachNodePortlet(compilation, 'rcvs', 'node1', '0')
-            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.rcvs.$0, 'node1_RCVS_0')
-            assert.doesNotThrow(() => attachNodePortlet(compilation, 'rcvs', 'node1', '0'))
-            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.rcvs.$0, 'node1_RCVS_0')
+            attachNodePortlet(compilation, 'messageReceivers', 'node1', '0')
+            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.messageReceivers.$0, 'node1_RCVS_0')
+            assert.doesNotThrow(() => attachNodePortlet(compilation, 'messageReceivers', 'node1', '0'))
+            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.messageReceivers.$0, 'node1_RCVS_0')
         })
     })
 
@@ -235,7 +212,6 @@ describe('variable-names-index', () => {
         it('should attach outlet listeners variable names', () => {
             const graph = makeGraph({
                 node1: {
-                    type: 'type1',
                     inlets: {
                         inlet1: { type: 'message', id: 'inlet1' },
                     },
@@ -247,7 +223,6 @@ describe('variable-names-index', () => {
             })
 
             const variableNamesIndex: VariableNamesIndex = generateVariableNamesIndex(
-                NODE_IMPLEMENTATIONS,
                 graph,
                 false
             )
@@ -260,10 +235,11 @@ describe('variable-names-index', () => {
 
             const compilation = makeCompilation({
                 graph,
-                outletListenerSpecs,
-                inletCallerSpecs,
                 variableNamesIndex,
-                nodeImplementations: NODE_IMPLEMENTATIONS,
+                settings: {
+                    outletListenerSpecs,
+                    inletCallerSpecs,
+                },
             })
 
             attachOutletListenersAndInletCallers(compilation)

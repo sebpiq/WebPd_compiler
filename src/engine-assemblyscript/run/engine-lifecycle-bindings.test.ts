@@ -20,45 +20,75 @@
 
 import assert from 'assert'
 import { compileAscCode } from './test-helpers'
-import compileToAssemblyscript from '../compile'
-import { makeCompilation } from '../../test-helpers'
 import { EngineMetadata } from '../../run/types'
 import { readMetadata } from './engine-lifecycle-bindings'
+import compile from '../../compile'
+import { CompilationSettings, NodeImplementations } from '../../compile/types'
+import { makeGraph } from '../../dsp-graph/test-helpers'
+import { AnonFunc, Var } from '../../ast/declare'
 
 describe('engine-lifecycle-bindings', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
-            const compilation = makeCompilation({
-                target: 'assemblyscript',
-                inletCallerSpecs: {},
-                outletListenerSpecs: {},
+            const compilationSettings: CompilationSettings = {
+                audio: {
+                    bitDepth: 32,
+                    channelCount: { in: 11, out: 22 },
+                },
+                inletCallerSpecs: {
+                    node1: ['0'],
+                },
+                outletListenerSpecs: {
+                    node1: ['0'],
+                },
+            }
+
+            const graph = makeGraph({
+                node1: {
+                    inlets: { '0': { type: 'message', id: '0' } },
+                    outlets: { '0': { type: 'message', id: '0' } },
+                },
             })
 
+            const nodeImplementations: NodeImplementations = {
+                DUMMY: {
+                    messageReceivers: () => ({
+                        '0': AnonFunc([Var('Message', 'm')])``,
+                    }),
+                },
+            }
+
+            const result = await compile(
+                graph,
+                nodeImplementations,
+                'assemblyscript',
+                compilationSettings
+            )
+
+            if (result.status !== 0) {
+                throw new Error(`Compilation failed ${result.status}`)
+            }
+
             const wasmBuffer = await compileAscCode(
-                compileToAssemblyscript(compilation) +
-                    `
-                    let bla: f32 = 1
-                `,
-                32
+                result.code,
+                compilationSettings.audio.bitDepth
             )
 
             const metadata = await readMetadata(wasmBuffer)
 
             assert.deepStrictEqual<EngineMetadata>(metadata, {
                 audioSettings: {
-                    ...compilation.audioSettings,
+                    ...compilationSettings.audio,
                     blockSize: 0,
                     sampleRate: 0,
                 },
                 compilation: {
                     variableNamesIndex: {
-                        inletCallers:
-                            compilation.variableNamesIndex.inletCallers,
-                        outletListeners:
-                            compilation.variableNamesIndex.outletListeners,
+                        inletCallers: { node1: { '0': 'inletCallers_node1_0' } },
+                        outletListeners: { node1: { '0': 'outletListeners_node1_0' } },
                     },
-                    inletCallerSpecs: {},
-                    outletListenerSpecs: {},
+                    inletCallerSpecs: compilationSettings.inletCallerSpecs,
+                    outletListenerSpecs: compilationSettings.outletListenerSpecs,
                 },
             })
         })

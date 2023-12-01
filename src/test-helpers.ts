@@ -21,6 +21,7 @@
 import {
     AudioSettings,
     Compilation,
+    CompilationSettings,
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
@@ -32,10 +33,7 @@ import { Engine, Module, RawModule } from './run/types'
 import { generateVariableNamesIndex } from './compile/variable-names-index'
 import { writeFile } from 'fs/promises'
 import {
-    buildGraphTraversalDeclare,
-    buildGraphTraversalLoop,
-    collectDependenciesFromTraversal,
-    engineMinimalDependencies,
+    buildGraphTraversalAll,
     getMacros,
 } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
@@ -43,10 +41,7 @@ import {
     compileAscCode,
     wasmBufferToRawModule,
 } from './engine-assemblyscript/run/test-helpers'
-import {
-    mapArray,
-    renderSwitch,
-} from './functional-helpers'
+import { mapArray, renderSwitch } from './functional-helpers'
 import {
     createRawModule as createAssemblyScriptWasmRawModule,
     createBindings as createAssemblyScriptWasmEngineBindings,
@@ -56,15 +51,25 @@ import {
     createBindings as createJavaScriptEngineBindings,
 } from './engine-javascript/run'
 import { createModule } from './run/run-helpers'
-import generateDeclarationsDependencies from './compile/generate-declarations-dependencies'
-import { collectExports } from './compile/compile-helpers'
 import { initializePrecompilation } from './compile/precompile'
 import render from './ast/render'
+import {
+    collectAndDedupeExports,
+    flattenDependencies,
+    instantiateAndDedupeDependencies,
+} from './compile/precompile/dependencies'
+import { validateSettings } from './compile'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
     target: CompilerTarget
 }
+
+export type TestingCompilation = Partial<
+    Omit<Compilation, 'settings'> & {
+        settings: Partial<Compilation['settings']>
+    }
+>
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
@@ -88,56 +93,41 @@ export const round = (v: number, decimals: number = 4) => {
 }
 
 export const makeCompilation = (
-    compilation: Partial<Compilation>
+    compilation: TestingCompilation
 ): Compilation => {
-    const debug = compilation.debug || false
-    const target: CompilerTarget = compilation.target || 'javascript'
+    const defaultSettings: CompilationSettings = {
+        audio: {
+            bitDepth: 32,
+            channelCount: { in: 2, out: 2 },
+        },
+    }
+    const target = compilation.target || 'javascript'
+    const settings = validateSettings({
+        ...defaultSettings,
+        ...(compilation.settings || {}),
+    })
     const nodeImplementations = compilation.nodeImplementations || {
         DUMMY: {},
     }
     const graph = compilation.graph || {}
-    const arrays = compilation.arrays || {}
-    const inletCallerSpecs = compilation.inletCallerSpecs || {}
-    const outletListenerSpecs = compilation.outletListenerSpecs || {}
-    const graphTraversalDeclare =
-        compilation.graphTraversalDeclare ||
-        buildGraphTraversalDeclare(graph, inletCallerSpecs)
-    const graphTraversalLoop =
-        compilation.graphTraversalLoop || buildGraphTraversalLoop(graph)
     const variableNamesIndex =
         compilation.variableNamesIndex ||
-        generateVariableNamesIndex(nodeImplementations, graph, debug)
+        generateVariableNamesIndex(graph, settings.debug)
     const precompilation =
-        compilation.precompilation || initializePrecompilation(graph, variableNamesIndex)
-    const engineDependencies =
-        compilation.engineDependencies ||
-        [
-            ...engineMinimalDependencies(),
-            ...collectDependenciesFromTraversal(
-                nodeImplementations,
-                graph,
-                graphTraversalDeclare
-            ),
-        ]
-    const audioSettings = compilation.audioSettings || {
-        bitDepth: 32,
-        channelCount: { in: 2, out: 2 },
-    }
+        compilation.precompilation ||
+        initializePrecompilation(
+            graph,
+            buildGraphTraversalAll(graph, settings.inletCallerSpecs),
+            variableNamesIndex
+        )
     return {
         ...compilation,
         target,
         graph,
-        graphTraversalDeclare,
-        graphTraversalLoop,
+        settings,
         nodeImplementations,
-        audioSettings,
-        arrays,
-        outletListenerSpecs,
-        inletCallerSpecs,
         variableNamesIndex,
         precompilation,
-        engineDependencies,
-        debug,
     }
 }
 
@@ -188,7 +178,10 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     code: Code,
     dependencies: Array<GlobalCodeDefinition> = []
 ) => {
-    const exports = collectExports(target, dependencies)
+    const exports = collectAndDedupeExports(
+        target,
+        flattenDependencies(dependencies)
+    )
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
     return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
@@ -236,72 +229,83 @@ export const runTestSuite = (
             const { target, bitDepth } = testParameters
             const compilation = makeCompilation({
                 target,
-                audioSettings: {
-                    bitDepth,
-                    channelCount: { in: 2, out: 2 },
+                settings: {
+                    audio: {
+                        bitDepth,
+                        channelCount: { in: 2, out: 2 },
+                    },
                 },
             })
 
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
                 tests.map(({ testFunction }, i) => {
                     const astTestFunc = testFunction(target)
-                    return ({
-                        codeGenerator: () => ({...astTestFunc, name: testFunctionNames[i] }),
+                    return {
+                        codeGenerator: () => ({
+                            ...astTestFunc,
+                            name: testFunctionNames[i],
+                        }),
                         exports: [{ name: testFunctionNames[i] }],
-                    })
+                    }
                 })
 
             let sequence = Sequence([
-                Func('reportTestFailure', [
-                    Var('string', 'msg')
-                ], 'void')`
+                Func('reportTestFailure', [Var('string', 'msg')], 'void')`
                     console.log(msg)
                     throw new Error('test failed')
                 `,
-                Func('assert_stringsEqual', [
-                    Var('string', 'actual'), 
-                    Var('string', 'expected')
-                ], 'void')`
+                Func(
+                    'assert_stringsEqual',
+                    [Var('string', 'actual'), Var('string', 'expected')],
+                    'void'
+                )`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got string "' + actual 
                             + '" expected "' + expected + '"')
                     }
                 `,
-                Func('assert_booleansEqual', [
-                    Var('boolean', 'actual'), 
-                    Var('boolean', 'expected')
-                ], 'void')`
+                Func(
+                    'assert_booleansEqual',
+                    [Var('boolean', 'actual'), Var('boolean', 'expected')],
+                    'void'
+                )`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got boolean ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
                 `,
-                Func('assert_integersEqual', [
-                    Var('Int', 'actual'), 
-                    Var('Int', 'expected')
-                ], 'void')`
+                Func(
+                    'assert_integersEqual',
+                    [Var('Int', 'actual'), Var('Int', 'expected')],
+                    'void'
+                )`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got integer ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
                 `,
-                Func('assert_floatsEqual', [
-                    Var('Float', 'actual'), 
-                    Var('Float', 'expected')
-                ], 'void')`
+                Func(
+                    'assert_floatsEqual',
+                    [Var('Float', 'actual'), Var('Float', 'expected')],
+                    'void'
+                )`
                     if (actual !== expected) {
                         reportTestFailure(
                             'Got float ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
                 `,
-                Func('assert_floatArraysEqual', [
-                    Var('FloatArray', 'actual'),
-                    Var('FloatArray', 'expected'),
-                ], 'void')`
+                Func(
+                    'assert_floatArraysEqual',
+                    [
+                        Var('FloatArray', 'actual'),
+                        Var('FloatArray', 'expected'),
+                    ],
+                    'void'
+                )`
                     if (actual.length !== expected.length) {
                         reportTestFailure(
                             'Arrays of different length ' + actual.toString() 
@@ -316,26 +320,32 @@ export const runTestSuite = (
                     }
                 `,
 
-                generateDeclarationsDependencies(compilation, [
-                    ...dependencies,
-                    ...testsCodeDefinitions,
-                ]),
-
-                target === 'javascript' ? 
-                    'const exports = {}': null,
-
-                generateTestExports(
-                    target,
-                    collectExports(target, [
+                instantiateAndDedupeDependencies(
+                    compilation,
+                    flattenDependencies([
                         ...dependencies,
                         ...testsCodeDefinitions,
                     ])
-                )
+                ),
+
+                target === 'javascript' ? 'const exports = {}' : null,
+
+                generateTestExports(
+                    target,
+                    collectAndDedupeExports(target, [
+                        ...dependencies,
+                        ...testsCodeDefinitions,
+                    ])
+                ),
             ])
 
             testModules.push([
                 testParameters,
-                await createTestModule(target, bitDepth, render(getMacros(target), sequence)),
+                await createTestModule(
+                    target,
+                    bitDepth,
+                    render(getMacros(target), sequence)
+                ),
             ])
         }
     })

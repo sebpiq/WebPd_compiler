@@ -37,7 +37,7 @@ describe('test-helpers-node-implementations', () => {
             'should work with signal inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    generateLoop: ({ ins, outs }) =>
+                    loop: ({ ins, outs }) =>
                         ast`${outs.$0} = ${ins.$0} + 0.1`,
                 }
 
@@ -65,7 +65,7 @@ describe('test-helpers-node-implementations', () => {
             'should work with message inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    generateMessageReceivers: ({ snds }) => ({
+                    messageReceivers: ({ snds }) => ({
                         '0': AnonFunc([
                             Var('Message', 'm')
                         ], 'void')`
@@ -99,7 +99,7 @@ describe('test-helpers-node-implementations', () => {
             'should send message at the right frame %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    generateMessageReceivers: ({ globs, snds }) => ({
+                    messageReceivers: ({ globs, snds }) => ({
                         '0': AnonFunc([
                             Var('Message', 'm')
                         ], 'void')`
@@ -133,7 +133,7 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests with fs %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    generateMessageReceivers: ({}) => ({
+                    messageReceivers: ({}) => ({
                         '0': AnonFunc([
                             Var('Message', 'm')
                         ], 'void')`
@@ -184,7 +184,7 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests on arrays %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    generateMessageReceivers: () => ({
+                    messageReceivers: () => ({
                         '0': AnonFunc([
                             Var('Message', 'm')
                         ], 'void')`

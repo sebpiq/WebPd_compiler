@@ -18,20 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { executeCompilation } from './compile'
-import {
-    TEST_PARAMETERS,
-    createTestEngine,
-    makeCompilation,
-    round,
-} from './test-helpers'
+import compile from './compile'
+import { TEST_PARAMETERS, createTestEngine, round } from './test-helpers'
 import {
     AudioSettings,
-    Compilation,
     CompilerTarget,
     NodeImplementations,
     GlobalCodeDefinition,
     GlobalCodeGeneratorWithSettings,
+    CompilationSettings,
 } from './compile/types'
 import { Engine, Message, SoundFileInfo, FloatArray } from './run/types'
 import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
@@ -44,45 +39,49 @@ import {
     fsWriteSoundStream,
 } from './stdlib/fs'
 import { commonsArrays, commonsWaitEngineConfigure } from './stdlib/commons'
-import { ast, Sequence, ConstVar, Func, Var, AnonFunc, Class } from './ast/declare'
+import {
+    ast,
+    Sequence,
+    ConstVar,
+    Func,
+    Var,
+    AnonFunc,
+    Class,
+} from './ast/declare'
+import { DspGraph } from './dsp-graph'
 
 describe('Engine', () => {
     type TestEngineExportsKeys = { [name: string]: any }
 
     interface EngineTestSettings {
-        target: CompilerTarget
-        bitDepth: AudioSettings['bitDepth']
-        dependencies?: Array<GlobalCodeDefinition>
-        compilation?: Partial<Compilation>
+        graph?: DspGraph.Graph
+        nodeImplementations?: NodeImplementations
+        injectedDependencies?: Array<GlobalCodeDefinition>
+        settings?: CompilationSettings
     }
 
     const initializeEngineTest = async <
         ExportsKeys extends TestEngineExportsKeys
-    >({
-        target,
-        bitDepth,
-        dependencies = [],
-        compilation: extraCompilation = {},
-    }: EngineTestSettings) => {
+    >(
+        target: CompilerTarget,
+        bitDepth: AudioSettings['bitDepth'],
+        {
+            injectedDependencies = [],
+            nodeImplementations = {},
+            graph = undefined,
+            settings = {},
+        }: EngineTestSettings
+    ) => {
         // Add a dummy node with a dummy node type that is only used to inject specified `dependencies`
         const dependenciesInjectorType = 'DEPENDENCIES_INJECTOR'
         const dependenciesInjectorId = 'dependenciesInjector'
-        if (
-            extraCompilation.graph &&
-            extraCompilation.graph[dependenciesInjectorId]
-        ) {
+        if (graph && graph[dependenciesInjectorId]) {
             throw new Error(`Unexpected, node with same id already in graph.`)
         }
 
-        const compilation = makeCompilation({
-            target,
-            audioSettings: {
-                channelCount: { in: 2, out: 2 },
-                bitDepth,
-            },
-            ...extraCompilation,
-            graph: {
-                ...(extraCompilation.graph || {}),
+        const compileResult = await compile(
+            {
+                ...(graph || {}),
                 [dependenciesInjectorId]: {
                     ...nodeDefaults(dependenciesInjectorId),
                     type: dependenciesInjectorType,
@@ -90,20 +89,32 @@ describe('Engine', () => {
                     isPushingMessages: true,
                 },
             },
-            nodeImplementations: {
-                DUMMY: { generateLoop: () => Sequence([]) },
-                ...(extraCompilation.nodeImplementations || {}),
+            {
+                DUMMY: { loop: () => Sequence([]) },
+                ...(nodeImplementations || {}),
                 [dependenciesInjectorType]: {
-                    dependencies: dependencies,
+                    dependencies: injectedDependencies,
                 },
             },
-        })
+            target,
+            {
+                audio: {
+                    channelCount: { in: 2, out: 2 },
+                    bitDepth,
+                },
+                ...settings,
+            }
+        )
+
+        if (compileResult.status !== 0) {
+            throw new Error(`Unexpected, compilation failed.`)
+        }
 
         const engine = await createTestEngine<ExportsKeys>(
             target,
             bitDepth,
-            executeCompilation(compilation),
-            dependencies
+            compileResult.code,
+            injectedDependencies
         )
 
         return engine
@@ -122,10 +133,12 @@ describe('Engine', () => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        generateLoop: ({
+                        loop: ({
                             globs,
                             compilation: {
-                                audioSettings: { channelCount },
+                                settings: {
+                                    audio: { channelCount },
+                                },
                                 target,
                             },
                         }) =>
@@ -155,18 +168,14 @@ describe('Engine', () => {
                     new floatArrayType(blockSize),
                 ]
 
-                const audioSettings: AudioSettings = {
-                    bitDepth,
-                    channelCount: { in: 2, out: outputChannels },
-                }
-
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    compilation: {
-                        graph,
-                        nodeImplementations,
-                        audioSettings,
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
+                        audio: {
+                            bitDepth,
+                            channelCount: { in: 2, out: outputChannels },
+                        },
                     },
                 })
 
@@ -191,11 +200,13 @@ describe('Engine', () => {
             async ({ target, bitDepth }) => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        generateLoop: ({
+                        loop: ({
                             globs,
                             compilation: {
-                                audioSettings: { channelCount },
                                 target,
+                                settings: {
+                                    audio: { channelCount },
+                                },
                             },
                         }) =>
                             target === 'assemblyscript'
@@ -221,11 +232,6 @@ describe('Engine', () => {
                     },
                 })
 
-                const audioSettings: AudioSettings = {
-                    bitDepth,
-                    channelCount: { in: 2, out: 3 },
-                }
-
                 const blockSize = 4
 
                 const input: Array<Float32Array> = [
@@ -238,13 +244,14 @@ describe('Engine', () => {
                     new Float32Array(blockSize),
                 ]
 
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    compilation: {
-                        graph,
-                        nodeImplementations,
-                        audioSettings,
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
+                        audio: {
+                            bitDepth,
+                            channelCount: { in: 2, out: 3 },
+                        },
                     },
                 })
 
@@ -263,17 +270,18 @@ describe('Engine', () => {
             async ({ target, bitDepth }) => {
                 const graph = makeGraph({
                     bla: {
-                        inlets: { blo: { type: 'message', id: 'blo' } },
                         isPushingMessages: true,
+                        inlets: { blo: { type: 'message', id: 'blo' } },
                     },
                     bli: {
+                        isPushingMessages: true,
                         outlets: { blu: { type: 'message', id: 'blu' } },
                     },
                 })
 
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        generateMessageReceivers: () => ({
+                        messageReceivers: () => ({
                             blo: AnonFunc(
                                 [Var('Message', 'm')],
                                 'void'
@@ -287,13 +295,11 @@ describe('Engine', () => {
                     channelCount: { in: 2, out: 3 },
                 }
 
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    compilation: {
-                        graph,
-                        nodeImplementations,
-                        audioSettings,
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
+                        audio: audioSettings,
                         inletCallerSpecs: { bla: ['blo'] },
                         outletListenerSpecs: { bli: ['blu'] },
                     },
@@ -339,13 +345,19 @@ describe('Engine', () => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const nodeImplementations: NodeImplementations = {
                         DUMMY: {
-                            generateInitialization: ({ globs, state }) => ast`
-                                ${ConstVar('DummyNodeState', state, `{
+                            initialization: ({ globs, state }) => ast`
+                                ${ConstVar(
+                                    'DummyNodeState',
+                                    state,
+                                    `{
                                     configureCalled: 0
-                                }`)}
-                                commons_waitEngineConfigure(() => {${state}.configureCalled = ${globs.sampleRate}})
+                                }`
+                                )}
+                                commons_waitEngineConfigure(() => {${state}.configureCalled = ${
+                                globs.sampleRate
+                            }})
                             `,
-                            generateLoop: ({
+                            loop: ({
                                 globs,
                                 state,
                                 compilation: { target },
@@ -355,10 +367,10 @@ describe('Engine', () => {
                                     : ast`${globs.output}[0][0] = ${state}.configureCalled`,
 
                             dependencies: [
-                                () => 
-                                    Class('DummyNodeState', [ 
-                                        Var('Float', 'configureCalled') 
-                                    ])
+                                () =>
+                                    Class('DummyNodeState', [
+                                        Var('Float', 'configureCalled'),
+                                    ]),
                             ],
                         },
                     }
@@ -370,23 +382,23 @@ describe('Engine', () => {
                         },
                     })
 
-                    const audioSettings: AudioSettings = {
-                        bitDepth,
-                        channelCount: { in: 0, out: 1 },
-                    }
-
                     const output: Array<FloatArray> = [new floatArrayType(1)]
 
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        compilation: {
+                        {
                             graph,
                             nodeImplementations,
-                            audioSettings,
-                        },
-                        dependencies: [commonsWaitEngineConfigure],
-                    })
+                            settings: {
+                                audio: {
+                                    bitDepth,
+                                    channelCount: { in: 0, out: 1 },
+                                },
+                            },
+                            injectedDependencies: [commonsWaitEngineConfigure],
+                        }
+                    )
 
                     engine.configure(44100, 1)
                     engine.loop([], output)
@@ -411,11 +423,13 @@ describe('Engine', () => {
                         _commons_ARRAYS.set('array1', array)
                     `
 
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        dependencies: [commonsArrays, testCode],
-                    })
+                        {
+                            injectedDependencies: [commonsArrays, testCode],
+                        }
+                    )
 
                     assert.deepStrictEqual(
                         engine.commons.getArray('array1'),
@@ -469,11 +483,13 @@ describe('Engine', () => {
                         ],
                     }
 
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        dependencies: [commonsArrays, testCode],
-                    })
+                        {
+                            injectedDependencies: [commonsArrays, testCode],
+                        }
+                    )
 
                     engine.commons.setArray(
                         'array1',
@@ -502,18 +518,22 @@ describe('Engine', () => {
                 'should embed arrays passed to the compiler %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        compilation: {
-                            arrays: {
-                                array1: new Float32Array([1, 2, 3, 4]),
-                                array2: new Float32Array([11, 22, 33, 44, 55]),
-                                array3: new Float32Array(0),
+                        {
+                            settings: {
+                                arrays: {
+                                    array1: new Float32Array([1, 2, 3, 4]),
+                                    array2: new Float32Array([
+                                        11, 22, 33, 44, 55,
+                                    ]),
+                                    array3: new Float32Array(0),
+                                },
                             },
-                        },
-                        dependencies: [commonsArrays],
-                    })
+                            injectedDependencies: [commonsArrays],
+                        }
+                    )
                     assert.deepStrictEqual(
                         engine.commons.getArray('array1'),
                         new floatArrayType([1, 2, 3, 4])
@@ -615,15 +635,17 @@ describe('Engine', () => {
                         exports: [{ name: 'testReceivedSound' }],
                     }
 
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        dependencies: [
-                            fsReadSoundFile,
-                            sharedTestingCode,
-                            testCode,
-                        ],
-                    })
+                        {
+                            injectedDependencies: [
+                                fsReadSoundFile,
+                                sharedTestingCode,
+                                testCode,
+                            ],
+                        }
+                    )
 
                     // 1. Some function in the engine requests a read file operation.
                     // Request is sent to host via callback
@@ -757,15 +779,17 @@ describe('Engine', () => {
                         exports: [{ name: 'testReceivedSound' }],
                     }
 
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        dependencies: [
-                            fsReadSoundStream,
-                            sharedTestingCode,
-                            testCode,
-                        ],
-                    })
+                        {
+                            injectedDependencies: [
+                                fsReadSoundStream,
+                                sharedTestingCode,
+                                testCode,
+                            ],
+                        }
+                    )
 
                     // 1. Some function in the engine requests a read stream operation.
                     // Request is sent to host via callback
@@ -923,11 +947,16 @@ describe('Engine', () => {
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        dependencies: [fsWriteSoundStream, sharedTestingCode],
-                    })
+                        {
+                            injectedDependencies: [
+                                fsWriteSoundStream,
+                                sharedTestingCode,
+                            ],
+                        }
+                    )
 
                     // 1. Some function in the engine requests a write stream operation.
                     // Request is sent to host via callback
@@ -1078,11 +1107,16 @@ describe('Engine', () => {
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const engine = await initializeEngineTest({
+                    const engine = await initializeEngineTest(
                         target,
                         bitDepth,
-                        dependencies: [fsWriteSoundFile, sharedTestingCode],
-                    })
+                        {
+                            injectedDependencies: [
+                                fsWriteSoundFile,
+                                sharedTestingCode,
+                            ],
+                        }
+                    )
 
                     // 1. Some function in the engine requests a write file operation.
                     // Request is sent to host via callback
@@ -1131,12 +1165,14 @@ describe('Engine', () => {
                 // We don't need to actually compile any node
                 const graph = makeGraph({
                     someNode1: {
+                        isPushingMessages: true,
                         outlets: {
                             someOutlet1: { type: 'message', id: 'someOutlet1' },
                             someOutlet2: { type: 'message', id: 'someOutlet2' },
                         },
                     },
                     someNode2: {
+                        isPushingMessages: true,
                         outlets: {
                             someOutlet1: { type: 'message', id: 'someOutlet1' },
                         },
@@ -1175,13 +1211,11 @@ describe('Engine', () => {
                     exports: [{ name: 'testCallOutletListener' }],
                 }
 
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    dependencies: [testCode],
-                    compilation: {
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    injectedDependencies: [testCode],
+                    graph,
+                    settings: {
                         outletListenerSpecs,
-                        graph,
                     },
                 })
 
@@ -1251,7 +1285,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        generateMessageReceivers: ({ node: { id } }) => ({
+                        messageReceivers: ({ node: { id } }) => ({
                             someInlet1: AnonFunc(
                                 [Var('Message', 'm')],
                                 'void'
@@ -1302,14 +1336,12 @@ describe('Engine', () => {
                     exports: [{ name: 'testMessageReceived' }],
                 }
 
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    dependencies: [testCode],
-                    compilation: {
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    injectedDependencies: [testCode],
+                    graph,
+                    nodeImplementations,
+                    settings: {
                         inletCallerSpecs,
-                        graph,
-                        nodeImplementations,
                     },
                 })
 
@@ -1375,26 +1407,26 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        generateMessageReceivers: ({ snds }) => ({
-                            '0': AnonFunc([
-                                Var('Message', 'm')
-                            ], 'void')`${snds['0']}(m);return`,
-                            '1': AnonFunc([
-                                Var('Message', 'm')
-                            ], 'void')`${snds['1']}(m);return`,
+                        messageReceivers: ({ snds }) => ({
+                            '0': AnonFunc(
+                                [Var('Message', 'm')],
+                                'void'
+                            )`${snds['0']}(m);return`,
+                            '1': AnonFunc(
+                                [Var('Message', 'm')],
+                                'void'
+                            )`${snds['1']}(m);return`,
                         }),
                     },
                 }
 
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    compilation: {
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    settings: {
                         inletCallerSpecs,
                         outletListenerSpecs,
-                        graph,
-                        nodeImplementations,
                     },
+                    graph,
+                    nodeImplementations,
                 })
 
                 const calledOutlet0: Array<Message> = []
@@ -1429,20 +1461,21 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        generateMessageReceivers: () => ({
+                        messageReceivers: () => ({
                             // No return so an error will be thrown
-                            someInlet: AnonFunc([ Var('Message', 'm') ], 'void')``,
+                            someInlet: AnonFunc(
+                                [Var('Message', 'm')],
+                                'void'
+                            )``,
                         }),
                     },
                 }
 
-                const engine = await initializeEngineTest({
-                    target,
-                    bitDepth,
-                    compilation: {
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
                         inletCallerSpecs,
-                        graph,
-                        nodeImplementations,
                     },
                 })
 

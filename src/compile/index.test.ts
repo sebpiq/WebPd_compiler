@@ -23,54 +23,51 @@ import { CompilationSettings } from './types'
 
 describe('compile', () => {
     const COMPILER_SETTINGS_AS: CompilationSettings = {
-        audioSettings: {
+        audio: {
             channelCount: { in: 2, out: 2 },
             bitDepth: 32,
         },
-        target: 'assemblyscript',
     }
 
     const COMPILER_SETTINGS_JS: CompilationSettings = {
-        audioSettings: {
+        audio: {
             channelCount: { in: 2, out: 2 },
             bitDepth: 32,
         },
-        target: 'javascript',
     }
 
     it('should compile assemblyscript without error', () => {
-        const compileResult = compile({}, {}, COMPILER_SETTINGS_AS)
+        const compileResult = compile({}, {}, 'assemblyscript', COMPILER_SETTINGS_AS)
         assert.ok(compileResult.status === 0)
         assert.strictEqual(typeof compileResult.code, 'string')
     })
 
     it('should compile javascript without error', () => {
-        const compileResult = compile({}, {}, COMPILER_SETTINGS_JS)
+        const compileResult = compile({}, {}, 'javascript', COMPILER_SETTINGS_JS)
         assert.ok(compileResult.status === 0)
         assert.strictEqual(typeof compileResult.code, 'string')
     })
 
     describe('validateSettings', () => {
         it('should validate settings and set defaults', () => {
-            const settings = validateSettings({
-                target: 'assemblyscript',
-                audioSettings: {
-                    channelCount: { in: 2, out: 2 },
-                    bitDepth: 32,
-                },
-            })
+            const settings = validateSettings({})
             assert.deepStrictEqual(settings.outletListenerSpecs, {})
             assert.deepStrictEqual(settings.inletCallerSpecs, {})
             assert.deepStrictEqual(settings.arrays, {})
+            assert.deepStrictEqual(settings.audio, {
+                channelCount: { in: 2, out: 2 },
+                bitDepth: 64,
+            },)
         })
 
         it('should throw error if bitDepth invalid', () => {
             assert.throws(() =>
                 validateSettings({
                     target: 'assemblyscript',
-                    channelCount: { in: 2, out: 2 },
-                    sampleRate: 44100,
-                    bitDepth: 666,
+                    audio: {
+                        channelCount: { in: 2, out: 2 },
+                        bitDepth: 666,
+                    },
                 } as any)
             )
         })

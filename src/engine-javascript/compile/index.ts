@@ -19,17 +19,18 @@
  */
 
 import { buildMetadata } from '../../compile/compile-helpers'
-import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
-import generateDeclarationsNode from '../../compile/generate-declarations-nodes'
-import generateLoop from '../../compile/generate-loop'
-import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
-import generateInitializationsNodes from '../../compile/generate-initializations-nodes'
+import {
+    generatePortletsDeclarations,
+    generateGlobs,
+    generateNodeInitializations,
+    generateLoop,
+    generateInletCallers,
+    generateOutletListeners,
+    generateEmbeddedArrays,
+    generateImportsExports,
+} from '../../compile/generate'
 import { Compilation } from '../../compile/types'
 import { JavaScriptEngineCode } from './types'
-import generateInletCallers from '../../compile/generate-inlet-callers'
-import generateOutletListeners from '../../compile/generate-outlet-listeners'
-import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
-import generateImportsExports from '../../compile/generate-imps-exps'
 import render from '../../ast/render'
 import macros from './macros'
 import { ast } from '../../ast/declare'
@@ -37,18 +38,20 @@ import { ast } from '../../ast/declare'
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
         variableNamesIndex,
-        outletListenerSpecs,
-        inletCallerSpecs,
-        engineDependencies,
+        settings: {
+            outletListenerSpecs,
+            inletCallerSpecs,
+        },
+        precompilation,
     } = compilation
     const globs = compilation.variableNamesIndex.globs
     const metadata = buildMetadata(compilation)
 
     // prettier-ignore
     return render(macros, ast`
-        ${generateDeclarationsGlobals(compilation)}
-        ${generateDeclarationsDependencies(compilation, engineDependencies)}
-        ${generateDeclarationsNode(compilation)}
+        ${generateGlobs(compilation)}
+        ${precompilation.dependencies.ast}
+        ${generatePortletsDeclarations(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
 
@@ -59,7 +62,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             outletId
         ) => ast`const ${variableName} = (m) => {exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)}`)}
 
-        ${generateInitializationsNodes(compilation)}
+        ${generateNodeInitializations(compilation)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
@@ -92,8 +95,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         }
 
         ${generateImportsExports(
-            'javascript',
-            engineDependencies,
+            compilation,
             ({ name }) => ast`
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)

@@ -19,27 +19,30 @@
  */
 
 import { buildMetadata } from '../../compile/compile-helpers'
-import generateDeclarationsNodes from '../../compile/generate-declarations-nodes'
-import generateDeclarationsGlobals from '../../compile/generate-declarations-globals'
-import generateInitializationsNodes from '../../compile/generate-initializations-nodes'
-import generateLoop from '../../compile/generate-loop'
+import {
+    generatePortletsDeclarations,
+    generateGlobs,
+    generateNodeInitializations,
+    generateLoop,
+    generateInletCallers,
+    generateOutletListeners,
+    generateEmbeddedArrays,
+    generateImportsExports,
+} from '../../compile/generate'
 import { Compilation } from '../../compile/types'
 import { AssemblyScriptWasmEngineCode } from './types'
-import generateInletCallers from '../../compile/generate-inlet-callers'
-import generateOutletListeners from '../../compile/generate-outlet-listeners'
-import generateEmbeddedArrays from '../../compile/generate-embedded-arrays'
-import generateDeclarationsDependencies from '../../compile/generate-declarations-dependencies'
-import generateImportsExports from '../../compile/generate-imps-exps'
 import render from '../../ast/render'
 import macros from './macros'
 import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
-        audioSettings,
-        inletCallerSpecs,
+        settings: {
+            audio: audioSettings,
+            inletCallerSpecs,
+        },
         variableNamesIndex,
-        engineDependencies,
+        precompilation
     } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.variableNamesIndex.globs
@@ -47,9 +50,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
     // prettier-ignore
     return render(macros, ast`
-        ${generateDeclarationsGlobals(compilation)}
-        ${generateDeclarationsDependencies(compilation, engineDependencies)}
-        ${generateDeclarationsNodes(compilation)}
+        ${generateGlobs(compilation)}
+        ${precompilation.dependencies.ast}
+        ${generatePortletsDeclarations(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
 
@@ -61,7 +64,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         let ${globs.input}: FloatArray = createFloatArray(0)
         let ${globs.output}: FloatArray = createFloatArray(0)
 
-        ${generateInitializationsNodes(compilation)}
+        ${generateNodeInitializations(compilation)}
 
         export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
@@ -89,8 +92,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         }
 
         ${generateImportsExports(
-            'assemblyscript',
-            engineDependencies,
+            compilation,
             ({ name, args, returnType }) => ast`export declare function ${name} (${
                 args.map((a) => `${a.name}: ${a.type}`).join(',')
             }): ${returnType}`, 
