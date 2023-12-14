@@ -57,15 +57,14 @@ interface EngineLifecycleRawModule extends RawModule {
     metadata: Engine['metadata']
     configure: Engine['configure']
     loop: Engine['loop']
-    outletListeners: Engine['outletListeners']
-    inletCallers: Engine['inletCallers']
+    io: Engine['io']
 }
 
 export type RawJavaScriptEngine = CommonsRawModule &
     FsRawModule &
     EngineLifecycleRawModule
 
-export const createRawModule = (code: Code): RawJavaScriptEngine =>
+export const createRawModule = (code: Code): RawModule =>
     new Function(`
         ${code}
         return exports
@@ -78,8 +77,7 @@ export const createBindings = (
     metadata: { type: 'raw' },
     configure: { type: 'raw' },
     loop: { type: 'raw' },
-    inletCallers: { type: 'raw' },
-    outletListeners: { type: 'raw' },
+    io: { type: 'raw' },
     commons: {
         type: 'proxy',
         value: createCommonsModule(
@@ -89,8 +87,8 @@ export const createBindings = (
     },
 })
 
-export const createEngine = (code: Code) => {
-    const rawModule = createRawModule(code)
+export const createEngine = (code: Code): Engine => {
+    const rawModule = createRawModule(code) as RawJavaScriptEngine
     return createModule(rawModule, createBindings(rawModule))
 }
 

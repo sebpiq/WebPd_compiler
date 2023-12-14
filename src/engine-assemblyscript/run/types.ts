@@ -77,6 +77,6 @@ export interface ForwardReferences<RawModuleType> {
     engineData?: EngineData
     modules: {
         fs?: Engine['fs']
-        outletListeners?: Engine['outletListeners']
+        io?: Engine['io']
     }
 }

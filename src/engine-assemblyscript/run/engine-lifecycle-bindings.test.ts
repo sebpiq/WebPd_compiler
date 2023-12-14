@@ -35,12 +35,14 @@ describe('engine-lifecycle-bindings', () => {
                     bitDepth: 32,
                     channelCount: { in: 11, out: 22 },
                 },
-                inletCallerSpecs: {
-                    node1: ['0'],
-                },
-                outletListenerSpecs: {
-                    node1: ['0'],
-                },
+                io: {
+                    messageReceivers: {
+                        node1: { portletIds: ['0'] },
+                    },
+                    messageSenders: {
+                        node1: { portletIds: ['0'] },
+                    },
+                }
             }
 
             const graph = makeGraph({
@@ -84,11 +86,19 @@ describe('engine-lifecycle-bindings', () => {
                 },
                 compilation: {
                     variableNamesIndex: {
-                        inletCallers: { node1: { '0': 'inletCallers_node1_0' } },
-                        outletListeners: { node1: { '0': 'outletListeners_node1_0' } },
+                        io: {
+                            messageReceivers: {
+                                node1: { '0': 'ioRcv_node1_0' },
+                            },
+                            messageSenders: {
+                                node1: { '0': 'ioSnd_node1_0' },
+                            },
+                        }
                     },
-                    inletCallerSpecs: compilationSettings.inletCallerSpecs,
-                    outletListenerSpecs: compilationSettings.outletListenerSpecs,
+                    io: {
+                        messageReceivers: compilationSettings.io.messageReceivers,
+                        messageSenders: compilationSettings.io.messageSenders
+                    },
                 },
             })
         })

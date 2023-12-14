@@ -24,8 +24,8 @@ import {
     generateGlobs,
     generateNodeInitializations,
     generateLoop,
-    generateInletCallers,
-    generateOutletListeners,
+    generateIoMessageReceivers,
+    generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
 } from '../../compile/generate'
@@ -37,12 +37,9 @@ import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
-        settings: {
-            audio: audioSettings,
-            inletCallerSpecs,
-        },
+        settings: { audio: audioSettings, io },
         variableNamesIndex,
-        precompilation
+        precompilation,
     } = compilation
     const { channelCount } = audioSettings
     const globs = compilation.variableNamesIndex.globs
@@ -56,8 +53,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
         ${generateEmbeddedArrays(compilation)}
 
-        ${generateInletCallers(compilation)}
-        ${generateOutletListeners(compilation, (variableName) => 
+        ${generateIoMessageReceivers(compilation)}
+        ${generateIoMessageSenders(compilation, (variableName) => 
             ast`export declare function ${variableName}(m: Message): void`)}
 
         const metadata: string = '${JSON.stringify(metadata)}'
@@ -84,9 +81,9 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
         export {
             metadata,
-            ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) => 
-                inletIds.map(inletId => 
-                    variableNamesIndex.inletCallers[nodeId][inletId] + ','
+            ${Object.entries(io.messageReceivers).map(([nodeId, spec]) => 
+                spec.portletIds.map(inletId => 
+                    variableNamesIndex.io.messageReceivers[nodeId][inletId] + ','
                 )
             )}
         }

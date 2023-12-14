@@ -58,8 +58,10 @@ export const generateVariableNamesIndex = (
             )
         ),
         globs: generateVariableNamesGlobs(),
-        outletListeners: createNamespace('outletListeners', {}),
-        inletCallers: createNamespace('inletCallers', {}),
+        io: {
+            messageReceivers: createNamespace('io:messageReceivers', {}),
+            messageSenders: createNamespace('io:messageSenders', {}),
+        },
     })
 
 export const generateVariableNamesGlobs = () =>
@@ -104,24 +106,26 @@ export const attachNodePortlet = (
  * Helper that attaches to the generated `variableNamesIndex` the names of specified outlet listeners
  * and inlet callers.
  */
-export const attachOutletListenersAndInletCallers = ({
+export const attachIoMessages = ({
     graph,
     variableNamesIndex,
-    settings: { outletListenerSpecs, inletCallerSpecs },
+    settings: { io },
 }: Compilation): void =>
-    (['inletCallers', 'outletListeners'] as const).forEach((nsKey) => {
+    (['messageReceivers', 'messageSenders'] as const).forEach((nsKey) => {
         const specs =
-            nsKey === 'inletCallers' ? inletCallerSpecs : outletListenerSpecs
-        Object.entries(specs).forEach(([nodeId, outletIds]) => {
+            (nsKey === 'messageReceivers'
+                ? io.messageReceivers
+                : io.messageSenders) || {}
+        Object.entries(specs).forEach(([nodeId, spec]) => {
             const node = getters.getNode(graph, nodeId)
-            variableNamesIndex[nsKey][nodeId] = createNamespace(
+            variableNamesIndex.io[nsKey][nodeId] = createNamespace(
                 nodeNamespaceLabel(node, nsKey),
                 {}
             )
-            outletIds.forEach((outletId) => {
-                variableNamesIndex[nsKey][nodeId][
+            spec.portletIds.forEach((outletId) => {
+                variableNamesIndex.io[nsKey][nodeId][
                     outletId
-                ] = `${nsKey}_${nodeId}_${outletId}`
+                ] = `io${nsKey === 'messageReceivers' ? 'Rcv': 'Snd'}_${nodeId}_${outletId}`
             })
         })
     })

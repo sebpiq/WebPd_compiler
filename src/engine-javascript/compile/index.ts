@@ -24,8 +24,8 @@ import {
     generateGlobs,
     generateNodeInitializations,
     generateLoop,
-    generateInletCallers,
-    generateOutletListeners,
+    generateIoMessageReceivers,
+    generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
 } from '../../compile/generate'
@@ -38,10 +38,7 @@ import { ast } from '../../ast/declare'
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
         variableNamesIndex,
-        settings: {
-            outletListenerSpecs,
-            inletCallerSpecs,
-        },
+        settings: { io },
         precompilation,
     } = compilation
     const globs = compilation.variableNamesIndex.globs
@@ -55,12 +52,12 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
 
         ${generateEmbeddedArrays(compilation)}
 
-        ${generateInletCallers(compilation)}
-        ${generateOutletListeners(compilation, (
+        ${generateIoMessageReceivers(compilation)}
+        ${generateIoMessageSenders(compilation, (
             variableName, 
             nodeId, 
             outletId
-        ) => ast`const ${variableName} = (m) => {exports.outletListeners['${nodeId}']['${outletId}'].onMessage(m)}`)}
+        ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'].onMessage(m)}`)}
 
         ${generateNodeInitializations(compilation)}
 
@@ -76,22 +73,24 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             loop: (${globs.input}, ${globs.output}) => {
                 ${generateLoop(compilation)}
             },
-            outletListeners: {
-                ${Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
-                    ast`${nodeId}: {
-                        ${outletIds.map(outletId => 
-                            `"${outletId}": {onMessage: () => undefined},`)}
-                    },`
-                )}
-            },
-            inletCallers: {
-                ${Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
-                    ast`${nodeId}: {
-                        ${inletIds.map(inletId => 
-                            `"${inletId}": ${variableNamesIndex.inletCallers[nodeId][inletId]},`)}
-                    },`
-                )}
-            },
+            io: {
+                messageReceivers: {
+                    ${Object.entries(io.messageReceivers).map(([nodeId, spec]) =>
+                        ast`${nodeId}: {
+                            ${spec.portletIds.map(inletId => 
+                                `"${inletId}": ${variableNamesIndex.io.messageReceivers[nodeId][inletId]},`)}
+                        },`
+                    )}
+                },
+                messageSenders: {
+                    ${Object.entries(io.messageSenders).map(([nodeId, spec]) =>
+                        ast`${nodeId}: {
+                            ${spec.portletIds.map(outletId => 
+                                `"${outletId}": {onMessage: () => undefined},`)}
+                        },`
+                    )}
+                },
+            }
         }
 
         ${generateImportsExports(

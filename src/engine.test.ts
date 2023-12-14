@@ -27,8 +27,15 @@ import {
     GlobalCodeDefinition,
     GlobalCodeGeneratorWithSettings,
     CompilationSettings,
+    IoMessageSpecs,
 } from './compile/types'
-import { Engine, Message, SoundFileInfo, FloatArray } from './run/types'
+import {
+    Engine,
+    Message,
+    SoundFileInfo,
+    FloatArray,
+    EngineMetadata,
+} from './run/types'
 import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
 import { getFloatArrayType } from './run/run-helpers'
 import {
@@ -300,20 +307,24 @@ describe('Engine', () => {
                     nodeImplementations,
                     settings: {
                         audio: audioSettings,
-                        inletCallerSpecs: { bla: ['blo'] },
-                        outletListenerSpecs: { bli: ['blu'] },
+                        io: {
+                            messageReceivers: { bla: { portletIds: ['blo'] } },
+                            messageSenders: { bli: { portletIds: ['blu'] } },
+                        },
                     },
                 })
 
-                assert.deepStrictEqual(engine.metadata, {
+                assert.deepStrictEqual<EngineMetadata>(engine.metadata, {
                     audioSettings: {
                         ...audioSettings,
                         blockSize: 0,
                         sampleRate: 0,
                     },
                     compilation: {
-                        inletCallerSpecs: { bla: ['blo'] },
-                        outletListenerSpecs: { bli: ['blu'] },
+                        io: {
+                            messageReceivers: { bla: { portletIds: ['blo'] } },
+                            messageSenders: { bli: { portletIds: ['blu'] } },
+                        },
                         variableNamesIndex:
                             engine.metadata.compilation.variableNamesIndex,
                     },
@@ -357,11 +368,7 @@ describe('Engine', () => {
                                 globs.sampleRate
                             }})
                             `,
-                            loop: ({
-                                globs,
-                                state,
-                                compilation: { target },
-                            }) =>
+                            loop: ({ globs, state, compilation: { target } }) =>
                                 target === 'assemblyscript'
                                     ? ast`${globs.output}[0] = ${state}.configureCalled`
                                     : ast`${globs.output}[0][0] = ${state}.configureCalled`,
@@ -1157,7 +1164,7 @@ describe('Engine', () => {
         })
     })
 
-    describe('outletListeners', () => {
+    describe('io.messageSenders', () => {
         it.each(TEST_PARAMETERS)(
             'should create the specified outlet listeners %s',
             async ({ target, bitDepth }) => {
@@ -1179,9 +1186,11 @@ describe('Engine', () => {
                     },
                 })
 
-                const outletListenerSpecs = {
-                    ['someNode1']: ['someOutlet1', 'someOutlet2'],
-                    ['someNode2']: ['someOutlet1'],
+                const messageSenders: IoMessageSpecs = {
+                    ['someNode1']: {
+                        portletIds: ['someOutlet1', 'someOutlet2'],
+                    },
+                    ['someNode2']: { portletIds: ['someOutlet1'] },
                 }
 
                 const testCode: GlobalCodeGeneratorWithSettings = {
@@ -1202,20 +1211,22 @@ describe('Engine', () => {
                             msg_writeFloatToken(m1, 1, 22)
                             msg_writeStringToken(m2, 0, 'bla')
                             `,
-                            Func('testCallOutletListener')`
-                                outletListeners_someNode1_someOutlet1(m1)
-                                outletListeners_someNode1_someOutlet2(m2)
-                                outletListeners_someNode2_someOutlet1(m1)
+                            Func('testCallMessageSend')`
+                                ioSnd_someNode1_someOutlet1(m1)
+                                ioSnd_someNode1_someOutlet2(m2)
+                                ioSnd_someNode2_someOutlet1(m1)
                             `,
                         ]),
-                    exports: [{ name: 'testCallOutletListener' }],
+                    exports: [{ name: 'testCallMessageSend' }],
                 }
 
                 const engine = await initializeEngineTest(target, bitDepth, {
                     injectedDependencies: [testCode],
                     graph,
                     settings: {
-                        outletListenerSpecs,
+                        io: {
+                            messageSenders,
+                        },
                     },
                 })
 
@@ -1224,31 +1235,31 @@ describe('Engine', () => {
                 const called21: Array<Message> = []
 
                 assert.ok(
-                    engine.outletListeners.someNode1.someOutlet1
+                    engine.io.messageSenders.someNode1.someOutlet1
                         .onMessage instanceof Function
                 )
                 assert.ok(
-                    engine.outletListeners.someNode1.someOutlet2
+                    engine.io.messageSenders.someNode1.someOutlet2
                         .onMessage instanceof Function
                 )
                 assert.ok(
-                    engine.outletListeners.someNode2.someOutlet1
+                    engine.io.messageSenders.someNode2.someOutlet1
                         .onMessage instanceof Function
                 )
 
-                engine.outletListeners.someNode1.someOutlet1.onMessage = (
+                engine.io.messageSenders.someNode1.someOutlet1.onMessage = (
                     message: Message
                 ) => called11.push(message)
 
-                engine.outletListeners.someNode1.someOutlet2.onMessage = (
+                engine.io.messageSenders.someNode1.someOutlet2.onMessage = (
                     message: Message
                 ) => called12.push(message)
 
-                engine.outletListeners.someNode2.someOutlet1.onMessage = (
+                engine.io.messageSenders.someNode2.someOutlet1.onMessage = (
                     message: Message
                 ) => called21.push(message)
 
-                engine.testCallOutletListener()
+                engine.testCallMessageSend()
                 assert.deepStrictEqual(called11, [[11, 22]])
                 assert.deepStrictEqual(called12, [['bla']])
                 assert.deepStrictEqual(called21, [[11, 22]])
@@ -1256,7 +1267,7 @@ describe('Engine', () => {
         )
     })
 
-    describe('inletCallers', () => {
+    describe('io.messageReceivers', () => {
         it.each(TEST_PARAMETERS)(
             'should create the specified inlet callers %s',
             async ({ target, bitDepth }) => {
@@ -1278,9 +1289,9 @@ describe('Engine', () => {
                     },
                 })
 
-                const inletCallerSpecs = {
-                    someNode1: ['someInlet1', 'someInlet2'],
-                    someNode2: ['someInlet1'],
+                const messageReceivers: IoMessageSpecs = {
+                    someNode1: { portletIds: ['someInlet1', 'someInlet2'] },
+                    someNode2: { portletIds: ['someInlet1'] },
                 }
 
                 const nodeImplementations: NodeImplementations = {
@@ -1307,31 +1318,31 @@ describe('Engine', () => {
                                 'new Map()'
                             ),
                             `
-                        received.set("someNode1:1", [])
-                        received.set("someNode1:2", [])
-                        received.set("someNode2:1", [])
-                        `,
+                                received.set("someNode1:1", [])
+                                received.set("someNode1:2", [])
+                                received.set("someNode2:1", [])
+                            `,
 
                             Func(
                                 'messageIsCorrect',
                                 [Var('Message', 'message')],
                                 'boolean'
                             )`
-                            return msg_getLength(message) === 2
-                                && msg_isFloatToken(message, 0)
-                                && msg_isStringToken(message, 1)
-                                && msg_readFloatToken(message, 0) === 666
-                                && msg_readStringToken(message, 1) === 'n4t4s'
-                        `,
+                                return msg_getLength(message) === 2
+                                    && msg_isFloatToken(message, 0)
+                                    && msg_isStringToken(message, 1)
+                                    && msg_readFloatToken(message, 0) === 666
+                                    && msg_readStringToken(message, 1) === 'n4t4s'
+                            `,
 
                             Func('testMessageReceived', [], 'boolean')`
-                            return received.get("someNode1:1").length === 1
-                                && received.get("someNode1:2").length === 1
-                                && received.get("someNode2:1").length === 1
-                                && messageIsCorrect(received.get("someNode1:1")[0])
-                                && messageIsCorrect(received.get("someNode1:2")[0])
-                                && messageIsCorrect(received.get("someNode2:1")[0])
-                        `,
+                                return received.get("someNode1:1").length === 1
+                                    && received.get("someNode1:2").length === 1
+                                    && received.get("someNode2:1").length === 1
+                                    && messageIsCorrect(received.get("someNode1:1")[0])
+                                    && messageIsCorrect(received.get("someNode1:2")[0])
+                                    && messageIsCorrect(received.get("someNode2:1")[0])
+                            `,
                         ]),
                     exports: [{ name: 'testMessageReceived' }],
                 }
@@ -1341,18 +1352,19 @@ describe('Engine', () => {
                     graph,
                     nodeImplementations,
                     settings: {
-                        inletCallerSpecs,
+                        io: { messageReceivers },
                     },
                 })
 
                 assert.ok(
-                    engine.inletCallers.someNode1.someInlet1 instanceof Function
+                    engine.io.messageReceivers.someNode1.someInlet1 instanceof
+                        Function
                 )
 
                 assert.ok(!engine.testMessageReceived())
-                engine.inletCallers.someNode1.someInlet1([666, 'n4t4s'])
-                engine.inletCallers.someNode1.someInlet2([666, 'n4t4s'])
-                engine.inletCallers.someNode2.someInlet1([666, 'n4t4s'])
+                engine.io.messageReceivers.someNode1.someInlet1([666, 'n4t4s'])
+                engine.io.messageReceivers.someNode1.someInlet2([666, 'n4t4s'])
+                engine.io.messageReceivers.someNode2.someInlet1([666, 'n4t4s'])
                 assert.ok(engine.testMessageReceived())
             }
         )
@@ -1397,12 +1409,12 @@ describe('Engine', () => {
                     },
                 })
 
-                const inletCallerSpecs = {
-                    node1: ['0'],
+                const messageReceivers: IoMessageSpecs = {
+                    node1: { portletIds: ['0'] },
                 }
 
-                const outletListenerSpecs = {
-                    node2: ['0', '1'],
+                const messageSenders: IoMessageSpecs = {
+                    node2: { portletIds: ['0', '1'] },
                 }
 
                 const nodeImplementations: NodeImplementations = {
@@ -1422,8 +1434,10 @@ describe('Engine', () => {
 
                 const engine = await initializeEngineTest(target, bitDepth, {
                     settings: {
-                        inletCallerSpecs,
-                        outletListenerSpecs,
+                        io: {
+                            messageReceivers,
+                            messageSenders,
+                        },
                     },
                     graph,
                     nodeImplementations,
@@ -1431,12 +1445,12 @@ describe('Engine', () => {
 
                 const calledOutlet0: Array<Message> = []
                 const calledOutlet1: Array<Message> = []
-                engine.outletListeners.node2['0'].onMessage = (m) =>
+                engine.io.messageSenders.node2['0'].onMessage = (m) =>
                     calledOutlet0.push(m)
-                engine.outletListeners.node2['1'].onMessage = (m) =>
+                engine.io.messageSenders.node2['1'].onMessage = (m) =>
                     calledOutlet1.push(m)
 
-                engine.inletCallers.node1['0']([123, 'bla', 456])
+                engine.io.messageReceivers.node1['0']([123, 'bla', 456])
                 assert.deepStrictEqual(calledOutlet0, [[123, 'bla', 456]])
                 assert.deepStrictEqual(calledOutlet1, [[123, 'bla', 456]])
             }
@@ -1455,8 +1469,8 @@ describe('Engine', () => {
                     },
                 })
 
-                const inletCallerSpecs = {
-                    someNode: ['someInlet'],
+                const messageReceivers: IoMessageSpecs = {
+                    someNode: { portletIds: ['someInlet'] },
                 }
 
                 const nodeImplementations: NodeImplementations = {
@@ -1475,12 +1489,14 @@ describe('Engine', () => {
                     graph,
                     nodeImplementations,
                     settings: {
-                        inletCallerSpecs,
+                        io: {
+                            messageReceivers,
+                        },
                     },
                 })
 
                 await expect(() =>
-                    engine.inletCallers.someNode.someInlet([123, 'bla'])
+                    engine.io.messageReceivers.someNode.someInlet([123, 'bla'])
                 ).toThrow(
                     /\[someNodeType\], id "someNode", inlet "someInlet", unsupported message : \[123(.0)*, "bla"\]( at [0-9]+:[0-9]+)?/
                 )

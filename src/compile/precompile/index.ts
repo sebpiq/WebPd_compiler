@@ -20,7 +20,7 @@
 
 import { DspGraph, getters, traversal } from '../../dsp-graph'
 import { mapObject } from '../../functional-helpers'
-import { attachOutletListenersAndInletCallers } from '../variable-names-index'
+import { attachIoMessages } from '../variable-names-index'
 import { buildGraphTraversalSignal } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../namespace'
 import { Compilation, Precompilation, VariableNamesIndex } from '../types'
@@ -43,7 +43,7 @@ export default (compilation: Compilation) => {
     const { graph, precompilation } = compilation
     const nodes = traversal.toNodes(graph, precompilation.traversals.all)
 
-    attachOutletListenersAndInletCallers(compilation)
+    attachIoMessages(compilation)
     precompileDependencies(compilation)
 
     // Go through the graph and precompile inlets.

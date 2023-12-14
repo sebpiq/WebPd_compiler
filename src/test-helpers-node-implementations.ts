@@ -178,28 +178,36 @@ export const generateFramesForNode = async <NodeArguments>(
                 ),
 
             initialization: ({ state }) => ast`
-                ${ConstVar('TestHelperNodeFakeSourceNode', state, ast`{
-                    ${Object.keys(fakeSourceNode.outlets)
-                        .filter(
-                            (outletId) =>
-                                fakeSourceNode.outlets[outletId].type === 'signal'
-                        )
-                        .map((outletId) => `VALUE_${outletId}: 0,`)}
-                }`)}
-            `,
-
-            dependencies: [() =>                 
-                Class(
+                ${ConstVar(
                     'TestHelperNodeFakeSourceNode',
-                    Object.keys(fakeSourceNode.outlets)
+                    state,
+                    ast`{
+                    ${Object.keys(fakeSourceNode.outlets)
                         .filter(
                             (outletId) =>
                                 fakeSourceNode.outlets[outletId].type ===
                                 'signal'
                         )
-                        .map((outletId) => Var('Float', `VALUE_${outletId}`))
-                ),
-            ]
+                        .map((outletId) => `VALUE_${outletId}: 0,`)}
+                }`
+                )}
+            `,
+
+            dependencies: [
+                () =>
+                    Class(
+                        'TestHelperNodeFakeSourceNode',
+                        Object.keys(fakeSourceNode.outlets)
+                            .filter(
+                                (outletId) =>
+                                    fakeSourceNode.outlets[outletId].type ===
+                                    'signal'
+                            )
+                            .map((outletId) =>
+                                Var('Float', `VALUE_${outletId}`)
+                            )
+                    ),
+            ],
         },
 
         fake_sink_node: {
@@ -237,29 +245,31 @@ export const generateFramesForNode = async <NodeArguments>(
     }
 
     // --------------- Compile code & engine
-    const compileResult = compile(graph,
-        nodeImplementations,
-        target,
-        {
-            inletCallerSpecs: {
-                fakeSourceNode: Object.keys(fakeSourceNode.inlets),
+    const compileResult = compile(graph, nodeImplementations, target, {
+        io: {
+            messageReceivers: {
+                fakeSourceNode: { portletIds: Object.keys(fakeSourceNode.inlets) },
             },
-            outletListenerSpecs: {
-                fakeSinkNode: Object.keys(fakeSinkNode.outlets),
+            messageSenders: {
+                fakeSinkNode: { portletIds: Object.keys(fakeSinkNode.outlets) },
             },
-            audio: {
-                channelCount: ENGINE_DSP_PARAMS.channelCount,
-                bitDepth,
-            },
-        })
+        },
+        audio: {
+            channelCount: ENGINE_DSP_PARAMS.channelCount,
+            bitDepth,
+        },
+    })
 
     if (compileResult.status !== 0) {
         throw new Error('Compilation failed')
     }
-    
-    const engine = await createTestEngine(target, bitDepth, compileResult.code, [
-        commonsArrays,
-    ])
+
+    const engine = await createTestEngine(
+        target,
+        bitDepth,
+        compileResult.code,
+        [commonsArrays]
+    )
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
@@ -336,10 +346,10 @@ export const generateFramesForNode = async <NodeArguments>(
         engine.fs.onWriteSoundFile = (...args) =>
             _fsCallback('onWriteSoundFile', args)
 
-        // Set up outletListeners to receive sent messages
-        Object.keys(engine.outletListeners['fakeSinkNode']).forEach(
+        // Set up engine outs to receive sent messages
+        Object.keys(engine.io.messageSenders['fakeSinkNode']).forEach(
             (outletId) => {
-                engine.outletListeners['fakeSinkNode'][outletId] = {
+                engine.io.messageSenders['fakeSinkNode'][outletId] = {
                     onMessage: (m) => {
                         if (testNode.outlets[outletId].type === 'message') {
                             outputFrame.sequence.push(outletId)
@@ -357,7 +367,7 @@ export const generateFramesForNode = async <NodeArguments>(
             }
         )
 
-        // We make sure we configure AFTER assigning the outletListeners,
+        // We make sure we configure AFTER assigning the io.messageSenders,
         // so we can receive messages sent during configure.
         engine.configure(nodeTestSettings.sampleRate, blockSize)
 
@@ -401,7 +411,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     )
                 }
                 value.forEach((message) =>
-                    engine.inletCallers['fakeSourceNode'][inletId](message)
+                    engine.io.messageReceivers['fakeSourceNode'][inletId](message)
                 )
             } else {
                 if (typeof value !== 'number') {
@@ -409,7 +419,7 @@ export const generateFramesForNode = async <NodeArguments>(
                         `signal inlet ${inletId} : unexpected value ${value} of type <${typeof value}>`
                     )
                 }
-                engine.inletCallers['fakeSourceNode'][inletId]([value])
+                engine.io.messageReceivers['fakeSourceNode'][inletId]([value])
             }
         })
 

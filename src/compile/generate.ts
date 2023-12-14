@@ -17,10 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import {
-    Compilation,
-    GlobalCodeDefinitionExport,
-} from './types'
+import { Compilation, GlobalCodeDefinitionExport } from './types'
 import { AstFunc, AstSequence, VariableName } from '../ast/types'
 import { Sequence, Func, Var, ast } from '../ast/declare'
 import { DspGraph, traversal } from '../dsp-graph'
@@ -64,18 +61,18 @@ export const generateNodeInitializations = ({
         ),
     ])
 
-export const generateInletCallers = ({
-    settings: { inletCallerSpecs },
+export const generateIoMessageReceivers = ({
+    settings: { io },
     variableNamesIndex,
 }: Compilation): AstSequence =>
     // Here not possible to assign directly the receiver because otherwise assemblyscript
     // doesn't export a function but a global instead.
     Sequence(
-        Object.entries(inletCallerSpecs).map(([nodeId, inletIds]) =>
-            inletIds.map(
+        Object.entries(io.messageReceivers).map(([nodeId, spec]) =>
+            spec.portletIds.map(
                 (inletId) =>
                     Func(
-                        variableNamesIndex.inletCallers[nodeId][inletId],
+                        variableNamesIndex.io.messageReceivers[nodeId][inletId],
                         [Var('Message', 'm')],
                         'void'
                     )`${variableNamesIndex.nodes[nodeId].messageReceivers[inletId]}(m)`
@@ -83,20 +80,20 @@ export const generateInletCallers = ({
         )
     )
 
-export const generateOutletListeners = (
-    { settings: { outletListenerSpecs }, variableNamesIndex }: Compilation,
-    generateOutletListener: (
+export const generateIoMessageSenders = (
+    { settings: { io }, variableNamesIndex }: Compilation,
+    generateIoMessageSender: (
         variableName: VariableName,
         nodeId: DspGraph.NodeId,
         outletId: DspGraph.PortletId
     ) => AstSequence
 ) =>
     Sequence(
-        Object.entries(outletListenerSpecs).map(([nodeId, outletIds]) =>
-            outletIds.map((outletId) => {
+        Object.entries(io.messageSenders).map(([nodeId, spec]) =>
+            spec.portletIds.map((outletId) => {
                 const listenerVariableName =
-                    variableNamesIndex.outletListeners[nodeId][outletId]
-                return generateOutletListener(
+                    variableNamesIndex.io.messageSenders[nodeId][outletId]
+                return generateIoMessageSender(
                     listenerVariableName,
                     nodeId,
                     outletId

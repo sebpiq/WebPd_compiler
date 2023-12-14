@@ -21,15 +21,14 @@ import assert from 'assert'
 import {
     assertValidNamePart,
     attachNodePortlet,
-    attachOutletListenersAndInletCallers,
+    attachIoMessages,
     generateVariableNamesIndex,
 } from './variable-names-index'
-import { VariableNamesIndex } from './types'
+import { IoMessageSpecs, VariableNamesIndex } from './types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 
 describe('variable-names-index', () => {
-
     describe('generate', () => {
         it('should create state variable names for each node', () => {
             const graph = makeGraph({
@@ -67,13 +66,20 @@ describe('variable-names-index', () => {
 
             assert.throws(() => variableNamesIndex.nodes.unknownNode)
             assert.throws(
-                () => variableNamesIndex.nodes.node1.messageReceivers['unknown receiver']
+                () =>
+                    variableNamesIndex.nodes.node1.messageReceivers[
+                        'unknown receiver'
+                    ]
             )
             assert.throws(
-                () => variableNamesIndex.nodes.node1.signalOuts['unknown portlet']
+                () =>
+                    variableNamesIndex.nodes.node1.signalOuts['unknown portlet']
             )
             assert.throws(
-                () => variableNamesIndex.nodes.node1.messageSenders['unknown sender']
+                () =>
+                    variableNamesIndex.nodes.node1.messageSenders[
+                        'unknown sender'
+                    ]
             )
         })
     })
@@ -93,7 +99,7 @@ describe('variable-names-index', () => {
                         '3': { type: 'message', id: '3' },
                     },
                 },
-                node2: {}
+                node2: {},
             })
 
             const variableNamesIndex = generateVariableNamesIndex(graph, false)
@@ -191,9 +197,17 @@ describe('variable-names-index', () => {
             const compilation = makeCompilation({ graph })
 
             attachNodePortlet(compilation, 'messageReceivers', 'node1', '0')
-            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.messageReceivers.$0, 'node1_RCVS_0')
-            assert.doesNotThrow(() => attachNodePortlet(compilation, 'messageReceivers', 'node1', '0'))
-            assert.strictEqual(compilation.variableNamesIndex.nodes.node1.messageReceivers.$0, 'node1_RCVS_0')
+            assert.strictEqual(
+                compilation.variableNamesIndex.nodes.node1.messageReceivers.$0,
+                'node1_RCVS_0'
+            )
+            assert.doesNotThrow(() =>
+                attachNodePortlet(compilation, 'messageReceivers', 'node1', '0')
+            )
+            assert.strictEqual(
+                compilation.variableNamesIndex.nodes.node1.messageReceivers.$0,
+                'node1_RCVS_0'
+            )
         })
     })
 
@@ -208,7 +222,7 @@ describe('variable-names-index', () => {
         })
     })
 
-    describe('attachOutletListenersAndInletCallers', () => {
+    describe('attachIoMessages', () => {
         it('should attach outlet listeners variable names', () => {
             const graph = makeGraph({
                 node1: {
@@ -222,35 +236,35 @@ describe('variable-names-index', () => {
                 },
             })
 
-            const variableNamesIndex: VariableNamesIndex = generateVariableNamesIndex(
-                graph,
-                false
-            )
-            const outletListenerSpecs = {
-                node1: ['outlet1'],
+            const variableNamesIndex: VariableNamesIndex =
+                generateVariableNamesIndex(graph, false)
+            const messageSenders: IoMessageSpecs = {
+                node1: { portletIds: ['outlet1'] },
             }
-            const inletCallerSpecs = {
-                node1: ['inlet1'],
+            const messageReceivers: IoMessageSpecs = {
+                node1: { portletIds: ['inlet1'] },
             }
 
             const compilation = makeCompilation({
                 graph,
                 variableNamesIndex,
                 settings: {
-                    outletListenerSpecs,
-                    inletCallerSpecs,
+                    io: {
+                        messageSenders,
+                        messageReceivers,
+                    }
                 },
             })
 
-            attachOutletListenersAndInletCallers(compilation)
-            assert.deepStrictEqual(variableNamesIndex.outletListeners, {
+            attachIoMessages(compilation)
+            assert.deepStrictEqual(variableNamesIndex.io.messageSenders, {
                 node1: {
-                    outlet1: 'outletListeners_node1_outlet1',
+                    outlet1: 'ioSnd_node1_outlet1',
                 },
             })
-            assert.deepStrictEqual(variableNamesIndex.inletCallers, {
+            assert.deepStrictEqual(variableNamesIndex.io.messageReceivers, {
                 node1: {
-                    inlet1: 'inletCallers_node1_inlet1',
+                    inlet1: 'ioRcv_node1_inlet1',
                 },
             })
         })

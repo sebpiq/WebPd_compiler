@@ -46,10 +46,10 @@ import { createCommonsBindings } from './commons-bindings'
 import { createModule } from '../../run/run-helpers'
 import {
     createEngineLifecycleBindings,
-    createInletCallersBindings,
-    createOutletListenersBindings,
+    createIoMessageReceiversBindings,
+    createIoMessageSendersBindings,
     EngineLifecycleWithDependenciesRawModule,
-    outletListenersImports,
+    ioMsgSendersImports,
     readMetadata,
 } from './engine-lifecycle-bindings'
 import { Bindings } from '../../run/types'
@@ -78,7 +78,7 @@ export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
 
     const wasmImports: AssemblyScriptWasmImports = {
         ...createFsImports(forwardReferences),
-        ...outletListenersImports(forwardReferences, metadata),
+        ...ioMsgSendersImports(forwardReferences, metadata),
     }
 
     const bitDepth = metadata.audioSettings.bitDepth
@@ -112,18 +112,20 @@ export const createBindings = async (
         createCommonsBindings(rawModule, engineData)
     )
     const fs = createModule(rawModule, createFsBindings(rawModule, engineData))
-    const inletCallers = createModule(
-        rawModule,
-        createInletCallersBindings(rawModule, engineData)
-    )
-    const outletListeners = createModule(
-        rawModule,
-        createOutletListenersBindings(rawModule, engineData)
-    )
+    const io = {
+        messageReceivers: createModule(
+            rawModule,
+            createIoMessageReceiversBindings(rawModule, engineData)
+        ),
+        messageSenders: createModule(
+            rawModule,
+            createIoMessageSendersBindings(rawModule, engineData)
+        ),
+    }
 
     // Update forward refs for use in Wasm imports
     forwardReferences.modules.fs = fs
-    forwardReferences.modules.outletListeners = outletListeners
+    forwardReferences.modules.io = io
     forwardReferences.engineData = engineData
     forwardReferences.rawModule = rawModule
 
@@ -133,7 +135,6 @@ export const createBindings = async (
         metadata: { type: 'proxy', value: engineData.metadata },
         commons: { type: 'proxy', value: commons },
         fs: { type: 'proxy', value: fs },
-        inletCallers: { type: 'proxy', value: inletCallers },
-        outletListeners: { type: 'proxy', value: outletListeners },
+        io: { type: 'proxy', value: io },
     }
 }

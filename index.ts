@@ -1,6 +1,7 @@
 export { default as default } from './src/compile'
 export {
     CompilationSettings,
+    Compilation,
     NodeImplementations,
     CompilerTarget,
     AudioSettings,
@@ -10,6 +11,7 @@ export { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './src/stdlib/fs'
 export { Engine, Message, FloatArray } from './src/run/types'
 export { createEngine as createAssemblyScriptWasmEngine } from './src/engine-assemblyscript/run'
 export { createEngine as createJavaScriptEngine } from './src/engine-javascript/run'
+export { readMetadata } from './src/run'
 export { getFloatArrayType } from './src/run/run-helpers'
 export { createNamespace } from './src/compile/namespace'
 export * as functional from './src/functional-helpers'

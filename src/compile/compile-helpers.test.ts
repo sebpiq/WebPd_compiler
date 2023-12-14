@@ -60,7 +60,7 @@ describe('compile-helpers', () => {
 
             assert.deepStrictEqual(
                 referenceImplementation,
-                defaultImplementation,
+                defaultImplementation
             )
         })
 
@@ -122,7 +122,10 @@ describe('compile-helpers', () => {
                     isPushingMessages: true,
                 },
             })
-            const traversal = buildGraphTraversalAll(graph, {})
+            const traversal = buildGraphTraversalAll(graph, {
+                messageReceivers: {},
+                messageSenders: {},
+            })
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
                 'n1',
                 'n2',
@@ -152,7 +155,10 @@ describe('compile-helpers', () => {
                 },
             })
             const traversal = buildGraphTraversalAll(graph, {
-                n1: ['0'],
+                messageReceivers: {
+                    n1: { portletIds: ['0'] },
+                },
+                messageSenders: {}
             })
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
                 'n1',

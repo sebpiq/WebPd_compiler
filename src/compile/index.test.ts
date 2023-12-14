@@ -51,8 +51,10 @@ describe('compile', () => {
     describe('validateSettings', () => {
         it('should validate settings and set defaults', () => {
             const settings = validateSettings({})
-            assert.deepStrictEqual(settings.outletListenerSpecs, {})
-            assert.deepStrictEqual(settings.inletCallerSpecs, {})
+            assert.deepStrictEqual(settings.io, {
+                messageReceivers: {},
+                messageSenders: {},
+            })
             assert.deepStrictEqual(settings.arrays, {})
             assert.deepStrictEqual(settings.audio, {
                 channelCount: { in: 2, out: 2 },

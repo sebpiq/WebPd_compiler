@@ -29,7 +29,7 @@ import {
     normalizeAstSequence,
 } from '../ast/test-helpers'
 import {
-    generateInletCallers,
+    generateIoMessageReceivers,
     generateLoop,
     generateNodeInitializations,
     generatePortletsDeclarations,
@@ -192,7 +192,11 @@ describe('generate', () => {
                 graph,
             })
 
-            compilation.precompilation.traversals.all = ['node1', 'node2', 'node3']
+            compilation.precompilation.traversals.all = [
+                'node1',
+                'node2',
+                'node3',
+            ]
             compilation.precompilation.nodes.node1.messageSenders['0'] = {
                 messageSenderName: 'node1_SNDS_0',
                 messageReceiverNames: ['node2_RCVS_0', 'node2_RCVS_1'],
@@ -267,7 +271,7 @@ describe('generate', () => {
         })
     })
 
-    describe('generateInletCallers', () => {
+    describe('generateIoMessageReceivers', () => {
         it('should compile declared inlet callers', () => {
             const graph = makeGraph({
                 node1: {
@@ -292,21 +296,24 @@ describe('generate', () => {
             const compilation = makeCompilation({
                 graph,
                 settings: {
-                    inletCallerSpecs: { node1: ['0'] },
+                    io: {
+                        messageReceivers: { node1: { portletIds: ['0'] } },
+                        messageSenders: {},
+                    }
                 },
                 nodeImplementations,
             })
 
             precompile(compilation)
 
-            const sequence = generateInletCallers(compilation)
+            const sequence = generateIoMessageReceivers(compilation)
 
             assert.deepStrictEqual<AstSequence>(sequence, {
                 astType: 'Sequence',
                 content: [
                     {
                         astType: 'Func',
-                        name: 'inletCallers_node1_0',
+                        name: 'ioRcv_node1_0',
                         args: [
                             {
                                 astType: 'Var',

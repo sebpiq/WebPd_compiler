@@ -31,7 +31,6 @@ import {
     Precompilation,
 } from '../types'
 import { AstElement, AstFunc } from '../../ast/types'
-import deepEqual from 'deep-equal'
 import { DspGraph, traversal } from '../../dsp-graph'
 import { core, commonsCore, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
@@ -83,9 +82,7 @@ export const instantiateAndDedupeDependencies = (
                 (astElements, astElement) =>
                     astElements.every(
                         (otherElement) =>
-                            !deepEqual(otherElement, astElement, {
-                                strict: true,
-                            })
+                            !_deepEqual(otherElement, astElement)
                     )
                         ? [...astElements, astElement]
                         : astElements,
@@ -180,3 +177,8 @@ const _getGlobalCodeGeneratorContext = (
     audioSettings: settings.audio,
     globs: variableNamesIndex.globs,
 })
+
+const _deepEqual = (ast1: AstElement, ast2: AstElement) => 
+    // This works but this flawed cause {a: 1, b: 2} and {b: 2, a: 1}
+    // would compare to false.
+    JSON.stringify(ast1) === JSON.stringify(ast2)

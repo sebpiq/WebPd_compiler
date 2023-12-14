@@ -24,11 +24,9 @@ import {
     Compilation,
     CompilerTarget,
     GlobalCodeDefinition,
-    GlobalCodeGeneratorContext,
     GlobalCodeGeneratorWithSettings,
     NodeImplementation,
     NodeImplementations,
-    PortletsIndex,
 } from './types'
 import { EngineMetadata } from '../run/types'
 import { CodeMacros } from '../ast/types'
@@ -57,8 +55,7 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     const {
         settings: {
             audio: audioSettings,
-            inletCallerSpecs,
-            outletListenerSpecs,
+            io,
         },
         variableNamesIndex,
     } = compilation
@@ -70,11 +67,9 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
             blockSize: 0,
         },
         compilation: {
-            inletCallerSpecs,
-            outletListenerSpecs,
+            io,
             variableNamesIndex: {
-                inletCallers: variableNamesIndex.inletCallers,
-                outletListeners: variableNamesIndex.outletListeners,
+                io: variableNamesIndex.io,
             },
         },
     }
@@ -85,11 +80,11 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
  * This should be exhaustive so that all nodes that are connected
  * to an input or output of the graph are declared correctly.
  * Order of nodes doesn't matter.
- * @TODO : outletListeners should also be included ?
+ * @TODO : messageSenders should also be included ?
  */
 export const buildGraphTraversalAll = (
     graph: DspGraph.Graph,
-    inletCallerSpecs: PortletsIndex
+    io: Compilation['settings']['io']
 ): DspGraph.GraphTraversal => {
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
@@ -97,7 +92,7 @@ export const buildGraphTraversalAll = (
     const nodesPushingMessages = Object.values(graph).filter(
         (node) => !!node.isPushingMessages
     )
-    Object.keys(inletCallerSpecs).forEach((nodeId) => {
+    Object.keys(io.messageReceivers || {}).forEach((nodeId) => {
         if (nodesPushingMessages.find((node) => node.id === nodeId)) {
             return
         }

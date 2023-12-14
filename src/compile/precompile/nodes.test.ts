@@ -17,15 +17,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import assert from "assert"
-import { Func, Var, AnonFunc, ast } from "../../ast/declare"
-import { makeGraph } from "../../dsp-graph/test-helpers"
-import { makeCompilation } from "../../test-helpers"
-import { NodeImplementations } from "../types"
-import { precompileSignalOutlet, precompileSignalInlet, precompileMessageOutlet, precompileMessageInlet, precompileMessageReceivers, precompileInitialization, precompileLoop, precompileInlineLoop } from "./nodes"
+import assert from 'assert'
+import { Func, Var, AnonFunc, ast } from '../../ast/declare'
+import { makeGraph } from '../../dsp-graph/test-helpers'
+import { makeCompilation } from '../../test-helpers'
+import { NodeImplementations } from '../types'
+import {
+    precompileSignalOutlet,
+    precompileSignalInlet,
+    precompileMessageOutlet,
+    precompileMessageInlet,
+    precompileMessageReceivers,
+    precompileInitialization,
+    precompileLoop,
+    precompileInlineLoop,
+} from './nodes'
 
 describe('precompile.nodes', () => {
-
     describe('precompileSignalOutlet', () => {
         it('should substitute connected signal in with its source out for non-inline nodes', () => {
             const graph = makeGraph({
@@ -101,7 +109,7 @@ describe('precompile.nodes', () => {
     })
 
     describe('precompileMessageOutlet', () => {
-        it('should create messageSender if several sinks or outletListener', () => {
+        it('should create messageSender if several sinks or io.messageSender', () => {
             const graph = makeGraph({
                 node1: {
                     outlets: {
@@ -228,14 +236,17 @@ describe('precompile.nodes', () => {
             const compilation = makeCompilation({
                 graph,
                 settings: {
-                    outletListenerSpecs: {
-                        node1: ['0'],
-                    },
-                }
+                    io: {
+                        messageSenders: {
+                            node1: { portletIds: ['0'] },
+                        },
+                        messageReceivers: {}
+                    }
+                },
             })
 
-            compilation.variableNamesIndex.outletListeners.node1 = {
-                '0': 'node1_outletListener_0',
+            compilation.variableNamesIndex.io.messageSenders.node1 = {
+                '0': 'ioSnd_node1_0',
             }
 
             precompileMessageOutlet(compilation, graph.node1, '0')
@@ -244,13 +255,13 @@ describe('precompile.nodes', () => {
             assert.strictEqual(
                 compilation.precompilation.nodes.node1.generationContext
                     .messageSenders.$0,
-                'node1_outletListener_0'
+                'ioSnd_node1_0'
             )
         })
     })
 
     describe('precompileMessageInlet', () => {
-        it('should declare message inlet when it has one or more sources or inletCaller', () => {
+        it('should declare message inlet when it has one or more sources or io.messageReceivers', () => {
             const graph = makeGraph({
                 node1: {
                     outlets: {
@@ -275,7 +286,7 @@ describe('precompile.nodes', () => {
                         '0': { id: '0', type: 'message' },
                     },
                 },
-                // Works the same if no connection but inletCaller is declared
+                // Works the same if no connection but io.messageReceivers is declared
                 node4: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
@@ -286,8 +297,11 @@ describe('precompile.nodes', () => {
             const compilation = makeCompilation({
                 graph,
                 settings: {
-                    inletCallerSpecs: { node4: ['0'] },
-                }
+                    io: {
+                        messageReceivers: { node4: { portletIds: ['0'] } },
+                        messageSenders: {}
+                    }
+                },
             })
 
             precompileMessageInlet(compilation, graph.node2, '0')
@@ -736,8 +750,7 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlineType0: {
-                    inlineLoop: ({ node: { args } }) =>
-                        ast`${args.value} + 1`,
+                    inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlineType1: {
                     inlineLoop: ({ node: { args }, ins }) =>
@@ -757,7 +770,8 @@ describe('precompile.nodes', () => {
             const inlineTraversal = precompileInlineLoop(compilation, graph.n4)
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n5.generationContext.signalIns.$0,
+                compilation.precompilation.nodes.n5.generationContext.signalIns
+                    .$0,
                 `(N4 * (N2 + 1) - N4 * ((N1 + 1) * N3))`
             )
 
@@ -833,8 +847,7 @@ describe('precompile.nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 messageType: {},
                 inlineType0: {
-                    inlineLoop: ({ node: { args } }) =>
-                        ast`${args.value} + 1`,
+                    inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlineType1: {
                     inlineLoop: ({ node: { args }, ins }) =>
@@ -850,7 +863,8 @@ describe('precompile.nodes', () => {
             const inlineTraversal = precompileInlineLoop(compilation, graph.n3)
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n4.generationContext.signalIns.$0,
+                compilation.precompilation.nodes.n4.generationContext.signalIns
+                    .$0,
                 '(((N1 + 1) * N2) * N3)'
             )
 
@@ -914,8 +928,7 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlineType0: {
-                    inlineLoop: ({ node: { args } }) =>
-                        ast`${args.value} + 1`,
+                    inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlineType1: {
                     inlineLoop: ({ node: { args }, ins }) =>
@@ -938,7 +951,8 @@ describe('precompile.nodes', () => {
             const inlineTraversal = precompileInlineLoop(compilation, graph.n3)
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n4.generationContext.signalIns.$0,
+                compilation.precompilation.nodes.n4.generationContext.signalIns
+                    .$0,
                 '((N2 * (N1 + 1) - N2 * BLA) * N3)'
             )
 
@@ -1005,12 +1019,12 @@ describe('precompile.nodes', () => {
             const inlineTraversal = precompileInlineLoop(compilation, graph.n2)
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n3.generationContext.signalIns.$0,
+                compilation.precompilation.nodes.n3.generationContext.signalIns
+                    .$0,
                 '((nonInline1_OUTS_0 * N1) * N2)'
             )
 
             assert.deepStrictEqual(inlineTraversal, ['n1', 'n2'])
         })
     })
-
 })

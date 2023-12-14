@@ -117,7 +117,7 @@ export const makeCompilation = (
         compilation.precompilation ||
         initializePrecompilation(
             graph,
-            buildGraphTraversalAll(graph, settings.inletCallerSpecs),
+            buildGraphTraversalAll(graph, settings.io),
             variableNamesIndex
         )
     return {

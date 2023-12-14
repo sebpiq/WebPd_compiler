@@ -25,7 +25,7 @@ import { DspGraph, getters, traversal } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getNodeImplementation, getMacros } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../namespace'
-import { Compilation } from '../types'
+import { IoMessageSpecs, Compilation } from '../types'
 import { attachNodePortlet } from '../variable-names-index'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
@@ -95,9 +95,12 @@ export const precompileMessageOutlet = (
     const {
         variableNamesIndex,
         precompilation,
-        settings: { outletListenerSpecs },
+        settings: { io },
     } = compilation
-    const nodeOutletListenerSpecs = outletListenerSpecs[sourceNode.id] || []
+    const ioSendersPortletIds = _getPortletIdsFromMsgIo(
+        io.messageSenders,
+        sourceNode.id
+    )
     const precompiledNode = precompilation.nodes[sourceNode.id]
     const totalSinkCount = _getMessageOutletTotalSinkCount(
         compilation,
@@ -114,8 +117,7 @@ export const precompileMessageOutlet = (
     //      }
     //
     if (totalSinkCount > 1) {
-        const nodeOutletListeners = outletListenerSpecs[sourceNode.id] || []
-        const hasOutletListener = nodeOutletListeners.includes(outletId)
+        const hasIoSender = ioSendersPortletIds.includes(outletId)
         const messageSenderName = attachNodePortlet(
             compilation,
             'messageSenders',
@@ -133,9 +135,9 @@ export const precompileMessageOutlet = (
                             inletId
                         ]
                 ),
-                ...(hasOutletListener
+                ...(hasIoSender
                     ? [
-                          variableNamesIndex.outletListeners[sourceNode.id][
+                          variableNamesIndex.io.messageSenders[sourceNode.id][
                               outletId
                           ],
                       ]
@@ -167,7 +169,7 @@ export const precompileMessageOutlet = (
     //
     else if (
         outletSinks.length === 1 &&
-        !nodeOutletListenerSpecs.includes(outletId)
+        !ioSendersPortletIds.includes(outletId)
     ) {
         precompiledNode.generationContext.messageSenders[outletId] =
             variableNamesIndex.nodes[outletSinks[0].nodeId].messageReceivers[
@@ -178,10 +180,10 @@ export const precompileMessageOutlet = (
     // Same thing if there's no sink, but one outlet listener
     else if (
         outletSinks.length === 0 &&
-        nodeOutletListenerSpecs.includes(outletId)
+        ioSendersPortletIds.includes(outletId)
     ) {
         precompiledNode.generationContext.messageSenders[outletId] =
-            variableNamesIndex.outletListeners[sourceNode.id][outletId]
+            variableNamesIndex.io.messageSenders[sourceNode.id][outletId]
     }
 }
 
@@ -465,11 +467,14 @@ const _getMessageInletTotalSourceCount = (
     inletId: DspGraph.PortletId
 ) => {
     const {
-        settings: { inletCallerSpecs },
+        settings: { io },
     } = compilation
-    const nodeInletCallerSpecs = inletCallerSpecs[node.id] || []
+    const ioReceiversPortletIds = _getPortletIdsFromMsgIo(
+        io.messageReceivers,
+        node.id
+    )
     const inletSources = getters.getSources(node, inletId)
-    return inletSources.length + +nodeInletCallerSpecs.includes(inletId)
+    return inletSources.length + +ioReceiversPortletIds.includes(inletId)
 }
 
 const _getMessageOutletTotalSinkCount = (
@@ -478,9 +483,18 @@ const _getMessageOutletTotalSinkCount = (
     outletId: DspGraph.PortletId
 ) => {
     const {
-        settings: { outletListenerSpecs },
+        settings: { io },
     } = compilation
-    const nodeOutletListenerSpecs = outletListenerSpecs[node.id] || []
+    const ioSendersPortletIds = _getPortletIdsFromMsgIo(
+        io.messageSenders,
+        node.id
+    )
     const outletSinks = getters.getSinks(node, outletId)
-    return outletSinks.length + +nodeOutletListenerSpecs.includes(outletId)
+    return outletSinks.length + +ioSendersPortletIds.includes(outletId)
 }
+
+const _getPortletIdsFromMsgIo = (
+    specs: IoMessageSpecs,
+    nodeId: DspGraph.NodeId
+): Array<DspGraph.PortletId> =>
+    (specs[nodeId] && specs[nodeId].portletIds) || []

@@ -23,8 +23,17 @@ import { VariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 
 // -------------------------------- COMPILATION -------------------------------- //
-export type PortletsIndex = {
-    [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
+type PortletsSpecMetadataBasicValue = boolean | string | number
+
+export type IoMessageSpecs = {
+    [nodeId: DspGraph.NodeId]: {
+        portletIds: Array<DspGraph.PortletId>
+        metadata?: {
+            [key: string]:
+                | PortletsSpecMetadataBasicValue
+                | Array<PortletsSpecMetadataBasicValue>
+        }
+    }
 }
 
 export type CompilerTarget = 'assemblyscript' | 'javascript'
@@ -40,14 +49,22 @@ export interface AudioSettings {
 export interface CompilationSettings {
     audio?: AudioSettings
     arrays?: DspGraph.Arrays
-    inletCallerSpecs?: PortletsIndex
-    outletListenerSpecs?: PortletsIndex
+    io?: {
+        messageReceivers?: IoMessageSpecs
+        messageSenders?: IoMessageSpecs
+    }
     debug?: boolean
 }
 
 export interface Compilation {
     readonly settings: {
-        [Property in keyof CompilationSettings]-?: CompilationSettings[Property]
+        audio: AudioSettings
+        arrays: DspGraph.Arrays
+        io: {
+            messageReceivers: IoMessageSpecs
+            messageSenders: IoMessageSpecs
+        }
+        debug: boolean
     }
     readonly target: CompilerTarget
     readonly graph: DspGraph.Graph
@@ -126,19 +143,19 @@ export interface VariableNamesIndex {
         nullSignal: string
     }
 
-    /** Namespace for inlet callers */
-    inletCallers: {
-        [nodeId: DspGraph.NodeId]: {
-            [outletId: DspGraph.PortletId]: VariableName
+    io: {
+        messageReceivers: {
+            [nodeId: DspGraph.NodeId]: {
+                [outletId: DspGraph.PortletId]: VariableName
+            }
+        }
+        messageSenders: {
+            [nodeId: DspGraph.NodeId]: {
+                [outletId: DspGraph.PortletId]: VariableName
+            }
         }
     }
 
-    /** Namespace for outlet listeners callbacks */
-    outletListeners: {
-        [nodeId: DspGraph.NodeId]: {
-            [outletId: DspGraph.PortletId]: VariableName
-        }
-    }
 }
 
 export interface GlobalCodeGeneratorContext {

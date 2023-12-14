@@ -77,11 +77,9 @@ export interface EngineMetadata {
         blockSize: number
     }
     compilation: {
-        readonly inletCallerSpecs: Compilation['settings']['inletCallerSpecs']
-        readonly outletListenerSpecs: Compilation['settings']['outletListenerSpecs']
+        readonly io: Compilation['settings']['io']
         readonly variableNamesIndex: {
-            readonly inletCallers: Compilation['variableNamesIndex']['inletCallers']
-            readonly outletListeners: Compilation['variableNamesIndex']['outletListeners']
+            readonly io: Compilation['variableNamesIndex']['io']
         }
     }
 }
@@ -94,16 +92,18 @@ export interface Engine {
 
     loop: (input: Array<FloatArray>, output: Array<FloatArray>) => void
 
-    inletCallers: {
-        [nodeId: DspGraph.NodeId]: {
-            [inletId: DspGraph.PortletId]: (m: Message) => void
+    io: {
+        messageReceivers: {
+            [nodeId: DspGraph.NodeId]: {
+                [inletId: DspGraph.PortletId]: (m: Message) => void
+            }
         }
-    }
-
-    outletListeners: {
-        [nodeId: DspGraph.NodeId]: {
-            [outletId: DspGraph.PortletId]: {
-                onMessage: (message: Message) => void
+    
+        messageSenders: {
+            [nodeId: DspGraph.NodeId]: {
+                [outletId: DspGraph.PortletId]: {
+                    onMessage: (message: Message) => void
+                }
             }
         }
     }

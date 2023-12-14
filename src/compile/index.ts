@@ -55,7 +55,7 @@ export default (
     const variableNamesIndex = generateVariableNamesIndex(graph, settings.debug)
     const graphTraversalAll = buildGraphTraversalAll(
         graph,
-        settings.inletCallerSpecs
+        settings.io
     )
     const trimmedGraph = traversal.trimGraph(graph, graphTraversalAll)
 
@@ -93,8 +93,10 @@ export const validateSettings = (
     compilationSettings: CompilationSettings
 ): Compilation['settings'] => {
     const arrays = compilationSettings.arrays || {}
-    const inletCallerSpecs = compilationSettings.inletCallerSpecs || {}
-    const outletListenerSpecs = compilationSettings.outletListenerSpecs || {}
+    const io = {
+        messageReceivers: (compilationSettings.io || {}).messageReceivers || {},
+        messageSenders: (compilationSettings.io || {}).messageSenders || {},
+    }
     const debug = compilationSettings.debug || false
     const audio = compilationSettings.audio || {
         channelCount: { in: 2, out: 2 },
@@ -103,11 +105,11 @@ export const validateSettings = (
     if (![32, 64].includes(audio.bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }
+
     return {
         audio,
         arrays,
-        outletListenerSpecs,
-        inletCallerSpecs,
+        io,
         debug,
     }
 }

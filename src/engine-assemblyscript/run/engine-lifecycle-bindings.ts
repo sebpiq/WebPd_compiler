@@ -121,65 +121,60 @@ export const createEngineLifecycleBindings = (
     }
 }
 
-export const createInletCallersBindings = (
+export const createIoMessageReceiversBindings = (
     rawModule: EngineLifecycleWithDependenciesRawModule,
     engineData: EngineData
-): Bindings<Engine['inletCallers']> =>
+): Bindings<Engine['io']['messageReceivers']> =>
     mapObject(
-        engineData.metadata.compilation.inletCallerSpecs,
-        (inletIds, nodeId) => ({
+        engineData.metadata.compilation.io.messageReceivers,
+        (spec, nodeId) => ({
             type: 'proxy',
-            value: mapArray(inletIds, (inletId) => [
+            value: mapArray(spec.portletIds, (inletId) => [
                 inletId,
                 (message: Message) => {
                     const messagePointer = lowerMessage(rawModule, message)
                     ;(rawModule as any)[
-                        engineData.metadata.compilation.variableNamesIndex
-                            .inletCallers[nodeId][inletId]
+                        engineData.metadata.compilation.variableNamesIndex.io
+                            .messageReceivers[nodeId][inletId]
                     ](messagePointer)
                 },
             ]),
         })
     )
 
-export const createOutletListenersBindings = (
+export const createIoMessageSendersBindings = (
     _: EngineLifecycleWithDependenciesRawModule,
     engineData: EngineData
-): Bindings<Engine['outletListeners']> =>
-    mapObject(
-        engineData.metadata.compilation.outletListenerSpecs,
-        (outletIds) => ({
-            type: 'proxy',
-            value: mapArray(outletIds, (outletId) => [
-                outletId,
-                {
-                    onMessage: () => undefined,
-                },
-            ]),
-        })
-    )
+): Bindings<Engine['io']['messageSenders']> =>
+    mapObject(engineData.metadata.compilation.io.messageSenders, (spec) => ({
+        type: 'proxy',
+        value: mapArray(spec.portletIds, (outletId) => [
+            outletId,
+            {
+                onMessage: () => undefined,
+            },
+        ]),
+    }))
 
-export const outletListenersImports = (
+export const ioMsgSendersImports = (
     forwardReferences: ForwardReferences<EngineLifecycleWithDependenciesRawModule>,
     metadata: EngineMetadata
 ) => {
     const wasmImports: {
-        [listenerName: VariableName]: (
-            messagePointer: MessagePointer
-        ) => void
+        [listenerName: VariableName]: (messagePointer: MessagePointer) => void
     } = {}
     const { variableNamesIndex } = metadata.compilation
-    Object.entries(metadata.compilation.outletListenerSpecs).forEach(
-        ([nodeId, outletIds]) => {
-            outletIds.forEach((outletId) => {
+    Object.entries(metadata.compilation.io.messageSenders).forEach(
+        ([nodeId, spec]) => {
+            spec.portletIds.forEach((outletId) => {
                 const listenerName =
-                    variableNamesIndex.outletListeners[nodeId][outletId]
+                    variableNamesIndex.io.messageSenders[nodeId][outletId]
                 wasmImports[listenerName] = (messagePointer) => {
                     const message = liftMessage(
                         forwardReferences.rawModule,
                         messagePointer
                     )
-                    forwardReferences.modules.outletListeners[nodeId][
+                    forwardReferences.modules.io.messageSenders[nodeId][
                         outletId
                     ].onMessage(message)
                 }
