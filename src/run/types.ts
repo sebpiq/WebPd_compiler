@@ -72,11 +72,12 @@ export type SoundFileInfo = [
 export type Signal = number
 
 export interface EngineMetadata {
+    readonly libVersion: string
     readonly audioSettings: Compilation['settings']['audio'] & {
         sampleRate: number
         blockSize: number
     }
-    compilation: {
+    readonly compilation: {
         readonly io: Compilation['settings']['io']
         readonly variableNamesIndex: {
             readonly io: Compilation['variableNamesIndex']['io']

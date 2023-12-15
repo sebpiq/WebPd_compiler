@@ -1,9 +1,31 @@
+/*
+ * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
+ *
+ * This file is part of WebPd
+ * (see https://github.com/sebpiq/WebPd).
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+import packageInfo from '../../package.json'
 import assert from 'assert'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import compile from '../compile'
 import { compileAscCode } from '../engine-assemblyscript/run/test-helpers'
 import { readMetadata } from './index'
 import { AnonFunc, Var } from '../ast/declare'
+import { EngineMetadata } from './types'
+import { CompilationSettings, NodeImplementations } from '../compile/types'
 
 describe('readMetadata', () => {
     const GRAPH = makeGraph({
@@ -14,14 +36,14 @@ describe('readMetadata', () => {
             isPushingMessages: true,
         },
     })
-    const NODE_IMPLEMENTATIONS = {
+    const NODE_IMPLEMENTATIONS: NodeImplementations = {
         DUMMY: {
             messageReceivers: () => ({
                 '0': AnonFunc([Var('Message', 'message')])``,
             }),
         },
     }
-    const COMPILATION_SETTINGS = {
+    const COMPILATION_SETTINGS: CompilationSettings = {
         io: {
             messageReceivers: {
                 node1: {
@@ -32,7 +54,8 @@ describe('readMetadata', () => {
         },
     }
 
-    const EXPECTED_METADATA = {
+    const EXPECTED_METADATA: EngineMetadata = {
+        libVersion: packageInfo.version,
         audioSettings: {
             blockSize: 0,
             sampleRate: 0,

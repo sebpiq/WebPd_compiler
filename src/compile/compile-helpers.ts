@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph, getters, traversal } from '../dsp-graph'
+import packageInfo from '../../package.json'
 import jsMacros from '../engine-javascript/compile/macros'
 import ascMacros from '../engine-assemblyscript/compile/macros'
 import {
@@ -60,6 +61,7 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
         variableNamesIndex,
     } = compilation
     return {
+        libVersion: packageInfo.version,
         audioSettings: {
             ...audioSettings,
             // Determined at configure

@@ -27,12 +27,10 @@ import {
     getNodeImplementation,
 } from './compile-helpers'
 import {
-    GlobalCodeDefinition,
-    GlobalCodeGeneratorWithSettings,
     NodeImplementation,
     NodeImplementations,
 } from './types'
-import { Func, Sequence } from '../ast/declare'
+import { Sequence } from '../ast/declare'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {

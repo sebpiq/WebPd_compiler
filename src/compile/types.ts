@@ -32,6 +32,7 @@ export type IoMessageSpecs = {
             [key: string]:
                 | PortletsSpecMetadataBasicValue
                 | Array<PortletsSpecMetadataBasicValue>
+                | {[key: string]: PortletsSpecMetadataBasicValue}
         }
     }
 }

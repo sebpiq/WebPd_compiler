@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import packageInfo from '../package.json'
 import assert from 'assert'
 import compile from './compile'
 import { TEST_PARAMETERS, createTestEngine, round } from './test-helpers'
@@ -315,6 +316,7 @@ describe('Engine', () => {
                 })
 
                 assert.deepStrictEqual<EngineMetadata>(engine.metadata, {
+                    libVersion: packageInfo.version,
                     audioSettings: {
                         ...audioSettings,
                         blockSize: 0,

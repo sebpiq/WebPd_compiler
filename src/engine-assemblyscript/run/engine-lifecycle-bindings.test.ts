@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import packageInfo from '../../../package.json'
 import assert from 'assert'
 import { compileAscCode } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
@@ -79,6 +80,7 @@ describe('engine-lifecycle-bindings', () => {
             const metadata = await readMetadata(wasmBuffer)
 
             assert.deepStrictEqual<EngineMetadata>(metadata, {
+                libVersion: packageInfo.version,
                 audioSettings: {
                     ...compilationSettings.audio,
                     blockSize: 0,
