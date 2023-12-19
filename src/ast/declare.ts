@@ -43,7 +43,7 @@ export const Var = (
         astType: 'Var',
         name,
         type: typeName,
-        value: _prepareVarValue(value),
+        value: value !== undefined ? _prepareVarValue(value) : undefined,
     })
 
 export const ConstVar = (
@@ -186,13 +186,13 @@ const _intersperse = (
  * most likely an error due to unproper use of `ast`.
  * Deacivated. Activate for debugging by uncommenting the line below.
  */
-const _preventToString = <T extends AstElement>(element: T): T => ({
+const _preventToString = <T>(element: T): T => ({
     ...element,
     // Uncomment this to activate
     // toString: () => { throw new Error(`Rendering element ${elemennt.astType} as string is probably an error`) }
 })
 
-const _prepareVarValue = (value?: Code | AstSequence | number) => {
+const _prepareVarValue = (value: AstVarValue) => {
     if (typeof value === 'number') {
         return Sequence([value.toString()])
     } else if (typeof value === 'string') {

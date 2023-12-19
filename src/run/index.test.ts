@@ -21,7 +21,7 @@ import packageInfo from '../../package.json'
 import assert from 'assert'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import compile from '../compile'
-import { compileAscCode } from '../engine-assemblyscript/run/test-helpers'
+import { compileAssemblyscript } from '../engine-assemblyscript/run/test-helpers'
 import { readMetadata } from './index'
 import { AnonFunc, Var } from '../ast/declare'
 import { EngineMetadata } from './types'
@@ -93,7 +93,7 @@ describe('readMetadata', () => {
         if (result.status !== 0) {
             throw new Error(`Compilation failed: ${result.status}`)
         }
-        const wasmBuffer = await compileAscCode(result.code, 64)
+        const wasmBuffer = await compileAssemblyscript(result.code, 64)
         const metadata = await readMetadata('assemblyscript', wasmBuffer)
         assert.deepStrictEqual(metadata, EXPECTED_METADATA)
     })

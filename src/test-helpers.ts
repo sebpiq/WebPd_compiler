@@ -38,7 +38,7 @@ import {
 } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
-    compileAscCode,
+    compileAssemblyscript,
     wasmBufferToRawModule,
 } from './engine-assemblyscript/run/test-helpers'
 import { mapArray, renderSwitch } from './functional-helpers'
@@ -151,7 +151,7 @@ export const createTestModule = async <ModuleType extends Module>(
 
     // Always save latest compilation for easy inspection
     await writeFile(
-        `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'asc'}`,
+        `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'as'}`,
         code
     )
     switch (target) {
@@ -160,7 +160,7 @@ export const createTestModule = async <ModuleType extends Module>(
             const jsModule = await applyBindingsNonNull.javascript(rawModule)
             return jsModule as ModuleType
         case 'assemblyscript':
-            const buffer = await compileAscCode(code, bitDepth)
+            const buffer = await compileAssemblyscript(code, bitDepth)
             const ascModule = await applyBindingsNonNull.assemblyscript(buffer)
             return ascModule as ModuleType
     }

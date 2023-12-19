@@ -29,7 +29,7 @@ export const TEST_PARAMETERS = [
     { bitDepth: 64 as AudioSettings['bitDepth'] },
 ]
 
-export const compileAscCode = async (
+export const compileAssemblyscript = async (
     code: Code,
     bitDepth: AudioSettings['bitDepth']
 ): Promise<ArrayBuffer> => {
@@ -61,7 +61,7 @@ export const ascCodeToRawModule = async <M extends RawModule>(
     bitDepth: AudioSettings['bitDepth'],
     imports: any = {}
 ): Promise<M> => {
-    const buffer = await compileAscCode(code, bitDepth)
+    const buffer = await compileAssemblyscript(code, bitDepth)
     const wasmInstance = await instantiateWasmModule(buffer, imports)
     return wasmInstance.exports as unknown as M
 }

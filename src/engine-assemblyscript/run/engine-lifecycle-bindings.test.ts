@@ -20,7 +20,7 @@
 
 import packageInfo from '../../../package.json'
 import assert from 'assert'
-import { compileAscCode } from './test-helpers'
+import { compileAssemblyscript } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
 import { readMetadata } from './engine-lifecycle-bindings'
 import compile from '../../compile'
@@ -72,7 +72,7 @@ describe('engine-lifecycle-bindings', () => {
                 throw new Error(`Compilation failed ${result.status}`)
             }
 
-            const wasmBuffer = await compileAscCode(
+            const wasmBuffer = await compileAssemblyscript(
                 result.code,
                 compilationSettings.audio.bitDepth
             )
