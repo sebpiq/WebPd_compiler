@@ -1,5 +1,5 @@
 {
-    "extends": "../node_modules/@webpd/dev/dist.tsconfig.json",
+    "extends": "../node_modules/@webpd/dev/configs/dist.tsconfig.json",
     "compilerOptions": {
         "outDir": "../dist",
         "rootDir": "../"

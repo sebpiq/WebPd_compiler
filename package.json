@@ -8,10 +8,10 @@
     "license": "LGPL-3.0",
     "author": "Sébastien Piquemal",
     "scripts": {
-        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config jest.mjs --testTimeout 10000",
+        "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",
         "build:dist": "npx rollup --config node_modules/@webpd/dev/configs/dist.rollup.mjs",
-        "build:bindings": "npx rollup --config rollup-bindings.mjs",
-        "build:all": "npm run clean; npm run build:dist; npm run build:bindings",
+        "build:bindings": "npx rollup --config configs/bindings.rollup.mjs",
+        "build": "npm run clean; npm run build:dist; npm run build:bindings",
         "clean": "rm -rf dist",
         "prettier": "npm explore @webpd/dev -- npm run prettier $(pwd)/src",
         "eslint": "npm explore @webpd/dev -- npm run eslint $(pwd)/src"
