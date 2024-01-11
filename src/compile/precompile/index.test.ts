@@ -21,18 +21,8 @@ import assert from 'assert'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { makeCompilation } from '../../test-helpers'
 import precompile from '.'
-import {
-    precompileInitialization,
-    precompileInlineLoop,
-    precompileLoop,
-    precompileMessageInlet,
-    precompileMessageOutlet,
-    precompileMessageReceivers,
-    precompileSignalInlet,
-    precompileSignalOutlet
-} from './nodes'
 import { NodeImplementations } from '../types'
-import { AnonFunc, Func, Var, ast } from '../../ast/declare'
+import { ast } from '../../ast/declare'
 
 describe('precompile', () => {
     it('should precompile the inline loop code', () => {

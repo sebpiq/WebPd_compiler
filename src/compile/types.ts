@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstElement, AstFunc, AstSequence } from '../ast/types'
+import { AstElement, AstFunc, AstSequence, AstVar } from '../ast/types'
 import { VariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 
@@ -109,6 +109,7 @@ export interface PrecompiledNodeCode {
         }
     }
     signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
+    stateInitialization: AstVar | null
     initialization: AstElement
     loop: AstElement
 }
@@ -189,6 +190,13 @@ export type GlobalCodeDefinition =
 
 /** Implementation of a graph node type */
 export interface NodeImplementation<NodeArgsType> {
+
+    stateInitialization?: (context: {
+        globs: VariableNamesIndex['globs']
+        node: DspGraph.Node<NodeArgsType>
+        compilation: Compilation
+    }) => AstVar
+
     initialization?: (context: {
         globs: VariableNamesIndex['globs']
         state: PrecompiledNodeCode['generationContext']['state']

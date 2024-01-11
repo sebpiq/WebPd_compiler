@@ -28,6 +28,7 @@ import {
     generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
+    generateNodeStateDeclarations,
 } from '../../compile/generate'
 import { Compilation } from '../../compile/types'
 import { AssemblyScriptWasmEngineCode } from './types'
@@ -47,19 +48,22 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
     // prettier-ignore
     return render(macros, ast`
+        const metadata: string = '${JSON.stringify(metadata)}'
+        
         ${generateGlobs(compilation)}
+        let ${globs.input}: FloatArray = createFloatArray(0)
+        let ${globs.output}: FloatArray = createFloatArray(0)
+
         ${precompilation.dependencies.ast}
-        ${generatePortletsDeclarations(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
+
+        ${generateNodeStateDeclarations(compilation)}
+        ${generatePortletsDeclarations(compilation)}
 
         ${generateIoMessageReceivers(compilation)}
         ${generateIoMessageSenders(compilation, (variableName) => 
             ast`export declare function ${variableName}(m: Message): void`)}
-
-        const metadata: string = '${JSON.stringify(metadata)}'
-        let ${globs.input}: FloatArray = createFloatArray(0)
-        let ${globs.output}: FloatArray = createFloatArray(0)
 
         ${generateNodeInitializations(compilation)}
 

@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { Compilation, GlobalCodeDefinitionExport } from './types'
-import { AstFunc, AstSequence, VariableName } from '../ast/types'
-import { Sequence, Func, Var, ast } from '../ast/declare'
+import { Compilation, GlobalCodeDefinitionExport, NodeImplementation } from './types'
+import { AstConstVar, AstFunc, AstSequence, VariableName } from '../ast/types'
+import { Sequence, Func, Var, ast, ConstVar } from '../ast/declare'
 import { DspGraph, traversal } from '../dsp-graph'
 
 export const generateGlobs = ({
@@ -51,6 +51,26 @@ export const generateEmbeddedArrays = ({ settings: { arrays } }: Compilation) =>
             ])
         )
     )
+
+export const generateNodeStateDeclarations = ({
+    precompilation,
+    variableNamesIndex,
+}: Compilation): AstSequence =>
+    Sequence([
+        precompilation.traversals.all.reduce<Array<AstConstVar>>((declarations, nodeId) => {
+            const precompiledNode = precompilation.nodes[nodeId]
+            const nodeVariableNames = variableNamesIndex.nodes[nodeId]
+            if (!precompiledNode.stateInitialization) {
+                return declarations
+            } else {
+                return [...declarations, ConstVar(
+                    precompiledNode.stateInitialization.type,
+                    nodeVariableNames.state,
+                    precompiledNode.stateInitialization.value
+                )]
+            }
+        }, []),
+    ])
 
 export const generateNodeInitializations = ({
     precompilation,

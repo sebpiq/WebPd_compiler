@@ -37,6 +37,7 @@ import {
     precompileLoop,
     isInlinableNode,
     getInlinableNodeSinkList,
+    precompileStateInitialization,
 } from './nodes'
 
 export default (compilation: Compilation) => {
@@ -45,6 +46,11 @@ export default (compilation: Compilation) => {
 
     attachIoMessages(compilation)
     precompileDependencies(compilation)
+
+    // Precompile node stateInitialization
+    nodes.forEach((node) => {
+        precompileStateInitialization(compilation, node)
+    })
 
     // Go through the graph and precompile inlets.
     nodes.forEach((node) => {
@@ -150,6 +156,7 @@ export const initializePrecompilation = (
                 nodeNamespaceLabel(node, 'signalOuts'),
                 {}
             ),
+            stateInitialization: null,
             initialization: ast``,
             loop: ast``,
         }))

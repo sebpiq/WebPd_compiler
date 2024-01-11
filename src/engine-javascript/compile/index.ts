@@ -28,6 +28,7 @@ import {
     generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
+    generateNodeStateDeclarations,
 } from '../../compile/generate'
 import { Compilation } from '../../compile/types'
 import { JavaScriptEngineCode } from './types'
@@ -47,10 +48,13 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     // prettier-ignore
     return render(macros, ast`
         ${generateGlobs(compilation)}
+
         ${precompilation.dependencies.ast}
-        ${generatePortletsDeclarations(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
+
+        ${generateNodeStateDeclarations(compilation)}
+        ${generatePortletsDeclarations(compilation)}
 
         ${generateIoMessageReceivers(compilation)}
         ${generateIoMessageSenders(compilation, (

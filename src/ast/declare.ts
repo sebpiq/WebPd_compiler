@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { countTo } from '../functional-helpers'
-import { AstElement, AstSequenceContent, Code, VariableName } from './types'
+import { AstSequenceContent, Code, VariableName } from './types'
 import {
     TypeName,
     AstVar,

@@ -33,6 +33,27 @@ type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
 
 const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 
+export const precompileStateInitialization = (
+    compilation: Compilation,
+    node: DspGraph.Node
+) => {
+    const { precompilation, nodeImplementations, variableNamesIndex } =
+        compilation
+    const { globs } = variableNamesIndex
+    const nodeImplementation = getNodeImplementation(
+        nodeImplementations,
+        node.type
+    )
+    const precompiledNode = precompilation.nodes[node.id]
+    precompiledNode.stateInitialization = nodeImplementation.stateInitialization
+        ? nodeImplementation.stateInitialization({
+              globs,
+              node,
+              compilation,
+          })
+        : null
+}
+
 export const precompileSignalOutlet = (
     compilation: Compilation,
     node: DspGraph.Node,

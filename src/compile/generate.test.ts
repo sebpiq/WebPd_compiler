@@ -23,7 +23,7 @@ import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import precompile from './precompile'
-import { AnonFunc, Func, Var, ast } from '../ast/declare'
+import { AnonFunc, ConstVar, Func, Var, ast } from '../ast/declare'
 import {
     assertAstSequencesAreEqual,
     normalizeAstSequence,
@@ -32,6 +32,7 @@ import {
     generateIoMessageReceivers,
     generateLoop,
     generateNodeInitializations,
+    generateNodeStateDeclarations,
     generatePortletsDeclarations,
 } from './generate'
 import { AstSequence } from '../ast/types'
@@ -239,6 +240,35 @@ describe('generate', () => {
                             content: ['node3_RCVS_0(m)'],
                         },
                     },
+                ],
+            })
+        })
+    })
+
+    describe('generateNodeStateDeclarations', () => {
+        it('should compile declarations for node state and filter out nodes with no state declaration', () => {
+            const graph = makeGraph({
+                node1: {},
+                node2: {},
+                node3: {},
+            })
+
+            const compilation = makeCompilation({
+                graph,
+            })
+
+            compilation.precompilation.traversals.all = ['node1', 'node2', 'node3']
+            compilation.precompilation.nodes.node1.stateInitialization = Var('State', '', `{ a: 111, b: 222 }`)
+            compilation.precompilation.nodes.node2.stateInitialization = Var('State', '', `{ a: 333, b: 444 }`)
+            compilation.precompilation.nodes.node3.stateInitialization = null
+
+            const sequence = generateNodeStateDeclarations(compilation)
+
+            assertAstSequencesAreEqual(sequence, {
+                astType: 'Sequence',
+                content: [
+                    ConstVar('State', 'node1_STATE', '{ a: 111, b: 222 }'),
+                    ConstVar('State', 'node2_STATE', '{ a: 333, b: 444 }'),
                 ],
             })
         })

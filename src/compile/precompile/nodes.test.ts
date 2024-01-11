@@ -31,6 +31,7 @@ import {
     precompileInitialization,
     precompileLoop,
     precompileInlineLoop,
+    precompileStateInitialization,
 } from './nodes'
 
 describe('precompile.nodes', () => {
@@ -240,8 +241,8 @@ describe('precompile.nodes', () => {
                         messageSenders: {
                             node1: { portletIds: ['0'] },
                         },
-                        messageReceivers: {}
-                    }
+                        messageReceivers: {},
+                    },
                 },
             })
 
@@ -299,8 +300,8 @@ describe('precompile.nodes', () => {
                 settings: {
                     io: {
                         messageReceivers: { node4: { portletIds: ['0'] } },
-                        messageSenders: {}
-                    }
+                        messageSenders: {},
+                    },
                 },
             })
 
@@ -541,6 +542,36 @@ describe('precompile.nodes', () => {
 
             assert.throws(() =>
                 precompileMessageReceivers(compilation, graph.node1)
+            )
+        })
+    })
+
+    describe('precompileStateInitialization', () => {
+        it('should precompile node stateInitialization', () => {
+            const graph = makeGraph({
+                node1: {
+                    type: 'type1',
+                    args: { a: 22, b: 33 },
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                type1: {
+                    stateInitialization: ({ node: { args } }) =>
+                        Var('State', '', `{ a: ${args.a}, b: ${args.b} }`),
+                },
+            }
+
+            const compilation = makeCompilation({
+                graph,
+                nodeImplementations,
+            })
+
+            precompileStateInitialization(compilation, graph.node1)
+
+            assert.deepStrictEqual(
+                compilation.precompilation.nodes.node1.stateInitialization,
+                Var('State', '', `{ a: 22, b: 33 }`),
             )
         })
     })
