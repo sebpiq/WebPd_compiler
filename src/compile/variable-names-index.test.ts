@@ -24,7 +24,11 @@ import {
     attachIoMessages,
     generateVariableNamesIndex,
 } from './variable-names-index'
-import { IoMessageSpecs, VariableNamesIndex } from './types'
+import {
+    IoMessageSpecs,
+    NodeImplementations,
+    VariableNamesIndex,
+} from './types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
 
@@ -158,9 +162,14 @@ describe('variable-names-index', () => {
 
             const variableNamesIndex = generateVariableNamesIndex(graph, true)
 
+            const nodeImplementations: NodeImplementations = {
+                'dac~bla*wow!': {},
+            }
+
             const compilation = makeCompilation({
                 graph,
                 variableNamesIndex,
+                nodeImplementations,
                 settings: {
                     debug: true,
                 },
@@ -252,7 +261,7 @@ describe('variable-names-index', () => {
                     io: {
                         messageSenders,
                         messageReceivers,
-                    }
+                    },
                 },
             })
 

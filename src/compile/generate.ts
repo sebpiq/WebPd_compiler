@@ -17,10 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { Compilation, GlobalCodeDefinitionExport, NodeImplementation } from './types'
+import { Compilation, GlobalCodeDefinitionExport } from './types'
 import { AstConstVar, AstFunc, AstSequence, VariableName } from '../ast/types'
 import { Sequence, Func, Var, ast, ConstVar } from '../ast/declare'
 import { DspGraph, traversal } from '../dsp-graph'
+import { isNodeInsideGroup } from './precompile/dsp-groups'
 
 export const generateGlobs = ({
     variableNamesIndex: { globs },
@@ -57,26 +58,32 @@ export const generateNodeStateDeclarations = ({
     variableNamesIndex,
 }: Compilation): AstSequence =>
     Sequence([
-        precompilation.traversals.all.reduce<Array<AstConstVar>>((declarations, nodeId) => {
-            const precompiledNode = precompilation.nodes[nodeId]
-            const nodeVariableNames = variableNamesIndex.nodes[nodeId]
-            if (!precompiledNode.stateInitialization) {
-                return declarations
-            } else {
-                return [...declarations, ConstVar(
-                    precompiledNode.stateInitialization.type,
-                    nodeVariableNames.state,
-                    precompiledNode.stateInitialization.value
-                )]
-            }
-        }, []),
+        precompilation.graph.fullTraversal.reduce<Array<AstConstVar>>(
+            (declarations, nodeId) => {
+                const precompiledNode = precompilation.nodes[nodeId]
+                const nodeVariableNames = variableNamesIndex.nodes[nodeId]
+                if (!precompiledNode.stateInitialization) {
+                    return declarations
+                } else {
+                    return [
+                        ...declarations,
+                        ConstVar(
+                            precompiledNode.stateInitialization.type,
+                            nodeVariableNames.state,
+                            precompiledNode.stateInitialization.value
+                        ),
+                    ]
+                }
+            },
+            []
+        ),
     ])
 
 export const generateNodeInitializations = ({
     precompilation,
 }: Compilation): AstSequence =>
     Sequence([
-        precompilation.traversals.all.map(
+        precompilation.graph.fullTraversal.map(
             (nodeId) => precompilation.nodes[nodeId].initialization
         ),
     ])
@@ -84,20 +91,38 @@ export const generateNodeInitializations = ({
 export const generateIoMessageReceivers = ({
     settings: { io },
     variableNamesIndex,
+    precompilation,
 }: Compilation): AstSequence =>
-    // Here not possible to assign directly the receiver because otherwise assemblyscript
-    // doesn't export a function but a global instead.
     Sequence(
-        Object.entries(io.messageReceivers).map(([nodeId, spec]) =>
-            spec.portletIds.map(
+        Object.entries(io.messageReceivers).map(([nodeId, spec]) => {
+            // TODO : todo-io-messageReceivers This lookup should be done in precompile
+            const groupsContainingSink = Object.entries(
+                precompilation.graph.coldDspGroups
+            )
+                .filter(([_, dspGroup]) => isNodeInsideGroup(nodeId, dspGroup))
+                .map(([groupId]) => groupId)
+
+            const coldDspFunctionNames = groupsContainingSink.map(
+                (groupId) => variableNamesIndex.coldDspGroups[groupId]
+            )
+            // END TODO
+
+            return spec.portletIds.map(
                 (inletId) =>
                     Func(
                         variableNamesIndex.io.messageReceivers[nodeId][inletId],
                         [Var('Message', 'm')],
                         'void'
-                    )`${variableNamesIndex.nodes[nodeId].messageReceivers[inletId]}(m)`
+                    )`
+                        ${
+                            variableNamesIndex.nodes[nodeId].messageReceivers[
+                                inletId
+                            ]
+                        }(m)
+                        ${coldDspFunctionNames.map((name) => `${name}()`)}
+                    `
             )
-        )
+        })
     )
 
 export const generateIoMessageSenders = (
@@ -132,7 +157,7 @@ export const generatePortletsDeclarations = (
     } = compilation
     const graphTraversalNodes = traversal.toNodes(
         graph,
-        precompilation.traversals.all
+        precompilation.graph.fullTraversal
     )
 
     return Sequence([
@@ -150,12 +175,12 @@ export const generatePortletsDeclarations = (
                     ([inletId, astFunc]) => {
                         // prettier-ignore
                         return Func(astFunc.name, astFunc.args, astFunc.returnType)`
-                                ${astFunc.body}
-                                throw new Error('[${node.type}], id "${node.id}", inlet "${inletId}", unsupported message : ' + msg_display(${astFunc.args[0].name})${
-                                    debug
-                                        ? " + '\\nDEBUG : remember, you must return from message receiver'"
-                                        : ''})
-                            `
+                            ${astFunc.body}
+                            throw new Error('[${node.type}], id "${node.id}", inlet "${inletId}", unsupported message : ' + msg_display(${astFunc.args[0].name})${
+                                debug
+                                    ? " + '\\nDEBUG : remember, you must return from message receiver'"
+                                    : ''})
+                        `
                     }
                 ),
             ]
@@ -168,12 +193,16 @@ export const generatePortletsDeclarations = (
                 ({
                     messageSenderName: sndName,
                     messageReceiverNames: rcvNames,
+                    coldDspFunctionNames,
                 }) =>
                     // prettier-ignore
                     Func(sndName, [
                     Var('Message', 'm')
                 ], 'void')`
-                    ${rcvNames.map(rcvName => `${rcvName}(m)`)}
+                    ${rcvNames.map(rcvName => 
+                        `${rcvName}(m)`)}
+                    ${coldDspFunctionNames.map(functionName => 
+                        `${functionName}()`)}
                 `
             )
         ),
@@ -182,17 +211,48 @@ export const generatePortletsDeclarations = (
 
 export const generateLoop = (compilation: Compilation) => {
     const { variableNamesIndex, precompilation } = compilation
-    const { traversals } = precompilation
+    const {
+        graph: { hotDspGroup },
+    } = precompilation
     const { globs } = variableNamesIndex
 
     // prettier-ignore
     return ast`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
-            ${traversals.loop.map((nodeId) => precompilation.nodes[nodeId].loop)}
+            ${hotDspGroup.traversal.map((nodeId) => precompilation.nodes[nodeId].loop)}
             ${globs.frame}++
         }
     `
+}
+
+export const generateColdDspInitialization = ({
+    precompilation,
+    variableNamesIndex,
+}: Compilation) =>
+    Sequence(
+        Object.keys(precompilation.graph.coldDspGroups).map((groupId) => {
+            return `${variableNamesIndex.coldDspGroups[groupId]}()`
+        })
+    )
+
+export const generateColdDspFunctions = (
+    compilation: Compilation
+): AstSequence => {
+    const { variableNamesIndex, precompilation } = compilation
+    const {
+        graph: { coldDspGroups },
+    } = precompilation
+
+    return Sequence(
+        Object.entries(coldDspGroups).map(([groupId, dspGroup]) => {
+            const funcName = variableNamesIndex.coldDspGroups[groupId]
+            // prettier-ignore
+            return Func(funcName, [], 'void')`
+                ${dspGroup.traversal.map((nodeId) => precompilation.nodes[nodeId].loop)}
+            `
+        })
+    )
 }
 
 export const generateImportsExports = (

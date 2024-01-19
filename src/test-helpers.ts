@@ -33,7 +33,7 @@ import { Engine, Module, RawModule } from './run/types'
 import { generateVariableNamesIndex } from './compile/variable-names-index'
 import { writeFile } from 'fs/promises'
 import {
-    buildGraphTraversalAll,
+    buildFullGraphTraversal,
     getMacros,
 } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
@@ -117,8 +117,9 @@ export const makeCompilation = (
         compilation.precompilation ||
         initializePrecompilation(
             graph,
-            buildGraphTraversalAll(graph, settings.io),
-            variableNamesIndex
+            buildFullGraphTraversal(graph, settings.io),
+            variableNamesIndex,
+            nodeImplementations,
         )
     return {
         ...compilation,

@@ -30,10 +30,57 @@ type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]
 export const toNodes = (
     graph: DspGraph.Graph,
     traversal: DspGraph.GraphTraversal
+) => traversal.map<DspGraph.Node>((nodeId) => getNode(graph, nodeId))
+
+export const listSignalSinkNodes = (
+    graph: DspGraph.Graph,
+    node: DspGraph.Node
 ) =>
-    traversal.map<DspGraph.Node>((nodeId) =>
-        getNode(graph, nodeId)
-    )
+    Object.entries(node.sinks)
+        .reduce<Array<DspGraph.NodeId>>(
+            (allSinkNodeIds, [outletId, sinkList]) => {
+                const outlet = getOutlet(node, outletId)
+                if (outlet.type === 'signal') {
+                    return [
+                        ...allSinkNodeIds,
+                        ...sinkList
+                            .map((sink) => sink.nodeId)
+                            .filter(
+                                (nodeId) => !allSinkNodeIds.includes(nodeId)
+                            ),
+                    ]
+                } else {
+                    return allSinkNodeIds
+                }
+            },
+            []
+        )
+        .map((nodeId) => getNode(graph, nodeId))
+
+export const listSignalSourceNodes = (
+    graph: DspGraph.Graph,
+    node: DspGraph.Node
+) =>
+    Object.entries(node.sources)
+        .reduce<Array<DspGraph.NodeId>>(
+            (allSourceNodeIds, [inletId, sourceList]) => {
+                const inlet = getInlet(node, inletId)
+                if (inlet.type === 'signal') {
+                    return [
+                        ...allSourceNodeIds,
+                        ...sourceList
+                            .map((source) => source.nodeId)
+                            .filter(
+                                (nodeId) => !allSourceNodeIds.includes(nodeId)
+                            ),
+                    ]
+                } else {
+                    return allSourceNodeIds
+                }
+            },
+            []
+        )
+        .map((nodeId) => getNode(graph, nodeId))
 
 /**
  * Breadth first traversal for signal in the graph.
@@ -43,11 +90,17 @@ export const toNodes = (
 export const signalNodes = (
     graph: DspGraph.Graph,
     nodesPullingSignal: Array<DspGraph.Node>,
-    shouldContinue?: (node: DspGraph.Node) => boolean,
+    shouldContinue?: (node: DspGraph.Node) => boolean
 ): DspGraph.GraphTraversal => {
     const traversal: DspGraph.GraphTraversal = []
     nodesPullingSignal.forEach((node) =>
-        _signalNodesBreadthFirstRecursive(traversal, [], graph, node, shouldContinue)
+        _signalNodesBreadthFirstRecursive(
+            traversal,
+            [],
+            graph,
+            node,
+            shouldContinue
+        )
     )
     return traversal
 }
@@ -57,10 +110,10 @@ const _signalNodesBreadthFirstRecursive = (
     currentPath: DspGraph.GraphTraversal,
     graph: DspGraph.Graph,
     node: DspGraph.Node,
-    shouldContinue?: (node: DspGraph.Node) => boolean,
+    shouldContinue?: (node: DspGraph.Node) => boolean
 ) => {
-    if (shouldContinue && !shouldContinue(node)) { 
-        return 
+    if (shouldContinue && !shouldContinue(node)) {
+        return
     }
     const nextPath: DspGraph.GraphTraversal = [...currentPath, node.id]
     Object.entries(node.sources)
@@ -76,7 +129,7 @@ const _signalNodesBreadthFirstRecursive = (
                     nextPath,
                     graph,
                     sourceNode,
-                    shouldContinue,
+                    shouldContinue
                 )
             })
         })

@@ -62,6 +62,7 @@ export const generateVariableNamesIndex = (
             messageReceivers: createNamespace('io:messageReceivers', {}),
             messageSenders: createNamespace('io:messageSenders', {}),
         },
+        coldDspGroups: createNamespace('coldDspGroups', {}),
     })
 
 export const generateVariableNamesGlobs = () =>
@@ -88,8 +89,8 @@ export const attachNodePortlet = (
         settings: { debug },
     } = compilation
     const nodeVariableNames = variableNamesIndex.nodes[nodeId]
-    const sinkNode = getters.getNode(graph, nodeId)
-    const prefix = _namePrefix(debug, sinkNode)
+    const node = getters.getNode(graph, nodeId)
+    const prefix = _namePrefix(debug, node)
     // Shouldnt throw an error if the variable already exists, as precompile might try to
     // declare it several times.
     if (!(portletId in nodeVariableNames[nsKey])) {
@@ -123,12 +124,19 @@ export const attachIoMessages = ({
                 {}
             )
             spec.portletIds.forEach((outletId) => {
-                variableNamesIndex.io[nsKey][nodeId][
-                    outletId
-                ] = `io${nsKey === 'messageReceivers' ? 'Rcv': 'Snd'}_${nodeId}_${outletId}`
+                variableNamesIndex.io[nsKey][nodeId][outletId] = `io${
+                    nsKey === 'messageReceivers' ? 'Rcv' : 'Snd'
+                }_${nodeId}_${outletId}`
             })
         })
     })
+
+export const attachColdDspGroup = (
+    { variableNamesIndex }: Compilation,
+    groupId: string
+) => {
+    return (variableNamesIndex.coldDspGroups[groupId] = `coldDsp_${groupId}`)
+}
 
 export const assertValidNamePart = (namePart: string) => {
     const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)

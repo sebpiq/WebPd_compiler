@@ -29,6 +29,8 @@ import {
     normalizeAstSequence,
 } from '../ast/test-helpers'
 import {
+    generateColdDspFunctions,
+    generateColdDspInitialization,
     generateIoMessageReceivers,
     generateLoop,
     generateNodeInitializations,
@@ -38,62 +40,62 @@ import {
 import { AstSequence } from '../ast/types'
 
 describe('generate', () => {
-    describe('generateNodePortletsDeclarations', () => {
+    describe('generatePortletsDeclarations', () => {
         const MESSAGE_RECEIVER_FUNC = AnonFunc([Var('Message', 'm')])``
 
         it('should compile declarations for signal outlets', () => {
             const graph = makeGraph({
-                node1: {},
-                node2: {},
+                n1: {},
+                n2: {},
             })
 
             const compilation = makeCompilation({
                 graph,
             })
 
-            compilation.precompilation.traversals.all = ['node1', 'node2']
-            compilation.precompilation.nodes.node1.signalOuts['0'] =
-                'node1_OUTS_0'
-            compilation.precompilation.nodes.node1.signalOuts['1'] =
-                'node1_OUTS_1'
-            compilation.precompilation.nodes.node2.signalOuts['0'] =
-                'node2_OUTS_0'
+            compilation.precompilation.graph.fullTraversal = ['n1', 'n2']
+            compilation.precompilation.nodes.n1.signalOuts['0'] =
+                'n1_OUTS_0'
+            compilation.precompilation.nodes.n1.signalOuts['1'] =
+                'n1_OUTS_1'
+            compilation.precompilation.nodes.n2.signalOuts['0'] =
+                'n2_OUTS_0'
 
             const sequence = generatePortletsDeclarations(compilation)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
                 content: [
-                    Var('Float', 'node1_OUTS_0', '0'),
-                    Var('Float', 'node1_OUTS_1', '0'),
-                    Var('Float', 'node2_OUTS_0', '0'),
+                    Var('Float', 'n1_OUTS_0', '0'),
+                    Var('Float', 'n1_OUTS_1', '0'),
+                    Var('Float', 'n2_OUTS_0', '0'),
                 ],
             })
         })
 
         it('should compile node message receivers', () => {
             const graph = makeGraph({
-                node1: {},
-                node2: {},
+                n1: {},
+                n2: {},
             })
 
             const compilation = makeCompilation({
                 graph,
             })
 
-            compilation.precompilation.traversals.all = ['node1', 'node2']
-            compilation.precompilation.nodes.node1.messageReceivers['0'] = Func(
-                'node1_RCVS_0',
+            compilation.precompilation.graph.fullTraversal = ['n1', 'n2']
+            compilation.precompilation.nodes.n1.messageReceivers['0'] = Func(
+                'n1_RCVS_0',
                 [Var('Message', 'm')]
-            )`// [node1] message receiver 0`
-            compilation.precompilation.nodes.node1.messageReceivers['1'] = Func(
-                'node1_RCVS_1',
+            )`// [n1] message receiver 0`
+            compilation.precompilation.nodes.n1.messageReceivers['1'] = Func(
+                'n1_RCVS_1',
                 [Var('Message', 'm')]
-            )`// [node1] message receiver 1`
-            compilation.precompilation.nodes.node2.messageReceivers['0'] = Func(
-                'node2_RCVS_0',
+            )`// [n1] message receiver 1`
+            compilation.precompilation.nodes.n2.messageReceivers['0'] = Func(
+                'n2_RCVS_0',
                 [Var('Message', 'm')]
-            )`// [node2] message receiver 0`
+            )`// [n2] message receiver 0`
 
             const sequence = generatePortletsDeclarations(compilation)
 
@@ -102,34 +104,34 @@ describe('generate', () => {
                 content: [
                     {
                         ...MESSAGE_RECEIVER_FUNC,
-                        name: 'node1_RCVS_0',
+                        name: 'n1_RCVS_0',
                         body: {
                             astType: 'Sequence',
                             content: [
-                                '// [node1] message receiver 0\n' +
-                                    `throw new Error('[DUMMY], id "node1", inlet "0", unsupported message : ' + msg_display(m))`,
+                                '// [n1] message receiver 0\n' +
+                                    `throw new Error('[DUMMY], id "n1", inlet "0", unsupported message : ' + msg_display(m))`,
                             ],
                         },
                     },
                     {
                         ...MESSAGE_RECEIVER_FUNC,
-                        name: 'node1_RCVS_1',
+                        name: 'n1_RCVS_1',
                         body: {
                             astType: 'Sequence',
                             content: [
-                                '// [node1] message receiver 1\n' +
-                                    `throw new Error('[DUMMY], id "node1", inlet "1", unsupported message : ' + msg_display(m))`,
+                                '// [n1] message receiver 1\n' +
+                                    `throw new Error('[DUMMY], id "n1", inlet "1", unsupported message : ' + msg_display(m))`,
                             ],
                         },
                     },
                     {
                         ...MESSAGE_RECEIVER_FUNC,
-                        name: 'node2_RCVS_0',
+                        name: 'n2_RCVS_0',
                         body: {
                             astType: 'Sequence',
                             content: [
-                                '// [node2] message receiver 0\n' +
-                                    `throw new Error('[DUMMY], id "node2", inlet "0", unsupported message : ' + msg_display(m))`,
+                                '// [n2] message receiver 0\n' +
+                                    `throw new Error('[DUMMY], id "n2", inlet "0", unsupported message : ' + msg_display(m))`,
                             ],
                         },
                     },
@@ -139,7 +141,7 @@ describe('generate', () => {
 
         it('should render correct error throw if debug = true', () => {
             const graph = makeGraph({
-                node1: {},
+                n1: {},
             })
 
             const compilation = makeCompilation({
@@ -147,11 +149,11 @@ describe('generate', () => {
                 settings: { debug: true },
             })
 
-            compilation.precompilation.traversals.all = ['node1']
-            compilation.precompilation.nodes.node1.messageReceivers['0'] = Func(
-                'node1_RCVS_0',
+            compilation.precompilation.graph.fullTraversal = ['n1']
+            compilation.precompilation.nodes.n1.messageReceivers['0'] = Func(
+                'n1_RCVS_0',
                 [Var('Message', 'm')]
-            )`// [node1] message receiver 0`
+            )`// [n1] message receiver 0`
 
             const sequence = generatePortletsDeclarations(compilation)
 
@@ -160,7 +162,7 @@ describe('generate', () => {
                 content: [
                     {
                         astType: 'Func',
-                        name: 'node1_RCVS_0',
+                        name: 'n1_RCVS_0',
                         args: [
                             {
                                 astType: 'Var',
@@ -173,8 +175,8 @@ describe('generate', () => {
                         body: {
                             astType: 'Sequence',
                             content: [
-                                '// [node1] message receiver 0\n' +
-                                    `throw new Error('[DUMMY], id "node1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
+                                '// [n1] message receiver 0\n' +
+                                    `throw new Error('[DUMMY], id "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
                             ],
                         },
                     },
@@ -184,31 +186,34 @@ describe('generate', () => {
 
         it('should compile node message senders', () => {
             const graph = makeGraph({
-                node1: {},
-                node2: {},
-                node3: {},
+                n1: {},
+                n2: {},
+                n3: {},
             })
 
             const compilation = makeCompilation({
                 graph,
             })
 
-            compilation.precompilation.traversals.all = [
-                'node1',
-                'node2',
-                'node3',
+            compilation.precompilation.graph.fullTraversal = [
+                'n1',
+                'n2',
+                'n3',
             ]
-            compilation.precompilation.nodes.node1.messageSenders['0'] = {
-                messageSenderName: 'node1_SNDS_0',
-                messageReceiverNames: ['node2_RCVS_0', 'node2_RCVS_1'],
+            compilation.precompilation.nodes.n1.messageSenders['0'] = {
+                messageSenderName: 'n1_SNDS_0',
+                messageReceiverNames: ['n2_RCVS_0', 'n2_RCVS_1'],
+                coldDspFunctionNames: [],
             }
-            compilation.precompilation.nodes.node1.messageSenders['1'] = {
-                messageSenderName: 'node1_SNDS_1',
-                messageReceiverNames: ['outlerListener_node1_0'],
+            compilation.precompilation.nodes.n1.messageSenders['1'] = {
+                messageSenderName: 'n1_SNDS_1',
+                messageReceiverNames: ['outlerListener_n1_0'],
+                coldDspFunctionNames: [],
             }
-            compilation.precompilation.nodes.node2.messageSenders['0'] = {
-                messageSenderName: 'node2_SNDS_0',
-                messageReceiverNames: ['node3_RCVS_0'],
+            compilation.precompilation.nodes.n2.messageSenders['0'] = {
+                messageSenderName: 'n2_SNDS_0',
+                messageReceiverNames: ['n3_RCVS_0'],
+                coldDspFunctionNames: [],
             }
 
             const sequence = generatePortletsDeclarations(compilation)
@@ -218,26 +223,62 @@ describe('generate', () => {
                 content: [
                     {
                         ...MESSAGE_RECEIVER_FUNC,
-                        name: 'node1_SNDS_0',
+                        name: 'n1_SNDS_0',
                         body: {
                             astType: 'Sequence',
-                            content: ['node2_RCVS_0(m)\nnode2_RCVS_1(m)'],
+                            content: ['n2_RCVS_0(m)\nn2_RCVS_1(m)'],
                         },
                     },
                     {
                         ...MESSAGE_RECEIVER_FUNC,
-                        name: 'node1_SNDS_1',
+                        name: 'n1_SNDS_1',
                         body: {
                             astType: 'Sequence',
-                            content: ['outlerListener_node1_0(m)'],
+                            content: ['outlerListener_n1_0(m)'],
                         },
                     },
                     {
                         ...MESSAGE_RECEIVER_FUNC,
-                        name: 'node2_SNDS_0',
+                        name: 'n2_SNDS_0',
                         body: {
                             astType: 'Sequence',
-                            content: ['node3_RCVS_0(m)'],
+                            content: ['n3_RCVS_0(m)'],
+                        },
+                    },
+                ],
+            })
+        })
+
+        it('should compile cold dsp functions in message senders', () => {
+            const graph = makeGraph({
+                n1: {},
+            })
+
+            const compilation = makeCompilation({
+                graph,
+            })
+
+            compilation.precompilation.graph.fullTraversal = [
+                'n1',
+            ]
+
+            compilation.precompilation.nodes.n1.messageSenders['0'] = {
+                messageSenderName: 'n1_SNDS_0',
+                messageReceiverNames: ['n2_RCVS_0', 'n2_RCVS_1'],
+                coldDspFunctionNames: ['DSP_0'],
+            }
+
+            const sequence = generatePortletsDeclarations(compilation)
+
+            assertAstSequencesAreEqual(sequence, {
+                astType: 'Sequence',
+                content: [
+                    {
+                        ...MESSAGE_RECEIVER_FUNC,
+                        name: 'n1_SNDS_0',
+                        body: {
+                            astType: 'Sequence',
+                            content: ['n2_RCVS_0(m)\nn2_RCVS_1(m)\nDSP_0()'],
                         },
                     },
                 ],
@@ -248,27 +289,39 @@ describe('generate', () => {
     describe('generateNodeStateDeclarations', () => {
         it('should compile declarations for node state and filter out nodes with no state declaration', () => {
             const graph = makeGraph({
-                node1: {},
-                node2: {},
-                node3: {},
+                n1: {},
+                n2: {},
+                n3: {},
             })
 
             const compilation = makeCompilation({
                 graph,
             })
 
-            compilation.precompilation.traversals.all = ['node1', 'node2', 'node3']
-            compilation.precompilation.nodes.node1.stateInitialization = Var('State', '', `{ a: 111, b: 222 }`)
-            compilation.precompilation.nodes.node2.stateInitialization = Var('State', '', `{ a: 333, b: 444 }`)
-            compilation.precompilation.nodes.node3.stateInitialization = null
+            compilation.precompilation.graph.fullTraversal = [
+                'n1',
+                'n2',
+                'n3',
+            ]
+            compilation.precompilation.nodes.n1.stateInitialization = Var(
+                'State',
+                '',
+                `{ a: 111, b: 222 }`
+            )
+            compilation.precompilation.nodes.n2.stateInitialization = Var(
+                'State',
+                '',
+                `{ a: 333, b: 444 }`
+            )
+            compilation.precompilation.nodes.n3.stateInitialization = null
 
             const sequence = generateNodeStateDeclarations(compilation)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
                 content: [
-                    ConstVar('State', 'node1_STATE', '{ a: 111, b: 222 }'),
-                    ConstVar('State', 'node2_STATE', '{ a: 333, b: 444 }'),
+                    ConstVar('State', 'n1_STATE', '{ a: 111, b: 222 }'),
+                    ConstVar('State', 'n2_STATE', '{ a: 333, b: 444 }'),
                 ],
             })
         })
@@ -277,26 +330,26 @@ describe('generate', () => {
     describe('generateNodeInitializations', () => {
         it('should generate initializations for nodes', () => {
             const graph = makeGraph({
-                node1: {},
-                node2: {},
+                n1: {},
+                n2: {},
             })
 
             const compilation = makeCompilation({
                 graph,
             })
 
-            compilation.precompilation.traversals.all = ['node1', 'node2']
-            compilation.precompilation.nodes.node1.initialization = ast`
-                ${Var('Float', 'node1', '0')}
-                console.log(node1)
+            compilation.precompilation.graph.fullTraversal = ['n1', 'n2']
+            compilation.precompilation.nodes.n1.initialization = ast`
+                ${Var('Float', 'n1', '0')}
+                console.log(n1)
             `
-            compilation.precompilation.nodes.node2.initialization = ast``
+            compilation.precompilation.nodes.n2.initialization = ast``
 
             const sequence = generateNodeInitializations(compilation)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
-                content: [Var('Float', 'node1', '0'), 'console.log(node1)'],
+                content: [Var('Float', 'n1', '0'), 'console.log(n1)'],
             })
         })
     })
@@ -304,7 +357,7 @@ describe('generate', () => {
     describe('generateIoMessageReceivers', () => {
         it('should compile declared inlet callers', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                     inlets: {
                         '0': { id: '0', type: 'message' },
@@ -327,9 +380,9 @@ describe('generate', () => {
                 graph,
                 settings: {
                     io: {
-                        messageReceivers: { node1: { portletIds: ['0'] } },
+                        messageReceivers: { n1: { portletIds: ['0'] } },
                         messageSenders: {},
-                    }
+                    },
                 },
                 nodeImplementations,
             })
@@ -338,12 +391,12 @@ describe('generate', () => {
 
             const sequence = generateIoMessageReceivers(compilation)
 
-            assert.deepStrictEqual<AstSequence>(sequence, {
+            assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
                 content: [
                     {
                         astType: 'Func',
-                        name: 'ioRcv_node1_0',
+                        name: 'ioRcv_n1_0',
                         args: [
                             {
                                 astType: 'Var',
@@ -355,7 +408,7 @@ describe('generate', () => {
                         returnType: 'void',
                         body: {
                             astType: 'Sequence',
-                            content: ['node1_RCVS_0(m)'],
+                            content: ['n1_RCVS_0(m)'],
                         },
                     },
                 ],
@@ -366,23 +419,22 @@ describe('generate', () => {
     describe('generateLoop', () => {
         it('should compile the loop function', () => {
             const graph = makeGraph({
-                node1: {},
-                node2: {},
-                node3: {},
+                n1: {},
+                n2: {},
+                n3: {},
             })
 
             const compilation = makeCompilation({
                 graph,
             })
 
-            ;(compilation.precompilation.traversals.loop = [
-                'node1',
-                'node2',
-                'node3',
-            ]),
-                (compilation.precompilation.nodes.node1.loop = ast`// [osc~] : frequency 440`)
-            compilation.precompilation.nodes.node2.loop = ast`// [+~] : value 110`
-            compilation.precompilation.nodes.node3.loop = ast`// [dac~] : channelCount 2`
+            compilation.precompilation.graph.hotDspGroup = {
+                traversal: ['n1', 'n2', 'n3'],
+                outNodesIds: ['n3'],
+            }
+            compilation.precompilation.nodes.n1.loop = ast`// n1`
+            compilation.precompilation.nodes.n2.loop = ast`// n2`
+            compilation.precompilation.nodes.n3.loop = ast`// n3`
 
             const sequence = generateLoop(compilation)
 
@@ -392,10 +444,109 @@ describe('generate', () => {
                     astType: 'Sequence',
                     content: [
                         `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
-                            '// [osc~] : frequency 440\n' +
-                            '// [+~] : value 110\n' +
-                            '// [dac~] : channelCount 2\n' +
+                            '// n1\n' +
+                            '// n2\n' +
+                            '// n3\n' +
                             `FRAME++\n}`,
+                    ],
+                }
+            )
+        })
+    })
+
+    describe('generateColdDspInitialization', () => {
+        it('should compile cold dsp initialization', () => {
+            const graph = makeGraph({})
+
+            const compilation = makeCompilation({
+                graph,
+            })
+
+            compilation.precompilation.graph.coldDspGroups = {
+                '0': {
+                    traversal: [],
+                    outNodesIds: [],
+                },
+                '1': {
+                    traversal: [],
+                    outNodesIds: [],
+                },
+            }
+
+            compilation.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
+            compilation.variableNamesIndex.coldDspGroups['1'] = 'DSP_1'
+
+            const sequence = generateColdDspInitialization(compilation)
+
+            assertAstSequencesAreEqual(
+                normalizeAstSequence(sequence),
+                {
+                    astType: 'Sequence',
+                    content: [
+                        `DSP_0()\nDSP_1()`
+                    ],
+                }
+            )
+        })
+    })
+
+    describe('generateColdDspFunctions', () => {
+        it('should compile cold dsp functions', () => {
+            const graph = makeGraph({
+                n1: {},
+                n2: {},
+                n3: {},
+            })
+
+            const compilation = makeCompilation({
+                graph,
+            })
+
+            compilation.precompilation.nodes.n1.loop = ast`// n1`
+            compilation.precompilation.nodes.n2.loop = ast`// n2`
+            compilation.precompilation.nodes.n3.loop = ast`// n3`
+
+            compilation.precompilation.graph.coldDspGroups = {
+                '0': {
+                    traversal: ['n1', 'n2'],
+                    outNodesIds: ['n2'],
+                },
+                '1': {
+                    traversal: ['n3'],
+                    outNodesIds: ['n3'],
+                },
+            }
+
+            compilation.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
+            compilation.variableNamesIndex.coldDspGroups['1'] = 'DSP_1'
+
+            const sequence = generateColdDspFunctions(compilation)
+
+            assertAstSequencesAreEqual(
+                normalizeAstSequence(sequence),
+                {
+                    astType: 'Sequence',
+                    content: [
+                        {
+                            astType: 'Func',
+                            name: 'DSP_0',
+                            args: [],
+                            returnType: 'void',
+                            body: {
+                                astType: 'Sequence',
+                                content: ['// n1' + '\n' + '// n2'],
+                            },
+                        },
+                        {
+                            astType: 'Func',
+                            name: 'DSP_1',
+                            args: [],
+                            returnType: 'void',
+                            body: {
+                                astType: 'Sequence',
+                                content: ['// n3'],
+                            },
+                        },
                     ],
                 }
             )

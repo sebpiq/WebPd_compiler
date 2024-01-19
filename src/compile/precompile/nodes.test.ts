@@ -24,7 +24,7 @@ import { makeCompilation } from '../../test-helpers'
 import { NodeImplementations } from '../types'
 import {
     precompileSignalOutlet,
-    precompileSignalInlet,
+    precompileSignalInletWithNoSource,
     precompileMessageOutlet,
     precompileMessageInlet,
     precompileMessageReceivers,
@@ -84,7 +84,7 @@ describe('precompile.nodes', () => {
         })
     })
 
-    describe('precompileSignalInlet', () => {
+    describe('precompileSignalInletWithNoSource', () => {
         it('should put empty signal for unconnected inlet', () => {
             const graph = makeGraph({
                 node1: {
@@ -98,7 +98,7 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            precompileSignalInlet(compilation, graph.node1, '0')
+            precompileSignalInletWithNoSource(compilation, graph.node1, '0')
 
             // Substitute with empty signal in generation context
             assert.strictEqual(
@@ -157,6 +157,7 @@ describe('precompile.nodes', () => {
                 {
                     messageSenderName: 'node1_SNDS_0',
                     messageReceiverNames: ['node2_RCVS_0', 'node3_RCVS_0'],
+                    coldDspFunctionNames: [],
                 }
             )
             // Add the sender name in generation context
@@ -180,7 +181,7 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            compilation.precompilation.traversals.all = ['node1']
+            compilation.precompilation.graph.fullTraversal = ['node1']
             precompileMessageOutlet(compilation, graph.node1, '0')
 
             // Substitute with null function in generation context
@@ -571,7 +572,7 @@ describe('precompile.nodes', () => {
 
             assert.deepStrictEqual(
                 compilation.precompilation.nodes.node1.stateInitialization,
-                Var('State', '', `{ a: 22, b: 33 }`),
+                Var('State', '', `{ a: 22, b: 33 }`)
             )
         })
     })
@@ -715,12 +716,12 @@ describe('precompile.nodes', () => {
             //   \        /
             //    \      /
             //     \    /
-            //    [  n4  ]  <- leaf node for the inlinable subtree
+            //    [  n4  ]  <- out node for the inlinable subgraph
             //        |
-            //    [  n5  ]  <- final sink
+            //    [  n5  ]  <- first non-inlinable sink
             const graph = makeGraph({
                 n1: {
-                    type: 'inlineType0',
+                    type: 'inlinableType0',
                     args: { value: 'N1' },
                     sinks: {
                         '0': [['n3', '0']],
@@ -733,7 +734,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n2: {
-                    type: 'inlineType0',
+                    type: 'inlinableType0',
                     args: { value: 'N2' },
                     sinks: {
                         '0': [['n4', '0']],
@@ -746,7 +747,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n3: {
-                    type: 'inlineType1',
+                    type: 'inlinableType1',
                     args: { value: 'N3' },
                     sinks: {
                         '0': [['n4', '1']],
@@ -759,7 +760,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n4: {
-                    type: 'inlineType2',
+                    type: 'inlinableType2',
                     args: { value: 'N4' },
                     inlets: {
                         '0': { type: 'signal', id: '0' },
@@ -773,6 +774,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n5: {
+                    type: 'nonInlinableType',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -780,17 +782,18 @@ describe('precompile.nodes', () => {
             })
 
             const nodeImplementations: NodeImplementations = {
-                inlineType0: {
+                inlinableType0: {
                     inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
-                inlineType1: {
+                inlinableType1: {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
-                inlineType2: {
+                inlinableType2: {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
+                nonInlinableType: {}
             }
 
             const compilation = makeCompilation({
@@ -798,15 +801,16 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            const inlineTraversal = precompileInlineLoop(compilation, graph.n4)
+            precompileInlineLoop(compilation, {
+                traversal: ['n2', 'n1', 'n3', 'n4'],
+                outNodesIds: ['n4'],
+            })
 
             assert.strictEqual(
                 compilation.precompilation.nodes.n5.generationContext.signalIns
                     .$0,
                 `(N4 * (N2 + 1) - N4 * ((N1 + 1) * N3))`
             )
-
-            assert.deepStrictEqual(inlineTraversal, ['n2', 'n1', 'n3', 'n4'])
         })
 
         it('shouldnt cause any problem with message inlets', () => {
@@ -816,9 +820,9 @@ describe('precompile.nodes', () => {
             //         |
             //         |
             //         |
-            //      [  n3  ]  <- leaf node for the inlinable subtree
+            //      [  n3  ]  <- out node for the inlinable subgraph
             //         |
-            //      [  n4  ]  <- final sink
+            //      [  n4  ]  <- first non-inlinable sink
             const graph = makeGraph({
                 n0: {
                     type: 'messageType',
@@ -831,7 +835,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n1: {
-                    type: 'inlineType0',
+                    type: 'inlinableType0',
                     args: { value: 'N1' },
                     sinks: {
                         '0': [['n2', '0']],
@@ -841,7 +845,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n2: {
-                    type: 'inlineType1',
+                    type: 'inlinableType1',
                     args: { value: 'N2' },
                     sinks: {
                         '0': [['n3', '0']],
@@ -855,7 +859,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n3: {
-                    type: 'inlineType1',
+                    type: 'inlinableType1',
                     args: { value: 'N3' },
                     inlets: {
                         '0': { type: 'signal', id: '0' },
@@ -869,6 +873,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n4: {
+                    type: 'nonInlinableType',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -877,13 +882,14 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 messageType: {},
-                inlineType0: {
+                inlinableType0: {
                     inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
-                inlineType1: {
+                inlinableType1: {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
+                nonInlinableType: {},
             }
 
             const compilation = makeCompilation({
@@ -891,7 +897,10 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            const inlineTraversal = precompileInlineLoop(compilation, graph.n3)
+            precompileInlineLoop(compilation, {
+                traversal: ['n1', 'n2', 'n3'],
+                outNodesIds: ['n3'],
+            })
 
             assert.strictEqual(
                 compilation.precompilation.nodes.n4.generationContext.signalIns
@@ -899,7 +908,6 @@ describe('precompile.nodes', () => {
                 '(((N1 + 1) * N2) * N3)'
             )
 
-            assert.deepStrictEqual(inlineTraversal, ['n1', 'n2', 'n3'])
         })
 
         it('shouldnt fail with non-connected signal inlet', () => {
@@ -912,7 +920,7 @@ describe('precompile.nodes', () => {
             //      [  n3  ]
             const graph = makeGraph({
                 n1: {
-                    type: 'inlineType0',
+                    type: 'inlinableType0',
                     args: { value: 'N1' },
                     sinks: {
                         '0': [['n2', '0']],
@@ -922,7 +930,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n2: {
-                    type: 'inlineType2',
+                    type: 'inlinableType2',
                     args: { value: 'N2' },
                     sinks: {
                         '0': [['n3', '0']],
@@ -937,7 +945,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n3: {
-                    type: 'inlineType1',
+                    type: 'inlinableType1',
                     args: { value: 'N3' },
                     inlets: {
                         '0': { type: 'signal', id: '0' },
@@ -951,6 +959,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n4: {
+                    type: 'nonInlinableType',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -958,17 +967,18 @@ describe('precompile.nodes', () => {
             })
 
             const nodeImplementations: NodeImplementations = {
-                inlineType0: {
+                inlinableType0: {
                     inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
-                inlineType1: {
+                inlinableType1: {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
-                inlineType2: {
+                inlinableType2: {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
+                nonInlinableType: {}
             }
 
             const compilation = makeCompilation({
@@ -979,7 +989,10 @@ describe('precompile.nodes', () => {
             compilation.precompilation.nodes.n2.generationContext.signalIns.$1 =
                 'BLA'
 
-            const inlineTraversal = precompileInlineLoop(compilation, graph.n3)
+            precompileInlineLoop(compilation, {
+                traversal: ['n1', 'n2', 'n3'],
+                outNodesIds: ['n3'],
+            })
 
             assert.strictEqual(
                 compilation.precompilation.nodes.n4.generationContext.signalIns
@@ -987,7 +1000,6 @@ describe('precompile.nodes', () => {
                 '((N2 * (N1 + 1) - N2 * BLA) * N3)'
             )
 
-            assert.deepStrictEqual(inlineTraversal, ['n1', 'n2', 'n3'])
         })
 
         it('shouldnt fail with non-inlinable source', () => {
@@ -1002,7 +1014,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n1: {
-                    type: 'inlineType1',
+                    type: 'inlinableType1',
                     args: { value: 'N1' },
                     sinks: {
                         '0': [['n2', '0']],
@@ -1015,9 +1027,12 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n2: {
-                    type: 'inlineType1',
+                    type: 'inlinableType1',
                     args: { value: 'N2' },
                     inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    outlets: {
                         '0': { type: 'signal', id: '0' },
                     },
                     sinks: {
@@ -1025,6 +1040,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n3: {
+                    type: 'nonInlinableType',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -1032,11 +1048,12 @@ describe('precompile.nodes', () => {
             })
 
             const nodeImplementations: NodeImplementations = {
-                inlineType1: {
+                inlinableType1: {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 signalType: {},
+                nonInlinableType: {},
             }
 
             const compilation = makeCompilation({
@@ -1047,7 +1064,10 @@ describe('precompile.nodes', () => {
             compilation.precompilation.nodes.n1.generationContext.signalIns.$0 =
                 'nonInline1_OUTS_0'
 
-            const inlineTraversal = precompileInlineLoop(compilation, graph.n2)
+            precompileInlineLoop(compilation, {
+                traversal: ['n1', 'n2'],
+                outNodesIds: ['n2'],
+            })
 
             assert.strictEqual(
                 compilation.precompilation.nodes.n3.generationContext.signalIns
@@ -1055,7 +1075,6 @@ describe('precompile.nodes', () => {
                 '((nonInline1_OUTS_0 * N1) * N2)'
             )
 
-            assert.deepStrictEqual(inlineTraversal, ['n1', 'n2'])
         })
     })
 })

@@ -24,11 +24,13 @@ import {
     generateGlobs,
     generateNodeInitializations,
     generateLoop,
+    generateColdDspFunctions,
     generateIoMessageReceivers,
     generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
     generateNodeStateDeclarations,
+    generateColdDspInitialization,
 } from '../../compile/generate'
 import { Compilation } from '../../compile/types'
 import { AssemblyScriptWasmEngineCode } from './types'
@@ -61,11 +63,13 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         ${generateNodeStateDeclarations(compilation)}
         ${generatePortletsDeclarations(compilation)}
 
+        ${generateColdDspFunctions(compilation)}
         ${generateIoMessageReceivers(compilation)}
         ${generateIoMessageSenders(compilation, (variableName) => 
             ast`export declare function ${variableName}(m: Message): void`)}
 
         ${generateNodeInitializations(compilation)}
+        ${generateColdDspInitialization(compilation)}
 
         export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})

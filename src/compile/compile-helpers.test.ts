@@ -22,7 +22,7 @@ import { DspGraph } from '../dsp-graph/types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import assert from 'assert'
 import {
-    buildGraphTraversalAll,
+    buildFullGraphTraversal,
     buildGraphTraversalSignal,
     getNodeImplementation,
 } from './compile-helpers'
@@ -120,7 +120,7 @@ describe('compile-helpers', () => {
                     isPushingMessages: true,
                 },
             })
-            const traversal = buildGraphTraversalAll(graph, {
+            const traversal = buildFullGraphTraversal(graph, {
                 messageReceivers: {},
                 messageSenders: {},
             })
@@ -152,7 +152,7 @@ describe('compile-helpers', () => {
                     },
                 },
             })
-            const traversal = buildGraphTraversalAll(graph, {
+            const traversal = buildFullGraphTraversal(graph, {
                 messageReceivers: {
                     n1: { portletIds: ['0'] },
                 },

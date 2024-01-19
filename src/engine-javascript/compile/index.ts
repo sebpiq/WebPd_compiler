@@ -25,10 +25,12 @@ import {
     generateNodeInitializations,
     generateLoop,
     generateIoMessageReceivers,
+    generateColdDspFunctions,
     generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
     generateNodeStateDeclarations,
+    generateColdDspInitialization,
 } from '../../compile/generate'
 import { Compilation } from '../../compile/types'
 import { JavaScriptEngineCode } from './types'
@@ -56,6 +58,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         ${generateNodeStateDeclarations(compilation)}
         ${generatePortletsDeclarations(compilation)}
 
+        ${generateColdDspFunctions(compilation)}
         ${generateIoMessageReceivers(compilation)}
         ${generateIoMessageSenders(compilation, (
             variableName, 
@@ -64,6 +67,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'].onMessage(m)}`)}
 
         ${generateNodeInitializations(compilation)}
+        ${generateColdDspInitialization(compilation)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},

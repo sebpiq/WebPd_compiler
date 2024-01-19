@@ -21,7 +21,7 @@ import assert from 'assert'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { makeCompilation } from '../../test-helpers'
 import precompile from '.'
-import { NodeImplementations } from '../types'
+import { DspGroup, NodeImplementations } from '../types'
 import { ast } from '../../ast/declare'
 
 describe('precompile', () => {
@@ -48,7 +48,7 @@ describe('precompile', () => {
                 },
             },
             n1: {
-                type: 'inlineType1',
+                type: 'inlinableType1',
                 args: { value: 'N1' },
                 sinks: {
                     '0': [['n3', '0']],
@@ -61,7 +61,7 @@ describe('precompile', () => {
                 },
             },
             n2: {
-                type: 'inlineType0',
+                type: 'inlinableType0',
                 args: { value: 'N2' },
                 sinks: {
                     '0': [['n4', '0']],
@@ -71,7 +71,7 @@ describe('precompile', () => {
                 },
             },
             n3: {
-                type: 'inlineType1',
+                type: 'inlinableType1',
                 args: { value: 'N3' },
                 sinks: {
                     '0': [['n4', '1']],
@@ -84,7 +84,7 @@ describe('precompile', () => {
                 },
             },
             n4: {
-                type: 'inlineType2',
+                type: 'inlinableType2',
                 args: { value: 'N4' },
                 inlets: {
                     '0': { type: 'signal', id: '0' },
@@ -107,15 +107,14 @@ describe('precompile', () => {
         })
 
         const nodeImplementations: NodeImplementations = {
-            inlineType0: {
-                inlineLoop: ({ node: { args } }) =>
-                    ast`${args.value} + 1`,
+            inlinableType0: {
+                inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
             },
-            inlineType1: {
+            inlinableType1: {
                 inlineLoop: ({ node: { args }, ins }) =>
                     ast`${ins.$0} * ${args.value}`,
             },
-            inlineType2: {
+            inlinableType2: {
                 inlineLoop: ({ node: { args }, ins }) =>
                     ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
             },
@@ -129,15 +128,6 @@ describe('precompile', () => {
             nodeImplementations,
         })
 
-        compilation.precompilation.traversals.all = [
-            'nonInline1',
-            'n1',
-            'n2',
-            'n3',
-            'n4',
-            'nonInline2',
-        ]
-
         precompile(compilation)
 
         assert.strictEqual(
@@ -146,9 +136,107 @@ describe('precompile', () => {
             '(N4 * (N2 + 1) - N4 * ((nonInline1_OUTS_0 * N1) * N3))'
         )
 
-        assert.deepStrictEqual(compilation.precompilation.traversals.loop, [
-            'nonInline1',
-            'nonInline2',
-        ])
+        assert.deepStrictEqual<DspGroup>(
+            compilation.precompilation.graph.hotDspGroup,
+            {
+                traversal: ['nonInline1', 'nonInline2'],
+                outNodesIds: ['nonInline2'],
+            }
+        )
+    })
+
+    it('should precompile cold dsp subgraphs and play well with inline loops', () => {
+        //
+        //           [  n1  ]  <- inlinable & cold dsp
+        //             |
+        // [  n3  ]  [  n2  ]  <- inlinable but also out node of the dsp group
+        //   \        /
+        //    \      /
+        //     \    /
+        //    [  n4  ]
+        //
+        const graph = makeGraph({
+            n1: {
+                type: 'inlinableAndColdType',
+                inlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+                outlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+                sinks: {
+                    0: [['n2', '0']],
+                },
+            },
+            n2: {
+                type: 'inlinableAndColdType',
+                inlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+                outlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+                sinks: {
+                    0: [['n4', '0']],
+                },
+            },
+            n3: {
+                type: 'signalType',
+                outlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+                sinks: {
+                    0: [['n4', '1']],
+                },
+            },
+            n4: {
+                type: 'signalType',
+                isPullingSignal: true,
+                inlets: {
+                    '0': { type: 'signal', id: '0' },
+                    '1': { type: 'signal', id: '1' },
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            signalType: {
+                loop: () => ast`// loop signalType`,
+            },
+            inlinableAndColdType: {
+                flags: {
+                    isPureFunction: true,
+                },
+                inlineLoop: ({ ins }) => ast`1 + ${ins.$0}`,
+            },
+        }
+
+        const compilation = makeCompilation({ graph, nodeImplementations })
+
+        precompile(compilation)
+
+        assert.deepStrictEqual<DspGroup>(
+            compilation.precompilation.graph.hotDspGroup,
+            {
+                traversal: ['n3', 'n4'],
+                outNodesIds: ['n4'],
+            }
+        )
+
+        assert.deepStrictEqual<{[groupId: string]: DspGroup}>(
+            compilation.precompilation.graph.coldDspGroups,
+            {
+                '0': {
+                    // n1 has been inlined
+                    traversal: ['n2'],
+                    outNodesIds: ['n2'],
+                },
+            }
+        )
+
+        assert.strictEqual(
+            compilation.precompilation.nodes.n2.generationContext.signalIns.$0,
+            '(1 + NULL_SIGNAL)'
+        )
     })
 })

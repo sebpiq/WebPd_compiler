@@ -18,7 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import {
-    getNodeImplementation,
     isGlobalDefinitionWithSettings,
 } from '../compile-helpers'
 import {
@@ -27,29 +26,22 @@ import {
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
     GlobalCodeGeneratorContext,
-    NodeImplementations,
     Precompilation,
 } from '../types'
 import { AstElement, AstFunc } from '../../ast/types'
-import { DspGraph, traversal } from '../../dsp-graph'
+import { traversal } from '../../dsp-graph'
 import { core, commonsCore, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
 
 export default (compilation: Compilation) => {
     const {
-        graph,
-        nodeImplementations,
         precompilation,
         target,
     } = compilation
 
     const dependencies = flattenDependencies([
         ...engineMinimalDependencies(),
-        ..._collectDependenciesFromTraversal(
-            nodeImplementations,
-            graph,
-            precompilation.traversals.all
-        ),
+        ..._collectDependenciesFromTraversal(compilation),
     ])
 
     // Flatten and de-duplicate all the module's dependencies
@@ -154,16 +146,14 @@ export const flattenDependencies = (
     })
 
 const _collectDependenciesFromTraversal = (
-    nodeImplementations: NodeImplementations,
-    graph: DspGraph.Graph,
-    graphTraversalAll: DspGraph.GraphTraversal
+    { precompilation, graph }: Compilation,
 ): Array<GlobalCodeDefinition> => {
     return traversal
-        .toNodes(graph, graphTraversalAll)
+        .toNodes(graph, precompilation.graph.fullTraversal)
         .reduce<Array<GlobalCodeDefinition>>(
             (definitions, node) => [
                 ...definitions,
-                ...getNodeImplementation(nodeImplementations, node.type)
+                ...precompilation.nodes[node.id].nodeImplementation
                     .dependencies,
             ],
             []

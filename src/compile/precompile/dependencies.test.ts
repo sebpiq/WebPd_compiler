@@ -73,7 +73,7 @@ describe('precompile-dependencies', () => {
                 nodeImplementations,
             })
 
-            compilation.precompilation.traversals.all = ['node1']
+            compilation.precompilation.graph.fullTraversal = ['node1']
 
             precompileDependencies(compilation)
 
@@ -133,7 +133,7 @@ describe('precompile-dependencies', () => {
                 nodeImplementations,
             })
 
-            compilation.precompilation.traversals.all = ['node1']
+            compilation.precompilation.graph.fullTraversal = ['node1']
 
             precompileDependencies(compilation)
 

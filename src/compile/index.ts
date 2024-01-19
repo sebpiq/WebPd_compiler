@@ -29,7 +29,7 @@ import compileToAssemblyscript from '../engine-assemblyscript/compile'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/compile/types'
 import { generateVariableNamesIndex } from './variable-names-index'
-import { buildGraphTraversalAll } from './compile-helpers'
+import { buildFullGraphTraversal } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
 import { traversal } from '../dsp-graph'
 import precompile, { initializePrecompilation } from './precompile'
@@ -53,11 +53,11 @@ export default (
 ): CompilationResult => {
     const settings = validateSettings(compilationSettings)
     const variableNamesIndex = generateVariableNamesIndex(graph, settings.debug)
-    const graphTraversalAll = buildGraphTraversalAll(
+    const fullGraphTraversal = buildFullGraphTraversal(
         graph,
         settings.io
     )
-    const trimmedGraph = traversal.trimGraph(graph, graphTraversalAll)
+    const trimmedGraph = traversal.trimGraph(graph, fullGraphTraversal)
 
     const compilation: Compilation = {
         graph: trimmedGraph,
@@ -67,8 +67,9 @@ export default (
         variableNamesIndex,
         precompilation: initializePrecompilation(
             trimmedGraph,
-            graphTraversalAll,
-            variableNamesIndex
+            fullGraphTraversal,
+            variableNamesIndex,
+            nodeImplementations,
         ),
     }
 

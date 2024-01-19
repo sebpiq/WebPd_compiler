@@ -20,14 +20,22 @@
 
 import { DspGraph, getters, traversal } from '../../dsp-graph'
 import { mapObject } from '../../functional-helpers'
-import { attachIoMessages } from '../variable-names-index'
-import { buildGraphTraversalSignal } from '../compile-helpers'
+import { attachColdDspGroup, attachIoMessages } from '../variable-names-index'
+import {
+    buildGraphTraversalSignal,
+    getNodeImplementation,
+} from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../namespace'
-import { Compilation, Precompilation, VariableNamesIndex } from '../types'
+import {
+    Compilation,
+    NodeImplementations,
+    Precompilation,
+    VariableNamesIndex,
+} from '../types'
 import { Sequence, ast } from '../../ast/declare'
 import precompileDependencies from './dependencies'
 import {
-    precompileSignalInlet,
+    precompileSignalInletWithNoSource,
     precompileMessageInlet,
     precompileSignalOutlet,
     precompileMessageOutlet,
@@ -35,35 +43,78 @@ import {
     precompileMessageReceivers,
     precompileInlineLoop,
     precompileLoop,
-    isInlinableNode,
-    getInlinableNodeSinkList,
     precompileStateInitialization,
 } from './nodes'
+import {
+    buildColdDspGroups,
+    removeNodesFromTraversal,
+    buildHotDspGroup,
+    buildInlinableDspGroups,
+} from './dsp-groups'
+import { DspGroup } from '../types'
 
 export default (compilation: Compilation) => {
     const { graph, precompilation } = compilation
-    const nodes = traversal.toNodes(graph, precompilation.traversals.all)
+    const nodes = traversal.toNodes(graph, precompilation.graph.fullTraversal)
 
-    attachIoMessages(compilation)
-    precompileDependencies(compilation)
+    // ------------------------ DSP GROUPS ------------------------ //
+    const rootDspGroup: DspGroup = {
+        traversal: buildGraphTraversalSignal(graph),
+        // TODO : this is duplicate from `buildGraphTraversalSignal`
+        outNodesIds: Object.values(graph)
+            .filter((node) => !!node.isPullingSignal)
+            .map((node) => node.id),
+    }
+    const coldDspGroups = buildColdDspGroups(compilation, rootDspGroup)
+    const hotDspGroup = buildHotDspGroup(
+        compilation,
+        rootDspGroup,
+        coldDspGroups
+    )
+    const allDspGroups = [hotDspGroup, ...coldDspGroups]
+    const inlinableDspGroups = allDspGroups.flatMap((parentDspGroup) => {
+        const inlinableDspGroups = buildInlinableDspGroups(
+            compilation,
+            parentDspGroup
+        )
+        // Nodes that will be inlined shouldnt be in the traversal for
+        // their parent dsp group.
+        parentDspGroup.traversal = removeNodesFromTraversal(
+            parentDspGroup.traversal,
+            inlinableDspGroups.flatMap((dspGroup) => dspGroup.traversal)
+        )
 
-    // Precompile node stateInitialization
-    nodes.forEach((node) => {
-        precompileStateInitialization(compilation, node)
+        return inlinableDspGroups
     })
+
+    precompilation.graph.hotDspGroup = hotDspGroup
+    coldDspGroups.forEach((dspGroup, index) => {
+        const groupId = `${index}`
+        precompilation.graph.coldDspGroups[groupId] = dspGroup
+        attachColdDspGroup(compilation, groupId)
+    })
+
+    // ------------------------ PORTLETS ------------------------ //
+    attachIoMessages(compilation)
 
     // Go through the graph and precompile inlets.
     nodes.forEach((node) => {
         Object.values(node.inlets).forEach((inlet) => {
             if (inlet.type === 'signal') {
-                precompileSignalInlet(compilation, node, inlet.id)
+                if (getters.getSources(node, inlet.id).length === 0) {
+                    precompileSignalInletWithNoSource(
+                        compilation,
+                        node,
+                        inlet.id
+                    )
+                }
             } else if (inlet.type === 'message') {
                 precompileMessageInlet(compilation, node, inlet.id)
             }
         })
     })
 
-    // Go through the graph and precompile outlets.
+    // Go through the graph and precompile message outlets.
     //
     // For example if a node has only one sink there is no need
     // to copy values between outlet and sink's inlet. Instead we can
@@ -72,53 +123,58 @@ export default (compilation: Compilation) => {
     // We need to compile outlets after inlets because they reference
     // message receivers.
     nodes.forEach((node) => {
-        Object.values(node.outlets).forEach((outlet) => {
-            if (outlet.type === 'signal') {
-                precompileSignalOutlet(compilation, node, outlet.id)
-            } else if (outlet.type === 'message') {
+        Object.values(node.outlets)
+            .filter((outlet) => outlet.type === 'message')
+            .forEach((outlet) => {
                 precompileMessageOutlet(compilation, node, outlet.id)
-            }
-        })
+            })
     })
 
-    // This must come after we have assigned all node variables,
-    nodes.forEach((node) => {
-        precompileInitialization(compilation, node)
-        precompileMessageReceivers(compilation, node)
-    })
-
-    const graphTraversalSignal = buildGraphTraversalSignal(graph)
-
-    // First inline nodes that can be inlined.
-    // Once inlined, these nodes don't have to be part of the loop traversal.
-    traversal
-        .toNodes(graph, graphTraversalSignal)
-        .filter((node) => _isInlinableLeafNode(compilation, node))
-        .forEach((node) => {
-            const inlineNodeTraversal = precompileInlineLoop(compilation, node)
-            inlineNodeTraversal.forEach((nodeId) => {
-                graphTraversalSignal.splice(
-                    graphTraversalSignal.indexOf(nodeId),
-                    1
-                )
+    // Go through all dsp groups and precompile signal outlets for nodes that
+    // are not inlined.
+    allDspGroups.forEach((dspGroup) => {
+        traversal.toNodes(graph, dspGroup.traversal).forEach((node) => {
+            Object.values(node.outlets).forEach((outlet) => {
+                precompileSignalOutlet(compilation, node, outlet.id)
             })
         })
+    })
 
-    // Then deal with non-inlinable signal nodes.
-    traversal.toNodes(graph, graphTraversalSignal).forEach((node) => {
-        precompilation.traversals.loop.push(node.id)
-        precompileLoop(compilation, node)
+    // ------------------------ DSP ------------------------ //
+    inlinableDspGroups.forEach((dspGroup) => {
+        precompileInlineLoop(compilation, dspGroup)
+    })
+
+    allDspGroups.forEach((dspGroup) => {
+        traversal.toNodes(graph, dspGroup.traversal).forEach((node) => {
+            precompileLoop(compilation, node)
+        })
+    })
+
+    // ------------------------ MISC ------------------------ //
+    precompileDependencies(compilation)
+
+    // This must come after we have assigned all node variables.
+    nodes.forEach((node) => {
+        precompileStateInitialization(compilation, node)
+        precompileInitialization(compilation, node)
+        precompileMessageReceivers(compilation, node)
     })
 }
 
 export const initializePrecompilation = (
     graph: DspGraph.Graph,
-    graphTraversalAll: DspGraph.GraphTraversal,
-    variableNamesIndex: VariableNamesIndex
+    fullTraversal: DspGraph.GraphTraversal,
+    variableNamesIndex: VariableNamesIndex,
+    nodeImplementations: NodeImplementations
 ): Precompilation => ({
     nodes: createNamespace(
         'precompilation',
         mapObject(graph, (node) => ({
+            nodeImplementation: getNodeImplementation(
+                nodeImplementations,
+                node.type
+            ),
             generationContext: {
                 messageReceivers: createNamespace(
                     nodeNamespaceLabel(
@@ -166,24 +222,12 @@ export const initializePrecompilation = (
         exports: [],
         ast: Sequence([]),
     },
-    traversals: {
-        all: graphTraversalAll,
-        loop: [],
+    graph: {
+        fullTraversal,
+        hotDspGroup: {
+            traversal: [],
+            outNodesIds: [],
+        },
+        coldDspGroups: createNamespace('coldDspGroups', {}),
     },
 })
-
-const _isInlinableLeafNode = (
-    compilation: Compilation,
-    node: DspGraph.Node
-): boolean => {
-    const { graph } = compilation
-    const sink = getInlinableNodeSinkList(node)[0]
-    if (!sink) {
-        return false
-    }
-    const sinkNode = getters.getNode(graph, sink.nodeId)
-    return (
-        isInlinableNode(compilation, node) &&
-        !isInlinableNode(compilation, sinkNode)
-    )
-}

@@ -84,7 +84,7 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
  * Order of nodes doesn't matter.
  * @TODO : messageSenders should also be included ?
  */
-export const buildGraphTraversalAll = (
+export const buildFullGraphTraversal = (
     graph: DspGraph.Graph,
     io: Compilation['settings']['io']
 ): DspGraph.GraphTraversal => {

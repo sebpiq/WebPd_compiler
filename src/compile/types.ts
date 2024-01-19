@@ -32,7 +32,7 @@ export type IoMessageSpecs = {
             [key: string]:
                 | PortletsSpecMetadataBasicValue
                 | Array<PortletsSpecMetadataBasicValue>
-                | {[key: string]: PortletsSpecMetadataBasicValue}
+                | { [key: string]: PortletsSpecMetadataBasicValue }
         }
     }
 }
@@ -87,13 +87,15 @@ export type Precompilation = {
         exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
         ast: AstSequence
     }
-    traversals: {
-        loop: DspGraph.GraphTraversal
-        all: DspGraph.GraphTraversal
+    graph: {
+        fullTraversal: DspGraph.GraphTraversal
+        hotDspGroup: DspGroup
+        coldDspGroups: { [groupId: string]: DspGroup }
     }
 }
 
 export interface PrecompiledNodeCode {
+    nodeImplementation: NodeImplementation<any>
     generationContext: {
         signalOuts: { [portletId: DspGraph.PortletId]: Code }
         messageSenders: { [portletId: DspGraph.PortletId]: Code }
@@ -106,12 +108,18 @@ export interface PrecompiledNodeCode {
         [outletId: DspGraph.PortletId]: {
             messageSenderName: VariableName
             messageReceiverNames: Array<VariableName>
+            coldDspFunctionNames: Array<VariableName>
         }
     }
     signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
     stateInitialization: AstVar | null
     initialization: AstElement
     loop: AstElement
+}
+
+export interface DspGroup {
+    traversal: DspGraph.GraphTraversal
+    outNodesIds: Array<DspGraph.NodeId>
 }
 
 // -------------------------------- CODE GENERATION -------------------------------- //
@@ -158,6 +166,7 @@ export interface VariableNamesIndex {
         }
     }
 
+    coldDspGroups: { [groupId: string]: VariableName }
 }
 
 export interface GlobalCodeGeneratorContext {
@@ -190,6 +199,16 @@ export type GlobalCodeDefinition =
 
 /** Implementation of a graph node type */
 export interface NodeImplementation<NodeArgsType> {
+    flags?: {
+        /**
+         * true if the node's signal outputs strictly depend
+         * on its signal inputs and its state.
+         *
+         * e.g. : [osc~] is not pure since its outputs change at each
+         * time step of the dsp.
+         */
+        isPureFunction?: true
+    }
 
     stateInitialization?: (context: {
         globs: VariableNamesIndex['globs']
