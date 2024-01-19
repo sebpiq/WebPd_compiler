@@ -33,6 +33,21 @@ export const buildColdDspGroups = (
     // 3. for each merged group consolidate the signal traversal, therefore 
     //      fixing the order in which nodes are visited and removing potential duplicates.
     // 
+    // e.g. :
+    // 
+    //      [  c1  ]      
+    //         |\________ 
+    //         |         |
+    //      [  c2  ]  [  c4  ]
+    //         |         |
+    //      [  c3  ]  [  c5  ]  <- out nodes of cold the cold dsp group
+    //         |         |
+    //      [  h1  ]  [  h2  ]  <- hot nodes  
+    // 
+    // In the graph above, [c1, c2, c3, c4, c5] constitute a cold dsp group.
+    // 1. We start by finding 2 single flow dsp groups : [c3, c2, c1] and [c5, c4, c1]
+    // 2. We detect that these 2 groups are connected, so we merge them into one group : [c3, c2, c1, c5, c4, c1]
+    // 
     return (
         _buildSingleFlowColdDspGroups(compilation, parentDspGroup)
             // Combine all connected single flow dsp groups.
