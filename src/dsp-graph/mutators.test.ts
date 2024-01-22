@@ -282,9 +282,22 @@ describe('mutators', () => {
                         ],
                         11: [['n1', '23']],
                     },
+                    outlets: {
+                        10: { id: '10', type: 'message' },
+                        11: { id: '11', type: 'message' },
+                    }
                 },
-                n1: {},
-                n2: {},
+                n1: {
+                    inlets: {
+                        21: { id: '21', type: 'message' },
+                        23: { id: '23', type: 'message' },
+                    }
+                },
+                n2: {
+                    inlets: {
+                        22: { id: '22', type: 'message' },
+                    }
+                },
             })
             assertGraphConnections(graph, [
                 ['n0', '10', 'n1', '21'],
@@ -316,14 +329,22 @@ describe('mutators', () => {
                     sinks: {
                         0: [['n1', '1']],
                     },
+                    outlets: {
+                        0: { id: '0', type: 'message' },
+                        1: { id: '1', type: 'message' },
+                    }
                 },
-                n1: {},
+                n1: {
+                    inlets: {
+                        1: { id: '1', type: 'message' },
+                    }
+                },
             })
 
             disconnect(
                 graph,
-                { nodeId: 'n0', portletId: '111' },
-                { nodeId: 'n1', portletId: '222' }
+                { nodeId: 'n0', portletId: '1' },
+                { nodeId: 'n1', portletId: '1' }
             )
 
             assertGraphConnections(graph, [['n0', '0', 'n1', '1']])
@@ -335,13 +356,23 @@ describe('mutators', () => {
                     sinks: {
                         0: [['n2', '0']],
                     },
+                    outlets: {
+                        0: { id: '0', type: 'message' },
+                    }
                 },
                 n1: {
                     sinks: {
                         0: [['n2', '0']],
                     },
+                    outlets: {
+                        0: { id: '0', type: 'message' },
+                    }
                 },
-                n2: {},
+                n2: {
+                    inlets: {
+                        0: { id: '0', type: 'message' },
+                    }
+                },
             })
 
             disconnect(

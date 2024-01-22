@@ -31,6 +31,9 @@ describe('graph-helpers', () => {
                     sources: {
                         '0': [{ nodeId: 'n2', portletId: '2' }],
                     },
+                    inlets: {
+                        0: { id: '0', type: 'message' },
+                    }
                 },
                 n2: {
                     ...nodeDefaults('n2', 'blo'),
@@ -40,12 +43,18 @@ describe('graph-helpers', () => {
                             { nodeId: 'n3', portletId: '22' },
                         ],
                     },
+                    outlets: {
+                        2: { id: '2', type: 'message' },
+                    }
                 },
                 n3: {
                     ...nodeDefaults('n3', 'blu'),
                     sources: {
                         '22': [{ nodeId: 'n2', portletId: '2' }],
                     },
+                    inlets: {
+                        22: { id: '22', type: 'message' },
+                    }
                 },
             })
             assert.strictEqual(graphIntegrity, null)
@@ -58,8 +67,16 @@ describe('graph-helpers', () => {
                     sources: {
                         '0': [{ nodeId: 'n2', portletId: '2' }],
                     },
+                    inlets: {
+                        0: { id: '0', type: 'message' },
+                    }
                 },
-                n2: nodeDefaults('n2', 'blo'),
+                n2: {
+                    ...nodeDefaults('n2', 'blo'),
+                    outlets: {
+                        2: { id: '2', type: 'message' },
+                    }
+                },
             })
             assert.deepStrictEqual(graphIntegrity, {
                 inconsistentConnections: [

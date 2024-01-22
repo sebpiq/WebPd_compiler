@@ -32,51 +32,69 @@ export const toNodes = (
     traversal: DspGraph.GraphTraversal
 ) => traversal.map<DspGraph.Node>((nodeId) => getNode(graph, nodeId))
 
-export const listSignalSinkNodes = (
+export const listSinkNodes = (
     graph: DspGraph.Graph,
     node: DspGraph.Node,
-    outletType
-) =>
-    Object.entries(node.sinks)
-        .reduce<Array<DspGraph.NodeId>>(
-            (allSinkNodeIds, [outletId, sinkList]) => {
-                const outlet = getOutlet(node, outletId)
-                if (outlet.type === 'signal') {
-                    return [
-                        ...allSinkNodeIds,
-                        ...sinkList
-                            .map((sink) => sink.nodeId)
-                            .filter(
-                                (nodeId) => !allSinkNodeIds.includes(nodeId)
-                            ),
-                    ]
-                } else {
-                    return allSinkNodeIds
-                }
-            },
-            []
-        )
-        .map((nodeId) => getNode(graph, nodeId))
+    portletType: DspGraph.PortletType
+) => _listSourceOrSinkNodes(node.sinks, getOutlet, graph, node, portletType)
 
-export const listSignalSourceNodes = (
+export const listSourceNodes = (
     graph: DspGraph.Graph,
-    node: DspGraph.Node
-) =>
-    Object.entries(node.sources)
+    node: DspGraph.Node,
+    portletType: DspGraph.PortletType
+) => _listSourceOrSinkNodes(node.sources, getInlet, graph, node, portletType)
+
+export const listSourceConnections = (node: DspGraph.Node): Array<Connection> =>
+    // We need to reverse the order of the connection, because `_listSourcesOrSinks`
+    // puts the calling node's endpoint first regardless of whether we're listing sources or sinks.
+    _listSourcesOrSinks(node.sources, getInlet, node).map(([sink, source]) => [
+        source,
+        sink,
+    ])
+
+export const listSinkConnections = (node: DspGraph.Node): Array<Connection> =>
+    _listSourcesOrSinks(node.sinks, getOutlet, node)
+
+const _listSourcesOrSinks = (
+    sourcesOrSinks: DspGraph.ConnectionEndpointMap,
+    portletGetter: typeof getInlet | typeof getOutlet,
+    node: DspGraph.Node,
+    portletType?: DspGraph.PortletType
+): Array<Connection> =>
+    // We always put the `node` endpoint first, even if we're listing connections to sources,
+    // this allows mre genericity to the function
+    Object.entries(sourcesOrSinks).reduce<Array<Connection>>(
+        (connections, [portletId, sourceOrSinkList]) => {
+            const nodeEndpoint = { portletId, nodeId: node.id }
+            const portlet = portletGetter(node, portletId)
+            if (portlet.type === portletType || portletType === undefined) {
+                return [
+                    ...connections,
+                    ...sourceOrSinkList.map(
+                        (s) => [nodeEndpoint, s] as Connection
+                    ),
+                ]
+            } else {
+                return connections
+            }
+        },
+        []
+    )
+
+const _listSourceOrSinkNodes = (
+    sourcesOrSinks: DspGraph.ConnectionEndpointMap,
+    portletGetter: typeof getInlet | typeof getOutlet,
+    graph: DspGraph.Graph,
+    node: DspGraph.Node,
+    portletType: DspGraph.PortletType
+): Array<DspGraph.Node> =>
+    _listSourcesOrSinks(sourcesOrSinks, portletGetter, node, portletType)
         .reduce<Array<DspGraph.NodeId>>(
-            (allSourceNodeIds, [inletId, sourceList]) => {
-                const inlet = getInlet(node, inletId)
-                if (inlet.type === 'signal') {
-                    return [
-                        ...allSourceNodeIds,
-                        ...sourceList
-                            .map((source) => source.nodeId)
-                            .filter(
-                                (nodeId) => !allSourceNodeIds.includes(nodeId)
-                            ),
-                    ]
+            (sourceOrSinkNodeIds, [_, sourceOrSink]) => {
+                if (!sourceOrSinkNodeIds.includes(sourceOrSink.nodeId)) {
+                    return [...sourceOrSinkNodeIds, sourceOrSink.nodeId]
                 } else {
-                    return allSourceNodeIds
+                    return sourceOrSinkNodeIds
                 }
             },
             []
@@ -88,14 +106,14 @@ export const listSignalSourceNodes = (
  * Traversal path is calculated by pulling incoming connections from
  * {@link nodesPullingSignal}.
  */
-export const signalNodes = (
+export const signalTraversal = (
     graph: DspGraph.Graph,
     nodesPullingSignal: Array<DspGraph.Node>,
     shouldContinue?: (node: DspGraph.Node) => boolean
 ): DspGraph.GraphTraversal => {
     const traversal: DspGraph.GraphTraversal = []
     nodesPullingSignal.forEach((node) =>
-        _signalNodesBreadthFirstRecursive(
+        _signalTraversalBreadthFirstRecursive(
             traversal,
             [],
             graph,
@@ -106,7 +124,7 @@ export const signalNodes = (
     return traversal
 }
 
-const _signalNodesBreadthFirstRecursive = (
+const _signalTraversalBreadthFirstRecursive = (
     traversal: DspGraph.GraphTraversal,
     currentPath: DspGraph.GraphTraversal,
     graph: DspGraph.Graph,
@@ -117,23 +135,18 @@ const _signalNodesBreadthFirstRecursive = (
         return
     }
     const nextPath: DspGraph.GraphTraversal = [...currentPath, node.id]
-    Object.entries(node.sources)
-        .filter(([inletId]) => getInlet(node, inletId).type === 'signal')
-        .forEach(([_, sources]) => {
-            sources.forEach((source) => {
-                const sourceNode = getNode(graph, source.nodeId)
-                if (currentPath.indexOf(sourceNode.id) !== -1) {
-                    return
-                }
-                _signalNodesBreadthFirstRecursive(
-                    traversal,
-                    nextPath,
-                    graph,
-                    sourceNode,
-                    shouldContinue
-                )
-            })
-        })
+    listSourceNodes(graph, node, 'signal').forEach((sourceNode) => {
+        if (currentPath.indexOf(sourceNode.id) !== -1) {
+            return
+        }
+        _signalTraversalBreadthFirstRecursive(
+            traversal,
+            nextPath,
+            graph,
+            sourceNode,
+            shouldContinue
+        )
+    })
     if (traversal.indexOf(node.id) === -1) {
         traversal.push(node.id)
     }
@@ -144,18 +157,18 @@ const _signalNodesBreadthFirstRecursive = (
  * Traversal path is calculated by pulling incoming connections from
  * {@link nodesPushingMessages}.
  */
-export const messageNodes = (
+export const messageTraversal = (
     graph: DspGraph.Graph,
     nodesPushingMessages: Array<DspGraph.Node>
 ) => {
     const traversal: DspGraph.GraphTraversal = []
     nodesPushingMessages.forEach((node) => {
-        _messageNodesDepthFirstRecursive(traversal, graph, node)
+        _messageTraversalDepthFirstRecursive(traversal, graph, node)
     })
     return traversal
 }
 
-const _messageNodesDepthFirstRecursive = (
+const _messageTraversalDepthFirstRecursive = (
     traversal: DspGraph.GraphTraversal,
     graph: DspGraph.Graph,
     node: DspGraph.Node
@@ -164,65 +177,9 @@ const _messageNodesDepthFirstRecursive = (
         return
     }
     traversal.push(node.id)
-    Object.entries(node.sinks)
-        .filter(([outletId]) => getOutlet(node, outletId).type === 'message')
-        .forEach(([_, sinks]) => {
-            sinks.forEach((sink) => {
-                _messageNodesDepthFirstRecursive(
-                    traversal,
-                    graph,
-                    getNode(graph, sink.nodeId)
-                )
-            })
-        })
-}
-
-export const listConnectionsIn = (
-    sources: DspGraph.ConnectionEndpointMap,
-    nodeId: DspGraph.NodeId
-): Array<Connection> => {
-    return Object.entries(sources).reduce(
-        (previousResults, [inletId, sources]) => {
-            return [
-                ...previousResults,
-                ...sources.map(
-                    (source) =>
-                        [
-                            source,
-                            {
-                                nodeId,
-                                portletId: inletId,
-                            },
-                        ] as Connection
-                ),
-            ]
-        },
-        [] as Array<Connection>
-    )
-}
-
-export const listConnectionsOut = (
-    sinks: DspGraph.ConnectionEndpointMap,
-    nodeId: DspGraph.NodeId
-): Array<Connection> => {
-    return Object.entries(sinks).reduce(
-        (previousResults, [outletId, sinks]) => {
-            return [
-                ...previousResults,
-                ...sinks.map(
-                    (sink) =>
-                        [
-                            {
-                                nodeId,
-                                portletId: outletId,
-                            },
-                            sink,
-                        ] as Connection
-                ),
-            ]
-        },
-        [] as Array<Connection>
-    )
+    listSinkNodes(graph, node, 'message').forEach((sinkNode) => {
+        _messageTraversalDepthFirstRecursive(traversal, graph, sinkNode)
+    })
 }
 
 /**

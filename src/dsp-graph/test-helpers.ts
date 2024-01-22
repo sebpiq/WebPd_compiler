@@ -21,7 +21,7 @@
 import assert from 'assert'
 import { testGraphIntegrity, endpointsEqual } from './graph-helpers'
 import { getNode } from './getters'
-import { listConnectionsIn } from './traversers'
+import { listSourceConnections } from './traversers'
 import { DspGraph } from './types'
 
 type GraphConnection = [
@@ -180,10 +180,7 @@ export const assertGraphConnections = (
     assertGraphIntegrity(graph)
     const actualConnections = Object.keys(graph).reduce(
         (connections, nodeId) => {
-            const moreConnections = listConnectionsIn(
-                getNode(graph, nodeId).sources,
-                nodeId
-            )
+            const moreConnections = listSourceConnections(getNode(graph, nodeId))
             return [...connections, ...moreConnections]
         },
         [] as Array<GraphConnection>

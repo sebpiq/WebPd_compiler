@@ -38,15 +38,15 @@ describe('precompile.nodes', () => {
     describe('precompileSignalOutlet', () => {
         it('should substitute connected signal in with its source out for non-inline nodes', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     outlets: {
                         '0': { id: '0', type: 'signal' },
                     },
                     sinks: {
-                        '0': [['node2', '0']],
+                        '0': [['n2', '0']],
                     },
                 },
-                node2: {
+                n2: {
                     inlets: {
                         '0': { id: '0', type: 'signal' },
                     },
@@ -57,29 +57,29 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            precompileSignalOutlet(compilation, graph.node1, '0')
-            precompileSignalOutlet(compilation, graph.node2, '0')
+            precompileSignalOutlet(compilation, graph.n1, '0')
+            precompileSignalOutlet(compilation, graph.n2, '0')
 
             // Creates a variable name for the signal out
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.node1.signalOuts.$0,
-                'node1_OUTS_0'
+                compilation.variableNamesIndex.nodes.n1.signalOuts.$0,
+                'n1_OUTS_0'
             )
             // Adds this variable name to precompilation `signalOuts`
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.signalOuts.$0,
-                'node1_OUTS_0'
+                compilation.precompilation.nodes.n1.signalOuts.$0,
+                'n1_OUTS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.generationContext
+                compilation.precompilation.nodes.n1.generationContext
                     .signalOuts.$0,
-                'node1_OUTS_0'
+                'n1_OUTS_0'
             )
-            // Assigns node1's out to node2's in in generation context
+            // Assigns n1's out to n2's in in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.node2.generationContext
+                compilation.precompilation.nodes.n2.generationContext
                     .signalIns.$0,
-                'node1_OUTS_0'
+                'n1_OUTS_0'
             )
         })
     })
@@ -87,7 +87,7 @@ describe('precompile.nodes', () => {
     describe('precompileSignalInletWithNoSource', () => {
         it('should put empty signal for unconnected inlet', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     inlets: {
                         '0': { id: '0', type: 'signal' },
                     },
@@ -98,11 +98,11 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            precompileSignalInletWithNoSource(compilation, graph.node1, '0')
+            precompileSignalInletWithNoSource(compilation, graph.n1, '0')
 
             // Substitute with empty signal in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.generationContext
+                compilation.precompilation.nodes.n1.generationContext
                     .signalIns.$0,
                 compilation.variableNamesIndex.globs.nullSignal
             )
@@ -112,23 +112,23 @@ describe('precompile.nodes', () => {
     describe('precompileMessageOutlet', () => {
         it('should create messageSender if several sinks or io.messageSender', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
                     sinks: {
                         '0': [
-                            ['node2', '0'],
-                            ['node3', '0'],
+                            ['n2', '0'],
+                            ['n3', '0'],
                         ],
                     },
                 },
-                node2: {
+                n2: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
                 },
-                node3: {
+                n3: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -139,43 +139,43 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            compilation.variableNamesIndex.nodes.node2.messageReceivers.$0 =
-                'node2_RCVS_0'
-            compilation.variableNamesIndex.nodes.node3.messageReceivers.$0 =
-                'node3_RCVS_0'
+            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+                'n2_RCVS_0'
+            compilation.variableNamesIndex.nodes.n3.messageReceivers.$0 =
+                'n3_RCVS_0'
 
-            precompileMessageOutlet(compilation, graph.node1, '0')
+            precompileMessageOutlet(compilation, graph.n1, '0')
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.node1.messageSenders.$0,
-                'node1_SNDS_0'
+                compilation.variableNamesIndex.nodes.n1.messageSenders.$0,
+                'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.messageSenders.$0,
+                compilation.precompilation.nodes.n1.messageSenders.$0,
                 {
-                    messageSenderName: 'node1_SNDS_0',
-                    functionNames: ['node2_RCVS_0', 'node3_RCVS_0'],
+                    messageSenderName: 'n1_SNDS_0',
+                    functionNames: ['n2_RCVS_0', 'n3_RCVS_0'],
                 }
             )
             // Add the sender name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.generationContext
+                compilation.precompilation.nodes.n1.generationContext
                     .messageSenders.$0,
-                'node1_SNDS_0'
+                'n1_SNDS_0'
             )
         })
 
         it('should create messageSender and add cold dsp function', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
-                    sinks: { '0': [['node2', '0']] },
+                    sinks: { '0': [['n2', '0']] },
                 },
-                node2: {
+                n2: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -188,41 +188,41 @@ describe('precompile.nodes', () => {
 
             compilation.precompilation.graph.coldDspGroups = {
                 '0': {
-                    traversal: ['node2'],
-                    outNodesIds: ['node2'],
+                    traversal: ['n2'],
+                    outNodesIds: ['n2'],
                 },
             }
 
-            compilation.variableNamesIndex.nodes.node2.messageReceivers.$0 =
-                'node2_RCVS_0'
+            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+                'n2_RCVS_0'
             compilation.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
 
-            precompileMessageOutlet(compilation, graph.node1, '0')
+            precompileMessageOutlet(compilation, graph.n1, '0')
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.node1.messageSenders.$0,
-                'node1_SNDS_0'
+                compilation.variableNamesIndex.nodes.n1.messageSenders.$0,
+                'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.messageSenders.$0,
+                compilation.precompilation.nodes.n1.messageSenders.$0,
                 {
-                    messageSenderName: 'node1_SNDS_0',
-                    functionNames: ['node2_RCVS_0', 'DSP_0'],
+                    messageSenderName: 'n1_SNDS_0',
+                    functionNames: ['n2_RCVS_0', 'DSP_0'],
                 }
             )
             // Add the sender name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.generationContext
+                compilation.precompilation.nodes.n1.generationContext
                     .messageSenders.$0,
-                'node1_SNDS_0'
+                'n1_SNDS_0'
             )
         })
 
         it('should substitute message sender with null function if no sink and not outlet listener', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -233,12 +233,12 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['node1']
-            precompileMessageOutlet(compilation, graph.node1, '0')
+            compilation.precompilation.graph.fullTraversal = ['n1']
+            precompileMessageOutlet(compilation, graph.n1, '0')
 
             // Substitute with null function in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.generationContext
+                compilation.precompilation.nodes.n1.generationContext
                     .messageSenders.$0,
                 compilation.variableNamesIndex.globs.nullMessageReceiver
             )
@@ -246,15 +246,15 @@ describe('precompile.nodes', () => {
 
         it("should substitute message sender with the sink's receiver if only one sink", () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
                     sinks: {
-                        '0': [['node2', '0']],
+                        '0': [['n2', '0']],
                     },
                 },
-                node2: {
+                n2: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -265,22 +265,22 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            compilation.variableNamesIndex.nodes.node2.messageReceivers.$0 =
-                'node2_RCVS_0'
+            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+                'n2_RCVS_0'
 
-            precompileMessageOutlet(compilation, graph.node1, '0')
+            precompileMessageOutlet(compilation, graph.n1, '0')
 
             // Substitute with receiver name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.generationContext
+                compilation.precompilation.nodes.n1.generationContext
                     .messageSenders.$0,
-                'node2_RCVS_0'
+                'n2_RCVS_0'
             )
         })
 
         it('should substitute message sender with outlet listener if no sinks', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -292,24 +292,24 @@ describe('precompile.nodes', () => {
                 settings: {
                     io: {
                         messageSenders: {
-                            node1: { portletIds: ['0'] },
+                            n1: { portletIds: ['0'] },
                         },
                         messageReceivers: {},
                     },
                 },
             })
 
-            compilation.variableNamesIndex.io.messageSenders.node1 = {
-                '0': 'ioSnd_node1_0',
+            compilation.variableNamesIndex.io.messageSenders.n1 = {
+                '0': 'ioSnd_n1_0',
             }
 
-            precompileMessageOutlet(compilation, graph.node1, '0')
+            precompileMessageOutlet(compilation, graph.n1, '0')
 
             // Substitute with receiver name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.node1.generationContext
+                compilation.precompilation.nodes.n1.generationContext
                     .messageSenders.$0,
-                'ioSnd_node1_0'
+                'ioSnd_n1_0'
             )
         })
     })
@@ -317,31 +317,31 @@ describe('precompile.nodes', () => {
     describe('precompileMessageInlet', () => {
         it('should declare message inlet when it has one or more sources or io.messageReceivers', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     outlets: {
                         '0': { id: '0', type: 'message' },
                         '1': { id: '1', type: 'message' },
                     },
                     sinks: {
                         '0': [
-                            ['node2', '0'],
-                            ['node3', '0'],
+                            ['n2', '0'],
+                            ['n3', '0'],
                         ],
-                        '1': [['node2', '0']],
+                        '1': [['n2', '0']],
                     },
                 },
-                node2: {
+                n2: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
                 },
-                node3: {
+                n3: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
                 },
                 // Works the same if no connection but io.messageReceivers is declared
-                node4: {
+                n4: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -352,68 +352,68 @@ describe('precompile.nodes', () => {
                 graph,
                 settings: {
                     io: {
-                        messageReceivers: { node4: { portletIds: ['0'] } },
+                        messageReceivers: { n4: { portletIds: ['0'] } },
                         messageSenders: {},
                     },
                 },
             })
 
-            precompileMessageInlet(compilation, graph.node2, '0')
-            precompileMessageInlet(compilation, graph.node3, '0')
-            precompileMessageInlet(compilation, graph.node4, '0')
+            precompileMessageInlet(compilation, graph.n2, '0')
+            precompileMessageInlet(compilation, graph.n3, '0')
+            precompileMessageInlet(compilation, graph.n4, '0')
 
             // Creates a variable names for message receivers
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.node2.messageReceivers.$0,
-                'node2_RCVS_0'
+                compilation.variableNamesIndex.nodes.n2.messageReceivers.$0,
+                'n2_RCVS_0'
             )
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.node3.messageReceivers.$0,
-                'node3_RCVS_0'
+                compilation.variableNamesIndex.nodes.n3.messageReceivers.$0,
+                'n3_RCVS_0'
             )
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.node4.messageReceivers.$0,
-                'node4_RCVS_0'
+                compilation.variableNamesIndex.nodes.n4.messageReceivers.$0,
+                'n4_RCVS_0'
             )
 
             // Add this variable names to generationContext
             assert.strictEqual(
-                compilation.precompilation.nodes.node2.generationContext
+                compilation.precompilation.nodes.n2.generationContext
                     .messageReceivers.$0,
-                'node2_RCVS_0'
+                'n2_RCVS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.nodes.node3.generationContext
+                compilation.precompilation.nodes.n3.generationContext
                     .messageReceivers.$0,
-                'node3_RCVS_0'
+                'n3_RCVS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.nodes.node4.generationContext
+                compilation.precompilation.nodes.n4.generationContext
                     .messageReceivers.$0,
-                'node4_RCVS_0'
+                'n4_RCVS_0'
             )
 
             // Add placeholder messageReceivers
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node2.messageReceivers.$0,
+                compilation.precompilation.nodes.n2.messageReceivers.$0,
                 Func(
-                    'node2_RCVS_0',
+                    'n2_RCVS_0',
                     [Var('Message', 'm')],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during compilation")`
             )
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node3.messageReceivers.$0,
+                compilation.precompilation.nodes.n3.messageReceivers.$0,
                 Func(
-                    'node3_RCVS_0',
+                    'n3_RCVS_0',
                     [Var('Message', 'm')],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during compilation")`
             )
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node4.messageReceivers.$0,
+                compilation.precompilation.nodes.n4.messageReceivers.$0,
                 Func(
-                    'node4_RCVS_0',
+                    'n4_RCVS_0',
                     [Var('Message', 'm')],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during compilation")`
@@ -422,7 +422,7 @@ describe('precompile.nodes', () => {
 
         it('should declare no message receivers when inlet has no source', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -433,25 +433,25 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            precompileMessageInlet(compilation, graph.node1, '0')
+            precompileMessageInlet(compilation, graph.n1, '0')
 
             assert.ok(
                 !(
                     '0' in
-                    compilation.variableNamesIndex.nodes.node1.messageReceivers
+                    compilation.variableNamesIndex.nodes.n1.messageReceivers
                 )
             )
             assert.ok(
                 !(
                     '0' in
-                    compilation.precompilation.nodes.node1.generationContext
+                    compilation.precompilation.nodes.n1.generationContext
                         .messageReceivers
                 )
             )
             assert.ok(
                 !(
                     '0' in
-                    compilation.precompilation.nodes.node1.messageReceivers
+                    compilation.precompilation.nodes.n1.messageReceivers
                 )
             )
         })
@@ -460,10 +460,10 @@ describe('precompile.nodes', () => {
     describe('precompileMessageReceivers', () => {
         it('should precompile messageReceivers where placeholder was declared', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                 },
-                node2: {
+                n2: {
                     type: 'type2',
                 },
             })
@@ -497,35 +497,35 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.node1.messageReceivers.$0 =
-                'node1_RCVS_0'
-            compilation.precompilation.nodes.node1.messageReceivers.$0 = AnonFunc()``
-            compilation.variableNamesIndex.nodes.node1.messageReceivers.$1 =
-                'node1_RCVS_1'
-            compilation.precompilation.nodes.node1.messageReceivers.$1 = AnonFunc()``
-            compilation.variableNamesIndex.nodes.node2.messageReceivers.$0 =
-                'node2_RCVS_0'
-            compilation.precompilation.nodes.node2.messageReceivers.$0 = AnonFunc()``
+            compilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+                'n1_RCVS_0'
+            compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
+            compilation.variableNamesIndex.nodes.n1.messageReceivers.$1 =
+                'n1_RCVS_1'
+            compilation.precompilation.nodes.n1.messageReceivers.$1 = AnonFunc()``
+            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+                'n2_RCVS_0'
+            compilation.precompilation.nodes.n2.messageReceivers.$0 = AnonFunc()``
 
-            precompileMessageReceivers(compilation, graph.node1)
-            precompileMessageReceivers(compilation, graph.node2)
+            precompileMessageReceivers(compilation, graph.n1)
+            precompileMessageReceivers(compilation, graph.n2)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.messageReceivers,
+                compilation.precompilation.nodes.n1.messageReceivers,
                 {
-                    '0': Func('node1_RCVS_0', [
+                    '0': Func('n1_RCVS_0', [
                         Var('Message', 'm'),
                     ])`// message receiver type1 inlet 0`,
-                    '1': Func('node1_RCVS_1', [
+                    '1': Func('n1_RCVS_1', [
                         Var('Message', 'm'),
                     ])`// message receiver type1 inlet 1`,
                 }
             )
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node2.messageReceivers,
+                compilation.precompilation.nodes.n2.messageReceivers,
                 {
-                    '0': Func('node2_RCVS_0', [
+                    '0': Func('n2_RCVS_0', [
                         Var('Message', 'm'),
                     ])`// message receiver type2 inlet 0`,
                 }
@@ -534,10 +534,10 @@ describe('precompile.nodes', () => {
 
         it('should throw an error if messageReceiver is missing', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                 },
-                node2: {
+                n2: {
                     type: 'type2',
                 },
             })
@@ -554,24 +554,24 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.node1.messageReceivers.$0 =
-                'node1_RCVS_0'
-            compilation.precompilation.nodes.node1.messageReceivers.$0 = AnonFunc()``
-            compilation.variableNamesIndex.nodes.node2.messageReceivers.$0 =
-                'node2_RCVS_0'
-            compilation.precompilation.nodes.node2.messageReceivers.$0 = AnonFunc()``
+            compilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+                'n1_RCVS_0'
+            compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
+            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+                'n2_RCVS_0'
+            compilation.precompilation.nodes.n2.messageReceivers.$0 = AnonFunc()``
 
             assert.throws(() =>
-                precompileMessageReceivers(compilation, graph.node1)
+                precompileMessageReceivers(compilation, graph.n1)
             )
             assert.throws(() =>
-                precompileMessageReceivers(compilation, graph.node2)
+                precompileMessageReceivers(compilation, graph.n2)
             )
         })
 
         it('should throw an error if messageReceiver has wrong signature', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                 },
             })
@@ -589,12 +589,12 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.node1.messageReceivers.$0 =
-                'node1_RCVS_0'
-            compilation.precompilation.nodes.node1.messageReceivers.$0 = AnonFunc()``
+            compilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+                'n1_RCVS_0'
+            compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
 
             assert.throws(() =>
-                precompileMessageReceivers(compilation, graph.node1)
+                precompileMessageReceivers(compilation, graph.n1)
             )
         })
     })
@@ -602,7 +602,7 @@ describe('precompile.nodes', () => {
     describe('precompileStateInitialization', () => {
         it('should precompile node stateInitialization', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                     args: { a: 22, b: 33 },
                 },
@@ -620,10 +620,10 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileStateInitialization(compilation, graph.node1)
+            precompileStateInitialization(compilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.stateInitialization,
+                compilation.precompilation.nodes.n1.stateInitialization,
                 Var('State', '', `{ a: 22, b: 33 }`)
             )
         })
@@ -632,7 +632,7 @@ describe('precompile.nodes', () => {
     describe('precompileInitialization', () => {
         it('should precompile node initialization', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                 },
             })
@@ -648,17 +648,17 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileInitialization(compilation, graph.node1)
+            precompileInitialization(compilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.initialization,
+                compilation.precompilation.nodes.n1.initialization,
                 ast`// initialization type1`
             )
         })
 
         it('should add empty initialization if not declared', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                 },
             })
@@ -672,10 +672,10 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileInitialization(compilation, graph.node1)
+            precompileInitialization(compilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.initialization,
+                compilation.precompilation.nodes.n1.initialization,
                 ast``
             )
         })
@@ -684,7 +684,7 @@ describe('precompile.nodes', () => {
     describe('precompileLoop', () => {
         it('should precompile node loop', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                 },
             })
@@ -700,17 +700,17 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileLoop(compilation, graph.node1)
+            precompileLoop(compilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.loop,
+                compilation.precompilation.nodes.n1.loop,
                 ast`// loop type1`
             )
         })
 
         it('should precompile inline node loop', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                     outlets: {
                         '0': { id: '0', type: 'message' },
@@ -729,20 +729,20 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.node1.signalOuts.$0 =
-                'node1_OUTS_0'
+            compilation.variableNamesIndex.nodes.n1.signalOuts.$0 =
+                'n1_OUTS_0'
 
-            precompileLoop(compilation, graph.node1)
+            precompileLoop(compilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.node1.loop,
-                ast`node1_OUTS_0 = a + b`
+                compilation.precompilation.nodes.n1.loop,
+                ast`n1_OUTS_0 = a + b`
             )
         })
 
         it('should throw an error if not loop nor inlineLoop', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                 },
             })
@@ -756,7 +756,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            assert.throws(() => precompileLoop(compilation, graph.node1))
+            assert.throws(() => precompileLoop(compilation, graph.n1))
         })
     })
 

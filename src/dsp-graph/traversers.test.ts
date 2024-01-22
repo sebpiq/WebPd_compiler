@@ -20,20 +20,120 @@
 
 import assert from 'assert'
 import {
-    signalNodes,
-    listConnectionsOut,
-    listConnectionsIn,
+    signalTraversal,
+    listSinkConnections,
+    listSourceConnections,
     removeDeadSinks,
     removeDeadSources,
     trimGraph,
-    messageNodes,
+    messageTraversal,
+    listSinkNodes,
+    listSourceNodes,
 } from './traversers'
 import { getNode } from './getters'
 import { DspGraph } from './types'
 import { makeGraph, nodeDefaults } from './test-helpers'
 
 describe('graph-traversal', () => {
-    describe('signalNodes', () => {
+    describe('listSignalSinkNodes', () => {
+        it('should list all signal nodes that are sinks of a given node', () => {
+            const graph = makeGraph({
+                n1: {
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
+                        '2': { type: 'signal', id: '2' },
+                    },
+                    sinks: {
+                        '0': [
+                            ['n2', '0'],
+                            ['n3', '0'],
+                        ],
+                        '1': [['n4', '0']],
+                        '2': [
+                            ['n5', '0'],
+                            // Duplicate sink, should be removeds
+                            ['n2', '0'],
+                        ],
+                    },
+                },
+                n2: {
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n3: {
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n4: {
+                    inlets: {
+                        '0': { type: 'message', id: '0' },
+                    },
+                },
+                n5: {
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+            })
+
+            assert.deepStrictEqual(listSinkNodes(graph, graph.n1!, 'signal'), [
+                graph.n2!,
+                graph.n3!,
+                graph.n5!,
+            ])
+        })
+    })
+
+    describe('listSignalSourceNodes', () => {
+        it('should list all signal nodes that are sources of a given node', () => {
+            const graph = makeGraph({
+                n1: {
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'message', id: '1' },
+                        '2': { type: 'signal', id: '2' },
+                    },
+                },
+                n2: {
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    sinks: {
+                        '0': [
+                            ['n1', '0'],
+                            ['n1', '2'],
+                        ],
+                    },
+                },
+                n3: {
+                    outlets: {
+                        '0': { type: 'message', id: '0' },
+                    },
+                    sinks: {
+                        '0': [['n1', '1']],
+                    },
+                },
+                n4: {
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                    sinks: {
+                        '0': [['n1', '2']],
+                    },
+                },
+            })
+
+            assert.deepStrictEqual(
+                listSourceNodes(graph, graph.n1!, 'signal'),
+                [graph.n2!, graph.n4!]
+            )
+        })
+    })
+
+    describe('signalTraversal', () => {
         it('traverses a graph with different levels in the right order', () => {
             // [  n1  ]
             //   |   \
@@ -70,7 +170,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = signalNodes(graph, [graph.n3!])
+            const traversal = signalTraversal(graph, [graph.n3!])
             assert.deepStrictEqual(traversal, ['n1', 'n2', 'n3'])
         })
 
@@ -148,8 +248,10 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = signalNodes(graph, [graph.n6!], (node) =>
-                !(['n1', 'n3'].includes(node.id))
+            const traversal = signalTraversal(
+                graph,
+                [graph.n6!],
+                (node) => !['n1', 'n3'].includes(node.id)
             )
             assert.deepStrictEqual(traversal, ['n2', 'n4', 'n5', 'n6'])
         })
@@ -189,7 +291,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = signalNodes(graph, [graph.n3!])
+            const traversal = signalTraversal(graph, [graph.n3!])
             assert.deepStrictEqual(traversal, ['n1', 'n2', 'n3'])
         })
 
@@ -223,7 +325,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = signalNodes(graph, [graph.n3!])
+            const traversal = signalTraversal(graph, [graph.n3!])
             assert.deepStrictEqual(traversal, ['n1', 'n3'])
         })
 
@@ -264,7 +366,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = signalNodes(graph, [graph.n3!])
+            const traversal = signalTraversal(graph, [graph.n3!])
             assert.deepStrictEqual(traversal, ['n1', 'n2', 'n3'])
         })
 
@@ -310,7 +412,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = signalNodes(graph, [graph.n3!])
+            const traversal = signalTraversal(graph, [graph.n3!])
             assert.deepStrictEqual(traversal, ['n1', 'n2', 'n3'])
         })
 
@@ -344,7 +446,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = signalNodes(graph, [graph.n3!])
+            const traversal = signalTraversal(graph, [graph.n3!])
             assert.deepStrictEqual(traversal, ['n1', 'n3'])
         })
 
@@ -358,11 +460,11 @@ describe('graph-traversal', () => {
                     },
                 },
             }
-            assert.throws(() => signalNodes(graph, [graph.n2!]))
+            assert.throws(() => signalTraversal(graph, [graph.n2!]))
         })
     })
 
-    describe('messageNodes', () => {
+    describe('messageTraversal', () => {
         it('traverses a graph with different levels in the right order', () => {
             // [  n1  ]
             //   |   \
@@ -399,7 +501,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = messageNodes(graph, [graph.n1!])
+            const traversal = messageTraversal(graph, [graph.n1!])
             assert.deepStrictEqual(traversal, ['n1', 'n3', 'n2'])
         })
 
@@ -445,7 +547,7 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = messageNodes(graph, [graph.n1!])
+            const traversal = messageTraversal(graph, [graph.n1!])
             assert.deepStrictEqual(traversal, ['n1', 'n2', 'n3'])
         })
 
@@ -477,15 +579,21 @@ describe('graph-traversal', () => {
                     },
                 },
             })
-            const traversal = messageNodes(graph, [graph.n1!])
+            const traversal = messageTraversal(graph, [graph.n1!])
             assert.deepStrictEqual(traversal, ['n1', 'n2'])
         })
     })
 
-    describe('listConnectionsIn', () => {
-        it('should list all the sources', () => {
+    describe('listSourceConnections', () => {
+        it('should list all the source connections', () => {
             const graph: DspGraph.Graph = makeGraph({
-                n1: {},
+                n1: {
+                    inlets: {
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'signal' },
+                        '2': { id: '2', type: 'message' },
+                    }
+                },
                 n2: {
                     sinks: {
                         '0': [
@@ -493,17 +601,25 @@ describe('graph-traversal', () => {
                             ['n1', '1'],
                         ],
                     },
+                    inlets: {
+                        '0': { id: '0', type: 'signal' },
+                    },
+                    outlets: {
+                        '0': { id: '0', type: 'signal' },
+                    }
                 },
                 n3: {
                     sinks: {
                         '1': [['n1', '2']],
                     },
+                    inlets: {
+                        '1': { id: '0', type: 'message' },
+                    }
                 },
             })
 
-            const results = listConnectionsIn(
-                getNode(graph, 'n1').sources,
-                'n1'
+            const results = listSourceConnections(
+                graph.n1!,
             )
             assert.deepStrictEqual(results, [
                 [
@@ -522,10 +638,15 @@ describe('graph-traversal', () => {
         })
     })
 
-    describe('listConnectionsOut', () => {
-        it('should list all sinks', () => {
+    describe('listSinkConnections', () => {
+        it('should list all sink connections', () => {
             const graph: DspGraph.Graph = makeGraph({
-                n1: {},
+                n1: {
+                    inlets: {
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'signal' },
+                    },
+                },
                 n2: {
                     sinks: {
                         '0': [
@@ -534,15 +655,30 @@ describe('graph-traversal', () => {
                         ],
                         '1': [['n3', '1']],
                     },
+                    inlets: {
+                        '1': { id: '1', type: 'signal' },
+                    },
+                    outlets: {
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'message' },
+                    },
                 },
                 n3: {
                     sinks: {
                         '1': [['n2', '1']],
                     },
+                    inlets: {
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'message' },
+                    },
+                    outlets: {
+                        '0': { id: '0', type: 'signal' },
+                        '1': { id: '1', type: 'signal' },
+                    },
                 },
             })
 
-            const results = listConnectionsOut(getNode(graph, 'n2').sinks, 'n2')
+            const results = listSinkConnections(graph.n2!)
             assert.deepStrictEqual(results, [
                 [
                     { nodeId: 'n2', portletId: '0' },

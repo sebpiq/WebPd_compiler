@@ -82,7 +82,7 @@ export const buildColdDspGroups = (
             // Compute the signal traversal, therefore fixing the order in which
             // nodes are visited and removing potential duplicates.
             .map<DspGroup>((dspGroup) => ({
-                traversal: traversers.signalNodes(
+                traversal: traversers.signalTraversal(
                     graph,
                     traversers.toNodes(graph, dspGroup.outNodesIds)
                 ),
@@ -104,7 +104,7 @@ export const _buildSingleFlowColdDspGroups = (
             if (
                 !_isNodeDspCold(compilation, node) ||
                 traversers
-                    .listSignalSinkNodes(graph, node)
+                    .listSinkNodes(graph, node, 'signal')
                     .every((sinkNode) => _isNodeDspCold(compilation, sinkNode))
             ) {
                 return dspGroups
@@ -114,7 +114,7 @@ export const _buildSingleFlowColdDspGroups = (
             let areAllSourcesCold = true
             const dspGroup: DspGroup = {
                 outNodesIds: [node.id],
-                traversal: traversers.signalNodes(
+                traversal: traversers.signalTraversal(
                     graph,
                     [node],
                     (sourceNode) => {
@@ -142,7 +142,7 @@ export const buildInlinableDspGroups = (
     return traversers
         .toNodes(graph, parentDspGroup.traversal)
         .reduce<Array<DspGroup>>((dspGroups, node) => {
-            const sinkNodes = traversers.listSignalSinkNodes(graph, node)
+            const sinkNodes = traversers.listSinkNodes(graph, node, 'signal')
             // We're looking for the out node of an inlinable dsp group.
             if (
                 _isNodeDspInlinable(compilation, node) &&
@@ -159,7 +159,7 @@ export const buildInlinableDspGroups = (
                 return [
                     ...dspGroups,
                     {
-                        traversal: traversers.signalNodes(
+                        traversal: traversers.signalTraversal(
                             graph,
                             [node],
                             (sourceNode) =>
@@ -198,7 +198,7 @@ const _isNodeDspInlinable = (
     { precompilation, graph }: Compilation,
     node: DspGraph.Node
 ) => {
-    const sinkNodes = traversers.listSignalSinkNodes(graph, node)
+    const sinkNodes = traversers.listSinkNodes(graph, node, 'signal')
     return (
         !!precompilation.nodes[node.id].nodeImplementation.inlineLoop &&
         sinkNodes.length === 1

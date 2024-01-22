@@ -103,8 +103,8 @@ export const buildFullGraphTraversal = (
 
     return Array.from(
         new Set([
-            ...traversers.messageNodes(graph, nodesPushingMessages),
-            ...traversers.signalNodes(graph, nodesPullingSignal),
+            ...traversers.messageTraversal(graph, nodesPushingMessages),
+            ...traversers.signalTraversal(graph, nodesPullingSignal),
         ])
     )
 }
@@ -118,7 +118,7 @@ export const buildGraphTraversalSignal = (
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
     )
-    return traversers.signalNodes(graph, nodesPullingSignal)
+    return traversers.signalTraversal(graph, nodesPullingSignal)
 }
 
 export const isGlobalDefinitionWithSettings = (

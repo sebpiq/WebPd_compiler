@@ -19,7 +19,7 @@
  */
 
 import { getNode, getSinks, getSources } from './getters'
-import { listConnectionsOut, listConnectionsIn } from './traversers'
+import { listSinkConnections, listSourceConnections } from './traversers'
 import { DspGraph } from './types'
 
 type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]
@@ -37,7 +37,7 @@ export const testGraphIntegrity = (
     Object.keys(graph).forEach((nodeId) => {
         const node = getNode(graph, nodeId)
         // For each source, we check that the corresponding node declares the equivalent sink
-        listConnectionsIn(node.sources, nodeId).forEach(([source, sink]) => {
+        listSourceConnections(node).forEach(([source, sink]) => {
             const sourceNode = getNode(graph, source.nodeId)
             const sinks = getSinks(sourceNode, source.portletId)
             const matchedSink = sinks.filter((otherSink) =>
@@ -49,7 +49,7 @@ export const testGraphIntegrity = (
         })
 
         // For each sink, we check that the corresponding node declares the equivalent source
-        listConnectionsOut(node.sinks, nodeId).forEach(([source, sink]) => {
+        listSinkConnections(node).forEach(([source, sink]) => {
             const sinkNode = getNode(graph, sink.nodeId)
             const matchedSource = getSources(sinkNode, sink.portletId)
             if (!matchedSource) {
