@@ -150,6 +150,7 @@ export interface VariableNamesIndex {
         input: string
         nullMessageReceiver: string
         nullSignal: string
+        emptyMessage: string
     }
 
     io: {

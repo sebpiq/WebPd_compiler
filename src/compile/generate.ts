@@ -35,7 +35,8 @@ export const generateGlobs = ({
         Var('Float', globs.nullSignal, '0'),
         Func(globs.nullMessageReceiver, [
             Var('Message', 'm')
-        ], 'void')``
+        ], 'void')``,
+        Var('Message', globs.emptyMessage, 'msg_create([])'),
     ])
 
 /**
@@ -155,10 +156,7 @@ export const generatePortletsDeclarations = (
         precompilation,
         settings: { debug },
     } = compilation
-    const nodes = traversers.toNodes(
-        graph,
-        precompilation.graph.fullTraversal
-    )
+    const nodes = traversers.toNodes(graph, precompilation.graph.fullTraversal)
 
     return Sequence([
         nodes.map((node) => {
@@ -190,10 +188,7 @@ export const generatePortletsDeclarations = (
         // This needs to come after all message receivers are declared since we reference them here.
         nodes.map((node) =>
             Object.values(precompilation.nodes[node.id].messageSenders).map(
-                ({
-                    messageSenderName: sndName,
-                    functionNames,
-                }) =>
+                ({ messageSenderName: sndName, functionNames }) =>
                     // prettier-ignore
                     Func(sndName, [
                         Var('Message', 'm')
@@ -229,7 +224,7 @@ export const generateColdDspInitialization = ({
 }: Compilation) =>
     Sequence(
         Object.keys(precompilation.graph.coldDspGroups).map((groupId) => {
-            return `${variableNamesIndex.coldDspGroups[groupId]}()`
+            return `${variableNamesIndex.coldDspGroups[groupId]}(${variableNamesIndex.globs.emptyMessage})`
         })
     )
 

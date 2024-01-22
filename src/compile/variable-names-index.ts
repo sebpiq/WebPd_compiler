@@ -75,6 +75,7 @@ export const generateVariableNamesGlobs = () =>
         input: 'INPUT',
         nullMessageReceiver: 'SND_TO_NULL',
         nullSignal: 'NULL_SIGNAL',
+        emptyMessage: 'EMPTY_MESSAGE',
     })
 
 export const attachNodePortlet = (

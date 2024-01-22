@@ -444,7 +444,7 @@ describe('generate', () => {
                 {
                     astType: 'Sequence',
                     content: [
-                        `DSP_0()\nDSP_1()`
+                        `DSP_0(EMPTY_MESSAGE)\nDSP_1(EMPTY_MESSAGE)`
                     ],
                 }
             )

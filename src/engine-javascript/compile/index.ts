@@ -49,9 +49,9 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
 
     // prettier-ignore
     return render(macros, ast`
-        ${generateGlobs(compilation)}
-
         ${precompilation.dependencies.ast}
+
+        ${generateGlobs(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
 

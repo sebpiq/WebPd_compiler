@@ -51,12 +51,12 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     // prettier-ignore
     return render(macros, ast`
         const metadata: string = '${JSON.stringify(metadata)}'
-        
+
+        ${precompilation.dependencies.ast}
+
         ${generateGlobs(compilation)}
         let ${globs.input}: FloatArray = createFloatArray(0)
         let ${globs.output}: FloatArray = createFloatArray(0)
-
-        ${precompilation.dependencies.ast}
 
         ${generateEmbeddedArrays(compilation)}
 
