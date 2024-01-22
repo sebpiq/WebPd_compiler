@@ -202,18 +202,15 @@ describe('generate', () => {
             ]
             compilation.precompilation.nodes.n1.messageSenders['0'] = {
                 messageSenderName: 'n1_SNDS_0',
-                messageReceiverNames: ['n2_RCVS_0', 'n2_RCVS_1'],
-                coldDspFunctionNames: [],
+                functionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
             }
             compilation.precompilation.nodes.n1.messageSenders['1'] = {
                 messageSenderName: 'n1_SNDS_1',
-                messageReceiverNames: ['outlerListener_n1_0'],
-                coldDspFunctionNames: [],
+                functionNames: ['outlerListener_n1_0'],
             }
             compilation.precompilation.nodes.n2.messageSenders['0'] = {
                 messageSenderName: 'n2_SNDS_0',
-                messageReceiverNames: ['n3_RCVS_0'],
-                coldDspFunctionNames: [],
+                functionNames: ['n3_RCVS_0'],
             }
 
             const sequence = generatePortletsDeclarations(compilation)
@@ -226,7 +223,7 @@ describe('generate', () => {
                         name: 'n1_SNDS_0',
                         body: {
                             astType: 'Sequence',
-                            content: ['n2_RCVS_0(m)\nn2_RCVS_1(m)'],
+                            content: ['n2_RCVS_0(m)\nn2_RCVS_1(m)\nDSP_1(m)'],
                         },
                     },
                     {
@@ -243,42 +240,6 @@ describe('generate', () => {
                         body: {
                             astType: 'Sequence',
                             content: ['n3_RCVS_0(m)'],
-                        },
-                    },
-                ],
-            })
-        })
-
-        it('should compile cold dsp functions in message senders', () => {
-            const graph = makeGraph({
-                n1: {},
-            })
-
-            const compilation = makeCompilation({
-                graph,
-            })
-
-            compilation.precompilation.graph.fullTraversal = [
-                'n1',
-            ]
-
-            compilation.precompilation.nodes.n1.messageSenders['0'] = {
-                messageSenderName: 'n1_SNDS_0',
-                messageReceiverNames: ['n2_RCVS_0', 'n2_RCVS_1'],
-                coldDspFunctionNames: ['DSP_0'],
-            }
-
-            const sequence = generatePortletsDeclarations(compilation)
-
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
-                    {
-                        ...MESSAGE_RECEIVER_FUNC,
-                        name: 'n1_SNDS_0',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['n2_RCVS_0(m)\nn2_RCVS_1(m)\nDSP_0()'],
                         },
                     },
                 ],
@@ -530,7 +491,7 @@ describe('generate', () => {
                         {
                             astType: 'Func',
                             name: 'DSP_0',
-                            args: [],
+                            args: [Var('Message', 'm')],
                             returnType: 'void',
                             body: {
                                 astType: 'Sequence',
@@ -540,7 +501,7 @@ describe('generate', () => {
                         {
                             astType: 'Func',
                             name: 'DSP_1',
-                            args: [],
+                            args: [Var('Message', 'm')],
                             returnType: 'void',
                             body: {
                                 astType: 'Sequence',

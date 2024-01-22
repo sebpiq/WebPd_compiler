@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { DspGraph, getters, traversal } from '../dsp-graph'
+import { DspGraph, getters, traversers } from '../dsp-graph'
 import packageInfo from '../../package.json'
 import jsMacros from '../engine-javascript/compile/macros'
 import ascMacros from '../engine-assemblyscript/compile/macros'
@@ -103,8 +103,8 @@ export const buildFullGraphTraversal = (
 
     return Array.from(
         new Set([
-            ...traversal.messageNodes(graph, nodesPushingMessages),
-            ...traversal.signalNodes(graph, nodesPullingSignal),
+            ...traversers.messageNodes(graph, nodesPushingMessages),
+            ...traversers.signalNodes(graph, nodesPullingSignal),
         ])
     )
 }
@@ -118,7 +118,7 @@ export const buildGraphTraversalSignal = (
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
     )
-    return traversal.signalNodes(graph, nodesPullingSignal)
+    return traversers.signalNodes(graph, nodesPullingSignal)
 }
 
 export const isGlobalDefinitionWithSettings = (

@@ -72,7 +72,7 @@ describe('compile-helpers', () => {
         })
     })
 
-    describe('buildGraphTraversalDeclare', () => {
+    describe('buildFullGraphTraversal', () => {
         it('should combine signal and message traversals and remove duplicates', () => {
             // [  n1  ]         [  n5  ]
             //    / \

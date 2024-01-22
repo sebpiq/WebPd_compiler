@@ -29,7 +29,7 @@ import {
     Precompilation,
 } from '../types'
 import { AstElement, AstFunc } from '../../ast/types'
-import { traversal } from '../../dsp-graph'
+import { traversers } from '../../dsp-graph'
 import { core, commonsCore, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
 
@@ -148,7 +148,7 @@ export const flattenDependencies = (
 const _collectDependenciesFromTraversal = (
     { precompilation, graph }: Compilation,
 ): Array<GlobalCodeDefinition> => {
-    return traversal
+    return traversers
         .toNodes(graph, precompilation.graph.fullTraversal)
         .reduce<Array<GlobalCodeDefinition>>(
             (definitions, node) => [

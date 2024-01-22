@@ -25,11 +25,11 @@ import {
     disconnectNodes,
     deleteNode,
     disconnect,
-} from './mutations'
+} from './mutators'
 import { assertGraphConnections, makeGraph, nodeDefaults } from './test-helpers'
 import { DspGraph } from './types'
 
-describe('graph-mutations', () => {
+describe('mutators', () => {
     describe('addNode', () => {
         it("should add the node to the graph if it isn't yet", () => {
             const graph: DspGraph.Graph = {}

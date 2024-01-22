@@ -145,7 +145,7 @@ describe('precompile', () => {
         )
     })
 
-    it('should precompile cold dsp subgraphs and play well with inline loops', () => {
+    it('should precompile cold dsp groups and play well with inline loops', () => {
         //
         //           [  n1  ]  <- inlinable & cold dsp
         //             |

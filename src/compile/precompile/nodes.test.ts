@@ -156,8 +156,60 @@ describe('precompile.nodes', () => {
                 compilation.precompilation.nodes.node1.messageSenders.$0,
                 {
                     messageSenderName: 'node1_SNDS_0',
-                    messageReceiverNames: ['node2_RCVS_0', 'node3_RCVS_0'],
-                    coldDspFunctionNames: [],
+                    functionNames: ['node2_RCVS_0', 'node3_RCVS_0'],
+                }
+            )
+            // Add the sender name in generation context
+            assert.strictEqual(
+                compilation.precompilation.nodes.node1.generationContext
+                    .messageSenders.$0,
+                'node1_SNDS_0'
+            )
+        })
+
+        it('should create messageSender and add cold dsp function', () => {
+            const graph = makeGraph({
+                node1: {
+                    outlets: {
+                        '0': { id: '0', type: 'message' },
+                    },
+                    sinks: { '0': [['node2', '0']] },
+                },
+                node2: {
+                    inlets: {
+                        '0': { id: '0', type: 'message' },
+                    },
+                },
+            })
+
+            const compilation = makeCompilation({
+                graph,
+            })
+
+            compilation.precompilation.graph.coldDspGroups = {
+                '0': {
+                    traversal: ['node2'],
+                    outNodesIds: ['node2'],
+                },
+            }
+
+            compilation.variableNamesIndex.nodes.node2.messageReceivers.$0 =
+                'node2_RCVS_0'
+            compilation.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
+
+            precompileMessageOutlet(compilation, graph.node1, '0')
+
+            // Creates a variable name for the message sender
+            assert.strictEqual(
+                compilation.variableNamesIndex.nodes.node1.messageSenders.$0,
+                'node1_SNDS_0'
+            )
+            // Add precompilation info for the message sender
+            assert.deepStrictEqual(
+                compilation.precompilation.nodes.node1.messageSenders.$0,
+                {
+                    messageSenderName: 'node1_SNDS_0',
+                    functionNames: ['node2_RCVS_0', 'DSP_0'],
                 }
             )
             // Add the sender name in generation context
@@ -716,7 +768,7 @@ describe('precompile.nodes', () => {
             //   \        /
             //    \      /
             //     \    /
-            //    [  n4  ]  <- out node for the inlinable subgraph
+            //    [  n4  ]  <- out node for the inlinable dsp group
             //        |
             //    [  n5  ]  <- first non-inlinable sink
             const graph = makeGraph({
@@ -793,7 +845,7 @@ describe('precompile.nodes', () => {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
-                nonInlinableType: {}
+                nonInlinableType: {},
             }
 
             const compilation = makeCompilation({
@@ -820,7 +872,7 @@ describe('precompile.nodes', () => {
             //         |
             //         |
             //         |
-            //      [  n3  ]  <- out node for the inlinable subgraph
+            //      [  n3  ]  <- out node for the inlinable dsp group
             //         |
             //      [  n4  ]  <- first non-inlinable sink
             const graph = makeGraph({
@@ -907,7 +959,6 @@ describe('precompile.nodes', () => {
                     .$0,
                 '(((N1 + 1) * N2) * N3)'
             )
-
         })
 
         it('shouldnt fail with non-connected signal inlet', () => {
@@ -978,7 +1029,7 @@ describe('precompile.nodes', () => {
                     inlineLoop: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
-                nonInlinableType: {}
+                nonInlinableType: {},
             }
 
             const compilation = makeCompilation({
@@ -999,7 +1050,6 @@ describe('precompile.nodes', () => {
                     .$0,
                 '((N2 * (N1 + 1) - N2 * BLA) * N3)'
             )
-
         })
 
         it('shouldnt fail with non-inlinable source', () => {
@@ -1074,7 +1124,6 @@ describe('precompile.nodes', () => {
                     .$0,
                 '((nonInline1_OUTS_0 * N1) * N2)'
             )
-
         })
     })
 })

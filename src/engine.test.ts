@@ -93,7 +93,8 @@ describe('Engine', () => {
                 [dependenciesInjectorId]: {
                     ...nodeDefaults(dependenciesInjectorId),
                     type: dependenciesInjectorType,
-                    // Force node to be in declaration graph traversal
+                    // Force node to be in the graph traversal
+                    // so that it gets compiled.
                     isPushingMessages: true,
                 },
             },

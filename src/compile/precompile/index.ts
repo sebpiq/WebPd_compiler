@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { DspGraph, getters, traversal } from '../../dsp-graph'
+import { DspGraph, getters, traversers } from '../../dsp-graph'
 import { mapObject } from '../../functional-helpers'
 import { attachColdDspGroup, attachIoMessages } from '../variable-names-index'
 import {
@@ -55,7 +55,7 @@ import { DspGroup } from '../types'
 
 export default (compilation: Compilation) => {
     const { graph, precompilation } = compilation
-    const nodes = traversal.toNodes(graph, precompilation.graph.fullTraversal)
+    const nodes = traversers.toNodes(graph, precompilation.graph.fullTraversal)
 
     // ------------------------ DSP GROUPS ------------------------ //
     const rootDspGroup: DspGroup = {
@@ -133,7 +133,7 @@ export default (compilation: Compilation) => {
     // Go through all dsp groups and precompile signal outlets for nodes that
     // are not inlined.
     allDspGroups.forEach((dspGroup) => {
-        traversal.toNodes(graph, dspGroup.traversal).forEach((node) => {
+        traversers.toNodes(graph, dspGroup.traversal).forEach((node) => {
             Object.values(node.outlets).forEach((outlet) => {
                 precompileSignalOutlet(compilation, node, outlet.id)
             })
@@ -146,7 +146,7 @@ export default (compilation: Compilation) => {
     })
 
     allDspGroups.forEach((dspGroup) => {
-        traversal.toNodes(graph, dspGroup.traversal).forEach((node) => {
+        traversers.toNodes(graph, dspGroup.traversal).forEach((node) => {
             precompileLoop(compilation, node)
         })
     })

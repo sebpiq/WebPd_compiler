@@ -19,7 +19,7 @@
  */
 
 import { getNode, getSinks, getSources } from './getters'
-import { listConnectionsOut, listConnectionsIn } from './traversal'
+import { listConnectionsOut, listConnectionsIn } from './traversers'
 import { DspGraph } from './types'
 
 type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]

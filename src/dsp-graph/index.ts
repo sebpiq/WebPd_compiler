@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 export type { DspGraph } from './types'
-export * as traversal from './traversal'
+export * as traversers from './traversers'
 export * as getters from './getters'
-export * as mutation from './mutations'
+export * as mutators from './mutators'
 export * as helpers from './graph-helpers'

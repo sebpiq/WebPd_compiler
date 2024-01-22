@@ -31,7 +31,7 @@ import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/compile/t
 import { generateVariableNamesIndex } from './variable-names-index'
 import { buildFullGraphTraversal } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
-import { traversal } from '../dsp-graph'
+import { traversers } from '../dsp-graph'
 import precompile, { initializePrecompilation } from './precompile'
 
 interface CompilationSuccess {
@@ -57,7 +57,7 @@ export default (
         graph,
         settings.io
     )
-    const trimmedGraph = traversal.trimGraph(graph, fullGraphTraversal)
+    const trimmedGraph = traversers.trimGraph(graph, fullGraphTraversal)
 
     const compilation: Compilation = {
         graph: trimmedGraph,

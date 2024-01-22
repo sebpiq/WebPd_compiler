@@ -107,27 +107,49 @@ export const precompileMessageOutlet = (
         precompilation,
         settings: { io },
     } = compilation
+    const precompiledNode = precompilation.nodes[sourceNode.id]
+
     const ioSendersPortletIds = _getPortletIdsFromMsgIo(
         io.messageSenders,
         sourceNode.id
     )
-    const precompiledNode = precompilation.nodes[sourceNode.id]
-    const totalSinkCount = _getMessageOutletTotalSinkCount(
-        compilation,
-        sourceNode,
-        outletId
-    )
+    const hasIoSender = ioSendersPortletIds.includes(outletId)
+    const functionNames = [
+        ...outletSinks.map(
+            ({ nodeId: sinkNodeId, portletId: inletId }) =>
+                variableNamesIndex.nodes[sinkNodeId].messageReceivers[inletId]
+        ),
+        ...(hasIoSender
+            ? [variableNamesIndex.io.messageSenders[sourceNode.id][outletId]]
+            : []),
+        ...outletSinks.reduce<Array<VariableName>>(
+            (coldDspFunctionNames, sink) => {
+                const groupsContainingSink = Object.entries(
+                    precompilation.graph.coldDspGroups
+                )
+                    .filter(([_, dspGroup]) =>
+                        isNodeInsideGroup(sink.nodeId, dspGroup)
+                    )
+                    .map(([groupId]) => groupId)
 
-    // If there are several sinks, we then need to generate
-    // a function to send messages to all sinks, e.g. :
+                const functionNames = groupsContainingSink.map(
+                    (groupId) => variableNamesIndex.coldDspGroups[groupId]
+                )
+                return [...coldDspFunctionNames, ...functionNames]
+            },
+            []
+        ),
+    ]
+
+    // If there are several functions to call, we then need to generate
+    // a message sender function to call all these functions, e.g. :
     //
     //      const NODE1_SND = (m) => {
     //          NODE3_RCV(m)
     //          NODE2_RCV(m)
     //      }
     //
-    if (totalSinkCount > 1) {
-        const hasIoSender = ioSendersPortletIds.includes(outletId)
+    if (functionNames.length > 1) {
         const messageSenderName = attachNodePortlet(
             compilation,
             'messageSenders',
@@ -138,50 +160,13 @@ export const precompileMessageOutlet = (
             messageSenderName
         precompiledNode.messageSenders[outletId] = {
             messageSenderName,
-            messageReceiverNames: [
-                ...outletSinks.map(
-                    ({ nodeId: sinkNodeId, portletId: inletId }) =>
-                        variableNamesIndex.nodes[sinkNodeId].messageReceivers[
-                            inletId
-                        ]
-                ),
-                ...(hasIoSender
-                    ? [
-                          variableNamesIndex.io.messageSenders[sourceNode.id][
-                              outletId
-                          ],
-                      ]
-                    : []),
-            ],
-            coldDspFunctionNames: outletSinks.reduce<Array<VariableName>>(
-                (coldDspFunctionNames, sink) => {
-                    const groupsContainingSink = Object.entries(
-                        precompilation.graph.coldDspGroups
-                    )
-                        .filter(([_, dspGroup]) =>
-                            isNodeInsideGroup(sink.nodeId, dspGroup)
-                        )
-                        .map(([groupId]) => groupId)
-
-                    const functionNames = groupsContainingSink.map(
-                        (groupId) => variableNamesIndex.coldDspGroups[groupId]
-                    )
-                    return [...coldDspFunctionNames, ...functionNames]
-                },
-                []
-            ),
+            functionNames,
         }
     }
 
-    // If no sink, no message receiver, we assign the node SND
-    // a function that does nothing
-    else if (totalSinkCount === 0) {
-        precompiledNode.generationContext.messageSenders[outletId] =
-            compilation.variableNamesIndex.globs.nullMessageReceiver
-    }
-
-    // For a message outlet that sends to a single sink node
-    // its out can be directly replaced by next node's in.
+    // For a message outlet that sends to a single function,
+    // its SND can be directly replaced by that function, instead
+    // of creating a dedicated message sender.
     // e.g. instead of (which is useful if several sinks) :
     //
     //      const NODE1_SND = (m) => {
@@ -194,23 +179,16 @@ export const precompileMessageOutlet = (
     //
     //      NODE2_RCV(m)
     //
-    else if (
-        outletSinks.length === 1 &&
-        !ioSendersPortletIds.includes(outletId)
-    ) {
+    else if (functionNames.length === 1) {
         precompiledNode.generationContext.messageSenders[outletId] =
-            variableNamesIndex.nodes[outletSinks[0].nodeId].messageReceivers[
-                outletSinks[0].portletId
-            ]
+            functionNames[0]
     }
 
-    // Same thing if there's no sink, but one outlet listener
-    else if (
-        outletSinks.length === 0 &&
-        ioSendersPortletIds.includes(outletId)
-    ) {
+    // If no function to call, we assign the node SND
+    // a function that does nothing
+    else {
         precompiledNode.generationContext.messageSenders[outletId] =
-            variableNamesIndex.io.messageSenders[sourceNode.id][outletId]
+            compilation.variableNamesIndex.globs.nullMessageReceiver
     }
 }
 
@@ -341,20 +319,20 @@ export const precompileLoop = (
 }
 
 /**
- * Inlines a subgraph of inlinable nodes into a single string.
- * That string is then injected as signal input of the first non-inlinable sink.
+ * Inlines a dsp group of inlinable nodes into a single string.
+ * That string is then injected as signal input to the sink of our dsp group.
  * e.g. :
  *
  * ```
- *          [  n1  ]      <-  inlinable subgraph
+ *          [  n1  ]      <-  inlinable dsp group
  *               \          /
  *    [  n2  ]  [  n3  ]  <-
  *      \        /
  *       \      /
  *        \    /
- *       [  n4  ]  <- out node for the inlinable subgraph
+ *       [  n4  ]  <- out node for the dsp group
  *           |
- *       [  n5  ]  <- first non-inlinable sink
+ *       [  n5  ]  <- non-inlinable node, sink of the group
  *
  * ```
  */
@@ -463,22 +441,6 @@ const _getMessageInletTotalSourceCount = (
     )
     const inletSources = getters.getSources(node, inletId)
     return inletSources.length + +ioReceiversPortletIds.includes(inletId)
-}
-
-const _getMessageOutletTotalSinkCount = (
-    compilation: Compilation,
-    node: DspGraph.Node,
-    outletId: DspGraph.PortletId
-) => {
-    const {
-        settings: { io },
-    } = compilation
-    const ioSendersPortletIds = _getPortletIdsFromMsgIo(
-        io.messageSenders,
-        node.id
-    )
-    const outletSinks = getters.getSinks(node, outletId)
-    return outletSinks.length + +ioSendersPortletIds.includes(outletId)
 }
 
 const _getPortletIdsFromMsgIo = (

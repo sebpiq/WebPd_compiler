@@ -20,7 +20,7 @@
 import { Compilation, GlobalCodeDefinitionExport } from './types'
 import { AstConstVar, AstFunc, AstSequence, VariableName } from '../ast/types'
 import { Sequence, Func, Var, ast, ConstVar } from '../ast/declare'
-import { DspGraph, traversal } from '../dsp-graph'
+import { DspGraph, traversers } from '../dsp-graph'
 import { isNodeInsideGroup } from './precompile/dsp-groups'
 
 export const generateGlobs = ({
@@ -155,13 +155,13 @@ export const generatePortletsDeclarations = (
         precompilation,
         settings: { debug },
     } = compilation
-    const graphTraversalNodes = traversal.toNodes(
+    const nodes = traversers.toNodes(
         graph,
         precompilation.graph.fullTraversal
     )
 
     return Sequence([
-        graphTraversalNodes.map((node) => {
+        nodes.map((node) => {
             const precompiledNode = precompilation.nodes[node.id]
 
             return [
@@ -188,22 +188,19 @@ export const generatePortletsDeclarations = (
 
         // 3. Declares message senders for all message outlets.
         // This needs to come after all message receivers are declared since we reference them here.
-        graphTraversalNodes.map((node) =>
+        nodes.map((node) =>
             Object.values(precompilation.nodes[node.id].messageSenders).map(
                 ({
                     messageSenderName: sndName,
-                    messageReceiverNames: rcvNames,
-                    coldDspFunctionNames,
+                    functionNames,
                 }) =>
                     // prettier-ignore
                     Func(sndName, [
-                    Var('Message', 'm')
-                ], 'void')`
-                    ${rcvNames.map(rcvName => 
-                        `${rcvName}(m)`)}
-                    ${coldDspFunctionNames.map(functionName => 
-                        `${functionName}()`)}
-                `
+                        Var('Message', 'm')
+                    ], 'void')`
+                        ${functionNames.map(functionName => 
+                            `${functionName}(m)`)}
+                    `
             )
         ),
     ])
@@ -248,7 +245,7 @@ export const generateColdDspFunctions = (
         Object.entries(coldDspGroups).map(([groupId, dspGroup]) => {
             const funcName = variableNamesIndex.coldDspGroups[groupId]
             // prettier-ignore
-            return Func(funcName, [], 'void')`
+            return Func(funcName, [Var('Message', 'm')], 'void')`
                 ${dspGroup.traversal.map((nodeId) => precompilation.nodes[nodeId].loop)}
             `
         })

@@ -107,8 +107,7 @@ export interface PrecompiledNodeCode {
     messageSenders: {
         [outletId: DspGraph.PortletId]: {
             messageSenderName: VariableName
-            messageReceiverNames: Array<VariableName>
-            coldDspFunctionNames: Array<VariableName>
+            functionNames: Array<VariableName>
         }
     }
     signalOuts: { [outletId: DspGraph.PortletId]: VariableName }

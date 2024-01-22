@@ -34,7 +34,8 @@ export const toNodes = (
 
 export const listSignalSinkNodes = (
     graph: DspGraph.Graph,
-    node: DspGraph.Node
+    node: DspGraph.Node,
+    outletType
 ) =>
     Object.entries(node.sinks)
         .reduce<Array<DspGraph.NodeId>>(

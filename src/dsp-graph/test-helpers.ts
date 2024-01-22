@@ -21,7 +21,7 @@
 import assert from 'assert'
 import { testGraphIntegrity, endpointsEqual } from './graph-helpers'
 import { getNode } from './getters'
-import { listConnectionsIn } from './traversal'
+import { listConnectionsIn } from './traversers'
 import { DspGraph } from './types'
 
 type GraphConnection = [
