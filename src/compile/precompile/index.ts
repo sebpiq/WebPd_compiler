@@ -44,12 +44,14 @@ import {
     precompileInlineLoop,
     precompileLoop,
     precompileStateInitialization,
+    precompileCaching,
 } from './nodes'
 import {
     buildColdDspGroups,
     removeNodesFromTraversal,
     buildHotDspGroup,
     buildInlinableDspGroups,
+    buildGroupSinkConnections,
 } from './dsp-groups'
 import { DspGroup } from '../types'
 
@@ -90,7 +92,10 @@ export default (compilation: Compilation) => {
     precompilation.graph.hotDspGroup = hotDspGroup
     coldDspGroups.forEach((dspGroup, index) => {
         const groupId = `${index}`
-        precompilation.graph.coldDspGroups[groupId] = dspGroup
+        precompilation.graph.coldDspGroups[groupId] = {
+            ...dspGroup,
+            sinkConnections: buildGroupSinkConnections(graph, dspGroup)
+        }
         attachColdDspGroup(compilation, groupId)
     })
 
@@ -147,6 +152,7 @@ export default (compilation: Compilation) => {
 
     allDspGroups.forEach((dspGroup) => {
         traversers.toNodes(graph, dspGroup.traversal).forEach((node) => {
+            precompileCaching(compilation, node)
             precompileLoop(compilation, node)
         })
     })
@@ -215,6 +221,7 @@ export const initializePrecompilation = (
             stateInitialization: null,
             initialization: ast``,
             loop: ast``,
+            caching: createNamespace(nodeNamespaceLabel(node, 'caching'), {}),
         }))
     ),
     dependencies: {

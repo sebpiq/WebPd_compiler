@@ -21,7 +21,10 @@ import { Compilation, GlobalCodeDefinitionExport } from './types'
 import { AstConstVar, AstFunc, AstSequence, VariableName } from '../ast/types'
 import { Sequence, Func, Var, ast, ConstVar } from '../ast/declare'
 import { DspGraph, traversers } from '../dsp-graph'
-import { isNodeInsideGroup } from './precompile/dsp-groups'
+import {
+    findColdDspGroupFromSink,
+    isNodeInsideGroup,
+} from './precompile/dsp-groups'
 
 export const generateGlobs = ({
     variableNamesIndex: { globs },
@@ -100,7 +103,7 @@ export const generateIoMessageReceivers = ({
             const groupsContainingSink = Object.entries(
                 precompilation.graph.coldDspGroups
             )
-                .filter(([_, dspGroup]) => isNodeInsideGroup(nodeId, dspGroup))
+                .filter(([_, dspGroup]) => isNodeInsideGroup(dspGroup, nodeId))
                 .map(([groupId]) => groupId)
 
             const coldDspFunctionNames = groupsContainingSink.map(
@@ -204,7 +207,7 @@ export const generatePortletsDeclarations = (
 export const generateLoop = (compilation: Compilation) => {
     const { variableNamesIndex, precompilation } = compilation
     const {
-        graph: { hotDspGroup },
+        graph: { hotDspGroup, coldDspGroups },
     } = precompilation
     const { globs } = variableNamesIndex
 
@@ -212,7 +215,25 @@ export const generateLoop = (compilation: Compilation) => {
     return ast`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
-            ${hotDspGroup.traversal.map((nodeId) => precompilation.nodes[nodeId].loop)}
+            ${hotDspGroup.traversal.map((nodeId) => {
+                const precompiledNode = precompilation.nodes[nodeId]
+                return [
+                    // For all caching functions, we render those that are not
+                    // the sink of a cold dsp group.
+                    ...Object.entries(precompiledNode.caching)
+                        .filter(([inletId]) => 
+                            findColdDspGroupFromSink(
+                                coldDspGroups, { 
+                                    nodeId, 
+                                    portletId: inletId 
+                                }
+                            ) === undefined)
+                        .map(([_, astElement]) => 
+                            astElement
+                        ),
+                    precompiledNode.loop
+                ]
+            })}
             ${globs.frame}++
         }
     `
@@ -223,9 +244,10 @@ export const generateColdDspInitialization = ({
     variableNamesIndex,
 }: Compilation) =>
     Sequence(
-        Object.keys(precompilation.graph.coldDspGroups).map((groupId) => {
-            return `${variableNamesIndex.coldDspGroups[groupId]}(${variableNamesIndex.globs.emptyMessage})`
-        })
+        Object.keys(precompilation.graph.coldDspGroups).map(
+            (groupId) =>
+                `${variableNamesIndex.coldDspGroups[groupId]}(${variableNamesIndex.globs.emptyMessage})`
+        )
     )
 
 export const generateColdDspFunctions = (
@@ -241,7 +263,12 @@ export const generateColdDspFunctions = (
             const funcName = variableNamesIndex.coldDspGroups[groupId]
             // prettier-ignore
             return Func(funcName, [Var('Message', 'm')], 'void')`
-                ${dspGroup.traversal.map((nodeId) => precompilation.nodes[nodeId].loop)}
+                ${dspGroup.traversal.map((nodeId) => 
+                    precompilation.nodes[nodeId].loop
+                )}
+                ${dspGroup.sinkConnections.map(([_, sink]) => 
+                    precompilation.nodes[sink.nodeId].caching[sink.portletId]
+                )}
             `
         })
     )

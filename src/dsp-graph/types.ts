@@ -75,7 +75,7 @@ export declare module DspGraph {
         readonly isPushingMessages?: true
     }
 
-    type Graph = { [nodeId: string]: Node }
+    type Graph = { [nodeId: NodeId]: Node }
 
     type Arrays = { [arrayName: string]: Float32Array }
 

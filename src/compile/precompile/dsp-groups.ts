@@ -1,6 +1,6 @@
-import { DspGraph, traversers } from '../../dsp-graph'
+import { DspGraph, helpers, traversers } from '../../dsp-graph'
 import { buildGraphTraversalSignal } from '../compile-helpers'
-import { DspGroup } from '../types'
+import { ColdDspGroup, DspGroup } from '../types'
 import { Compilation } from '../types'
 
 export const buildHotDspGroup = (
@@ -23,26 +23,27 @@ export const buildColdDspGroups = (
     const { graph } = compilation
 
     // Go through all nodes in the signal traversal, and find groups of signal nodes
-    // that can be cached / computed only when needed (cold dsp), outside 
+    // that can be cached / computed only when needed (cold dsp), outside
     // of the main dsp loop (hot dsp). We proceed in the following way :
-    // 1. Find single flow dsp groups, i.e. a cold node and all its sources, 
+    //
+    // 1. Find single flow dsp groups, i.e. a cold node and all its sources,
     //      and their sources, etc. as long as all nodes are cold.
     // 2. some of these single flow dsp groups might be connected to each other,
     //      therefore we need to merge them.
-    // 3. for each merged group consolidate the signal traversal, therefore 
+    // 3. for each merged group consolidate the signal traversal, therefore
     //      fixing the order in which nodes are visited and removing potential duplicates.
-    // 
+    //
     // e.g. :
-    // 
-    //      [  c1  ]      
-    //         |\________ 
+    //
+    //      [  c1  ]
+    //         |\________
     //         |         |
     //      [  c2  ]  [  c4  ]
     //         |         |
     //      [  c3  ]  [  c5  ]  <- out nodes of cold the cold dsp group
     //         |         |
-    //      [  h1  ]  [  h2  ]  <- hot nodes  
-    // 
+    //      [  h1  ]  [  h2  ]  <- hot nodes
+    //
     // In the graph above, [c1, c2, c3, c4, c5] constitute a cold dsp group.
     // 1. We start by finding 2 single flow dsp groups : [c3, c2, c1] and [c5, c4, c1]
     // 2. We detect that these 2 groups are connected, so we merge them into one group : [c3, c2, c1, c5, c4, c1]
@@ -147,7 +148,7 @@ export const buildInlinableDspGroups = (
             if (
                 _isNodeDspInlinable(compilation, node) &&
                 sinkNodes.length === 1 &&
-                // If node is the out node of its parent dsp group, then its not inlinable, 
+                // If node is the out node of its parent dsp group, then its not inlinable,
                 // because it needs to declare output variables.
                 !parentDspGroup.outNodesIds.includes(node.id) &&
                 // If `node`'s sink is itself inlinable, then `node` is not the out node.
@@ -175,9 +176,28 @@ export const buildInlinableDspGroups = (
 }
 
 export const isNodeInsideGroup = (
+    dspGroup: DspGroup,
     nodeId: DspGraph.NodeId,
-    dspGroup: DspGroup
 ) => dspGroup.traversal.includes(nodeId)
+
+export const findColdDspGroupFromSink = (
+    coldDspGroupMap: {[groupId: string]: ColdDspGroup},
+    sink: DspGraph.ConnectionEndpoint,
+) =>
+    Object.values(coldDspGroupMap).find((dspGroup) =>
+        dspGroup.sinkConnections.find(([_, otherSink]) =>
+            helpers.endpointsEqual(otherSink, sink)
+        )
+    )
+
+export const buildGroupSinkConnections = (
+    graph: DspGraph.Graph,
+    dspGroup: DspGroup
+) =>
+    traversers
+        .toNodes(graph, dspGroup.outNodesIds)
+        // Get a flat list of all the sink connections of the out nodes.
+        .flatMap((outNode) => traversers.listSinkConnections(outNode, 'signal'))
 
 export const removeNodesFromTraversal = (
     traversal: DspGraph.GraphTraversal,

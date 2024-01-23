@@ -78,7 +78,7 @@ export const generateVariableNamesGlobs = () =>
         emptyMessage: 'EMPTY_MESSAGE',
     })
 
-export const attachNodePortlet = (
+export const attachNodeVariable = (
     compilation: Compilation,
     nsKey: 'signalOuts' | 'messageSenders' | 'messageReceivers',
     nodeId: DspGraph.NodeId,

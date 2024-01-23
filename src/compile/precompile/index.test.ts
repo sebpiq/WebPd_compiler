@@ -21,8 +21,9 @@ import assert from 'assert'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { makeCompilation } from '../../test-helpers'
 import precompile from '.'
-import { DspGroup, NodeImplementations } from '../types'
+import { ColdDspGroup, DspGroup, NodeImplementations } from '../types'
 import { ast } from '../../ast/declare'
+import { AstSequence } from '../../ast/types'
 
 describe('precompile', () => {
     it('should precompile the inline loop code', () => {
@@ -223,13 +224,19 @@ describe('precompile', () => {
             }
         )
 
-        assert.deepStrictEqual<{[groupId: string]: DspGroup}>(
+        assert.deepStrictEqual<{ [groupId: string]: ColdDspGroup }>(
             compilation.precompilation.graph.coldDspGroups,
             {
                 '0': {
                     // n1 has been inlined
                     traversal: ['n2'],
                     outNodesIds: ['n2'],
+                    sinkConnections: [
+                        [
+                            { nodeId: 'n2', portletId: '0' },
+                            { nodeId: 'n4', portletId: '0' },
+                        ],
+                    ],
                 },
             }
         )
@@ -237,6 +244,78 @@ describe('precompile', () => {
         assert.strictEqual(
             compilation.precompilation.nodes.n2.generationContext.signalIns.$0,
             '(1 + NULL_SIGNAL)'
+        )
+    })
+
+    it('should precompile cold dsp groups and caching functions', () => {
+        //
+        //  [  n1  ]  <- out node of the dsp group
+        //    |
+        //  [  n2  ]  <- sink node with caching function
+        //
+        const graph = makeGraph({
+            n1: {
+                type: 'coldNodeType',
+                inlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+                outlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+                sinks: {
+                    0: [['n2', '0']],
+                },
+            },
+            n2: {
+                type: 'signalType',
+                isPullingSignal: true,
+                inlets: {
+                    '0': { type: 'signal', id: '0' },
+                },
+            },
+        })
+
+        const nodeImplementations: NodeImplementations = {
+            signalType: {
+                caching: () => ({
+                    '0': ast`// caching 0`,
+                }),
+                loop: () => ast`// loop signalType`,
+            },
+            coldNodeType: {
+                flags: {
+                    isPureFunction: true,
+                },
+                inlineLoop: ({ ins }) => ast`1 + ${ins.$0}`,
+            },
+        }
+
+        const compilation = makeCompilation({ graph, nodeImplementations })
+
+        precompile(compilation)
+
+        assert.deepStrictEqual<{ [groupId: string]: ColdDspGroup }>(
+            compilation.precompilation.graph.coldDspGroups,
+            {
+                '0': {
+                    traversal: ['n1'],
+                    outNodesIds: ['n1'],
+                    sinkConnections: [
+                        [
+                            { nodeId: 'n1', portletId: '0' },
+                            { nodeId: 'n2', portletId: '0' },
+                        ],
+                    ],
+                },
+            }
+        )
+
+        assert.deepStrictEqual<AstSequence>(
+            compilation.precompilation.nodes.n2.caching['0'],
+            {
+                astType: 'Sequence',
+                content: ['// caching 0'],
+            }
         )
     })
 })

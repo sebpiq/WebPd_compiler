@@ -21,6 +21,7 @@
 import { AstElement, AstFunc, AstSequence, AstVar } from '../ast/types'
 import { VariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
+import { Connection } from '../dsp-graph/traversers'
 
 // -------------------------------- COMPILATION -------------------------------- //
 type PortletsSpecMetadataBasicValue = boolean | string | number
@@ -90,7 +91,7 @@ export type Precompilation = {
     graph: {
         fullTraversal: DspGraph.GraphTraversal
         hotDspGroup: DspGroup
-        coldDspGroups: { [groupId: string]: DspGroup }
+        coldDspGroups: { [groupId: string]: ColdDspGroup }
     }
 }
 
@@ -114,11 +115,16 @@ export interface PrecompiledNodeCode {
     stateInitialization: AstVar | null
     initialization: AstElement
     loop: AstElement
+    caching: { [inletId: DspGraph.PortletId]: AstElement }
 }
 
 export interface DspGroup {
     traversal: DspGraph.GraphTraversal
     outNodesIds: Array<DspGraph.NodeId>
+}
+
+export interface ColdDspGroup extends DspGroup {
+    sinkConnections: Array<Connection>
 }
 
 // -------------------------------- CODE GENERATION -------------------------------- //
@@ -267,6 +273,16 @@ export interface NodeImplementation<NodeArgsType> {
         compilation: Compilation
     }) => {
         [inletId: DspGraph.PortletId]: AstFunc
+    }
+
+    caching?: (context: {
+        globs: VariableNamesIndex['globs']
+        state: PrecompiledNodeCode['generationContext']['state']
+        ins: PrecompiledNodeCode['generationContext']['signalIns']
+        node: DspGraph.Node<NodeArgsType>
+        compilation: Compilation
+    }) => {
+        [inletId: DspGraph.PortletId]: AstElement
     }
 
     /** List of dependencies for this node type */

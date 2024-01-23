@@ -26,7 +26,7 @@ import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../namespace'
 import { IoMessageSpecs, Compilation } from '../types'
-import { attachNodePortlet } from '../variable-names-index'
+import { attachNodeVariable } from '../variable-names-index'
 import { DspGroup } from '../types'
 import { isNodeInsideGroup } from './dsp-groups'
 
@@ -71,7 +71,7 @@ export const precompileSignalOutlet = (
     //
     //      NODE2_OUT = NODE1_OUT * 2
     //
-    const signalOutName = attachNodePortlet(
+    const signalOutName = attachNodeVariable(
         compilation,
         'signalOuts',
         node.id,
@@ -128,7 +128,7 @@ export const precompileMessageOutlet = (
                     precompilation.graph.coldDspGroups
                 )
                     .filter(([_, dspGroup]) =>
-                        isNodeInsideGroup(sink.nodeId, dspGroup)
+                        isNodeInsideGroup(dspGroup, sink.nodeId)
                     )
                     .map(([groupId]) => groupId)
 
@@ -150,7 +150,7 @@ export const precompileMessageOutlet = (
     //      }
     //
     if (functionNames.length > 1) {
-        const messageSenderName = attachNodePortlet(
+        const messageSenderName = attachNodeVariable(
             compilation,
             'messageSenders',
             sourceNode.id,
@@ -199,7 +199,7 @@ export const precompileMessageInlet = (
 ) => {
     const precompiledNode = compilation.precompilation.nodes[node.id]
     if (_getMessageInletTotalSourceCount(compilation, node, inletId) >= 1) {
-        const messageReceiverName = attachNodePortlet(
+        const messageReceiverName = attachNodeVariable(
             compilation,
             'messageReceivers',
             node.id,
@@ -220,6 +220,10 @@ export const precompileMessageInlet = (
     }
 }
 
+/**
+ * This needs to be in a separate function as `precompileMessageInlet`, because we need
+ * all variable names defined before we can precompile message receivers.
+ */
 export const precompileMessageReceivers = (
     compilation: Compilation,
     node: DspGraph.Node
@@ -414,6 +418,39 @@ export const precompileInlineLoop = (
     precompilation.nodes[groupSinkNode.nodeId].generationContext.signalIns[
         groupSinkNode.portletId
     ] = inlinedNodes[dspGroup.outNodesIds[0]]
+}
+
+export const precompileCaching = (
+    compilation: Compilation,
+    node: DspGraph.Node
+): void => {
+    const { precompilation, variableNamesIndex } = compilation
+    const precompiledNode = precompilation.nodes[node.id]
+    const { globs } = variableNamesIndex
+    const { nodeImplementation } = precompiledNode
+    const { state, signalIns: ins } = precompiledNode.generationContext
+    const caching = createNamespace(
+        nodeNamespaceLabel(node, 'caching'),
+        nodeImplementation.caching
+            ? nodeImplementation.caching({
+                  globs,
+                  state,
+                  ins,
+                  node,
+                  compilation,
+              })
+            : {}
+    )
+
+    Object.entries(caching).forEach(([inletId, astElement]) => {
+        // If that sink is directly connected to a cold dsp group,
+        // then the caching function will be ran at the same time 
+        // as the cold dsp. 
+        // 
+        // Otherwise, that caching function will be ran in the same dsp 
+        // flow as the node.
+        precompiledNode.caching[inletId] = astElement
+    })
 }
 
 const _getInlinableGroupSinkNode = (

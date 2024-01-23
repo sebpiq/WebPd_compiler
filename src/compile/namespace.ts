@@ -45,6 +45,7 @@ export const createNamespace = <T extends Object>(
                         'toJSON',
                         'Symbol(Symbol.toStringTag)',
                         'constructor',
+                        '$typeof',
                         '$$typeof',
                         '@@__IMMUTABLE_ITERABLE__@@',
                         '@@__IMMUTABLE_RECORD__@@',

@@ -32,6 +32,7 @@ import {
     precompileLoop,
     precompileInlineLoop,
     precompileStateInitialization,
+    precompileCaching,
 } from './nodes'
 
 describe('precompile.nodes', () => {
@@ -71,14 +72,14 @@ describe('precompile.nodes', () => {
                 'n1_OUTS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext
-                    .signalOuts.$0,
+                compilation.precompilation.nodes.n1.generationContext.signalOuts
+                    .$0,
                 'n1_OUTS_0'
             )
             // Assigns n1's out to n2's in in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n2.generationContext
-                    .signalIns.$0,
+                compilation.precompilation.nodes.n2.generationContext.signalIns
+                    .$0,
                 'n1_OUTS_0'
             )
         })
@@ -102,8 +103,8 @@ describe('precompile.nodes', () => {
 
             // Substitute with empty signal in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext
-                    .signalIns.$0,
+                compilation.precompilation.nodes.n1.generationContext.signalIns
+                    .$0,
                 compilation.variableNamesIndex.globs.nullSignal
             )
         })
@@ -190,6 +191,7 @@ describe('precompile.nodes', () => {
                 '0': {
                     traversal: ['n2'],
                     outNodesIds: ['n2'],
+                    sinkConnections: [],
                 },
             }
 
@@ -449,10 +451,7 @@ describe('precompile.nodes', () => {
                 )
             )
             assert.ok(
-                !(
-                    '0' in
-                    compilation.precompilation.nodes.n1.messageReceivers
-                )
+                !('0' in compilation.precompilation.nodes.n1.messageReceivers)
             )
         })
     })
@@ -599,6 +598,51 @@ describe('precompile.nodes', () => {
         })
     })
 
+    describe('precompileCaching', () => {
+        it('should precompile caching functions', () => {
+            const graph = makeGraph({
+                n1: {
+                    type: 'type1',
+                },
+                n2: {
+                    type: 'type2',
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                type1: {},
+                type2: {
+                    caching: () => ({
+                        '0': ast`// caching inlet 0`,
+                        '1': ast`// caching inlet 1`,
+                    }),
+                },
+            }
+
+            const compilation = makeCompilation({
+                graph,
+                nodeImplementations,
+            })
+
+            precompileCaching(compilation, graph.n1!)
+
+            assert.deepStrictEqual(
+                compilation.precompilation.nodes.n1.caching,
+                {}
+            )
+
+            precompileCaching(compilation, graph.n2!)
+
+            assert.deepStrictEqual(
+                compilation.precompilation.nodes.n2.caching,
+                {
+                    '0': ast`// caching inlet 0`,
+                    '1': ast`// caching inlet 1`,
+                }
+            )
+        })
+    })
+
     describe('precompileStateInitialization', () => {
         it('should precompile node stateInitialization', () => {
             const graph = makeGraph({
@@ -729,8 +773,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.n1.signalOuts.$0 =
-                'n1_OUTS_0'
+            compilation.variableNamesIndex.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
 
             precompileLoop(compilation, graph.n1)
 

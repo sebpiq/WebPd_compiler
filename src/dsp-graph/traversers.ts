@@ -22,7 +22,10 @@ import { mapArray } from '../functional-helpers'
 import { getInlet, getNode, getOutlet } from './getters'
 import { DspGraph } from './types'
 
-type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]
+export type Connection = [
+    DspGraph.ConnectionEndpoint,
+    DspGraph.ConnectionEndpoint
+]
 
 /**
  * Simple helper to get a list of nodes from a traversal (which is simply node ids).
@@ -35,25 +38,30 @@ export const toNodes = (
 export const listSinkNodes = (
     graph: DspGraph.Graph,
     node: DspGraph.Node,
-    portletType: DspGraph.PortletType
+    portletType?: DspGraph.PortletType
 ) => _listSourceOrSinkNodes(node.sinks, getOutlet, graph, node, portletType)
 
 export const listSourceNodes = (
     graph: DspGraph.Graph,
     node: DspGraph.Node,
-    portletType: DspGraph.PortletType
+    portletType?: DspGraph.PortletType
 ) => _listSourceOrSinkNodes(node.sources, getInlet, graph, node, portletType)
 
-export const listSourceConnections = (node: DspGraph.Node): Array<Connection> =>
+export const listSourceConnections = (
+    node: DspGraph.Node,
+    portletType?: DspGraph.PortletType
+): Array<Connection> =>
     // We need to reverse the order of the connection, because `_listSourcesOrSinks`
     // puts the calling node's endpoint first regardless of whether we're listing sources or sinks.
-    _listSourcesOrSinks(node.sources, getInlet, node).map(([sink, source]) => [
-        source,
-        sink,
-    ])
+    _listSourcesOrSinks(node.sources, getInlet, node, portletType).map(
+        ([sink, source]) => [source, sink]
+    )
 
-export const listSinkConnections = (node: DspGraph.Node): Array<Connection> =>
-    _listSourcesOrSinks(node.sinks, getOutlet, node)
+export const listSinkConnections = (
+    node: DspGraph.Node,
+    portletType?: DspGraph.PortletType
+): Array<Connection> =>
+    _listSourcesOrSinks(node.sinks, getOutlet, node, portletType)
 
 const _listSourcesOrSinks = (
     sourcesOrSinks: DspGraph.ConnectionEndpointMap,

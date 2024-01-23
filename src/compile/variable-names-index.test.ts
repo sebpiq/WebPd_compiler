@@ -20,7 +20,7 @@
 import assert from 'assert'
 import {
     assertValidNamePart,
-    attachNodePortlet,
+    attachNodeVariable,
     attachIoMessages,
     generateVariableNamesIndex,
 } from './variable-names-index'
@@ -88,7 +88,7 @@ describe('variable-names-index', () => {
         })
     })
 
-    describe('attachNodePortlet', () => {
+    describe('attachNodeVariable', () => {
         it('should attach portlet variable names for a node', () => {
             const graph = makeGraph({
                 node1: {
@@ -113,11 +113,11 @@ describe('variable-names-index', () => {
                 graph,
             })
 
-            attachNodePortlet(compilation, 'signalOuts', 'node1', '0')
-            attachNodePortlet(compilation, 'signalOuts', 'node1', '2')
-            attachNodePortlet(compilation, 'messageSenders', 'node1', '1')
-            attachNodePortlet(compilation, 'messageSenders', 'node1', '3')
-            attachNodePortlet(compilation, 'messageReceivers', 'node1', '1')
+            attachNodeVariable(compilation, 'signalOuts', 'node1', '0')
+            attachNodeVariable(compilation, 'signalOuts', 'node1', '2')
+            attachNodeVariable(compilation, 'messageSenders', 'node1', '1')
+            attachNodeVariable(compilation, 'messageSenders', 'node1', '3')
+            attachNodeVariable(compilation, 'messageReceivers', 'node1', '1')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
@@ -175,9 +175,9 @@ describe('variable-names-index', () => {
                 },
             })
 
-            attachNodePortlet(compilation, 'signalOuts', 'someObj', '0')
-            attachNodePortlet(compilation, 'messageSenders', 'someObj', '1')
-            attachNodePortlet(compilation, 'messageReceivers', 'someObj', '2')
+            attachNodeVariable(compilation, 'signalOuts', 'someObj', '0')
+            attachNodeVariable(compilation, 'messageSenders', 'someObj', '1')
+            attachNodeVariable(compilation, 'messageReceivers', 'someObj', '2')
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
@@ -205,13 +205,13 @@ describe('variable-names-index', () => {
 
             const compilation = makeCompilation({ graph })
 
-            attachNodePortlet(compilation, 'messageReceivers', 'node1', '0')
+            attachNodeVariable(compilation, 'messageReceivers', 'node1', '0')
             assert.strictEqual(
                 compilation.variableNamesIndex.nodes.node1.messageReceivers.$0,
                 'node1_RCVS_0'
             )
             assert.doesNotThrow(() =>
-                attachNodePortlet(compilation, 'messageReceivers', 'node1', '0')
+                attachNodeVariable(compilation, 'messageReceivers', 'node1', '0')
             )
             assert.strictEqual(
                 compilation.variableNamesIndex.nodes.node1.messageReceivers.$0,
