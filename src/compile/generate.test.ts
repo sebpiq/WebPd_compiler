@@ -596,5 +596,56 @@ describe('generate', () => {
                 ],
             })
         })
+
+        it('should not add calls to caching if not defined by the sink node', () => {
+            const graph = makeGraph({
+                n1: {},
+                n2: {},
+            })
+
+            const compilation = makeCompilation({
+                graph,
+            })
+
+            compilation.precompilation.nodes.n1.loop = ast`// n1`
+            compilation.precompilation.graph.coldDspGroups = {
+                '0': {
+                    traversal: ['n1'],
+                    outNodesIds: ['n1'],
+                    sinkConnections: [
+                        [
+                            { nodeId: 'n1', portletId: '0' },
+                            { nodeId: 'n2', portletId: '0' },
+                        ],
+                    ],
+                },
+            }
+            compilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
+
+            const sequence = generateColdDspFunctions(compilation)
+
+            assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
+                astType: 'Sequence',
+                content: [
+                    {
+                        astType: 'Func',
+                        name: 'DSP_0',
+                        args: [
+                            {
+                                astType: 'Var',
+                                name: 'm',
+                                type: 'Message',
+                                value: undefined,
+                            },
+                        ],
+                        returnType: 'void',
+                        body: {
+                            astType: 'Sequence',
+                            content: ['// n1'],
+                        },
+                    },
+                ],
+            })
+        })
     })
 })

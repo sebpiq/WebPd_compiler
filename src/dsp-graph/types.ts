@@ -80,4 +80,9 @@ export declare module DspGraph {
     type Arrays = { [arrayName: string]: Float32Array }
 
     type GraphTraversal = Array<NodeId>
+
+    type Connection = [
+        DspGraph.ConnectionEndpoint,
+        DspGraph.ConnectionEndpoint
+    ]
 }

@@ -22,11 +22,6 @@ import { mapArray } from '../functional-helpers'
 import { getInlet, getNode, getOutlet } from './getters'
 import { DspGraph } from './types'
 
-export type Connection = [
-    DspGraph.ConnectionEndpoint,
-    DspGraph.ConnectionEndpoint
-]
-
 /**
  * Simple helper to get a list of nodes from a traversal (which is simply node ids).
  */
@@ -50,7 +45,7 @@ export const listSourceNodes = (
 export const listSourceConnections = (
     node: DspGraph.Node,
     portletType?: DspGraph.PortletType
-): Array<Connection> =>
+): Array<DspGraph.Connection> =>
     // We need to reverse the order of the connection, because `_listSourcesOrSinks`
     // puts the calling node's endpoint first regardless of whether we're listing sources or sinks.
     _listSourcesOrSinks(node.sources, getInlet, node, portletType).map(
@@ -60,7 +55,7 @@ export const listSourceConnections = (
 export const listSinkConnections = (
     node: DspGraph.Node,
     portletType?: DspGraph.PortletType
-): Array<Connection> =>
+): Array<DspGraph.Connection> =>
     _listSourcesOrSinks(node.sinks, getOutlet, node, portletType)
 
 const _listSourcesOrSinks = (
@@ -68,10 +63,10 @@ const _listSourcesOrSinks = (
     portletGetter: typeof getInlet | typeof getOutlet,
     node: DspGraph.Node,
     portletType?: DspGraph.PortletType
-): Array<Connection> =>
+): Array<DspGraph.Connection> =>
     // We always put the `node` endpoint first, even if we're listing connections to sources,
     // this allows mre genericity to the function
-    Object.entries(sourcesOrSinks).reduce<Array<Connection>>(
+    Object.entries(sourcesOrSinks).reduce<Array<DspGraph.Connection>>(
         (connections, [portletId, sourceOrSinkList]) => {
             const nodeEndpoint = { portletId, nodeId: node.id }
             const portlet = portletGetter(node, portletId)
@@ -79,7 +74,7 @@ const _listSourcesOrSinks = (
                 return [
                     ...connections,
                     ...sourceOrSinkList.map(
-                        (s) => [nodeEndpoint, s] as Connection
+                        (s) => [nodeEndpoint, s] as DspGraph.Connection
                     ),
                 ]
             } else {

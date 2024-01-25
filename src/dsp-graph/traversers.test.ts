@@ -30,12 +30,11 @@ import {
     listSinkNodes,
     listSourceNodes,
 } from './traversers'
-import { getNode } from './getters'
 import { DspGraph } from './types'
 import { makeGraph, nodeDefaults } from './test-helpers'
 
 describe('graph-traversal', () => {
-    describe('listSignalSinkNodes', () => {
+    describe('listSinkNodes', () => {
         it('should list all signal nodes that are sinks of a given node', () => {
             const graph = makeGraph({
                 n1: {
@@ -87,7 +86,7 @@ describe('graph-traversal', () => {
         })
     })
 
-    describe('listSignalSourceNodes', () => {
+    describe('listSourceNodes', () => {
         it('should list all signal nodes that are sources of a given node', () => {
             const graph = makeGraph({
                 n1: {

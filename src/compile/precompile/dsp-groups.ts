@@ -1,4 +1,5 @@
 import { DspGraph, helpers, traversers } from '../../dsp-graph'
+import { endpointsEqual } from '../../dsp-graph/graph-helpers'
 import { buildGraphTraversalSignal } from '../compile-helpers'
 import { ColdDspGroup, DspGroup } from '../types'
 import { Compilation } from '../types'
@@ -147,7 +148,6 @@ export const buildInlinableDspGroups = (
             // We're looking for the out node of an inlinable dsp group.
             if (
                 _isNodeDspInlinable(compilation, node) &&
-                sinkNodes.length === 1 &&
                 // If node is the out node of its parent dsp group, then its not inlinable,
                 // because it needs to declare output variables.
                 !parentDspGroup.outNodesIds.includes(node.id) &&
@@ -177,12 +177,12 @@ export const buildInlinableDspGroups = (
 
 export const isNodeInsideGroup = (
     dspGroup: DspGroup,
-    nodeId: DspGraph.NodeId,
+    nodeId: DspGraph.NodeId
 ) => dspGroup.traversal.includes(nodeId)
 
 export const findColdDspGroupFromSink = (
-    coldDspGroupMap: {[groupId: string]: ColdDspGroup},
-    sink: DspGraph.ConnectionEndpoint,
+    coldDspGroupMap: { [groupId: string]: ColdDspGroup },
+    sink: DspGraph.ConnectionEndpoint
 ) =>
     Object.values(coldDspGroupMap).find((dspGroup) =>
         dspGroup.sinkConnections.find(([_, otherSink]) =>
@@ -214,13 +214,24 @@ const _isNodeDspCold = (
         : false
 }
 
-const _isNodeDspInlinable = (
-    { precompilation, graph }: Compilation,
+export const _isNodeDspInlinable = (
+    { precompilation }: Compilation,
     node: DspGraph.Node
 ) => {
-    const sinkNodes = traversers.listSinkNodes(graph, node, 'signal')
+    const sinks = traversers
+        .listSinkConnections(node, 'signal')
+        .map(([_, sink]) => sink)
+        // De-duplicate sinks
+        .reduce<Array<DspGraph.ConnectionEndpoint>>((dedupedSinks, sink) => {
+            if (dedupedSinks.every((otherSink) => !endpointsEqual(otherSink, sink))) {
+                return [...dedupedSinks, sink]
+            } else {
+                return dedupedSinks
+            }
+        }, [])
+
     return (
         !!precompilation.nodes[node.id].nodeImplementation.inlineLoop &&
-        sinkNodes.length === 1
+        sinks.length === 1
     )
 }

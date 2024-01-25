@@ -22,8 +22,6 @@ import { getNode, getSinks, getSources } from './getters'
 import { listSinkConnections, listSourceConnections } from './traversers'
 import { DspGraph } from './types'
 
-type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]
-
 export const endpointsEqual = (
     a1: DspGraph.ConnectionEndpoint,
     a2: DspGraph.ConnectionEndpoint
@@ -31,8 +29,8 @@ export const endpointsEqual = (
 
 export const testGraphIntegrity = (
     graph: DspGraph.Graph
-): { inconsistentConnections: Array<Connection> } | null => {
-    const inconsistentConnections: Array<Connection> = []
+): { inconsistentConnections: Array<DspGraph.Connection> } | null => {
+    const inconsistentConnections: Array<DspGraph.Connection> = []
 
     Object.keys(graph).forEach((nodeId) => {
         const node = getNode(graph, nodeId)

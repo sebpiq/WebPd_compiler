@@ -4,6 +4,7 @@ import { makeCompilation } from '../../test-helpers'
 import { NodeImplementations } from '../types'
 import {
     _buildSingleFlowColdDspGroups,
+    _isNodeDspInlinable,
     buildColdDspGroups,
     buildHotDspGroup,
     buildInlinableDspGroups,
@@ -535,7 +536,7 @@ describe('dsp-groups', () => {
             //    [  n2  ]  <- out node for inlinable group
             //       |
             //    [  n3  ]  <- out node for parent group
-            // 
+            //
             const graph = makeGraph({
                 n1: {
                     type: 'inlinableType',
@@ -589,6 +590,42 @@ describe('dsp-groups', () => {
                         outNodesIds: ['n2'],
                     },
                 ]
+            )
+        })
+    })
+
+    describe('_isNodeDspInlinable', () => {
+        it('should return false if several signal connections between 2 nodes', () => {
+            const graph = makeGraph({
+                n1: {
+                    type: 'inlinableType',
+                    sinks: {
+                        '0': [['n2', '0'], ['n2', '1']],
+                    },
+                    outlets: {
+                        '0': { type: 'signal', id: '0' },
+                    },
+                },
+                n2: {
+                    type: 'inlinableType',
+                    inlets: {
+                        '0': { type: 'signal', id: '0' },
+                        '1': { type: 'signal', id: '1' },
+                    },
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                inlinableType: {
+                    inlineLoop: () => ast``,
+                }
+            }
+
+            const compilation = makeCompilation({ graph, nodeImplementations })
+
+            assert.strictEqual(
+                _isNodeDspInlinable(compilation, graph.n1),
+                false
             )
         })
     })

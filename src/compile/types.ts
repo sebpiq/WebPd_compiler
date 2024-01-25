@@ -21,7 +21,6 @@
 import { AstElement, AstFunc, AstSequence, AstVar } from '../ast/types'
 import { VariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
-import { Connection } from '../dsp-graph/traversers'
 
 // -------------------------------- COMPILATION -------------------------------- //
 type PortletsSpecMetadataBasicValue = boolean | string | number
@@ -124,7 +123,7 @@ export interface DspGroup {
 }
 
 export interface ColdDspGroup extends DspGroup {
-    sinkConnections: Array<Connection>
+    sinkConnections: Array<DspGraph.Connection>
 }
 
 // -------------------------------- CODE GENERATION -------------------------------- //

@@ -123,7 +123,7 @@ export const generateIoMessageReceivers = ({
                                 inletId
                             ]
                         }(m)
-                        ${coldDspFunctionNames.map((name) => `${name}()`)}
+                        ${coldDspFunctionNames.map((name) => `${name}(m)`)}
                     `
             )
         })
@@ -266,9 +266,12 @@ export const generateColdDspFunctions = (
                 ${dspGroup.traversal.map((nodeId) => 
                     precompilation.nodes[nodeId].loop
                 )}
-                ${dspGroup.sinkConnections.map(([_, sink]) => 
-                    precompilation.nodes[sink.nodeId].caching[sink.portletId]
-                )}
+                ${dspGroup.sinkConnections
+                    .filter(([_, sink]) => sink.portletId in precompilation.nodes[sink.nodeId].caching)
+                    .map(([_, sink]) => 
+                        precompilation.nodes[sink.nodeId].caching[sink.portletId]
+                    )
+                }
             `
         })
     )
