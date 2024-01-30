@@ -51,13 +51,30 @@ export const getNodeImplementation = (
     }
 }
 
+export const getNodeImplementationsUsedInGraph = (
+    graph: DspGraph.Graph,
+    nodeImplementations: NodeImplementations
+) =>
+    Object.values(graph).reduce<{
+        [nodeType: DspGraph.NodeType]: NodeImplementation
+    }>((nodeImplementationsUsedInGraph, node) => {
+        if (node.type in nodeImplementationsUsedInGraph) {
+            return nodeImplementationsUsedInGraph
+        } else {
+            return {
+                ...nodeImplementationsUsedInGraph,
+                [node.type]: getNodeImplementation(
+                    nodeImplementations,
+                    node.type
+                ),
+            }
+        }
+    }, {})
+
 /** Helper to build engine metadata from compilation object */
 export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     const {
-        settings: {
-            audio: audioSettings,
-            io,
-        },
+        settings: { audio: audioSettings, io },
         variableNamesIndex,
     } = compilation
     return {

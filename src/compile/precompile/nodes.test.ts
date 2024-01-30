@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { Func, Var, AnonFunc, ast } from '../../ast/declare'
+import { Func, Var, AnonFunc, ast, Class } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { makeCompilation } from '../../test-helpers'
 import { NodeImplementations } from '../types'
@@ -31,7 +31,7 @@ import {
     precompileInitialization,
     precompileLoop,
     precompileInlineLoop,
-    precompileStateInitialization,
+    precompileState,
     precompileCaching,
 } from './nodes'
 
@@ -643,8 +643,8 @@ describe('precompile.nodes', () => {
         })
     })
 
-    describe('precompileStateInitialization', () => {
-        it('should precompile node stateInitialization', () => {
+    describe('precompileState', () => {
+        it('should precompile node state initialization', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -654,8 +654,11 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 type1: {
-                    stateInitialization: ({ node: { args } }) =>
-                        Var('State', '', `{ a: ${args.a}, b: ${args.b} }`),
+                    state: ({ node: { args } }) =>
+                        Class('State_type1', [
+                            Var('Int', 'a', args.a),
+                            Var('Int', 'b', args.b),
+                        ]),
                 },
             }
 
@@ -664,12 +667,23 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileStateInitialization(compilation, graph.n1)
+            compilation.variableNamesIndex.nodeImplementations.type1.stateClass = 'State_type1'
 
-            assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.stateInitialization,
-                Var('State', '', `{ a: 22, b: 33 }`)
-            )
+            precompileState(compilation, graph.n1)
+
+            assert.deepStrictEqual(compilation.precompilation.nodes.n1.state, {
+                className: 'State_type1',
+                initialization: {
+                    a: {
+                        astType: 'Sequence',
+                        content: ['22'],
+                    },
+                    b: {
+                        astType: 'Sequence',
+                        content: ['33'],
+                    },
+                },
+            })
         })
     })
 

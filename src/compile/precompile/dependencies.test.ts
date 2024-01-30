@@ -36,7 +36,7 @@ import { makeCompilation } from '../../test-helpers'
 import { Func, Sequence, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 
-describe('precompile-dependencies', () => {
+describe('precompile.dependencies', () => {
     const COMPILATION = makeCompilation({})
 
     describe('default', () => {
@@ -146,7 +146,6 @@ describe('precompile-dependencies', () => {
                 [Func('bla')``, Func('bli')``]
             )
         })
-
     })
 
     describe('collectDependencies', () => {

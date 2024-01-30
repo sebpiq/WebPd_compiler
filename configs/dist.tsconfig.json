@@ -2,9 +2,10 @@
     "extends": "../node_modules/@webpd/dev/configs/dist.tsconfig.json",
     "compilerOptions": {
         "outDir": "../dist",
-        "rootDir": "../"
+        "rootDir": "../",
+        "sourceMap": false
     },
     "include": [
         "../src/**/*.ts"
-    ]
+    ],
 }

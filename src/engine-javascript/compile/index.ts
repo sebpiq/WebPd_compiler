@@ -22,6 +22,7 @@ import { buildMetadata } from '../../compile/compile-helpers'
 import {
     generatePortletsDeclarations,
     generateGlobs,
+    generateNodeImplementationsCoreAndStateClasses,
     generateNodeInitializations,
     generateLoop,
     generateIoMessageReceivers,
@@ -29,7 +30,7 @@ import {
     generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
-    generateNodeStateDeclarations,
+    generateNodeStateInstances,
     generateColdDspInitialization,
 } from '../../compile/generate'
 import { Compilation } from '../../compile/types'
@@ -50,12 +51,13 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
     // prettier-ignore
     return render(macros, ast`
         ${precompilation.dependencies.ast}
+        ${generateNodeImplementationsCoreAndStateClasses(compilation)}
 
         ${generateGlobs(compilation)}
 
         ${generateEmbeddedArrays(compilation)}
 
-        ${generateNodeStateDeclarations(compilation)}
+        ${generateNodeStateInstances(compilation)}
         ${generatePortletsDeclarations(compilation)}
 
         ${generateColdDspFunctions(compilation)}

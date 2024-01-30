@@ -26,7 +26,7 @@ import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../namespace'
 import { IoMessageSpecs, Compilation } from '../types'
-import { attachNodeVariable } from '../variable-names-index'
+import { attachNodeVariable, attachNodeImplementationVariable } from '../variable-names-index'
 import { DspGroup } from '../types'
 import { isNodeInsideGroup } from './dsp-groups'
 
@@ -35,7 +35,7 @@ type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
 
 const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 
-export const precompileStateInitialization = (
+export const precompileState = (
     compilation: Compilation,
     node: DspGraph.Node
 ) => {
@@ -43,13 +43,33 @@ export const precompileStateInitialization = (
     const { globs } = variableNamesIndex
     const precompiledNode = precompilation.nodes[node.id]
     const { nodeImplementation } = precompiledNode
-    precompiledNode.stateInitialization = nodeImplementation.stateInitialization
-        ? nodeImplementation.stateInitialization({
-              globs,
-              node,
-              compilation,
-          })
-        : null
+    if (nodeImplementation.state) {
+        const nodeType = node.type
+        const stateClassName = variableNamesIndex.nodeImplementations[nodeType].stateClass
+        if (!stateClassName) {
+            throw new Error(
+                `No stateClass defined for ${nodeType}`
+            )
+        }
+        const astClass = nodeImplementation.state({
+            globs,
+            node,
+            compilation,
+            stateClassName,
+        })
+
+        // Add state iniialization to the node.
+        precompiledNode.state = {
+            className: stateClassName,
+            initialization: astClass.members.reduce(
+                (stateInitialization, astVar) => ({
+                    ...stateInitialization,
+                    [astVar.name]: astVar.value,
+                }),
+                {}
+            ),
+        }
+    }
 }
 
 export const precompileSignalOutlet = (
@@ -444,10 +464,10 @@ export const precompileCaching = (
 
     Object.entries(caching).forEach(([inletId, astElement]) => {
         // If that sink is directly connected to a cold dsp group,
-        // then the caching function will be ran at the same time 
-        // as the cold dsp. 
-        // 
-        // Otherwise, that caching function will be ran in the same dsp 
+        // then the caching function will be ran at the same time
+        // as the cold dsp.
+        //
+        // Otherwise, that caching function will be ran in the same dsp
         // flow as the node.
         precompiledNode.caching[inletId] = astElement
     })

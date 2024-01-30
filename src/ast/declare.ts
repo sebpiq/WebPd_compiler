@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { countTo } from '../functional-helpers'
-import { AstSequenceContent, Code, VariableName } from './types'
+import { AstElement, AstSequenceContent, Code, VariableName } from './types'
 import {
     TypeName,
     AstVar,
@@ -32,7 +32,7 @@ type AstContentRaw = AstSequenceContent | AstSequence | null | number
 
 type AstContentRawNested = Array<AstContentRawNested | AstContentRaw>
 
-export type AstVarValue = Code | AstSequence | number
+export type AstVarValue = Code | number | AstElement
 
 export const Var = (
     typeName: TypeName,

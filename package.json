@@ -9,7 +9,7 @@
     "author": "Sébastien Piquemal",
     "scripts": {
         "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",
-        "build:dist": "npx rollup --config node_modules/@webpd/dev/configs/dist.rollup.mjs",
+        "build:dist": "npx rollup --config configs/dist.rollup.mjs",
         "build:bindings": "npx rollup --config configs/bindings.rollup.mjs",
         "build": "npm run clean; npm run build:dist; npm run build:bindings",
         "clean": "rm -rf dist",

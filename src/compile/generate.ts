@@ -25,6 +25,8 @@ import {
     findColdDspGroupFromSink,
     isNodeInsideGroup,
 } from './precompile/dsp-groups'
+import render from '../ast/render'
+import { getMacros } from './compile-helpers'
 
 export const generateGlobs = ({
     variableNamesIndex: { globs },
@@ -57,7 +59,20 @@ export const generateEmbeddedArrays = ({ settings: { arrays } }: Compilation) =>
         )
     )
 
-export const generateNodeStateDeclarations = ({
+export const generateNodeImplementationsCoreAndStateClasses = ({
+    precompilation,
+}: Compilation): AstSequence =>
+    Sequence(
+        Object.values(precompilation.nodeImplementations).map(
+            (precompiledImplementation) => [
+                precompiledImplementation.stateClass,
+                precompiledImplementation.core,
+            ]
+        )
+    )
+
+export const generateNodeStateInstances = ({
+    target,
     precompilation,
     variableNamesIndex,
 }: Compilation): AstSequence =>
@@ -66,15 +81,27 @@ export const generateNodeStateDeclarations = ({
             (declarations, nodeId) => {
                 const precompiledNode = precompilation.nodes[nodeId]
                 const nodeVariableNames = variableNamesIndex.nodes[nodeId]
-                if (!precompiledNode.stateInitialization) {
+                if (!precompiledNode.state) {
                     return declarations
                 } else {
                     return [
                         ...declarations,
                         ConstVar(
-                            precompiledNode.stateInitialization.type,
+                            precompiledNode.state.className,
                             nodeVariableNames.state,
-                            precompiledNode.stateInitialization.value
+                            ast`{
+                                ${Object.entries(
+                                    precompiledNode.state.initialization
+                                )
+                                    .map(
+                                        ([key, value]) =>
+                                            `${key}: ${render(
+                                                getMacros(target),
+                                                value
+                                            )}`
+                                    )
+                                    .join(',\n')}
+                            }`
                         ),
                     ]
                 }

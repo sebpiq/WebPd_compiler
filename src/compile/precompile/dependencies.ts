@@ -17,9 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import {
-    isGlobalDefinitionWithSettings,
-} from '../compile-helpers'
+import { isGlobalDefinitionWithSettings } from '../compile-helpers'
 import {
     Compilation,
     CompilerTarget,
@@ -28,16 +26,13 @@ import {
     GlobalCodeGeneratorContext,
     Precompilation,
 } from '../types'
-import { AstElement, AstFunc } from '../../ast/types'
+import { AstElement, AstFunc, AstSequence } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { core, commonsCore, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
 
 export default (compilation: Compilation) => {
-    const {
-        precompilation,
-        target,
-    } = compilation
+    const { precompilation, target } = compilation
 
     const dependencies = flattenDependencies([
         ...engineMinimalDependencies(),
@@ -61,7 +56,7 @@ export default (compilation: Compilation) => {
 export const instantiateAndDedupeDependencies = (
     compilation: Compilation,
     dependencies: Array<GlobalCodeDefinition>
-): Precompilation['dependencies']['ast'] => {
+): AstSequence => {
     const context = _getGlobalCodeGeneratorContext(compilation)
     return Sequence(
         dependencies
@@ -73,8 +68,7 @@ export const instantiateAndDedupeDependencies = (
             .reduce<Array<AstElement>>(
                 (astElements, astElement) =>
                     astElements.every(
-                        (otherElement) =>
-                            !_deepEqual(otherElement, astElement)
+                        (otherElement) => !_deepEqual(otherElement, astElement)
                     )
                         ? [...astElements, astElement]
                         : astElements,
@@ -145,9 +139,10 @@ export const flattenDependencies = (
         }
     })
 
-const _collectDependenciesFromTraversal = (
-    { precompilation, graph }: Compilation,
-): Array<GlobalCodeDefinition> => {
+const _collectDependenciesFromTraversal = ({
+    precompilation,
+    graph,
+}: Compilation): Array<GlobalCodeDefinition> => {
     return traversers
         .toNodes(graph, precompilation.graph.fullTraversal)
         .reduce<Array<GlobalCodeDefinition>>(
@@ -160,15 +155,17 @@ const _collectDependenciesFromTraversal = (
         )
 }
 
-const _getGlobalCodeGeneratorContext = (
-    { settings, target, variableNamesIndex }: Compilation
-): GlobalCodeGeneratorContext => ({
+const _getGlobalCodeGeneratorContext = ({
+    settings,
+    target,
+    variableNamesIndex,
+}: Compilation): GlobalCodeGeneratorContext => ({
     target: target,
     audioSettings: settings.audio,
     globs: variableNamesIndex.globs,
 })
 
-const _deepEqual = (ast1: AstElement, ast2: AstElement) => 
+const _deepEqual = (ast1: AstElement, ast2: AstElement) =>
     // This works but this flawed cause {a: 1, b: 2} and {b: 2, a: 1}
     // would compare to false.
     JSON.stringify(ast1) === JSON.stringify(ast2)

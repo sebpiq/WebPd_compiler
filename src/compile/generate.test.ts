@@ -23,7 +23,7 @@ import { NodeImplementations } from './types'
 import { makeCompilation } from '../test-helpers'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import precompile from './precompile'
-import { AnonFunc, ConstVar, Func, Var, ast } from '../ast/declare'
+import { AnonFunc, Class, ConstVar, Func, Sequence, Var, ast } from '../ast/declare'
 import {
     assertAstSequencesAreEqual,
     normalizeAstSequence,
@@ -33,8 +33,9 @@ import {
     generateColdDspInitialization,
     generateIoMessageReceivers,
     generateLoop,
+    generateNodeImplementationsCoreAndStateClasses,
     generateNodeInitializations,
-    generateNodeStateDeclarations,
+    generateNodeStateInstances,
     generatePortletsDeclarations,
 } from './generate'
 import { AstSequence } from '../ast/types'
@@ -240,7 +241,7 @@ describe('generate', () => {
         })
     })
 
-    describe('generateNodeStateDeclarations', () => {
+    describe('generateNodeStateInstances', () => {
         it('should compile declarations for node state and filter out nodes with no state declaration', () => {
             const graph = makeGraph({
                 n1: {},
@@ -253,25 +254,118 @@ describe('generate', () => {
             })
 
             compilation.precompilation.graph.fullTraversal = ['n1', 'n2', 'n3']
-            compilation.precompilation.nodes.n1.stateInitialization = Var(
-                'State',
-                '',
-                `{ a: 111, b: 222 }`
-            )
-            compilation.precompilation.nodes.n2.stateInitialization = Var(
-                'State',
-                '',
-                `{ a: 333, b: 444 }`
-            )
-            compilation.precompilation.nodes.n3.stateInitialization = null
+            compilation.precompilation.nodes.n1.state = {
+                className: 'State',
+                initialization: {
+                    a: Sequence(['111']),
+                    b: Sequence([AnonFunc([Var('Float', 'x')])`return x * 2`]),
+                }
+            }
+            compilation.precompilation.nodes.n2.state = {
+                className: 'State',
+                initialization: {
+                    a: Sequence(['333']),
+                    b: Sequence(['444']),
+                }
+            }
+            compilation.precompilation.nodes.n3.state = null
 
-            const sequence = generateNodeStateDeclarations(compilation)
+            const sequence = generateNodeStateInstances(compilation)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
                 content: [
-                    ConstVar('State', 'n1_STATE', '{ a: 111, b: 222 }'),
-                    ConstVar('State', 'n2_STATE', '{ a: 333, b: 444 }'),
+                    ConstVar('State', 'n1_STATE', '{\na: 111,\nb: function (x) {return x * 2}\n}'),
+                    ConstVar('State', 'n2_STATE', '{\na: 333,\nb: 444\n}'),
+                ],
+            })
+        })
+    })
+
+    describe('generateNodeImplementationsCoreAndStateClasses', () => {
+        it('should generate initializations for nodes', () => {
+
+            const compilation = makeCompilation({})
+
+            compilation.precompilation.nodeImplementations.type1 = {
+                stateClass: Class('State_type1', [
+                    Var('Float', 'a'),
+                ]),
+                core: Sequence([
+                    ConstVar('Bla', 'bla', '"hello"'),
+                    Func('blo', [Var('State_type1', 'state')])`// blo`,
+                ]),
+                nodeImplementation: {},
+            }
+
+            compilation.precompilation.nodeImplementations.type2 = {
+                stateClass: Class('State_type2', [
+                    Var('Float', 'b'),
+                ]),
+                core: Sequence([
+                    ConstVar('Int', 'i', '0'),
+                ]),
+                nodeImplementation: {},
+            }
+
+            const sequence = generateNodeImplementationsCoreAndStateClasses(compilation)
+
+            assertAstSequencesAreEqual(sequence, {
+                astType: 'Sequence',
+                content: [
+                    {
+                        astType: 'Class',
+                        name: 'State_type1',
+                        members: [
+                            {
+                                astType: 'Var',
+                                name: 'a',
+                                type: 'Float',
+                                value: undefined,
+                            }
+                        ]
+                    },
+                    {
+                        astType: 'ConstVar',
+                        name: 'bla',
+                        type: 'Bla',
+                        value: ast`"hello"`,
+                    },
+                    {
+                        astType: 'Func',
+                        name: 'blo',
+                        args: [
+                            {
+                                astType: 'Var',
+                                name: 'state',
+                                type: 'State_type1',
+                                value: undefined,
+                            },
+                        ],
+                        returnType: 'void',
+                        body: {
+                            astType: 'Sequence',
+                            content: ['// blo'],
+                        },
+                    },
+                    {
+                        astType: 'Class',
+                        name: 'State_type2',
+                        members: [
+                            {
+                                astType: 'Var',
+                                name: 'b',
+                                type: 'Float',
+                                value: undefined,
+                            }
+                        ]
+                    },
+                    {
+                        astType: 'ConstVar',
+                        name: 'i',
+                        type: 'Int',
+                        value: ast`0`,
+                    },
                 ],
             })
         })

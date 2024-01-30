@@ -23,6 +23,7 @@ import {
     attachNodeVariable,
     attachIoMessages,
     generateVariableNamesIndex,
+    attachNodeImplementationVariable,
 } from './variable-names-index'
 import {
     IoMessageSpecs,
@@ -31,16 +32,23 @@ import {
 } from './types'
 import { makeGraph } from '../dsp-graph/test-helpers'
 import { makeCompilation } from '../test-helpers'
+import { DspGraph } from '../dsp-graph'
 
 describe('variable-names-index', () => {
     describe('generate', () => {
         it('should create state variable names for each node', () => {
             const graph = makeGraph({
-                node1: {},
-                node2: {},
+                node1: { type: 'type1'},
+                node2: { type: 'type1'},
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(graph, false)
+            const nodeImplementations: NodeImplementations = { 'type1': {} }
+
+            const variableNamesIndex = generateVariableNamesIndex(
+                graph,
+                nodeImplementations,
+                false
+            )
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
@@ -61,12 +69,40 @@ describe('variable-names-index', () => {
             )
         })
 
-        it('should throw error for unknown namespaces', () => {
+        it('should create namespace for each node node implementation encountered in the graph', () => {
             const graph = makeGraph({
-                node1: {},
+                'node1': { type: 'type1'},
+                'node2': { type: 'type2'},
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(graph, false)
+            const nodeImplementations: NodeImplementations = {
+                'type1': {},
+                'type2': {}
+            }
+
+            const variableNamesIndex = generateVariableNamesIndex(
+                graph,
+                nodeImplementations,
+                false
+            )
+
+            assert.deepStrictEqual(
+                JSON.parse(JSON.stringify({ ...variableNamesIndex.nodeImplementations })),
+                {
+                    type1: {},
+                    type2: {},
+                }
+            )
+        })
+
+        it('should throw error for unknown namespaces', () => {
+            const graph = makeGraph({
+                node1: { type: 'type1'},
+            })
+
+            const nodeImplementations: NodeImplementations = { 'type1': {} }
+
+            const variableNamesIndex = generateVariableNamesIndex(graph, nodeImplementations, false)
 
             assert.throws(() => variableNamesIndex.nodes.unknownNode)
             assert.throws(
@@ -92,6 +128,7 @@ describe('variable-names-index', () => {
         it('should attach portlet variable names for a node', () => {
             const graph = makeGraph({
                 node1: {
+                    type: 'type1',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                         '1': { type: 'message', id: '1' },
@@ -103,12 +140,15 @@ describe('variable-names-index', () => {
                         '3': { type: 'message', id: '3' },
                     },
                 },
-                node2: {},
+                node2: { type: 'type1'},
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(graph, false)
+            const nodeImplementations: NodeImplementations = { 'type1': {} }
+
+            const variableNamesIndex = generateVariableNamesIndex(graph, nodeImplementations, false)
 
             const compilation = makeCompilation({
+                nodeImplementations,
                 variableNamesIndex,
                 graph,
             })
@@ -160,11 +200,11 @@ describe('variable-names-index', () => {
                 },
             })
 
-            const variableNamesIndex = generateVariableNamesIndex(graph, true)
-
             const nodeImplementations: NodeImplementations = {
                 'dac~bla*wow!': {},
             }
+
+            const variableNamesIndex = generateVariableNamesIndex(graph, nodeImplementations, true)
 
             const compilation = makeCompilation({
                 graph,
@@ -200,10 +240,12 @@ describe('variable-names-index', () => {
 
         it('should not throw an error if variable already assigned', () => {
             const graph = makeGraph({
-                node1: {},
+                node1: { type: 'type1'},
             })
 
-            const compilation = makeCompilation({ graph })
+            const nodeImplementations: NodeImplementations = { 'type1': {} }
+
+            const compilation = makeCompilation({ graph, nodeImplementations })
 
             attachNodeVariable(compilation, 'messageReceivers', 'node1', '0')
             assert.strictEqual(
@@ -211,11 +253,60 @@ describe('variable-names-index', () => {
                 'node1_RCVS_0'
             )
             assert.doesNotThrow(() =>
-                attachNodeVariable(compilation, 'messageReceivers', 'node1', '0')
+                attachNodeVariable(
+                    compilation,
+                    'messageReceivers',
+                    'node1',
+                    '0'
+                )
             )
             assert.strictEqual(
                 compilation.variableNamesIndex.nodes.node1.messageReceivers.$0,
                 'node1_RCVS_0'
+            )
+        })
+    })
+
+    describe('attachNodeImplementationVariable', () => {
+        it('should attach state class variable names for NodeImplementation', () => {
+            const nodeImplementations: NodeImplementations = {
+                type1: {},
+                'type2+-Bla': {
+                    flags: {
+                        alphaName: 'type2_Bla',
+                    },
+                },
+            }
+
+            const graph: DspGraph.Graph = makeGraph({
+                'n1': {type: 'type1'},
+                'n2': {type: 'type2+-Bla'},
+            })
+
+            const variableNamesIndex = generateVariableNamesIndex(graph, nodeImplementations, false)
+
+            const compilation = makeCompilation({
+                nodeImplementations,
+                variableNamesIndex,
+                graph,
+            })
+
+            attachNodeImplementationVariable(compilation, 'stateClass', 'type1', nodeImplementations.type1)
+            attachNodeImplementationVariable(
+                compilation,
+                'stateClass',
+                'type2+-Bla',
+                nodeImplementations['type2+-Bla']
+            )
+
+            assert.deepStrictEqual(
+                JSON.parse(
+                    JSON.stringify({ ...variableNamesIndex.nodeImplementations })
+                ),
+                {
+                    type1: {stateClass: 'State_type1'},
+                    'type2+-Bla': {stateClass: 'State_type2_Bla'},
+                }
             )
         })
     })
@@ -235,6 +326,7 @@ describe('variable-names-index', () => {
         it('should attach outlet listeners variable names', () => {
             const graph = makeGraph({
                 node1: {
+                    type: 'type1',
                     inlets: {
                         inlet1: { type: 'message', id: 'inlet1' },
                     },
@@ -245,8 +337,10 @@ describe('variable-names-index', () => {
                 },
             })
 
+            const nodeImplementations: NodeImplementations = { 'type1': {} }
+
             const variableNamesIndex: VariableNamesIndex =
-                generateVariableNamesIndex(graph, false)
+                generateVariableNamesIndex(graph, nodeImplementations, false)
             const messageSenders: IoMessageSpecs = {
                 node1: { portletIds: ['outlet1'] },
             }
@@ -257,6 +351,7 @@ describe('variable-names-index', () => {
             const compilation = makeCompilation({
                 graph,
                 variableNamesIndex,
+                nodeImplementations,
                 settings: {
                     io: {
                         messageSenders,

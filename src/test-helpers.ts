@@ -32,10 +32,7 @@ import { ast, Sequence, Func, Var } from './ast/declare'
 import { Engine, Module, RawModule } from './run/types'
 import { generateVariableNamesIndex } from './compile/variable-names-index'
 import { writeFile } from 'fs/promises'
-import {
-    buildFullGraphTraversal,
-    getMacros,
-} from './compile/compile-helpers'
+import { buildFullGraphTraversal, getMacros } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
     compileAssemblyscript,
@@ -112,14 +109,14 @@ export const makeCompilation = (
     const graph = compilation.graph || {}
     const variableNamesIndex =
         compilation.variableNamesIndex ||
-        generateVariableNamesIndex(graph, settings.debug)
+        generateVariableNamesIndex(graph, nodeImplementations, settings.debug)
     const precompilation =
         compilation.precompilation ||
         initializePrecompilation(
             graph,
             buildFullGraphTraversal(graph, settings.io),
             variableNamesIndex,
-            nodeImplementations,
+            nodeImplementations
         )
     return {
         ...compilation,

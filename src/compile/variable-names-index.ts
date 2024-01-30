@@ -20,8 +20,14 @@
 
 import { DspGraph, getters } from '../dsp-graph'
 import { mapObject } from '../functional-helpers'
+import { getNodeImplementationsUsedInGraph } from './compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from './namespace'
-import { VariableNamesIndex, Compilation } from './types'
+import {
+    VariableNamesIndex,
+    Compilation,
+    NodeImplementation,
+    NodeImplementations,
+} from './types'
 
 /**
  * Generates the whole set of variable names for a compilation for a given graph.
@@ -32,6 +38,7 @@ import { VariableNamesIndex, Compilation } from './types'
  */
 export const generateVariableNamesIndex = (
     graph: DspGraph.Graph,
+    nodeImplementations: NodeImplementations,
     debug: boolean
 ): VariableNamesIndex =>
     createNamespace('variableNamesIndex', {
@@ -55,6 +62,13 @@ export const generateVariableNamesIndex = (
                     ),
                     state: `${_namePrefix(debug, node)}_STATE`,
                 })
+            )
+        ),
+        nodeImplementations: createNamespace(
+            'nodeImplementations',
+            mapObject(
+                getNodeImplementationsUsedInGraph(graph, nodeImplementations),
+                () => ({})
             )
         ),
         globs: generateVariableNamesGlobs(),
@@ -137,6 +151,24 @@ export const attachColdDspGroup = (
     groupId: string
 ) => {
     return (variableNamesIndex.coldDspGroups[groupId] = `coldDsp_${groupId}`)
+}
+
+export const attachNodeImplementationVariable = (
+    { variableNamesIndex }: Compilation,
+    nsKey: 'stateClass',
+    nodeType: DspGraph.NodeType,
+    nodeImplementation: NodeImplementation<any>
+) => {
+    switch (nsKey) {
+        case 'stateClass':
+            return (variableNamesIndex.nodeImplementations[
+                nodeType
+            ].stateClass = `State_${_v(
+                (nodeImplementation.flags
+                    ? nodeImplementation.flags.alphaName
+                    : null) || nodeType
+            )}`)
+    }
 }
 
 export const assertValidNamePart = (namePart: string) => {

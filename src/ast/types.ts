@@ -52,7 +52,7 @@ export interface AstSequence extends AstElementBase {
 export interface AstVarBase extends AstElementBase {
     name: VariableName
     type: TypeName
-    value?: AstSequence
+    value?: AstElement
 }
 
 export interface AstVar extends AstVarBase {
@@ -61,7 +61,7 @@ export interface AstVar extends AstVarBase {
 
 export interface AstConstVar extends AstVarBase {
     astType: 'ConstVar'
-    value: AstSequence
+    value: AstElement
 }
 
 export interface AstFunc extends AstElementBase {

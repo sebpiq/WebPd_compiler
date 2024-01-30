@@ -24,6 +24,7 @@ import { attachColdDspGroup, attachIoMessages } from '../variable-names-index'
 import {
     buildGraphTraversalSignal,
     getNodeImplementation,
+    getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../namespace'
 import {
@@ -43,7 +44,7 @@ import {
     precompileMessageReceivers,
     precompileInlineLoop,
     precompileLoop,
-    precompileStateInitialization,
+    precompileState,
     precompileCaching,
 } from './nodes'
 import {
@@ -54,10 +55,17 @@ import {
     buildGroupSinkConnections,
 } from './dsp-groups'
 import { DspGroup } from '../types'
+import { precompileCore, precompileStateClass } from './node-implementations'
 
 export default (compilation: Compilation) => {
     const { graph, precompilation } = compilation
     const nodes = traversers.toNodes(graph, precompilation.graph.fullTraversal)
+
+    // -------------------- NODE IMPLEMENTATIONS ------------------ //
+    Object.keys(precompilation.nodeImplementations).forEach((nodeType) => {
+        precompileStateClass(compilation, nodeType)
+        precompileCore(compilation, nodeType)
+    })
 
     // ------------------------ DSP GROUPS ------------------------ //
     const rootDspGroup: DspGroup = {
@@ -94,7 +102,7 @@ export default (compilation: Compilation) => {
         const groupId = `${index}`
         precompilation.graph.coldDspGroups[groupId] = {
             ...dspGroup,
-            sinkConnections: buildGroupSinkConnections(graph, dspGroup)
+            sinkConnections: buildGroupSinkConnections(graph, dspGroup),
         }
         attachColdDspGroup(compilation, groupId)
     })
@@ -157,15 +165,16 @@ export default (compilation: Compilation) => {
         })
     })
 
-    // ------------------------ MISC ------------------------ //
-    precompileDependencies(compilation)
-
+    // ------------------------ NODE ------------------------ //
     // This must come after we have assigned all node variables.
     nodes.forEach((node) => {
-        precompileStateInitialization(compilation, node)
+        precompileState(compilation, node)
         precompileInitialization(compilation, node)
         precompileMessageReceivers(compilation, node)
     })
+    
+    // ------------------------ MISC ------------------------ //
+    precompileDependencies(compilation)
 }
 
 export const initializePrecompilation = (
@@ -175,7 +184,7 @@ export const initializePrecompilation = (
     nodeImplementations: NodeImplementations
 ): Precompilation => ({
     nodes: createNamespace(
-        'precompilation',
+        'nodes',
         mapObject(graph, (node) => ({
             nodeImplementation: getNodeImplementation(
                 nodeImplementations,
@@ -222,7 +231,24 @@ export const initializePrecompilation = (
             initialization: ast``,
             loop: ast``,
             caching: createNamespace(nodeNamespaceLabel(node, 'caching'), {}),
+            state: null,
         }))
+    ),
+    nodeImplementations: createNamespace(
+        'nodeImplementations',
+        Object.entries(
+            getNodeImplementationsUsedInGraph(graph, nodeImplementations)
+        ).reduce<Precompilation['nodeImplementations']>(
+            (precompiledImplementations, [nodeType, nodeImplementation]) => ({
+                ...precompiledImplementations,
+                [nodeType]: {
+                    nodeImplementation,
+                    stateClass: null,
+                    core: null,
+                },
+            }),
+            {}
+        )
     ),
     dependencies: {
         imports: [],

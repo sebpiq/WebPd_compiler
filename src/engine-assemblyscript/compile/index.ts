@@ -22,6 +22,7 @@ import { buildMetadata } from '../../compile/compile-helpers'
 import {
     generatePortletsDeclarations,
     generateGlobs,
+    generateNodeImplementationsCoreAndStateClasses,
     generateNodeInitializations,
     generateLoop,
     generateColdDspFunctions,
@@ -29,7 +30,7 @@ import {
     generateIoMessageSenders,
     generateEmbeddedArrays,
     generateImportsExports,
-    generateNodeStateDeclarations,
+    generateNodeStateInstances,
     generateColdDspInitialization,
 } from '../../compile/generate'
 import { Compilation } from '../../compile/types'
@@ -53,6 +54,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         const metadata: string = '${JSON.stringify(metadata)}'
 
         ${precompilation.dependencies.ast}
+        ${generateNodeImplementationsCoreAndStateClasses(compilation)}
 
         ${generateGlobs(compilation)}
         let ${globs.input}: FloatArray = createFloatArray(0)
@@ -60,7 +62,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
 
         ${generateEmbeddedArrays(compilation)}
 
-        ${generateNodeStateDeclarations(compilation)}
+        ${generateNodeStateInstances(compilation)}
         ${generatePortletsDeclarations(compilation)}
 
         ${generateColdDspFunctions(compilation)}

@@ -52,11 +52,12 @@ export default (
     compilationSettings: CompilationSettings
 ): CompilationResult => {
     const settings = validateSettings(compilationSettings)
-    const variableNamesIndex = generateVariableNamesIndex(graph, settings.debug)
-    const fullGraphTraversal = buildFullGraphTraversal(
+    const variableNamesIndex = generateVariableNamesIndex(
         graph,
-        settings.io
+        nodeImplementations,
+        settings.debug
     )
+    const fullGraphTraversal = buildFullGraphTraversal(graph, settings.io)
     const trimmedGraph = traversers.trimGraph(graph, fullGraphTraversal)
 
     const compilation: Compilation = {
@@ -69,7 +70,7 @@ export default (
             trimmedGraph,
             fullGraphTraversal,
             variableNamesIndex,
-            nodeImplementations,
+            nodeImplementations
         ),
     }
 

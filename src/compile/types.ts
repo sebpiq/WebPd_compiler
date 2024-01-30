@@ -18,7 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstElement, AstFunc, AstSequence, AstVar } from '../ast/types'
+import {
+    AstClass,
+    AstElement,
+    AstFunc,
+    AstSequence,
+    AstVarBase,
+} from '../ast/types'
 import { VariableName, Code } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 
@@ -82,6 +88,13 @@ export type Precompilation = {
     nodes: {
         [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
     }
+    nodeImplementations: {
+        [nodeType: DspGraph.NodeType]: {
+            nodeImplementation: NodeImplementation<any>
+            stateClass: AstClass | null
+            core: AstElement | null
+        }
+    }
     dependencies: {
         imports: NonNullable<GlobalCodeGeneratorWithSettings['imports']>
         exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
@@ -103,6 +116,10 @@ export interface PrecompiledNodeCode {
         signalIns: { [portletId: DspGraph.PortletId]: Code }
         state: VariableName
     }
+    state: null | {
+        className: VariableName
+        initialization: { [key: string]: NonNullable<AstVarBase['value']> }
+    }
     messageReceivers: { [inletId: DspGraph.PortletId]: AstFunc }
     messageSenders: {
         [outletId: DspGraph.PortletId]: {
@@ -111,7 +128,6 @@ export interface PrecompiledNodeCode {
         }
     }
     signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
-    stateInitialization: AstVar | null
     initialization: AstElement
     loop: AstElement
     caching: { [inletId: DspGraph.PortletId]: AstElement }
@@ -134,6 +150,10 @@ export interface NodeVariableNames {
     state: VariableName
 }
 
+interface NodeImplementationVariableNames {
+    stateClass?: VariableName
+}
+
 /**
  * Map of all global variable names used for compilation.
  *
@@ -142,6 +162,10 @@ export interface NodeVariableNames {
 export interface VariableNamesIndex {
     /** Namespace for individual nodes */
     nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
+
+    nodeImplementations: {
+        [nodeType: DspGraph.NodeType]: NodeImplementationVariableNames
+    }
 
     /** Namespace for global variables */
     globs: {
@@ -203,7 +227,7 @@ export type GlobalCodeDefinition =
     | GlobalCodeGeneratorWithSettings
 
 /** Implementation of a graph node type */
-export interface NodeImplementation<NodeArgsType> {
+export interface NodeImplementation<NodeArgsType = any> {
     flags?: {
         /**
          * true if the node's signal outputs strictly depend
@@ -213,13 +237,22 @@ export interface NodeImplementation<NodeArgsType> {
          * time step of the dsp.
          */
         isPureFunction?: true
+
+        alphaName?: string
     }
 
-    stateInitialization?: (context: {
+    state?: (context: {
         globs: VariableNamesIndex['globs']
         node: DspGraph.Node<NodeArgsType>
+        stateClassName: VariableName
         compilation: Compilation
-    }) => AstVar
+    }) => AstClass
+
+    core?: (context: {
+        globs: VariableNamesIndex['globs']
+        stateClassName?: VariableName
+        compilation: Compilation
+    }) => AstElement
 
     initialization?: (context: {
         globs: VariableNamesIndex['globs']
