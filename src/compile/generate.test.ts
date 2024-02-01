@@ -275,8 +275,8 @@ describe('generate', () => {
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
                 content: [
-                    ConstVar('State', 'n1_STATE', '{\na: 111,\nb: function (x) {return x * 2}\n}'),
-                    ConstVar('State', 'n2_STATE', '{\na: 333,\nb: 444\n}'),
+                    ConstVar('State', 'n1_STATE', ast`{\na: 111,\nb: ${AnonFunc([Var('Float', 'x')])`return x * 2`},\n}`),
+                    ConstVar('State', 'n2_STATE', ast`{\na: 333,\nb: 444,\n}`),
                 ],
             })
         })

@@ -25,8 +25,6 @@ import {
     findColdDspGroupFromSink,
     isNodeInsideGroup,
 } from './precompile/dsp-groups'
-import render from '../ast/render'
-import { getMacros } from './compile-helpers'
 
 export const generateGlobs = ({
     variableNamesIndex: { globs },
@@ -72,7 +70,6 @@ export const generateNodeImplementationsCoreAndStateClasses = ({
     )
 
 export const generateNodeStateInstances = ({
-    target,
     precompilation,
     variableNamesIndex,
 }: Compilation): AstSequence =>
@@ -95,13 +92,9 @@ export const generateNodeStateInstances = ({
                                 )
                                     .map(
                                         ([key, value]) =>
-                                            `${key}: ${render(
-                                                getMacros(target),
-                                                value
-                                            )}`
-                                    )
-                                    .join(',\n')}
-                            }`
+                                            ast`${key}: ${value},`
+                                    )}
+                                }`
                         ),
                     ]
                 }

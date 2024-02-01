@@ -1501,7 +1501,7 @@ describe('Engine', () => {
                 await expect(() =>
                     engine.io.messageReceivers.someNode.someInlet([123, 'bla'])
                 ).toThrow(
-                    /\[someNodeType\], id "someNode", inlet "someInlet", unsupported message : \[123(.0)*, "bla"\]( at [0-9]+:[0-9]+)?/
+                    /Node "someNode", inlet "someInlet", unsupported message : \[123(.0)*, "bla"\]( at [0-9]+:[0-9]+)?/
                 )
             }
         )
