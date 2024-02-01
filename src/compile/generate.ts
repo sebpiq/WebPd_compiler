@@ -20,7 +20,7 @@
 import { Compilation, GlobalCodeDefinitionExport } from './types'
 import { AstConstVar, AstFunc, AstSequence, VariableName } from '../ast/types'
 import { Sequence, Func, Var, ast, ConstVar } from '../ast/declare'
-import { DspGraph, traversers } from '../dsp-graph'
+import { DspGraph } from '../dsp-graph'
 import {
     findColdDspGroupFromSink,
     isNodeInsideGroup,
@@ -178,21 +178,14 @@ export const generateIoMessageSenders = (
         )
     )
 
-export const generatePortletsDeclarations = (
-    compilation: Compilation
-): AstSequence => {
-    const {
-        graph,
-        precompilation,
-        settings: { debug },
-    } = compilation
-    const nodes = traversers.toNodes(graph, precompilation.graph.fullTraversal)
-
-    return Sequence([
-        nodes.map((node) => {
-            const precompiledNode = precompilation.nodes[node.id]
-
-            return [
+export const generatePortletsDeclarations = ({
+    precompilation,
+    settings: { debug },
+}: Compilation): AstSequence =>
+    Sequence([
+        precompilation.graph.fullTraversal
+            .map((nodeId) => [precompilation.nodes[nodeId], nodeId] as const)
+            .map(([precompiledNode, nodeId]) => [
                 // 1. Declares signal outlets
                 Object.values(precompiledNode.signalOuts).map((outName) =>
                     Var('Float', outName, '0')
@@ -204,20 +197,22 @@ export const generatePortletsDeclarations = (
                         // prettier-ignore
                         return Func(astFunc.name, astFunc.args, astFunc.returnType)`
                             ${astFunc.body}
-                            throw new Error('[${node.type}], id "${node.id}", inlet "${inletId}", unsupported message : ' + msg_display(${astFunc.args[0].name})${
+                            throw new Error('Node "${nodeId}", inlet "${inletId}", unsupported message : ' + msg_display(${astFunc.args[0].name})${
                                 debug
                                     ? " + '\\nDEBUG : remember, you must return from message receiver'"
                                     : ''})
                         `
                     }
                 ),
-            ]
-        }),
+            ]),
 
         // 3. Declares message senders for all message outlets.
         // This needs to come after all message receivers are declared since we reference them here.
-        nodes.map((node) =>
-            Object.values(precompilation.nodes[node.id].messageSenders).map(
+        precompilation.graph.fullTraversal
+            .flatMap((nodeId) =>
+                Object.values(precompilation.nodes[nodeId].messageSenders)
+            )
+            .map(
                 ({ messageSenderName: sndName, functionNames }) =>
                     // prettier-ignore
                     Func(sndName, [
@@ -226,13 +221,13 @@ export const generatePortletsDeclarations = (
                         ${functionNames.map(functionName => 
                             `${functionName}(m)`)}
                     `
-            )
-        ),
+            ),
     ])
-}
 
-export const generateLoop = (compilation: Compilation) => {
-    const { variableNamesIndex, precompilation } = compilation
+export const generateLoop = ({
+    variableNamesIndex,
+    precompilation,
+}: Compilation) => {
     const {
         graph: { hotDspGroup, coldDspGroups },
     } = precompilation
@@ -278,9 +273,8 @@ export const generateColdDspInitialization = ({
     )
 
 export const generateColdDspFunctions = (
-    compilation: Compilation
+    { variableNamesIndex, precompilation }: Compilation
 ): AstSequence => {
-    const { variableNamesIndex, precompilation } = compilation
     const {
         graph: { coldDspGroups },
     } = precompilation

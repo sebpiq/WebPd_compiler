@@ -107,7 +107,7 @@ describe('generate', () => {
                             astType: 'Sequence',
                             content: [
                                 '// [n1] message receiver 0\n' +
-                                    `throw new Error('[DUMMY], id "n1", inlet "0", unsupported message : ' + msg_display(m))`,
+                                    `throw new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m))`,
                             ],
                         },
                     },
@@ -118,7 +118,7 @@ describe('generate', () => {
                             astType: 'Sequence',
                             content: [
                                 '// [n1] message receiver 1\n' +
-                                    `throw new Error('[DUMMY], id "n1", inlet "1", unsupported message : ' + msg_display(m))`,
+                                    `throw new Error('Node "n1", inlet "1", unsupported message : ' + msg_display(m))`,
                             ],
                         },
                     },
@@ -129,7 +129,7 @@ describe('generate', () => {
                             astType: 'Sequence',
                             content: [
                                 '// [n2] message receiver 0\n' +
-                                    `throw new Error('[DUMMY], id "n2", inlet "0", unsupported message : ' + msg_display(m))`,
+                                    `throw new Error('Node "n2", inlet "0", unsupported message : ' + msg_display(m))`,
                             ],
                         },
                     },
@@ -174,7 +174,7 @@ describe('generate', () => {
                             astType: 'Sequence',
                             content: [
                                 '// [n1] message receiver 0\n' +
-                                    `throw new Error('[DUMMY], id "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
+                                    `throw new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
                             ],
                         },
                     },
