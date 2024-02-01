@@ -1,12 +1,13 @@
 import { DspGraph } from '../../dsp-graph'
 import { Compilation } from '../types'
-import { attachNodeImplementationVariable } from '../variable-names-index'
+import { attachNodeImplementationVariable } from './variable-names-index'
 
 export const precompileStateClass = (
     compilation: Compilation,
     nodeType: DspGraph.NodeType
 ) => {
-    const { precompilation, variableNamesIndex, graph } = compilation
+    const { precompilation, graph } = compilation
+    const { variableNamesIndex } = precompilation
     const { globs } = variableNamesIndex
     const precompiledImplementation =
         precompilation.nodeImplementations[nodeType]
@@ -14,7 +15,7 @@ export const precompileStateClass = (
     if (precompiledImplementation.nodeImplementation.state) {
         if (!variableNamesIndex.nodeImplementations[nodeType].stateClass) {
             attachNodeImplementationVariable(
-                compilation,
+                variableNamesIndex,
                 'stateClass',
                 nodeType,
                 precompiledImplementation.nodeImplementation
@@ -50,7 +51,8 @@ export const precompileCore = (
     compilation: Compilation,
     nodeType: DspGraph.NodeType
 ) => {
-    const { precompilation, variableNamesIndex } = compilation
+    const { precompilation } = compilation
+    const { variableNamesIndex } = precompilation
     const { globs } = variableNamesIndex
     const nodeImplementation =
         precompilation.nodeImplementations[nodeType].nodeImplementation

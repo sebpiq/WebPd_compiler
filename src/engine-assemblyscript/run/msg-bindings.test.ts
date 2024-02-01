@@ -35,7 +35,7 @@ import { MessagePointer } from './types'
 import { Sequence } from '../../ast/declare'
 import render from '../../ast/render'
 import macros from '../compile/macros'
-import { generateVariableNamesGlobs } from '../../compile/variable-names-index'
+import { generateVariableNamesGlobs } from '../../compile/precompile/variable-names-index'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {

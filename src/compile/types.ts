@@ -76,7 +76,6 @@ export interface Compilation {
     readonly target: CompilerTarget
     readonly graph: DspGraph.Graph
     readonly nodeImplementations: NodeImplementations
-    readonly variableNamesIndex: VariableNamesIndex
     readonly precompilation: Precompilation
 }
 
@@ -85,6 +84,7 @@ export interface Compilation {
  * This map is then used in code generation to replace variables with their precompiled counterparts.
  */
 export type Precompilation = {
+    variableNamesIndex: VariableNamesIndex
     nodes: {
         [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
     }

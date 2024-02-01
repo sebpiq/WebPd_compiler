@@ -33,7 +33,7 @@ describe('precompile.node-implementations', () => {
 
             precompileStateClass(compilation, 'type1')
 
-            assert.strictEqual(compilation.variableNamesIndex.nodeImplementations.type1.stateClass, 'State_type1')
+            assert.strictEqual(compilation.precompilation.variableNamesIndex.nodeImplementations.type1.stateClass, 'State_type1')
             assert.deepStrictEqual<AstClass>(
                 compilation.precompilation.nodeImplementations.type1.stateClass,
                 {

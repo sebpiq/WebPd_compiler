@@ -33,7 +33,7 @@ import { FloatArrayPointer, InternalPointer } from './types'
 import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../ast/render'
-import { generateVariableNamesGlobs } from '../../compile/variable-names-index'
+import { generateVariableNamesGlobs } from '../../compile/precompile/variable-names-index'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {

@@ -20,19 +20,18 @@
 
 import { DspGraph, getters, traversers } from '../../dsp-graph'
 import { mapObject } from '../../functional-helpers'
-import { attachColdDspGroup, attachIoMessages } from '../variable-names-index'
+import {
+    attachColdDspGroup,
+    attachIoMessages,
+    generateVariableNamesIndex,
+} from './variable-names-index'
 import {
     buildGraphTraversalSignal,
     getNodeImplementation,
     getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
-import { createNamespace, nodeNamespaceLabel } from '../namespace'
-import {
-    Compilation,
-    NodeImplementations,
-    Precompilation,
-    VariableNamesIndex,
-} from '../types'
+import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
+import { Compilation, NodeImplementations, Precompilation } from '../types'
 import { Sequence, ast } from '../../ast/declare'
 import precompileDependencies from './dependencies'
 import {
@@ -104,11 +103,15 @@ export default (compilation: Compilation) => {
             ...dspGroup,
             sinkConnections: buildGroupSinkConnections(graph, dspGroup),
         }
-        attachColdDspGroup(compilation, groupId)
+        attachColdDspGroup(precompilation.variableNamesIndex, groupId)
     })
 
     // ------------------------ PORTLETS ------------------------ //
-    attachIoMessages(compilation)
+    attachIoMessages(
+        precompilation.variableNamesIndex,
+        compilation.settings,
+        graph
+    )
 
     // Go through the graph and precompile inlets.
     nodes.forEach((node) => {
@@ -172,95 +175,112 @@ export default (compilation: Compilation) => {
         precompileInitialization(compilation, node)
         precompileMessageReceivers(compilation, node)
     })
-    
+
     // ------------------------ MISC ------------------------ //
     precompileDependencies(compilation)
 }
 
 export const initializePrecompilation = (
+    settings: Compilation['settings'],
     graph: DspGraph.Graph,
     fullTraversal: DspGraph.GraphTraversal,
-    variableNamesIndex: VariableNamesIndex,
-    nodeImplementations: NodeImplementations
-): Precompilation => ({
-    nodes: createNamespace(
-        'nodes',
-        mapObject(graph, (node) => ({
-            nodeImplementation: getNodeImplementation(
-                nodeImplementations,
-                node.type
-            ),
-            generationContext: {
-                messageReceivers: createNamespace(
-                    nodeNamespaceLabel(
-                        node,
-                        'generationContext:messageReceivers'
-                    ),
-                    {}
+    nodeImplementations: NodeImplementations,
+): Precompilation => {
+    const variableNamesIndex = generateVariableNamesIndex(
+        settings,
+        graph,
+        nodeImplementations,
+    )
+    return {
+        variableNamesIndex,
+        nodes: createNamespace(
+            'nodes',
+            mapObject(graph, (node) => ({
+                nodeImplementation: getNodeImplementation(
+                    nodeImplementations,
+                    node.type
                 ),
-                signalOuts: createNamespace(
-                    nodeNamespaceLabel(node, 'generationContext:signalOuts'),
+                generationContext: {
+                    messageReceivers: createNamespace(
+                        nodeNamespaceLabel(
+                            node,
+                            'generationContext:messageReceivers'
+                        ),
+                        {}
+                    ),
+                    signalOuts: createNamespace(
+                        nodeNamespaceLabel(
+                            node,
+                            'generationContext:signalOuts'
+                        ),
+                        {}
+                    ),
+                    messageSenders: createNamespace(
+                        nodeNamespaceLabel(
+                            node,
+                            'generationContext:messageSenders'
+                        ),
+                        {}
+                    ),
+                    signalIns: createNamespace(
+                        nodeNamespaceLabel(node, 'generationContext:signalIns'),
+                        {}
+                    ),
+                    state: variableNamesIndex.nodes[node.id].state,
+                },
+                messageReceivers: createNamespace(
+                    nodeNamespaceLabel(node, 'messageReceivers'),
                     {}
                 ),
                 messageSenders: createNamespace(
-                    nodeNamespaceLabel(
-                        node,
-                        'generationContext:messageSenders'
-                    ),
+                    nodeNamespaceLabel(node, 'messageSenders'),
                     {}
                 ),
-                signalIns: createNamespace(
-                    nodeNamespaceLabel(node, 'generationContext:signalIns'),
+                signalOuts: createNamespace(
+                    nodeNamespaceLabel(node, 'signalOuts'),
                     {}
                 ),
-                state: variableNamesIndex.nodes[node.id].state,
-            },
-            messageReceivers: createNamespace(
-                nodeNamespaceLabel(node, 'messageReceivers'),
+                stateInitialization: null,
+                initialization: ast``,
+                loop: ast``,
+                caching: createNamespace(
+                    nodeNamespaceLabel(node, 'caching'),
+                    {}
+                ),
+                state: null,
+            }))
+        ),
+        nodeImplementations: createNamespace(
+            'nodeImplementations',
+            Object.entries(
+                getNodeImplementationsUsedInGraph(graph, nodeImplementations)
+            ).reduce<Precompilation['nodeImplementations']>(
+                (
+                    precompiledImplementations,
+                    [nodeType, nodeImplementation]
+                ) => ({
+                    ...precompiledImplementations,
+                    [nodeType]: {
+                        nodeImplementation,
+                        stateClass: null,
+                        core: null,
+                    },
+                }),
                 {}
-            ),
-            messageSenders: createNamespace(
-                nodeNamespaceLabel(node, 'messageSenders'),
-                {}
-            ),
-            signalOuts: createNamespace(
-                nodeNamespaceLabel(node, 'signalOuts'),
-                {}
-            ),
-            stateInitialization: null,
-            initialization: ast``,
-            loop: ast``,
-            caching: createNamespace(nodeNamespaceLabel(node, 'caching'), {}),
-            state: null,
-        }))
-    ),
-    nodeImplementations: createNamespace(
-        'nodeImplementations',
-        Object.entries(
-            getNodeImplementationsUsedInGraph(graph, nodeImplementations)
-        ).reduce<Precompilation['nodeImplementations']>(
-            (precompiledImplementations, [nodeType, nodeImplementation]) => ({
-                ...precompiledImplementations,
-                [nodeType]: {
-                    nodeImplementation,
-                    stateClass: null,
-                    core: null,
-                },
-            }),
-            {}
-        )
-    ),
-    dependencies: {
-        imports: [],
-        exports: [],
-        ast: Sequence([]),
-    },
-    graph: {
-        fullTraversal,
-        hotDspGroup: {
-            traversal: [],
-            outNodesIds: [],
+            )
+        ),
+        dependencies: {
+            imports: [],
+            exports: [],
+            ast: Sequence([]),
         },
-        coldDspGroups: createNamespace('coldDspGroups', {}),
-    },
-})
+        graph: {
+            fullTraversal,
+            hotDspGroup: {
+                traversal: [],
+                outNodesIds: [],
+            },
+            coldDspGroups: createNamespace('coldDspGroups', {}),
+        },
+    }
+}

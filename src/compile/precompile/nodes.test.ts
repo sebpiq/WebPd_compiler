@@ -63,7 +63,7 @@ describe('precompile.nodes', () => {
 
             // Creates a variable name for the signal out
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.n1.signalOuts.$0,
+                compilation.precompilation.variableNamesIndex.nodes.n1.signalOuts.$0,
                 'n1_OUTS_0'
             )
             // Adds this variable name to precompilation `signalOuts`
@@ -105,7 +105,7 @@ describe('precompile.nodes', () => {
             assert.strictEqual(
                 compilation.precompilation.nodes.n1.generationContext.signalIns
                     .$0,
-                compilation.variableNamesIndex.globs.nullSignal
+                compilation.precompilation.variableNamesIndex.globs.nullSignal
             )
         })
     })
@@ -140,16 +140,16 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
-            compilation.variableNamesIndex.nodes.n3.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n3.messageReceivers.$0 =
                 'n3_RCVS_0'
 
             precompileMessageOutlet(compilation, graph.n1, '0')
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.n1.messageSenders.$0,
+                compilation.precompilation.variableNamesIndex.nodes.n1.messageSenders.$0,
                 'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
@@ -195,15 +195,15 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
-            compilation.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
+            compilation.precompilation.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
 
             precompileMessageOutlet(compilation, graph.n1, '0')
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.n1.messageSenders.$0,
+                compilation.precompilation.variableNamesIndex.nodes.n1.messageSenders.$0,
                 'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
@@ -242,7 +242,7 @@ describe('precompile.nodes', () => {
             assert.strictEqual(
                 compilation.precompilation.nodes.n1.generationContext
                     .messageSenders.$0,
-                compilation.variableNamesIndex.globs.nullMessageReceiver
+                compilation.precompilation.variableNamesIndex.globs.nullMessageReceiver
             )
         })
 
@@ -267,7 +267,7 @@ describe('precompile.nodes', () => {
                 graph,
             })
 
-            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
 
             precompileMessageOutlet(compilation, graph.n1, '0')
@@ -301,7 +301,7 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            compilation.variableNamesIndex.io.messageSenders.n1 = {
+            compilation.precompilation.variableNamesIndex.io.messageSenders.n1 = {
                 '0': 'ioSnd_n1_0',
             }
 
@@ -366,15 +366,15 @@ describe('precompile.nodes', () => {
 
             // Creates a variable names for message receivers
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.n2.messageReceivers.$0,
+                compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0,
                 'n2_RCVS_0'
             )
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.n3.messageReceivers.$0,
+                compilation.precompilation.variableNamesIndex.nodes.n3.messageReceivers.$0,
                 'n3_RCVS_0'
             )
             assert.strictEqual(
-                compilation.variableNamesIndex.nodes.n4.messageReceivers.$0,
+                compilation.precompilation.variableNamesIndex.nodes.n4.messageReceivers.$0,
                 'n4_RCVS_0'
             )
 
@@ -440,7 +440,7 @@ describe('precompile.nodes', () => {
             assert.ok(
                 !(
                     '0' in
-                    compilation.variableNamesIndex.nodes.n1.messageReceivers
+                    compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers
                 )
             )
             assert.ok(
@@ -496,13 +496,13 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
                 'n1_RCVS_0'
             compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
-            compilation.variableNamesIndex.nodes.n1.messageReceivers.$1 =
+            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$1 =
                 'n1_RCVS_1'
             compilation.precompilation.nodes.n1.messageReceivers.$1 = AnonFunc()``
-            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
             compilation.precompilation.nodes.n2.messageReceivers.$0 = AnonFunc()``
 
@@ -553,10 +553,10 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
                 'n1_RCVS_0'
             compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
-            compilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
             compilation.precompilation.nodes.n2.messageReceivers.$0 = AnonFunc()``
 
@@ -588,7 +588,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
                 'n1_RCVS_0'
             compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
 
@@ -667,7 +667,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodeImplementations.type1.stateClass = 'State_type1'
+            compilation.precompilation.variableNamesIndex.nodeImplementations.type1.stateClass = 'State_type1'
 
             precompileState(compilation, graph.n1)
 
@@ -787,7 +787,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            compilation.variableNamesIndex.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
+            compilation.precompilation.variableNamesIndex.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
 
             precompileLoop(compilation, graph.n1)
 

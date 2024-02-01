@@ -41,35 +41,35 @@ import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): JavaScriptEngineCode => {
     const {
-        variableNamesIndex,
-        settings: { io },
+        settings,
         precompilation,
     } = compilation
-    const globs = compilation.variableNamesIndex.globs
+    const variableNamesIndex = precompilation.variableNamesIndex
+    const globs = variableNamesIndex.globs
     const metadata = buildMetadata(compilation)
 
     // prettier-ignore
     return render(macros, ast`
         ${precompilation.dependencies.ast}
-        ${generateNodeImplementationsCoreAndStateClasses(compilation)}
+        ${generateNodeImplementationsCoreAndStateClasses(precompilation)}
 
-        ${generateGlobs(compilation)}
+        ${generateGlobs(precompilation)}
 
-        ${generateEmbeddedArrays(compilation)}
+        ${generateEmbeddedArrays(settings)}
 
-        ${generateNodeStateInstances(compilation)}
-        ${generatePortletsDeclarations(compilation)}
+        ${generateNodeStateInstances(precompilation)}
+        ${generatePortletsDeclarations(precompilation, settings)}
 
-        ${generateColdDspFunctions(compilation)}
-        ${generateIoMessageReceivers(compilation)}
-        ${generateIoMessageSenders(compilation, (
+        ${generateColdDspFunctions(precompilation)}
+        ${generateIoMessageReceivers(precompilation, settings)}
+        ${generateIoMessageSenders(precompilation, settings, (
             variableName, 
             nodeId, 
             outletId
         ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'].onMessage(m)}`)}
 
-        ${generateNodeInitializations(compilation)}
-        ${generateColdDspInitialization(compilation)}
+        ${generateNodeInitializations(precompilation)}
+        ${generateColdDspInitialization(precompilation)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
@@ -81,11 +81,11 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 _commons_emitEngineConfigure()
             },
             loop: (${globs.input}, ${globs.output}) => {
-                ${generateLoop(compilation)}
+                ${generateLoop(precompilation)}
             },
             io: {
                 messageReceivers: {
-                    ${Object.entries(io.messageReceivers).map(([nodeId, spec]) =>
+                    ${Object.entries(settings.io.messageReceivers).map(([nodeId, spec]) =>
                         ast`${nodeId}: {
                             ${spec.portletIds.map(inletId => 
                                 `"${inletId}": ${variableNamesIndex.io.messageReceivers[nodeId][inletId]},`)}
@@ -93,7 +93,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                     )}
                 },
                 messageSenders: {
-                    ${Object.entries(io.messageSenders).map(([nodeId, spec]) =>
+                    ${Object.entries(settings.io.messageSenders).map(([nodeId, spec]) =>
                         ast`${nodeId}: {
                             ${spec.portletIds.map(outletId => 
                                 `"${outletId}": {onMessage: () => undefined},`)}
@@ -104,7 +104,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
         }
 
         ${generateImportsExports(
-            compilation,
+            precompilation,
             ({ name }) => ast`
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)

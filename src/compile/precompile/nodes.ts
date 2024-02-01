@@ -24,9 +24,9 @@ import { Code, VariableName } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
-import { createNamespace, nodeNamespaceLabel } from '../namespace'
+import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
 import { IoMessageSpecs, Compilation } from '../types'
-import { attachNodeVariable, attachNodeImplementationVariable } from '../variable-names-index'
+import { attachNodeVariable, attachNodeImplementationVariable } from './variable-names-index'
 import { DspGroup } from '../types'
 import { isNodeInsideGroup } from './dsp-groups'
 
@@ -39,7 +39,8 @@ export const precompileState = (
     compilation: Compilation,
     node: DspGraph.Node
 ) => {
-    const { precompilation, variableNamesIndex } = compilation
+    const { precompilation } = compilation
+    const { variableNamesIndex } = precompilation
     const { globs } = variableNamesIndex
     const precompiledNode = precompilation.nodes[node.id]
     const { nodeImplementation } = precompiledNode
@@ -77,7 +78,7 @@ export const precompileSignalOutlet = (
     node: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
-    const { precompilation } = compilation
+    const { precompilation, settings } = compilation
     const outletSinks = getters.getSinks(node, outletId)
 
     // Signal inlets can receive input from ONLY ONE signal.
@@ -92,9 +93,10 @@ export const precompileSignalOutlet = (
     //      NODE2_OUT = NODE1_OUT * 2
     //
     const signalOutName = attachNodeVariable(
-        compilation,
+        precompilation.variableNamesIndex,
+        settings,
         'signalOuts',
-        node.id,
+        node,
         outletId
     )
     precompilation.nodes[node.id].signalOuts[outletId] = signalOutName
@@ -111,7 +113,8 @@ export const precompileSignalInletWithNoSource = (
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const { precompilation, variableNamesIndex } = compilation
+    const { precompilation } = compilation
+    const { variableNamesIndex } = precompilation
     precompilation.nodes[node.id].generationContext.signalIns[inletId] =
         variableNamesIndex.globs.nullSignal
 }
@@ -123,14 +126,14 @@ export const precompileMessageOutlet = (
 ) => {
     const outletSinks = getters.getSinks(sourceNode, outletId)
     const {
-        variableNamesIndex,
         precompilation,
-        settings: { io },
+        settings,
     } = compilation
+    const { variableNamesIndex } = precompilation
     const precompiledNode = precompilation.nodes[sourceNode.id]
 
     const ioSendersPortletIds = _getPortletIdsFromMsgIo(
-        io.messageSenders,
+        settings.io.messageSenders,
         sourceNode.id
     )
     const hasIoSender = ioSendersPortletIds.includes(outletId)
@@ -171,9 +174,10 @@ export const precompileMessageOutlet = (
     //
     if (functionNames.length > 1) {
         const messageSenderName = attachNodeVariable(
-            compilation,
+            precompilation.variableNamesIndex,
+            settings,
             'messageSenders',
-            sourceNode.id,
+            sourceNode,
             outletId
         )
         precompiledNode.generationContext.messageSenders[outletId] =
@@ -208,21 +212,22 @@ export const precompileMessageOutlet = (
     // a function that does nothing
     else {
         precompiledNode.generationContext.messageSenders[outletId] =
-            compilation.variableNamesIndex.globs.nullMessageReceiver
+            variableNamesIndex.globs.nullMessageReceiver
     }
 }
 
 export const precompileMessageInlet = (
-    compilation: Compilation,
+    { precompilation, settings }: Compilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const precompiledNode = compilation.precompilation.nodes[node.id]
-    if (_getMessageInletTotalSourceCount(compilation, node, inletId) >= 1) {
+    const precompiledNode = precompilation.nodes[node.id]
+    if (_getMessageInletTotalSourceCount(settings, node, inletId) >= 1) {
         const messageReceiverName = attachNodeVariable(
-            compilation,
+            precompilation.variableNamesIndex,
+            settings,
             'messageReceivers',
-            node.id,
+            node,
             inletId
         )
         precompiledNode.generationContext.messageReceivers[inletId] =
@@ -248,7 +253,8 @@ export const precompileMessageReceivers = (
     compilation: Compilation,
     node: DspGraph.Node
 ) => {
-    const { precompilation, variableNamesIndex } = compilation
+    const { precompilation } = compilation
+    const { variableNamesIndex } = precompilation
     const precompiledNode = precompilation.nodes[node.id]
     const { globs } = variableNamesIndex
     const { nodeImplementation } = precompiledNode
@@ -285,7 +291,8 @@ export const precompileInitialization = (
     compilation: Compilation,
     node: DspGraph.Node
 ) => {
-    const { precompilation, variableNamesIndex } = compilation
+    const { precompilation } = compilation
+    const { variableNamesIndex } = precompilation
     const { globs } = variableNamesIndex
 
     const precompiledNode = precompilation.nodes[node.id]
@@ -306,7 +313,8 @@ export const precompileLoop = (
     compilation: Compilation,
     node: DspGraph.Node
 ) => {
-    const { precompilation, variableNamesIndex } = compilation
+    const { precompilation } = compilation
+    const { variableNamesIndex } = precompilation
     const precompiledNode = precompilation.nodes[node.id]
     const { globs } = variableNamesIndex
     const {
@@ -364,7 +372,8 @@ export const precompileInlineLoop = (
     compilation: Compilation,
     dspGroup: DspGroup
 ): void => {
-    const { precompilation, variableNamesIndex, graph, target } = compilation
+    const { precompilation, graph, target } = compilation
+    const { variableNamesIndex } = precompilation
     const { globs } = variableNamesIndex
     const inlinedNodes = dspGroup.traversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
@@ -444,7 +453,8 @@ export const precompileCaching = (
     compilation: Compilation,
     node: DspGraph.Node
 ): void => {
-    const { precompilation, variableNamesIndex } = compilation
+    const { precompilation } = compilation
+    const { variableNamesIndex } = precompilation
     const precompiledNode = precompilation.nodes[node.id]
     const { globs } = variableNamesIndex
     const { nodeImplementation } = precompiledNode
@@ -485,13 +495,13 @@ const _getInlinableGroupSinkNode = (
 }
 
 const _getMessageInletTotalSourceCount = (
-    compilation: Compilation,
+    settings: Compilation['settings'],
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
     const {
-        settings: { io },
-    } = compilation
+        io
+    } = settings
     const ioReceiversPortletIds = _getPortletIdsFromMsgIo(
         io.messageReceivers,
         node.id

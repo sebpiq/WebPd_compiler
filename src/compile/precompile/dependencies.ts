@@ -158,7 +158,7 @@ const _collectDependenciesFromTraversal = ({
 const _getGlobalCodeGeneratorContext = ({
     settings,
     target,
-    variableNamesIndex,
+    precompilation: { variableNamesIndex },
 }: Compilation): GlobalCodeGeneratorContext => ({
     target: target,
     audioSettings: settings.audio,

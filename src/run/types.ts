@@ -19,7 +19,7 @@
  */
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../stdlib/fs'
 import { DspGraph } from '../dsp-graph'
-import { Compilation } from '../compile/types'
+import { Compilation, Precompilation } from '../compile/types'
 
 /** Type for a module without bindings */
 export interface RawModule {}
@@ -80,7 +80,7 @@ export interface EngineMetadata {
     readonly compilation: {
         readonly io: Compilation['settings']['io']
         readonly variableNamesIndex: {
-            readonly io: Compilation['variableNamesIndex']['io']
+            readonly io: Precompilation['variableNamesIndex']['io']
         }
     }
 }

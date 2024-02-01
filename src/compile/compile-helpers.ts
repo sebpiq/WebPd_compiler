@@ -75,7 +75,7 @@ export const getNodeImplementationsUsedInGraph = (
 export const buildMetadata = (compilation: Compilation): EngineMetadata => {
     const {
         settings: { audio: audioSettings, io },
-        variableNamesIndex,
+        precompilation: { variableNamesIndex },
     } = compilation
     return {
         libVersion: packageInfo.version,
@@ -103,7 +103,7 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
  */
 export const buildFullGraphTraversal = (
     graph: DspGraph.Graph,
-    io: Compilation['settings']['io']
+    { io }: Compilation['settings']
 ): DspGraph.GraphTraversal => {
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
@@ -141,4 +141,69 @@ export const buildGraphTraversalSignal = (
 export const isGlobalDefinitionWithSettings = (
     globalCodeDefinition: GlobalCodeDefinition
 ): globalCodeDefinition is GlobalCodeGeneratorWithSettings =>
-    !(typeof globalCodeDefinition === 'function')
+    !(typeof globalCodeDefinition === 'function')/**
+ * Helper to declare namespace objects enforcing stricter access rules. Specifically, it forbids :
+ * - reading an unknown property.
+ * - trying to overwrite an existing property.
+ *
+ * Also allows to access properties starting with a number by prepending a `$`.
+ * This is convenient to access portlets by their id without using indexing syntax, for example :
+ * `namespace.$0` instead of `namespace['0']`.
+ */
+
+export const createNamespace = <T extends Object>(
+    label: string,
+    namespace: T
+) => {
+    return new Proxy<T>(namespace, {
+        get: (target, k) => {
+            const key = _trimDollarKey(String(k))
+            if (!target.hasOwnProperty(key)) {
+                // Whitelist some fields that are undefined but accessed at
+                // some point or another by our code.
+                // TODO : find a better way to do this.
+                if ([
+                    'toJSON',
+                    'Symbol(Symbol.toStringTag)',
+                    'constructor',
+                    '$typeof',
+                    '$$typeof',
+                    '@@__IMMUTABLE_ITERABLE__@@',
+                    '@@__IMMUTABLE_RECORD__@@',
+                ].includes(key)) {
+                    return undefined
+                }
+                throw new Error(
+                    `Namespace "${label}" doesn't know key "${String(key)}"`
+                )
+            }
+            return (target as any)[key]
+        },
+
+        set: (target, k, newValue) => {
+            const key = _trimDollarKey(String(k)) as keyof T
+            if (target.hasOwnProperty(key)) {
+                throw new Error(
+                    `Key "${String(key)}" is protected and cannot be overwritten.`
+                )
+            } else {
+                target[key] = newValue
+            }
+            return newValue
+        },
+    })
+}
+
+export const nodeNamespaceLabel = (
+    node: DspGraph.Node,
+    namespaceName?: string
+) => `${node.type}:${node.id}${namespaceName ? `:${namespaceName}` : ''}`
+const _trimDollarKey = (key: string) => {
+    const match = /\$(.*)/.exec(key)
+    if (!match) {
+        return key
+    } else {
+        return match[1]
+    }
+}
+

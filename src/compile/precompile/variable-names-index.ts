@@ -18,16 +18,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { DspGraph, getters } from '../dsp-graph'
-import { mapObject } from '../functional-helpers'
-import { getNodeImplementationsUsedInGraph } from './compile-helpers'
-import { createNamespace, nodeNamespaceLabel } from './namespace'
+import { DspGraph, getters } from '../../dsp-graph'
+import { mapObject } from '../../functional-helpers'
+import { getNodeImplementationsUsedInGraph } from '../compile-helpers'
+import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
 import {
     VariableNamesIndex,
     Compilation,
     NodeImplementation,
     NodeImplementations,
-} from './types'
+} from '../types'
 
 /**
  * Generates the whole set of variable names for a compilation for a given graph.
@@ -37,9 +37,9 @@ import {
  * @returns
  */
 export const generateVariableNamesIndex = (
+    settings: Compilation['settings'],
     graph: DspGraph.Graph,
     nodeImplementations: NodeImplementations,
-    debug: boolean
 ): VariableNamesIndex =>
     createNamespace('variableNamesIndex', {
         nodes: createNamespace(
@@ -60,7 +60,7 @@ export const generateVariableNamesIndex = (
                         nodeNamespaceLabel(node, 'signalOuts'),
                         {}
                     ),
-                    state: `${_namePrefix(debug, node)}_STATE`,
+                    state: `${_namePrefix(settings.debug, node)}_STATE`,
                 })
             )
         ),
@@ -93,19 +93,14 @@ export const generateVariableNamesGlobs = () =>
     })
 
 export const attachNodeVariable = (
-    compilation: Compilation,
+    variableNamesIndex: VariableNamesIndex,
+    settings: Compilation['settings'],
     nsKey: 'signalOuts' | 'messageSenders' | 'messageReceivers',
-    nodeId: DspGraph.NodeId,
+    node: DspGraph.Node,
     portletId: DspGraph.PortletId
 ) => {
-    const {
-        graph,
-        variableNamesIndex,
-        settings: { debug },
-    } = compilation
-    const nodeVariableNames = variableNamesIndex.nodes[nodeId]
-    const node = getters.getNode(graph, nodeId)
-    const prefix = _namePrefix(debug, node)
+    const nodeVariableNames = variableNamesIndex.nodes[node.id]
+    const prefix = _namePrefix(settings.debug, node)
     // Shouldnt throw an error if the variable already exists, as precompile might try to
     // declare it several times.
     if (!(portletId in nodeVariableNames[nsKey])) {
@@ -122,16 +117,16 @@ export const attachNodeVariable = (
  * Helper that attaches to the generated `variableNamesIndex` the names of specified outlet listeners
  * and inlet callers.
  */
-export const attachIoMessages = ({
-    graph,
-    variableNamesIndex,
-    settings: { io },
-}: Compilation): void =>
+export const attachIoMessages = (
+    variableNamesIndex: VariableNamesIndex,
+    settings: Compilation['settings'],
+    graph: DspGraph.Graph,
+): void =>
     (['messageReceivers', 'messageSenders'] as const).forEach((nsKey) => {
         const specs =
             (nsKey === 'messageReceivers'
-                ? io.messageReceivers
-                : io.messageSenders) || {}
+                ? settings.io.messageReceivers
+                : settings.io.messageSenders) || {}
         Object.entries(specs).forEach(([nodeId, spec]) => {
             const node = getters.getNode(graph, nodeId)
             variableNamesIndex.io[nsKey][nodeId] = createNamespace(
@@ -147,14 +142,14 @@ export const attachIoMessages = ({
     })
 
 export const attachColdDspGroup = (
-    { variableNamesIndex }: Compilation,
+    variableNamesIndex: VariableNamesIndex,
     groupId: string
 ) => {
     return (variableNamesIndex.coldDspGroups[groupId] = `coldDsp_${groupId}`)
 }
 
 export const attachNodeImplementationVariable = (
-    { variableNamesIndex }: Compilation,
+    variableNamesIndex: VariableNamesIndex,
     nsKey: 'stateClass',
     nodeType: DspGraph.NodeType,
     nodeImplementation: NodeImplementation<any>

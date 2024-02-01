@@ -41,12 +41,12 @@ import { ast } from '../../ast/declare'
 
 export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
     const {
-        settings: { audio: audioSettings, io },
-        variableNamesIndex,
+        settings,
         precompilation,
     } = compilation
-    const { channelCount } = audioSettings
-    const globs = compilation.variableNamesIndex.globs
+    const { channelCount } = settings.audio
+    const variableNamesIndex = precompilation.variableNamesIndex
+    const globs = variableNamesIndex.globs
     const metadata = buildMetadata(compilation)
 
     // prettier-ignore
@@ -54,24 +54,24 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         const metadata: string = '${JSON.stringify(metadata)}'
 
         ${precompilation.dependencies.ast}
-        ${generateNodeImplementationsCoreAndStateClasses(compilation)}
+        ${generateNodeImplementationsCoreAndStateClasses(precompilation)}
 
-        ${generateGlobs(compilation)}
+        ${generateGlobs(precompilation)}
         let ${globs.input}: FloatArray = createFloatArray(0)
         let ${globs.output}: FloatArray = createFloatArray(0)
 
-        ${generateEmbeddedArrays(compilation)}
+        ${generateEmbeddedArrays(settings)}
 
-        ${generateNodeStateInstances(compilation)}
-        ${generatePortletsDeclarations(compilation)}
+        ${generateNodeStateInstances(precompilation)}
+        ${generatePortletsDeclarations(precompilation, settings)}
 
-        ${generateColdDspFunctions(compilation)}
-        ${generateIoMessageReceivers(compilation)}
-        ${generateIoMessageSenders(compilation, (variableName) => 
+        ${generateColdDspFunctions(precompilation)}
+        ${generateIoMessageReceivers(precompilation, settings)}
+        ${generateIoMessageSenders(precompilation, settings, (variableName) => 
             ast`export declare function ${variableName}(m: Message): void`)}
 
-        ${generateNodeInitializations(compilation)}
-        ${generateColdDspInitialization(compilation)}
+        ${generateNodeInitializations(precompilation)}
+        ${generateColdDspInitialization(precompilation)}
 
         export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
@@ -86,12 +86,12 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export function getOutput(): FloatArray { return ${globs.output} }
 
         export function loop(): void {
-            ${generateLoop(compilation)}
+            ${generateLoop(precompilation)}
         }
 
         export {
             metadata,
-            ${Object.entries(io.messageReceivers).map(([nodeId, spec]) => 
+            ${Object.entries(settings.io.messageReceivers).map(([nodeId, spec]) => 
                 spec.portletIds.map(inletId => 
                     variableNamesIndex.io.messageReceivers[nodeId][inletId] + ','
                 )
@@ -99,7 +99,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         }
 
         ${generateImportsExports(
-            compilation,
+            precompilation,
             ({ name, args, returnType }) => ast`export declare function ${name} (${
                 args.map((a) => `${a.name}: ${a.type}`).join(',')
             }): ${returnType}`, 

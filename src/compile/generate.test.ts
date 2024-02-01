@@ -59,7 +59,7 @@ describe('generate', () => {
             compilation.precompilation.nodes.n1.signalOuts.$1 = 'n1_OUTS_1'
             compilation.precompilation.nodes.n2.signalOuts.$0 = 'n2_OUTS_0'
 
-            const sequence = generatePortletsDeclarations(compilation)
+            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -95,7 +95,7 @@ describe('generate', () => {
                 [Var('Message', 'm')]
             )`// [n2] message receiver 0`
 
-            const sequence = generatePortletsDeclarations(compilation)
+            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -153,7 +153,7 @@ describe('generate', () => {
                 [Var('Message', 'm')]
             )`// [n1] message receiver 0`
 
-            const sequence = generatePortletsDeclarations(compilation)
+            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -207,7 +207,7 @@ describe('generate', () => {
                 functionNames: ['n3_RCVS_0'],
             }
 
-            const sequence = generatePortletsDeclarations(compilation)
+            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -270,7 +270,7 @@ describe('generate', () => {
             }
             compilation.precompilation.nodes.n3.state = null
 
-            const sequence = generateNodeStateInstances(compilation)
+            const sequence = generateNodeStateInstances(compilation.precompilation)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -308,7 +308,7 @@ describe('generate', () => {
                 nodeImplementation: {},
             }
 
-            const sequence = generateNodeImplementationsCoreAndStateClasses(compilation)
+            const sequence = generateNodeImplementationsCoreAndStateClasses(compilation.precompilation)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -389,7 +389,7 @@ describe('generate', () => {
             `
             compilation.precompilation.nodes.n2.initialization = ast``
 
-            const sequence = generateNodeInitializations(compilation)
+            const sequence = generateNodeInitializations(compilation.precompilation)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -433,7 +433,7 @@ describe('generate', () => {
 
             precompile(compilation)
 
-            const sequence = generateIoMessageReceivers(compilation)
+            const sequence = generateIoMessageReceivers(compilation.precompilation, compilation.settings)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -480,7 +480,7 @@ describe('generate', () => {
             compilation.precompilation.nodes.n2.loop = ast`// n2`
             compilation.precompilation.nodes.n3.loop = ast`// n3`
 
-            const sequence = generateLoop(compilation)
+            const sequence = generateLoop(compilation.precompilation)
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
@@ -514,7 +514,7 @@ describe('generate', () => {
             }
             compilation.precompilation.graph.coldDspGroups = {}
 
-            const sequence = generateLoop(compilation)
+            const sequence = generateLoop(compilation.precompilation)
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
@@ -552,10 +552,10 @@ describe('generate', () => {
                 },
             }
 
-            compilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
-            compilation.variableNamesIndex.coldDspGroups.$1 = 'DSP_1'
+            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
+            compilation.precompilation.variableNamesIndex.coldDspGroups.$1 = 'DSP_1'
 
-            const sequence = generateColdDspInitialization(compilation)
+            const sequence = generateColdDspInitialization(compilation.precompilation)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',
@@ -593,10 +593,10 @@ describe('generate', () => {
                 },
             }
 
-            compilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
-            compilation.variableNamesIndex.coldDspGroups.$1 = 'DSP_1'
+            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
+            compilation.precompilation.variableNamesIndex.coldDspGroups.$1 = 'DSP_1'
 
-            const sequence = generateColdDspFunctions(compilation)
+            const sequence = generateColdDspFunctions(compilation.precompilation)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',
@@ -663,9 +663,9 @@ describe('generate', () => {
                     ],
                 },
             }
-            compilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
+            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
 
-            const sequence = generateColdDspFunctions(compilation)
+            const sequence = generateColdDspFunctions(compilation.precompilation)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',
@@ -714,9 +714,9 @@ describe('generate', () => {
                     ],
                 },
             }
-            compilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
+            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
 
-            const sequence = generateColdDspFunctions(compilation)
+            const sequence = generateColdDspFunctions(compilation.precompilation)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',

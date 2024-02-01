@@ -17,7 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { Compilation, GlobalCodeDefinitionExport } from './types'
+import {
+    Precompilation,
+    GlobalCodeDefinitionExport,
+    Compilation,
+} from './types'
 import { AstConstVar, AstFunc, AstSequence, VariableName } from '../ast/types'
 import { Sequence, Func, Var, ast, ConstVar } from '../ast/declare'
 import { DspGraph } from '../dsp-graph'
@@ -28,7 +32,7 @@ import {
 
 export const generateGlobs = ({
     variableNamesIndex: { globs },
-}: Compilation): AstSequence =>
+}: Precompilation): AstSequence =>
     // prettier-ignore
     Sequence([
         Var('Int', globs.iterFrame, '0'),
@@ -45,7 +49,7 @@ export const generateGlobs = ({
 /**
  * Embed arrays passed to the compiler in the compiled module.
  */
-export const generateEmbeddedArrays = ({ settings: { arrays } }: Compilation) =>
+export const generateEmbeddedArrays = ({ arrays }: Compilation['settings']) =>
     Sequence(
         Object.entries(arrays).map(([arrayName, array]) =>
             Sequence([
@@ -58,25 +62,24 @@ export const generateEmbeddedArrays = ({ settings: { arrays } }: Compilation) =>
     )
 
 export const generateNodeImplementationsCoreAndStateClasses = ({
-    precompilation,
-}: Compilation): AstSequence =>
+    nodeImplementations,
+}: Precompilation): AstSequence =>
     Sequence(
-        Object.values(precompilation.nodeImplementations).map(
-            (precompiledImplementation) => [
-                precompiledImplementation.stateClass,
-                precompiledImplementation.core,
-            ]
-        )
+        Object.values(nodeImplementations).map((precompiledImplementation) => [
+            precompiledImplementation.stateClass,
+            precompiledImplementation.core,
+        ])
     )
 
 export const generateNodeStateInstances = ({
-    precompilation,
     variableNamesIndex,
-}: Compilation): AstSequence =>
+    graph,
+    nodes,
+}: Precompilation): AstSequence =>
     Sequence([
-        precompilation.graph.fullTraversal.reduce<Array<AstConstVar>>(
+        graph.fullTraversal.reduce<Array<AstConstVar>>(
             (declarations, nodeId) => {
-                const precompiledNode = precompilation.nodes[nodeId]
+                const precompiledNode = nodes[nodeId]
                 const nodeVariableNames = variableNamesIndex.nodes[nodeId]
                 if (!precompiledNode.state) {
                     return declarations
@@ -89,11 +92,7 @@ export const generateNodeStateInstances = ({
                             ast`{
                                 ${Object.entries(
                                     precompiledNode.state.initialization
-                                )
-                                    .map(
-                                        ([key, value]) =>
-                                            ast`${key}: ${value},`
-                                    )}
+                                ).map(([key, value]) => ast`${key}: ${value},`)}
                                 }`
                         ),
                     ]
@@ -104,25 +103,21 @@ export const generateNodeStateInstances = ({
     ])
 
 export const generateNodeInitializations = ({
-    precompilation,
-}: Compilation): AstSequence =>
+    graph,
+    nodes,
+}: Precompilation): AstSequence =>
     Sequence([
-        precompilation.graph.fullTraversal.map(
-            (nodeId) => precompilation.nodes[nodeId].initialization
-        ),
+        graph.fullTraversal.map((nodeId) => nodes[nodeId].initialization),
     ])
 
-export const generateIoMessageReceivers = ({
-    settings: { io },
-    variableNamesIndex,
-    precompilation,
-}: Compilation): AstSequence =>
+export const generateIoMessageReceivers = (
+    { variableNamesIndex, graph }: Precompilation,
+    { io }: Compilation['settings']
+): AstSequence =>
     Sequence(
         Object.entries(io.messageReceivers).map(([nodeId, spec]) => {
             // TODO : todo-io-messageReceivers This lookup should be done in precompile
-            const groupsContainingSink = Object.entries(
-                precompilation.graph.coldDspGroups
-            )
+            const groupsContainingSink = Object.entries(graph.coldDspGroups)
                 .filter(([_, dspGroup]) => isNodeInsideGroup(dspGroup, nodeId))
                 .map(([groupId]) => groupId)
 
@@ -150,7 +145,8 @@ export const generateIoMessageReceivers = ({
     )
 
 export const generateIoMessageSenders = (
-    { settings: { io }, variableNamesIndex }: Compilation,
+    { variableNamesIndex }: Precompilation,
+    { io }: Compilation['settings'],
     generateIoMessageSender: (
         variableName: VariableName,
         nodeId: DspGraph.NodeId,
@@ -171,13 +167,13 @@ export const generateIoMessageSenders = (
         )
     )
 
-export const generatePortletsDeclarations = ({
-    precompilation,
-    settings: { debug },
-}: Compilation): AstSequence =>
+export const generatePortletsDeclarations = (
+    { graph, nodes }: Precompilation,
+    { debug }: Compilation['settings']
+): AstSequence =>
     Sequence([
-        precompilation.graph.fullTraversal
-            .map((nodeId) => [precompilation.nodes[nodeId], nodeId] as const)
+        graph.fullTraversal
+            .map((nodeId) => [nodes[nodeId], nodeId] as const)
             .map(([precompiledNode, nodeId]) => [
                 // 1. Declares signal outlets
                 Object.values(precompiledNode.signalOuts).map((outName) =>
@@ -201,10 +197,8 @@ export const generatePortletsDeclarations = ({
 
         // 3. Declares message senders for all message outlets.
         // This needs to come after all message receivers are declared since we reference them here.
-        precompilation.graph.fullTraversal
-            .flatMap((nodeId) =>
-                Object.values(precompilation.nodes[nodeId].messageSenders)
-            )
+        graph.fullTraversal
+            .flatMap((nodeId) => Object.values(nodes[nodeId].messageSenders))
             .map(
                 ({ messageSenderName: sndName, functionNames }) =>
                     // prettier-ignore
@@ -219,11 +213,9 @@ export const generatePortletsDeclarations = ({
 
 export const generateLoop = ({
     variableNamesIndex,
-    precompilation,
-}: Compilation) => {
-    const {
-        graph: { hotDspGroup, coldDspGroups },
-    } = precompilation
+    nodes,
+    graph: { hotDspGroup, coldDspGroups },
+}: Precompilation) => {
     const { globs } = variableNamesIndex
 
     // prettier-ignore
@@ -231,7 +223,7 @@ export const generateLoop = ({
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
             ${hotDspGroup.traversal.map((nodeId) => {
-                const precompiledNode = precompilation.nodes[nodeId]
+                const precompiledNode = nodes[nodeId]
                 return [
                     // For all caching functions, we render those that are not
                     // the sink of a cold dsp group.
@@ -255,48 +247,45 @@ export const generateLoop = ({
 }
 
 export const generateColdDspInitialization = ({
-    precompilation,
     variableNamesIndex,
-}: Compilation) =>
+    graph,
+}: Precompilation) =>
     Sequence(
-        Object.keys(precompilation.graph.coldDspGroups).map(
+        Object.keys(graph.coldDspGroups).map(
             (groupId) =>
                 `${variableNamesIndex.coldDspGroups[groupId]}(${variableNamesIndex.globs.emptyMessage})`
         )
     )
 
-export const generateColdDspFunctions = (
-    { variableNamesIndex, precompilation }: Compilation
-): AstSequence => {
-    const {
-        graph: { coldDspGroups },
-    } = precompilation
-
-    return Sequence(
+export const generateColdDspFunctions = ({
+    variableNamesIndex,
+    graph: { coldDspGroups },
+    nodes,
+}: Precompilation): AstSequence =>
+    Sequence(
         Object.entries(coldDspGroups).map(([groupId, dspGroup]) => {
             const funcName = variableNamesIndex.coldDspGroups[groupId]
             // prettier-ignore
             return Func(funcName, [Var('Message', 'm')], 'void')`
                 ${dspGroup.traversal.map((nodeId) => 
-                    precompilation.nodes[nodeId].loop
+                    nodes[nodeId].loop
                 )}
                 ${dspGroup.sinkConnections
-                    .filter(([_, sink]) => sink.portletId in precompilation.nodes[sink.nodeId].caching)
+                    .filter(([_, sink]) => sink.portletId in nodes[sink.nodeId].caching)
                     .map(([_, sink]) => 
-                        precompilation.nodes[sink.nodeId].caching[sink.portletId]
+                        nodes[sink.nodeId].caching[sink.portletId]
                     )
                 }
             `
         })
     )
-}
 
 export const generateImportsExports = (
-    { precompilation }: Compilation,
+    { dependencies }: Precompilation,
     generateImport: (imprt: AstFunc) => AstSequence,
     generateExport: (xprt: GlobalCodeDefinitionExport) => AstSequence
 ): AstSequence =>
     Sequence([
-        precompilation.dependencies.imports.map(generateImport),
-        precompilation.dependencies.exports.map(generateExport),
+        dependencies.imports.map(generateImport),
+        dependencies.exports.map(generateExport),
     ])
