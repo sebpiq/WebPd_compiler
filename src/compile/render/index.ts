@@ -17,15 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { AstElement, Code, CodeMacros } from './types'
+import { AstElement, Code } from '../../ast/types'
+import { CodeMacros } from "./types"
 
-/**
- * Renders templated strings which contain nested arrays of strings.
- * This helper allows to use functions such as `.map` to generate several lines
- * of code, without having to use `.join('\n')`.
- * If a code line inserted in the template is falsy (null / undefined), it is ignored.
- * @todo : should not have to check for falsy codeLine has it should be typechecked.
- */
 const render = (macros: CodeMacros, element: AstElement | string): Code => {
     if (typeof element === 'string') {
         return element

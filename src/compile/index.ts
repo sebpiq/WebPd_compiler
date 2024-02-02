@@ -19,19 +19,19 @@
  */
 
 import {
-    Compilation,
+    UserCompilationSettings,
     CompilationSettings,
     CompilerTarget,
     NodeImplementations,
 } from './types'
-import compileToJavascript from '../engine-javascript/compile'
-import compileToAssemblyscript from '../engine-assemblyscript/compile'
+import renderToJavascript from '../engine-javascript/compile/render'
+import renderToAssemblyscript from '../engine-assemblyscript/compile/render'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/compile/types'
 import { buildFullGraphTraversal } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
 import { traversers } from '../dsp-graph'
-import precompile, { initializePrecompilation } from './precompile'
+import precompile from './precompile'
 
 interface CompilationSuccess {
     status: 0
@@ -48,33 +48,24 @@ export default (
     graph: DspGraph.Graph,
     nodeImplementations: NodeImplementations,
     target: CompilerTarget,
-    compilationSettings: CompilationSettings
+    compilationSettings: UserCompilationSettings
 ): CompilationResult => {
-    const settings = validateSettings(compilationSettings)
+    const settings = validateSettings(compilationSettings, target)
     const fullGraphTraversal = buildFullGraphTraversal(graph, settings)
     const trimmedGraph = traversers.trimGraph(graph, fullGraphTraversal)
+    
+    const precompiledCode = precompile(
+        { graph: trimmedGraph, nodeImplementations, settings },
+        fullGraphTraversal
+    )
 
-    const compilation: Compilation = {
-        graph: trimmedGraph,
-        nodeImplementations,
-        target,
-        settings,
-        precompilation: initializePrecompilation(
-            settings,
-            trimmedGraph,
-            fullGraphTraversal,
-            nodeImplementations,
-        ),
-    }
-
-    precompile(compilation)
     let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
-    if (compilation.target === 'javascript') {
-        code = compileToJavascript(compilation)
-    } else if (compilation.target === 'assemblyscript') {
-        code = compileToAssemblyscript(compilation)
+    if (target === 'javascript') {
+        code = renderToJavascript({ precompiledCode, settings })
+    } else if (target === 'assemblyscript') {
+        code = renderToAssemblyscript({ precompiledCode, settings })
     } else {
-        throw new Error(`Invalid compilation.target ${compilation.target}`)
+        throw new Error(`Invalid target ${target}`)
     }
 
     return {
@@ -85,8 +76,9 @@ export default (
 
 /** Asserts user provided settings are valid (or throws error) and sets default values. */
 export const validateSettings = (
-    compilationSettings: CompilationSettings
-): Compilation['settings'] => {
+    compilationSettings: UserCompilationSettings,
+    target: CompilerTarget
+): CompilationSettings => {
     const arrays = compilationSettings.arrays || {}
     const io = {
         messageReceivers: (compilationSettings.io || {}).messageReceivers || {},
@@ -106,6 +98,7 @@ export const validateSettings = (
         arrays,
         io,
         debug,
+        target,
     }
 }
 

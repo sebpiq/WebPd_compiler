@@ -20,8 +20,7 @@
 
 import {
     AudioSettings,
-    Compilation,
-    CompilationSettings,
+    UserCompilationSettings,
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
@@ -31,7 +30,7 @@ import { AstSequence, Code, AstFunc } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
 import { Engine, Module, RawModule } from './run/types'
 import { writeFile } from 'fs/promises'
-import { buildFullGraphTraversal, getMacros } from './compile/compile-helpers'
+import { getMacros } from './compile/compile-helpers'
 import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
     compileAssemblyscript,
@@ -47,25 +46,20 @@ import {
     createBindings as createJavaScriptEngineBindings,
 } from './engine-javascript/run'
 import { createModule } from './run/run-helpers'
-import { initializePrecompilation } from './compile/precompile'
-import render from './ast/render'
+import { initializePrecompiledCode } from './compile/precompile'
+import render from './compile/render'
 import {
     collectAndDedupeExports,
     flattenDependencies,
     instantiateAndDedupeDependencies,
 } from './compile/precompile/dependencies'
 import { validateSettings } from './compile'
+import { generateVariableNamesGlobs } from './compile/precompile/variable-names-index'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
     target: CompilerTarget
 }
-
-export type TestingCompilation = Partial<
-    Omit<Compilation, 'settings'> & {
-        settings: Partial<Compilation['settings']>
-    }
->
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
@@ -86,42 +80,6 @@ export const round = (v: number, decimals: number = 4) => {
         return 0
     }
     return rounded
-}
-
-export const makeCompilation = (
-    compilation: TestingCompilation
-): Compilation => {
-    const defaultSettings: CompilationSettings = {
-        audio: {
-            bitDepth: 32,
-            channelCount: { in: 2, out: 2 },
-        },
-    }
-    const target = compilation.target || 'javascript'
-    const settings = validateSettings({
-        ...defaultSettings,
-        ...(compilation.settings || {}),
-    })
-    const nodeImplementations = compilation.nodeImplementations || {
-        DUMMY: {},
-    }
-    const graph = compilation.graph || {}
-    const precompilation =
-        compilation.precompilation ||
-        initializePrecompilation(
-            settings,
-            graph,
-            buildFullGraphTraversal(graph, settings),
-            nodeImplementations,
-        )
-    return {
-        ...compilation,
-        target,
-        graph,
-        settings,
-        nodeImplementations,
-        precompilation,
-    }
 }
 
 interface CreateTestModuleApplyBindings {
@@ -220,16 +178,12 @@ export const runTestSuite = (
     beforeAll(async () => {
         for (let testParameters of TEST_PARAMETERS) {
             const { target, bitDepth } = testParameters
-            const compilation = makeCompilation({
-                target,
-                settings: {
-                    audio: {
-                        bitDepth,
-                        channelCount: { in: 2, out: 2 },
-                    },
+            const settings = validateSettings({
+                audio: {
+                    bitDepth,
+                    channelCount: { in: 2, out: 2 },
                 },
-            })
-
+            }, target)
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
                 tests.map(({ testFunction }, i) => {
                     const astTestFunc = testFunction(target)
@@ -314,11 +268,12 @@ export const runTestSuite = (
                 `,
 
                 instantiateAndDedupeDependencies(
-                    compilation,
+                    settings,
                     flattenDependencies([
                         ...dependencies,
                         ...testsCodeDefinitions,
-                    ])
+                    ]),
+                    generateVariableNamesGlobs()
                 ),
 
                 target === 'javascript' ? 'const exports = {}' : null,

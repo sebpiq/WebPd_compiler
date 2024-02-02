@@ -33,7 +33,7 @@ import { sked } from '../../stdlib/sked'
 import { msg } from '../../stdlib/msg'
 import { MessagePointer } from './types'
 import { Sequence } from '../../ast/declare'
-import render from '../../ast/render'
+import render from '../../compile/render'
 import macros from '../compile/macros'
 import { generateVariableNamesGlobs } from '../../compile/precompile/variable-names-index'
 

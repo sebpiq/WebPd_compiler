@@ -23,11 +23,11 @@ import { mapObject } from '../../functional-helpers'
 import { getNodeImplementationsUsedInGraph } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
 import {
-    VariableNamesIndex,
-    Compilation,
+    CompilationSettings,
     NodeImplementation,
     NodeImplementations,
 } from '../types'
+import { VariableNamesIndex } from './types'
 
 /**
  * Generates the whole set of variable names for a compilation for a given graph.
@@ -37,7 +37,7 @@ import {
  * @returns
  */
 export const generateVariableNamesIndex = (
-    settings: Compilation['settings'],
+    settings: CompilationSettings,
     graph: DspGraph.Graph,
     nodeImplementations: NodeImplementations,
 ): VariableNamesIndex =>
@@ -94,7 +94,7 @@ export const generateVariableNamesGlobs = () =>
 
 export const attachNodeVariable = (
     variableNamesIndex: VariableNamesIndex,
-    settings: Compilation['settings'],
+    settings: CompilationSettings,
     nsKey: 'signalOuts' | 'messageSenders' | 'messageReceivers',
     node: DspGraph.Node,
     portletId: DspGraph.PortletId
@@ -119,7 +119,7 @@ export const attachNodeVariable = (
  */
 export const attachIoMessages = (
     variableNamesIndex: VariableNamesIndex,
-    settings: Compilation['settings'],
+    settings: CompilationSettings,
     graph: DspGraph.Graph,
 ): void =>
     (['messageReceivers', 'messageSenders'] as const).forEach((nsKey) => {

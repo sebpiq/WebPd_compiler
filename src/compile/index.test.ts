@@ -19,17 +19,17 @@
  */
 import assert from 'assert'
 import compile, { validateSettings } from '.'
-import { CompilationSettings } from './types'
+import { UserCompilationSettings } from './types'
 
 describe('compile', () => {
-    const COMPILER_SETTINGS_AS: CompilationSettings = {
+    const COMPILER_SETTINGS_AS: UserCompilationSettings = {
         audio: {
             channelCount: { in: 2, out: 2 },
             bitDepth: 32,
         },
     }
 
-    const COMPILER_SETTINGS_JS: CompilationSettings = {
+    const COMPILER_SETTINGS_JS: UserCompilationSettings = {
         audio: {
             channelCount: { in: 2, out: 2 },
             bitDepth: 32,
@@ -50,7 +50,7 @@ describe('compile', () => {
 
     describe('validateSettings', () => {
         it('should validate settings and set defaults', () => {
-            const settings = validateSettings({})
+            const settings = validateSettings({}, 'javascript')
             assert.deepStrictEqual(settings.io, {
                 messageReceivers: {},
                 messageSenders: {},
@@ -70,7 +70,7 @@ describe('compile', () => {
                         channelCount: { in: 2, out: 2 },
                         bitDepth: 666,
                     },
-                } as any)
+                } as any, 'javascript')
             )
         })
     })

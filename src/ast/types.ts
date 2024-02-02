@@ -78,13 +78,3 @@ export interface AstClass extends AstElementBase {
     members: Array<AstVar>
 }
 
-/**
- * Macros injected in code generators so that they can be written in a generic manner.
- * Each target language supported must implement the full set of macros.
- */
-export type CodeMacros = {
-    Var: (declaration: AstVar, renderedValue: Code) => Code
-    ConstVar: (declaration: AstConstVar, renderedValue: Code) => Code
-    Func: (declaration: AstFunc, renderedArgsValues: Array<Code | null>, renderedBody: Code) => Code
-    Class: (declaration: AstClass) => Code
-}

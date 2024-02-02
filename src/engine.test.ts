@@ -27,7 +27,7 @@ import {
     NodeImplementations,
     GlobalCodeDefinition,
     GlobalCodeGeneratorWithSettings,
-    CompilationSettings,
+    UserCompilationSettings,
     IoMessageSpecs,
 } from './compile/types'
 import {
@@ -65,7 +65,7 @@ describe('Engine', () => {
         graph?: DspGraph.Graph
         nodeImplementations?: NodeImplementations
         injectedDependencies?: Array<GlobalCodeDefinition>
-        settings?: CompilationSettings
+        settings?: UserCompilationSettings
     }
 
     const initializeEngineTest = async <
@@ -144,10 +144,8 @@ describe('Engine', () => {
                     DUMMY: {
                         loop: ({
                             globs,
-                            compilation: {
-                                settings: {
-                                    audio: { channelCount },
-                                },
+                            settings: {
+                                audio: { channelCount },
                                 target,
                             },
                         }) =>
@@ -211,11 +209,9 @@ describe('Engine', () => {
                     DUMMY: {
                         loop: ({
                             globs,
-                            compilation: {
+                            settings: {
                                 target,
-                                settings: {
-                                    audio: { channelCount },
-                                },
+                                audio: { channelCount },
                             },
                         }) =>
                             target === 'assemblyscript'
@@ -371,7 +367,7 @@ describe('Engine', () => {
                                 globs.sampleRate
                             }})
                             `,
-                            loop: ({ globs, state, compilation: { target } }) =>
+                            loop: ({ globs, state, settings: { target } }) =>
                                 target === 'assemblyscript'
                                     ? ast`${globs.output}[0] = ${state}.configureCalled`
                                     : ast`${globs.output}[0][0] = ${state}.configureCalled`,

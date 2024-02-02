@@ -34,7 +34,6 @@ import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/test-helpers'
 import { commonsArrays } from './stdlib'
 import { AnonFunc, Class, ConstVar, Sequence, Var, ast } from './ast/declare'
-export { makeCompilation } from './test-helpers'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
 interface NodeTestSettings<NodeArguments> {

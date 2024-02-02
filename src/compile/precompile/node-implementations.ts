@@ -1,16 +1,14 @@
 import { DspGraph } from '../../dsp-graph'
-import { Compilation } from '../types'
+import { PrecompilationOperation } from './types'
 import { attachNodeImplementationVariable } from './variable-names-index'
 
 export const precompileStateClass = (
-    compilation: Compilation,
+    { input: { graph, settings }, output }: PrecompilationOperation,
     nodeType: DspGraph.NodeType
 ) => {
-    const { precompilation, graph } = compilation
-    const { variableNamesIndex } = precompilation
+    const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
-    const precompiledImplementation =
-        precompilation.nodeImplementations[nodeType]
+    const precompiledImplementation = output.nodeImplementations[nodeType]
 
     if (precompiledImplementation.nodeImplementation.state) {
         if (!variableNamesIndex.nodeImplementations[nodeType].stateClass) {
@@ -29,14 +27,15 @@ export const precompileStateClass = (
                 `No node of type "${nodeType}" exists in the graph.`
             )
         }
-        const stateClassName = variableNamesIndex.nodeImplementations[nodeType].stateClass
+        const stateClassName =
+            variableNamesIndex.nodeImplementations[nodeType].stateClass
         const astClass = precompiledImplementation.nodeImplementation.state({
             globs,
             node: sampleNode,
-            compilation,
+            settings,
             stateClassName,
         })
-        precompilation.nodeImplementations[nodeType].stateClass = {
+        output.nodeImplementations[nodeType].stateClass = {
             ...astClass,
             // Reset member values which are irrelevant in the state class.
             members: astClass.members.map((member) => ({
@@ -48,22 +47,20 @@ export const precompileStateClass = (
 }
 
 export const precompileCore = (
-    compilation: Compilation,
+    { input: { settings }, output }: PrecompilationOperation,
     nodeType: DspGraph.NodeType
 ) => {
-    const { precompilation } = compilation
-    const { variableNamesIndex } = precompilation
+    const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
     const nodeImplementation =
-        precompilation.nodeImplementations[nodeType].nodeImplementation
+        output.nodeImplementations[nodeType].nodeImplementation
     const stateClassName =
         variableNamesIndex.nodeImplementations[nodeType].stateClass || undefined
     if (nodeImplementation.core) {
-        precompilation.nodeImplementations[nodeType].core =
-            nodeImplementation.core({
-                compilation,
-                globs,
-                stateClassName,
-            })
+        output.nodeImplementations[nodeType].core = nodeImplementation.core({
+            settings,
+            globs,
+            stateClassName,
+        })
     }
 }

@@ -19,45 +19,49 @@
  */
 import { isGlobalDefinitionWithSettings } from '../compile-helpers'
 import {
-    Compilation,
+    CompilationSettings,
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
-    GlobalCodeGeneratorContext,
-    Precompilation,
 } from '../types'
 import { AstElement, AstFunc, AstSequence } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { core, commonsCore, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
+import { PrecompilationOperation, PrecompiledCode, VariableNamesIndex } from './types'
 
-export default (compilation: Compilation) => {
-    const { precompilation, target } = compilation
-
+export default (precompilation: PrecompilationOperation) => {
     const dependencies = flattenDependencies([
         ...engineMinimalDependencies(),
-        ..._collectDependenciesFromTraversal(compilation),
+        ..._collectDependenciesFromTraversal(precompilation),
     ])
 
     // Flatten and de-duplicate all the module's dependencies
-    precompilation.dependencies.ast = instantiateAndDedupeDependencies(
-        compilation,
-        dependencies
+    precompilation.output.dependencies.ast = instantiateAndDedupeDependencies(
+        precompilation.input.settings,
+        dependencies,
+        precompilation.output.variableNamesIndex.globs,
     )
 
     // Collect and attach imports / exports info
-    precompilation.dependencies.exports = collectAndDedupeExports(
-        target,
+    precompilation.output.dependencies.exports = collectAndDedupeExports(
+        precompilation.input.settings.target,
         dependencies
     )
-    precompilation.dependencies.imports = collectAndDedupeImports(dependencies)
+    precompilation.output.dependencies.imports =
+        collectAndDedupeImports(dependencies)
 }
 
 export const instantiateAndDedupeDependencies = (
-    compilation: Compilation,
-    dependencies: Array<GlobalCodeDefinition>
+    settings: CompilationSettings,
+    dependencies: Array<GlobalCodeDefinition>,
+    globs: VariableNamesIndex['globs']
 ): AstSequence => {
-    const context = _getGlobalCodeGeneratorContext(compilation)
+    const context = {
+        target: settings.target,
+        audioSettings: settings.audio,
+        globs,
+    }
     return Sequence(
         dependencies
             .map((codeDefinition) =>
@@ -86,7 +90,7 @@ export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
 export const collectAndDedupeExports = (
     target: CompilerTarget,
     dependencies: Array<GlobalCodeDefinition>
-): Precompilation['dependencies']['exports'] =>
+): PrecompiledCode['dependencies']['exports'] =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
         .filter((codeDefinition) => codeDefinition.exports)
@@ -106,7 +110,7 @@ export const collectAndDedupeExports = (
 
 export const collectAndDedupeImports = (
     dependencies: Array<GlobalCodeDefinition>
-): Precompilation['dependencies']['imports'] =>
+): PrecompiledCode['dependencies']['imports'] =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
         .filter((codeDefinition) => codeDefinition.imports)
@@ -140,30 +144,19 @@ export const flattenDependencies = (
     })
 
 const _collectDependenciesFromTraversal = ({
-    precompilation,
-    graph,
-}: Compilation): Array<GlobalCodeDefinition> => {
+    input: { graph },
+    output,
+}: PrecompilationOperation): Array<GlobalCodeDefinition> => {
     return traversers
-        .toNodes(graph, precompilation.graph.fullTraversal)
+        .toNodes(graph, output.graph.fullTraversal)
         .reduce<Array<GlobalCodeDefinition>>(
             (definitions, node) => [
                 ...definitions,
-                ...precompilation.nodes[node.id].nodeImplementation
-                    .dependencies,
+                ...output.nodes[node.id].nodeImplementation.dependencies,
             ],
             []
         )
 }
-
-const _getGlobalCodeGeneratorContext = ({
-    settings,
-    target,
-    precompilation: { variableNamesIndex },
-}: Compilation): GlobalCodeGeneratorContext => ({
-    target: target,
-    audioSettings: settings.audio,
-    globs: variableNamesIndex.globs,
-})
 
 const _deepEqual = (ast1: AstElement, ast2: AstElement) =>
     // This works but this flawed cause {a: 1, b: 2} and {b: 2, a: 1}

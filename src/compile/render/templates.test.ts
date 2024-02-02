@@ -19,29 +19,30 @@
  */
 
 import assert from 'assert'
-import { NodeImplementations } from './types'
-import { makeCompilation } from '../test-helpers'
-import { makeGraph } from '../dsp-graph/test-helpers'
-import precompile from './precompile'
-import { AnonFunc, Class, ConstVar, Func, Sequence, Var, ast } from '../ast/declare'
+import { NodeImplementations } from '../types'
+import { makeGraph } from '../../dsp-graph/test-helpers'
+import {
+    AnonFunc,
+    Class,
+    ConstVar,
+    Func,
+    Sequence,
+    Var,
+    ast,
+} from '../../ast/declare'
 import {
     assertAstSequencesAreEqual,
     normalizeAstSequence,
-} from '../ast/test-helpers'
-import {
-    generateColdDspFunctions,
-    generateColdDspInitialization,
-    generateIoMessageReceivers,
-    generateLoop,
-    generateNodeImplementationsCoreAndStateClasses,
-    generateNodeInitializations,
-    generateNodeStateInstances,
-    generatePortletsDeclarations,
-} from './generate'
-import { AstSequence } from '../ast/types'
+    makeRenderInput,
+} from './test-helpers'
+import templates from './templates'
+import { AstSequence } from '../../ast/types'
+import { makePrecompilation } from '../precompile/test-helpers'
+import { validateSettings } from '..'
+import { createNamespace } from '../compile-helpers'
 
-describe('generate', () => {
-    describe('generatePortletsDeclarations', () => {
+describe('templates', () => {
+    describe('templates.portletsDeclarations', () => {
         const MESSAGE_RECEIVER_FUNC = AnonFunc([Var('Message', 'm')])``
 
         it('should compile declarations for signal outlets', () => {
@@ -50,16 +51,16 @@ describe('generate', () => {
                 n2: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['n1', 'n2']
-            compilation.precompilation.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
-            compilation.precompilation.nodes.n1.signalOuts.$1 = 'n1_OUTS_1'
-            compilation.precompilation.nodes.n2.signalOuts.$0 = 'n2_OUTS_0'
+            renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
+            renderInput.precompiledCode.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
+            renderInput.precompiledCode.nodes.n1.signalOuts.$1 = 'n1_OUTS_1'
+            renderInput.precompiledCode.nodes.n2.signalOuts.$0 = 'n2_OUTS_0'
 
-            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
+            const sequence = templates.portletsDeclarations(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -77,25 +78,25 @@ describe('generate', () => {
                 n2: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['n1', 'n2']
-            compilation.precompilation.nodes.n1.messageReceivers.$0 = Func(
+            renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
+            renderInput.precompiledCode.nodes.n1.messageReceivers.$0 = Func(
                 'n1_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 0`
-            compilation.precompilation.nodes.n1.messageReceivers.$1 = Func(
+            renderInput.precompiledCode.nodes.n1.messageReceivers.$1 = Func(
                 'n1_RCVS_1',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 1`
-            compilation.precompilation.nodes.n2.messageReceivers.$0 = Func(
+            renderInput.precompiledCode.nodes.n2.messageReceivers.$0 = Func(
                 'n2_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n2] message receiver 0`
 
-            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
+            const sequence = templates.portletsDeclarations(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -138,22 +139,24 @@ describe('generate', () => {
         })
 
         it('should render correct error throw if debug = true', () => {
+            const settings = validateSettings({ debug: true }, 'javascript')
+
             const graph = makeGraph({
                 n1: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
-                settings: { debug: true },
+                settings,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['n1']
-            compilation.precompilation.nodes.n1.messageReceivers.$0 = Func(
+            renderInput.precompiledCode.graph.fullTraversal = ['n1']
+            renderInput.precompiledCode.nodes.n1.messageReceivers.$0 = Func(
                 'n1_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 0`
 
-            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
+            const sequence = templates.portletsDeclarations(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -189,25 +192,25 @@ describe('generate', () => {
                 n3: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['n1', 'n2', 'n3']
-            compilation.precompilation.nodes.n1.messageSenders.$0 = {
+            renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
+            renderInput.precompiledCode.nodes.n1.messageSenders.$0 = {
                 messageSenderName: 'n1_SNDS_0',
                 functionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
             }
-            compilation.precompilation.nodes.n1.messageSenders.$1 = {
+            renderInput.precompiledCode.nodes.n1.messageSenders.$1 = {
                 messageSenderName: 'n1_SNDS_1',
                 functionNames: ['outlerListener_n1_0'],
             }
-            compilation.precompilation.nodes.n2.messageSenders.$0 = {
+            renderInput.precompiledCode.nodes.n2.messageSenders.$0 = {
                 messageSenderName: 'n2_SNDS_0',
                 functionNames: ['n3_RCVS_0'],
             }
 
-            const sequence = generatePortletsDeclarations(compilation.precompilation, compilation.settings)
+            const sequence = templates.portletsDeclarations(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -241,7 +244,7 @@ describe('generate', () => {
         })
     })
 
-    describe('generateNodeStateInstances', () => {
+    describe('templates.nodeStateInstances', () => {
         it('should compile declarations for node state and filter out nodes with no state declaration', () => {
             const graph = makeGraph({
                 n1: {},
@@ -249,48 +252,51 @@ describe('generate', () => {
                 n3: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['n1', 'n2', 'n3']
-            compilation.precompilation.nodes.n1.state = {
+            renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
+            renderInput.precompiledCode.nodes.n1.state = {
                 className: 'State',
                 initialization: {
                     a: Sequence(['111']),
                     b: Sequence([AnonFunc([Var('Float', 'x')])`return x * 2`]),
-                }
+                },
             }
-            compilation.precompilation.nodes.n2.state = {
+            renderInput.precompiledCode.nodes.n2.state = {
                 className: 'State',
                 initialization: {
                     a: Sequence(['333']),
                     b: Sequence(['444']),
-                }
+                },
             }
-            compilation.precompilation.nodes.n3.state = null
+            renderInput.precompiledCode.nodes.n3.state = null
 
-            const sequence = generateNodeStateInstances(compilation.precompilation)
+            const sequence = templates.nodeStateInstances(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
                 content: [
-                    ConstVar('State', 'n1_STATE', ast`{\na: 111,\nb: ${AnonFunc([Var('Float', 'x')])`return x * 2`},\n}`),
+                    ConstVar(
+                        'State',
+                        'n1_STATE',
+                        ast`{\na: 111,\nb: ${AnonFunc([
+                            Var('Float', 'x'),
+                        ])`return x * 2`},\n}`
+                    ),
                     ConstVar('State', 'n2_STATE', ast`{\na: 333,\nb: 444,\n}`),
                 ],
             })
         })
     })
 
-    describe('generateNodeImplementationsCoreAndStateClasses', () => {
+    describe('templates.nodeImplementationsCoreAndStateClasses', () => {
         it('should generate initializations for nodes', () => {
+            const renderInput = makeRenderInput({})
 
-            const compilation = makeCompilation({})
-
-            compilation.precompilation.nodeImplementations.type1 = {
-                stateClass: Class('State_type1', [
-                    Var('Float', 'a'),
-                ]),
+            renderInput.precompiledCode.nodeImplementations.type1 = {
+                stateClass: Class('State_type1', [Var('Float', 'a')]),
                 core: Sequence([
                     ConstVar('Bla', 'bla', '"hello"'),
                     Func('blo', [Var('State_type1', 'state')])`// blo`,
@@ -298,17 +304,14 @@ describe('generate', () => {
                 nodeImplementation: {},
             }
 
-            compilation.precompilation.nodeImplementations.type2 = {
-                stateClass: Class('State_type2', [
-                    Var('Float', 'b'),
-                ]),
-                core: Sequence([
-                    ConstVar('Int', 'i', '0'),
-                ]),
+            renderInput.precompiledCode.nodeImplementations.type2 = {
+                stateClass: Class('State_type2', [Var('Float', 'b')]),
+                core: Sequence([ConstVar('Int', 'i', '0')]),
                 nodeImplementation: {},
             }
 
-            const sequence = generateNodeImplementationsCoreAndStateClasses(compilation.precompilation)
+            const sequence =
+                templates.nodeImplementationsCoreAndStateClasses(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -322,8 +325,8 @@ describe('generate', () => {
                                 name: 'a',
                                 type: 'Float',
                                 value: undefined,
-                            }
-                        ]
+                            },
+                        ],
                     },
                     {
                         astType: 'ConstVar',
@@ -357,8 +360,8 @@ describe('generate', () => {
                                 name: 'b',
                                 type: 'Float',
                                 value: undefined,
-                            }
-                        ]
+                            },
+                        ],
                     },
                     {
                         astType: 'ConstVar',
@@ -371,25 +374,25 @@ describe('generate', () => {
         })
     })
 
-    describe('generateNodeInitializations', () => {
+    describe('templates.nodeInitializations', () => {
         it('should generate initializations for nodes', () => {
             const graph = makeGraph({
                 n1: {},
                 n2: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['n1', 'n2']
-            compilation.precompilation.nodes.n1.initialization = ast`
+            renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
+            renderInput.precompiledCode.nodes.n1.initialization = ast`
                 ${Var('Float', 'n1', '0')}
                 console.log(n1)
             `
-            compilation.precompilation.nodes.n2.initialization = ast``
+            renderInput.precompiledCode.nodes.n2.initialization = ast``
 
-            const sequence = generateNodeInitializations(compilation.precompilation)
+            const sequence = templates.nodeInitializations(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -398,8 +401,18 @@ describe('generate', () => {
         })
     })
 
-    describe('generateIoMessageReceivers', () => {
+    describe('templates.ioMessageReceivers', () => {
         it('should compile declared inlet callers', () => {
+            const settings = validateSettings(
+                {
+                    io: {
+                        messageReceivers: { n1: { portletIds: ['0'] } },
+                        messageSenders: {},
+                    },
+                },
+                'javascript'
+            )
+
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -420,20 +433,18 @@ describe('generate', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
-                settings: {
-                    io: {
-                        messageReceivers: { n1: { portletIds: ['0'] } },
-                        messageSenders: {},
-                    },
-                },
+                settings,
                 nodeImplementations,
             })
 
-            precompile(compilation)
+            renderInput.precompiledCode.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+                'n1_RCVS_0'
+            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1 =
+                createNamespace('test.n1', { '0': 'ioRcv_n1_0' })
 
-            const sequence = generateIoMessageReceivers(compilation.precompilation, compilation.settings)
+            const sequence = templates.ioMessageReceivers(renderInput)
 
             assertAstSequencesAreEqual(sequence, {
                 astType: 'Sequence',
@@ -460,7 +471,7 @@ describe('generate', () => {
         })
     })
 
-    describe('generateLoop', () => {
+    describe('templates.loop', () => {
         it('should compile the loop function', () => {
             const graph = makeGraph({
                 n1: {},
@@ -468,19 +479,19 @@ describe('generate', () => {
                 n3: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.graph.hotDspGroup = {
+            renderInput.precompiledCode.graph.hotDspGroup = {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             }
-            compilation.precompilation.nodes.n1.loop = ast`// n1`
-            compilation.precompilation.nodes.n2.loop = ast`// n2`
-            compilation.precompilation.nodes.n3.loop = ast`// n3`
+            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.loop = ast`// n2`
+            renderInput.precompiledCode.nodes.n3.loop = ast`// n3`
 
-            const sequence = generateLoop(compilation.precompilation)
+            const sequence = templates.loop(renderInput)
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
@@ -502,19 +513,19 @@ describe('generate', () => {
                 n1: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.nodes.n1.caching.$0 = ast`// caching 0`
-            compilation.precompilation.nodes.n1.loop = ast`// n1`
-            compilation.precompilation.graph.hotDspGroup = {
+            renderInput.precompiledCode.nodes.n1.caching.$0 = ast`// caching 0`
+            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.graph.hotDspGroup = {
                 traversal: ['n1'],
                 outNodesIds: ['n1'],
             }
-            compilation.precompilation.graph.coldDspGroups = {}
+            renderInput.precompiledCode.graph.coldDspGroups = {}
 
-            const sequence = generateLoop(compilation.precompilation)
+            const sequence = templates.loop(renderInput)
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
@@ -531,15 +542,15 @@ describe('generate', () => {
         })
     })
 
-    describe('generateColdDspInitialization', () => {
+    describe('templates.coldDspInitialization', () => {
         it('should compile cold dsp initialization', () => {
             const graph = makeGraph({})
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.graph.coldDspGroups = {
+            renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: [],
                     outNodesIds: [],
@@ -552,10 +563,12 @@ describe('generate', () => {
                 },
             }
 
-            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
-            compilation.precompilation.variableNamesIndex.coldDspGroups.$1 = 'DSP_1'
+            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
+                'DSP_0'
+            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$1 =
+                'DSP_1'
 
-            const sequence = generateColdDspInitialization(compilation.precompilation)
+            const sequence = templates.coldDspInitialization(renderInput)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',
@@ -564,7 +577,7 @@ describe('generate', () => {
         })
     })
 
-    describe('generateColdDspFunctions', () => {
+    describe('templates.coldDspFunctions', () => {
         it('should compile cold dsp functions', () => {
             const graph = makeGraph({
                 n1: {},
@@ -572,15 +585,15 @@ describe('generate', () => {
                 n3: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.nodes.n1.loop = ast`// n1`
-            compilation.precompilation.nodes.n2.loop = ast`// n2`
-            compilation.precompilation.nodes.n3.loop = ast`// n3`
+            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.loop = ast`// n2`
+            renderInput.precompiledCode.nodes.n3.loop = ast`// n3`
 
-            compilation.precompilation.graph.coldDspGroups = {
+            renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1', 'n2'],
                     outNodesIds: ['n2'],
@@ -593,10 +606,12 @@ describe('generate', () => {
                 },
             }
 
-            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
-            compilation.precompilation.variableNamesIndex.coldDspGroups.$1 = 'DSP_1'
+            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
+                'DSP_0'
+            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$1 =
+                'DSP_1'
 
-            const sequence = generateColdDspFunctions(compilation.precompilation)
+            const sequence = templates.coldDspFunctions(renderInput)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',
@@ -645,13 +660,13 @@ describe('generate', () => {
                 n2: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.nodes.n1.loop = ast`// n1`
-            compilation.precompilation.nodes.n2.caching.$0 = ast`// caching n2`
-            compilation.precompilation.graph.coldDspGroups = {
+            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.caching.$0 = ast`// caching n2`
+            renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1'],
                     outNodesIds: ['n1'],
@@ -663,9 +678,10 @@ describe('generate', () => {
                     ],
                 },
             }
-            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
+            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
+                'DSP_0'
 
-            const sequence = generateColdDspFunctions(compilation.precompilation)
+            const sequence = templates.coldDspFunctions(renderInput)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',
@@ -697,12 +713,12 @@ describe('generate', () => {
                 n2: {},
             })
 
-            const compilation = makeCompilation({
+            const renderInput = makeRenderInput({
                 graph,
             })
 
-            compilation.precompilation.nodes.n1.loop = ast`// n1`
-            compilation.precompilation.graph.coldDspGroups = {
+            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1'],
                     outNodesIds: ['n1'],
@@ -714,9 +730,10 @@ describe('generate', () => {
                     ],
                 },
             }
-            compilation.precompilation.variableNamesIndex.coldDspGroups.$0 = 'DSP_0'
+            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
+                'DSP_0'
 
-            const sequence = generateColdDspFunctions(compilation.precompilation)
+            const sequence = templates.coldDspFunctions(renderInput)
 
             assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
                 astType: 'Sequence',

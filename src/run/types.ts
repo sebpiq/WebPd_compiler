@@ -19,7 +19,8 @@
  */
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../stdlib/fs'
 import { DspGraph } from '../dsp-graph'
-import { Compilation, Precompilation } from '../compile/types'
+import { CompilationSettings } from '../compile/types'
+import { PrecompilationOperation, PrecompiledCode } from '../compile/precompile/types'
 
 /** Type for a module without bindings */
 export interface RawModule {}
@@ -73,14 +74,14 @@ export type Signal = number
 
 export interface EngineMetadata {
     readonly libVersion: string
-    readonly audioSettings: Compilation['settings']['audio'] & {
+    readonly audioSettings: CompilationSettings['audio'] & {
         sampleRate: number
         blockSize: number
     }
     readonly compilation: {
-        readonly io: Compilation['settings']['io']
+        readonly io: CompilationSettings['io']
         readonly variableNamesIndex: {
-            readonly io: Precompilation['variableNamesIndex']['io']
+            readonly io: PrecompiledCode['variableNamesIndex']['io']
         }
     }
 }

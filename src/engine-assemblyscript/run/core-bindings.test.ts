@@ -32,7 +32,7 @@ import { core } from '../../stdlib/core'
 import { FloatArrayPointer, InternalPointer } from './types'
 import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
-import render from '../../ast/render'
+import render from '../../compile/render'
 import { generateVariableNamesGlobs } from '../../compile/precompile/variable-names-index'
 
 describe('core-bindings', () => {

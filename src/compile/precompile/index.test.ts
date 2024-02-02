@@ -19,13 +19,17 @@
  */
 import assert from 'assert'
 import { makeGraph } from '../../dsp-graph/test-helpers'
-import { makeCompilation } from '../../test-helpers'
 import precompile from '.'
-import { ColdDspGroup, DspGroup, NodeImplementations } from '../types'
+import { NodeImplementations } from '../types'
+import { ColdDspGroup, DspGroup } from './types'
 import { ast } from '../../ast/declare'
 import { AstSequence } from '../../ast/types'
+import { validateSettings } from '..'
+import { buildFullGraphTraversal } from '../compile-helpers'
 
 describe('precompile', () => {
+    const SETTINGS = validateSettings({}, 'javascript')
+
     it('should precompile the inline loop code', () => {
         //       [  nonInline1  ]
         //         |
@@ -124,21 +128,19 @@ describe('precompile', () => {
             },
         }
 
-        const compilation = makeCompilation({
-            graph,
-            nodeImplementations,
-        })
-
-        precompile(compilation)
+        const precompiledCode = precompile(
+            { graph, nodeImplementations, settings: SETTINGS },
+            buildFullGraphTraversal(graph, SETTINGS)
+        )
 
         assert.strictEqual(
-            compilation.precompilation.nodes.nonInline2.generationContext
-                .signalIns.$0,
+            precompiledCode.nodes.nonInline2.generationContext.signalIns
+                .$0,
             '(N4 * (N2 + 1) - N4 * ((nonInline1_OUTS_0 * N1) * N3))'
         )
 
         assert.deepStrictEqual<DspGroup>(
-            compilation.precompilation.graph.hotDspGroup,
+            precompiledCode.graph.hotDspGroup,
             {
                 traversal: ['nonInline1', 'nonInline2'],
                 outNodesIds: ['nonInline2'],
@@ -212,12 +214,13 @@ describe('precompile', () => {
             },
         }
 
-        const compilation = makeCompilation({ graph, nodeImplementations })
-
-        precompile(compilation)
+        const precompiledCode = precompile(
+            { graph, nodeImplementations, settings: SETTINGS },
+            buildFullGraphTraversal(graph, SETTINGS)
+        )
 
         assert.deepStrictEqual<DspGroup>(
-            compilation.precompilation.graph.hotDspGroup,
+            precompiledCode.graph.hotDspGroup,
             {
                 traversal: ['n3', 'n4'],
                 outNodesIds: ['n4'],
@@ -225,7 +228,7 @@ describe('precompile', () => {
         )
 
         assert.deepStrictEqual<{ [groupId: string]: ColdDspGroup }>(
-            compilation.precompilation.graph.coldDspGroups,
+            precompiledCode.graph.coldDspGroups,
             {
                 '0': {
                     // n1 has been inlined
@@ -242,7 +245,7 @@ describe('precompile', () => {
         )
 
         assert.strictEqual(
-            compilation.precompilation.nodes.n2.generationContext.signalIns.$0,
+            precompiledCode.nodes.n2.generationContext.signalIns.$0,
             '(1 + NULL_SIGNAL)'
         )
     })
@@ -290,12 +293,13 @@ describe('precompile', () => {
             },
         }
 
-        const compilation = makeCompilation({ graph, nodeImplementations })
-
-        precompile(compilation)
+        const precompiledCode = precompile(
+            { graph, nodeImplementations, settings: SETTINGS },
+            buildFullGraphTraversal(graph, SETTINGS)
+        )
 
         assert.deepStrictEqual<{ [groupId: string]: ColdDspGroup }>(
-            compilation.precompilation.graph.coldDspGroups,
+            precompiledCode.graph.coldDspGroups,
             {
                 '0': {
                     traversal: ['n1'],
@@ -311,7 +315,7 @@ describe('precompile', () => {
         )
 
         assert.deepStrictEqual<AstSequence>(
-            compilation.precompilation.nodes.n2.caching['0'],
+            precompiledCode.nodes.n2.caching['0'],
             {
                 astType: 'Sequence',
                 content: ['// caching 0'],

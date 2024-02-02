@@ -17,10 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import assert from "assert"
-import macros from "../engine-assemblyscript/compile/macros"
-import { ast, Var, ConstVar, Func, Class, AnonFunc } from "./declare"
-import render from "./render"
+import assert from 'assert'
+import macros from '../../engine-assemblyscript/compile/macros'
+import { ast, Var, ConstVar, Func, Class, AnonFunc } from '../../ast/declare'
+import render from '.'
 
 describe('render', () => {
     it('should render a simple string', () => {
@@ -29,38 +29,53 @@ describe('render', () => {
     })
 
     it('should render Var and ConstVar properly', () => {
-        assert.strictEqual(render(macros, Var('number', 'a', '1')), `let a: number = 1`)
+        assert.strictEqual(
+            render(macros, Var('number', 'a', '1')),
+            `let a: number = 1`
+        )
         assert.strictEqual(render(macros, Var('number', 'a')), `let a: number`)
-        assert.strictEqual(render(macros, ConstVar('string', 'b', '"HELLO"')), `const b: string = "HELLO"`)
+        assert.strictEqual(
+            render(macros, ConstVar('string', 'b', '"HELLO"')),
+            `const b: string = "HELLO"`
+        )
     })
 
     it('should render Func properly', () => {
-        const func = Func('myFunc', [
-            Var('Int', 'arg1'),
-            Var('Array<(a: Int) => void>', 'arg2', ast`[${
-                AnonFunc([Var('Int', 'a')])``
-            }]`),
-        ], 'string')`
+        const func = Func(
+            'myFunc',
+            [
+                Var('Int', 'arg1'),
+                Var(
+                    'Array<(a: Int) => void>',
+                    'arg2',
+                    ast`[${AnonFunc([Var('Int', 'a')])``}]`
+                ),
+            ],
+            'string'
+        )`
             ${Var('number', 'a', '1')}
             ${ConstVar('string', 'b', '"HELLO"')}
             return b + a.toString() + arg1.toString()
         `
-        assert.strictEqual(render(macros, func), `function myFunc(arg1: Int, arg2: Array<(a: Int) => void>=[function (a: Int): void {}]): string {
+        assert.strictEqual(
+            render(macros, func),
+            `function myFunc(arg1: Int, arg2: Array<(a: Int) => void>=[function (a: Int): void {}]): string {
             let a: number = 1
             const b: string = "HELLO"
             return b + a.toString() + arg1.toString()
-        }`)
+        }`
+        )
     })
 
     it('should render Class properly', () => {
-        const cls = Class('MyClass', [
-                Var('Int', 'a'),
-                Var('string', 'b')
-            ])
-        assert.strictEqual(render(macros, cls), `class MyClass {
+        const cls = Class('MyClass', [Var('Int', 'a'), Var('string', 'b')])
+        assert.strictEqual(
+            render(macros, cls),
+            `class MyClass {
 a: Int
 b: string
-}`)
+}`
+        )
     })
 
     it('should render a Sequence properly', () => {
@@ -68,19 +83,16 @@ b: string
             ${Var('number', 'a', '1')}
             ${ConstVar('string', 'b', '"HELLO"')}
             // My function documentation
-            ${Func('myFunc', [
-                Var('Int', 'arg1')
-            ], 'string')`
+            ${Func('myFunc', [Var('Int', 'arg1')], 'string')`
                 ${Var('number', 'a', '1')}
                 ${ConstVar('string', 'b', '"HELLO"')}
                 return b + a.toString() + arg1.toString()
             `}
-            ${Class('MyClass', [
-                Var('Int', 'a'),
-                Var('Float', 'b')
-            ])}`
+            ${Class('MyClass', [Var('Int', 'a'), Var('Float', 'b')])}`
 
-        assert.strictEqual(render(macros, sequence), `
+        assert.strictEqual(
+            render(macros, sequence),
+            `
             let a: number = 1
             const b: string = "HELLO"
             // My function documentation
@@ -92,6 +104,7 @@ b: string
             class MyClass {
 a: Int
 b: Float
-}`)
+}`
+        )
     })
 })

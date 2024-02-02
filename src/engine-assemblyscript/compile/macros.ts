@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AstClass, CodeMacros, AstConstVar, AstFunc, AstVar } from '../../ast/types'
+import { AstClass, AstConstVar, AstFunc, AstVar } from '../../ast/types'
+import { CodeMacros } from "../../compile/render/types"
 import { Code } from '../../ast/types'
 
 const Var = (declaration: AstVar, renderedValue?: Code) =>

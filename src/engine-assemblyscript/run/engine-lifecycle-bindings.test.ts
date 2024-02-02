@@ -24,14 +24,14 @@ import { compileAssemblyscript } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
 import { readMetadata } from './engine-lifecycle-bindings'
 import compile from '../../compile'
-import { CompilationSettings, NodeImplementations } from '../../compile/types'
+import { UserCompilationSettings, NodeImplementations } from '../../compile/types'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { AnonFunc, Var } from '../../ast/declare'
 
 describe('engine-lifecycle-bindings', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
-            const compilationSettings: CompilationSettings = {
+            const compilationSettings: UserCompilationSettings = {
                 audio: {
                     bitDepth: 32,
                     channelCount: { in: 11, out: 22 },

@@ -20,7 +20,7 @@
 import assert from 'assert'
 import { Class, ConstVar, Func, Var } from '../../ast/declare'
 import macros from './macros'
-import render from '../../ast/render'
+import render from '../../compile/render'
 
 describe('macros', () => {
     it('should render a Var declaration', () => {

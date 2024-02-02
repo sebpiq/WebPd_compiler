@@ -18,58 +18,44 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata } from '../../compile/compile-helpers'
-import {
-    generatePortletsDeclarations,
-    generateGlobs,
-    generateNodeImplementationsCoreAndStateClasses,
-    generateNodeInitializations,
-    generateLoop,
-    generateIoMessageReceivers,
-    generateColdDspFunctions,
-    generateIoMessageSenders,
-    generateEmbeddedArrays,
-    generateImportsExports,
-    generateNodeStateInstances,
-    generateColdDspInitialization,
-} from '../../compile/generate'
-import { Compilation } from '../../compile/types'
+import { buildMetadata } from '../../compile/render/metadata'
+import templates from '../../compile/render/templates'
 import { JavaScriptEngineCode } from './types'
-import render from '../../ast/render'
+import render from '../../compile/render'
 import macros from './macros'
 import { ast } from '../../ast/declare'
+import { RenderInput } from '../../compile/render/types'
 
-export default (compilation: Compilation): JavaScriptEngineCode => {
-    const {
-        settings,
-        precompilation,
-    } = compilation
-    const variableNamesIndex = precompilation.variableNamesIndex
+export default (
+    renderInput: RenderInput,
+): JavaScriptEngineCode => {
+    const { precompiledCode, settings } = renderInput
+    const variableNamesIndex = precompiledCode.variableNamesIndex
     const globs = variableNamesIndex.globs
-    const metadata = buildMetadata(compilation)
+    const metadata = buildMetadata(renderInput)
 
     // prettier-ignore
     return render(macros, ast`
-        ${precompilation.dependencies.ast}
-        ${generateNodeImplementationsCoreAndStateClasses(precompilation)}
+        ${templates.dependencies(renderInput)}
+        ${templates.nodeImplementationsCoreAndStateClasses(renderInput)}
 
-        ${generateGlobs(precompilation)}
+        ${templates.globs(renderInput)}
 
-        ${generateEmbeddedArrays(settings)}
+        ${templates.embeddedArrays(renderInput)}
 
-        ${generateNodeStateInstances(precompilation)}
-        ${generatePortletsDeclarations(precompilation, settings)}
+        ${templates.nodeStateInstances(renderInput)}
+        ${templates.portletsDeclarations(renderInput)}
 
-        ${generateColdDspFunctions(precompilation)}
-        ${generateIoMessageReceivers(precompilation, settings)}
-        ${generateIoMessageSenders(precompilation, settings, (
+        ${templates.coldDspFunctions(renderInput)}
+        ${templates.ioMessageReceivers(renderInput)}
+        ${templates.ioMessageSenders(renderInput, (
             variableName, 
             nodeId, 
             outletId
         ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'].onMessage(m)}`)}
 
-        ${generateNodeInitializations(precompilation)}
-        ${generateColdDspInitialization(precompilation)}
+        ${templates.nodeInitializations(renderInput)}
+        ${templates.coldDspInitialization(renderInput)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
@@ -81,7 +67,7 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
                 _commons_emitEngineConfigure()
             },
             loop: (${globs.input}, ${globs.output}) => {
-                ${generateLoop(precompilation)}
+                ${templates.loop(renderInput)}
             },
             io: {
                 messageReceivers: {
@@ -103,8 +89,8 @@ export default (compilation: Compilation): JavaScriptEngineCode => {
             }
         }
 
-        ${generateImportsExports(
-            precompilation,
+        ${templates.importsExports(
+            renderInput,
             ({ name }) => ast`
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)

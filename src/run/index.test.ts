@@ -25,7 +25,7 @@ import { compileAssemblyscript } from '../engine-assemblyscript/run/test-helpers
 import { readMetadata } from './index'
 import { AnonFunc, Var } from '../ast/declare'
 import { EngineMetadata } from './types'
-import { CompilationSettings, NodeImplementations } from '../compile/types'
+import { UserCompilationSettings, NodeImplementations } from '../compile/types'
 
 describe('readMetadata', () => {
     const GRAPH = makeGraph({
@@ -43,7 +43,7 @@ describe('readMetadata', () => {
             }),
         },
     }
-    const COMPILATION_SETTINGS: CompilationSettings = {
+    const COMPILATION_SETTINGS: UserCompilationSettings = {
         io: {
             messageReceivers: {
                 node1: {

@@ -125,7 +125,7 @@ describe('compile-helpers', () => {
                     messageReceivers: {},
                     messageSenders: {},
                 },
-            })
+            }, 'javascript')
 
             const traversal = buildFullGraphTraversal(graph, settings)
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
@@ -164,7 +164,7 @@ describe('compile-helpers', () => {
                     },
                     messageSenders: {},
                 },
-            })
+            }, 'javascript')
 
             const traversal = buildFullGraphTraversal(graph, settings)
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [

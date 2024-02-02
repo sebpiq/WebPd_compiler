@@ -20,7 +20,6 @@
 import assert from 'assert'
 import { Func, Var, AnonFunc, ast, Class } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
-import { makeCompilation } from '../../test-helpers'
 import { NodeImplementations } from '../types'
 import {
     precompileSignalOutlet,
@@ -34,6 +33,7 @@ import {
     precompileState,
     precompileCaching,
 } from './nodes'
+import { makePrecompilation } from './test-helpers'
 
 describe('precompile.nodes', () => {
     describe('precompileSignalOutlet', () => {
@@ -54,31 +54,31 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
             })
 
-            precompileSignalOutlet(compilation, graph.n1, '0')
-            precompileSignalOutlet(compilation, graph.n2, '0')
+            precompileSignalOutlet(precompilation, graph.n1, '0')
+            precompileSignalOutlet(precompilation, graph.n2, '0')
 
             // Creates a variable name for the signal out
             assert.strictEqual(
-                compilation.precompilation.variableNamesIndex.nodes.n1.signalOuts.$0,
+                precompilation.output.variableNamesIndex.nodes.n1.signalOuts.$0,
                 'n1_OUTS_0'
             )
             // Adds this variable name to precompilation `signalOuts`
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.signalOuts.$0,
+                precompilation.output.nodes.n1.signalOuts.$0,
                 'n1_OUTS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext.signalOuts
+                precompilation.output.nodes.n1.generationContext.signalOuts
                     .$0,
                 'n1_OUTS_0'
             )
             // Assigns n1's out to n2's in in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n2.generationContext.signalIns
+                precompilation.output.nodes.n2.generationContext.signalIns
                     .$0,
                 'n1_OUTS_0'
             )
@@ -95,17 +95,17 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
             })
 
-            precompileSignalInletWithNoSource(compilation, graph.n1, '0')
+            precompileSignalInletWithNoSource(precompilation, graph.n1, '0')
 
             // Substitute with empty signal in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext.signalIns
+                precompilation.output.nodes.n1.generationContext.signalIns
                     .$0,
-                compilation.precompilation.variableNamesIndex.globs.nullSignal
+                precompilation.output.variableNamesIndex.globs.nullSignal
             )
         })
     })
@@ -136,25 +136,25 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
             })
 
-            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
-            compilation.precompilation.variableNamesIndex.nodes.n3.messageReceivers.$0 =
+            precompilation.output.variableNamesIndex.nodes.n3.messageReceivers.$0 =
                 'n3_RCVS_0'
 
-            precompileMessageOutlet(compilation, graph.n1, '0')
+            precompileMessageOutlet(precompilation, graph.n1, '0')
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                compilation.precompilation.variableNamesIndex.nodes.n1.messageSenders.$0,
+                precompilation.output.variableNamesIndex.nodes.n1.messageSenders.$0,
                 'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.messageSenders.$0,
+                precompilation.output.nodes.n1.messageSenders.$0,
                 {
                     messageSenderName: 'n1_SNDS_0',
                     functionNames: ['n2_RCVS_0', 'n3_RCVS_0'],
@@ -162,7 +162,7 @@ describe('precompile.nodes', () => {
             )
             // Add the sender name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext
+                precompilation.output.nodes.n1.generationContext
                     .messageSenders.$0,
                 'n1_SNDS_0'
             )
@@ -183,11 +183,11 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
             })
 
-            compilation.precompilation.graph.coldDspGroups = {
+            precompilation.output.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n2'],
                     outNodesIds: ['n2'],
@@ -195,20 +195,20 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
-            compilation.precompilation.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
+            precompilation.output.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
 
-            precompileMessageOutlet(compilation, graph.n1, '0')
+            precompileMessageOutlet(precompilation, graph.n1, '0')
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                compilation.precompilation.variableNamesIndex.nodes.n1.messageSenders.$0,
+                precompilation.output.variableNamesIndex.nodes.n1.messageSenders.$0,
                 'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.messageSenders.$0,
+                precompilation.output.nodes.n1.messageSenders.$0,
                 {
                     messageSenderName: 'n1_SNDS_0',
                     functionNames: ['n2_RCVS_0', 'DSP_0'],
@@ -216,7 +216,7 @@ describe('precompile.nodes', () => {
             )
             // Add the sender name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext
+                precompilation.output.nodes.n1.generationContext
                     .messageSenders.$0,
                 'n1_SNDS_0'
             )
@@ -231,18 +231,18 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['n1']
-            precompileMessageOutlet(compilation, graph.n1, '0')
+            precompilation.output.graph.fullTraversal = ['n1']
+            precompileMessageOutlet(precompilation, graph.n1, '0')
 
             // Substitute with null function in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext
+                precompilation.output.nodes.n1.generationContext
                     .messageSenders.$0,
-                compilation.precompilation.variableNamesIndex.globs.nullMessageReceiver
+                precompilation.output.variableNamesIndex.globs.nullMessageReceiver
             )
         })
 
@@ -263,18 +263,18 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
             })
 
-            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
 
-            precompileMessageOutlet(compilation, graph.n1, '0')
+            precompileMessageOutlet(precompilation, graph.n1, '0')
 
             // Substitute with receiver name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext
+                precompilation.output.nodes.n1.generationContext
                     .messageSenders.$0,
                 'n2_RCVS_0'
             )
@@ -289,7 +289,7 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 settings: {
                     io: {
@@ -301,15 +301,15 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            compilation.precompilation.variableNamesIndex.io.messageSenders.n1 = {
+            precompilation.output.variableNamesIndex.io.messageSenders.n1 = {
                 '0': 'ioSnd_n1_0',
             }
 
-            precompileMessageOutlet(compilation, graph.n1, '0')
+            precompileMessageOutlet(precompilation, graph.n1, '0')
 
             // Substitute with receiver name in generation context
             assert.strictEqual(
-                compilation.precompilation.nodes.n1.generationContext
+                precompilation.output.nodes.n1.generationContext
                     .messageSenders.$0,
                 'ioSnd_n1_0'
             )
@@ -350,7 +350,7 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 settings: {
                     io: {
@@ -360,65 +360,65 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            precompileMessageInlet(compilation, graph.n2, '0')
-            precompileMessageInlet(compilation, graph.n3, '0')
-            precompileMessageInlet(compilation, graph.n4, '0')
+            precompileMessageInlet(precompilation, graph.n2, '0')
+            precompileMessageInlet(precompilation, graph.n3, '0')
+            precompileMessageInlet(precompilation, graph.n4, '0')
 
             // Creates a variable names for message receivers
             assert.strictEqual(
-                compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0,
+                precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0,
                 'n2_RCVS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.variableNamesIndex.nodes.n3.messageReceivers.$0,
+                precompilation.output.variableNamesIndex.nodes.n3.messageReceivers.$0,
                 'n3_RCVS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.variableNamesIndex.nodes.n4.messageReceivers.$0,
+                precompilation.output.variableNamesIndex.nodes.n4.messageReceivers.$0,
                 'n4_RCVS_0'
             )
 
             // Add this variable names to generationContext
             assert.strictEqual(
-                compilation.precompilation.nodes.n2.generationContext
+                precompilation.output.nodes.n2.generationContext
                     .messageReceivers.$0,
                 'n2_RCVS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.nodes.n3.generationContext
+                precompilation.output.nodes.n3.generationContext
                     .messageReceivers.$0,
                 'n3_RCVS_0'
             )
             assert.strictEqual(
-                compilation.precompilation.nodes.n4.generationContext
+                precompilation.output.nodes.n4.generationContext
                     .messageReceivers.$0,
                 'n4_RCVS_0'
             )
 
             // Add placeholder messageReceivers
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n2.messageReceivers.$0,
+                precompilation.output.nodes.n2.messageReceivers.$0,
                 Func(
                     'n2_RCVS_0',
                     [Var('Message', 'm')],
                     'void'
-                )`throw new Error("This placeholder should have been replaced during compilation")`
+                )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n3.messageReceivers.$0,
+                precompilation.output.nodes.n3.messageReceivers.$0,
                 Func(
                     'n3_RCVS_0',
                     [Var('Message', 'm')],
                     'void'
-                )`throw new Error("This placeholder should have been replaced during compilation")`
+                )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n4.messageReceivers.$0,
+                precompilation.output.nodes.n4.messageReceivers.$0,
                 Func(
                     'n4_RCVS_0',
                     [Var('Message', 'm')],
                     'void'
-                )`throw new Error("This placeholder should have been replaced during compilation")`
+                )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
         })
 
@@ -431,27 +431,27 @@ describe('precompile.nodes', () => {
                 },
             })
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
             })
 
-            precompileMessageInlet(compilation, graph.n1, '0')
+            precompileMessageInlet(precompilation, graph.n1, '0')
 
             assert.ok(
                 !(
                     '0' in
-                    compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers
+                    precompilation.output.variableNamesIndex.nodes.n1.messageReceivers
                 )
             )
             assert.ok(
                 !(
                     '0' in
-                    compilation.precompilation.nodes.n1.generationContext
+                    precompilation.output.nodes.n1.generationContext
                         .messageReceivers
                 )
             )
             assert.ok(
-                !('0' in compilation.precompilation.nodes.n1.messageReceivers)
+                !('0' in precompilation.output.nodes.n1.messageReceivers)
             )
         })
     })
@@ -491,26 +491,26 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+            precompilation.output.variableNamesIndex.nodes.n1.messageReceivers.$0 =
                 'n1_RCVS_0'
-            compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
-            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$1 =
+            precompilation.output.nodes.n1.messageReceivers.$0 = AnonFunc()``
+            precompilation.output.variableNamesIndex.nodes.n1.messageReceivers.$1 =
                 'n1_RCVS_1'
-            compilation.precompilation.nodes.n1.messageReceivers.$1 = AnonFunc()``
-            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            precompilation.output.nodes.n1.messageReceivers.$1 = AnonFunc()``
+            precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
-            compilation.precompilation.nodes.n2.messageReceivers.$0 = AnonFunc()``
+            precompilation.output.nodes.n2.messageReceivers.$0 = AnonFunc()``
 
-            precompileMessageReceivers(compilation, graph.n1)
-            precompileMessageReceivers(compilation, graph.n2)
+            precompileMessageReceivers(precompilation, graph.n1)
+            precompileMessageReceivers(precompilation, graph.n2)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.messageReceivers,
+                precompilation.output.nodes.n1.messageReceivers,
                 {
                     '0': Func('n1_RCVS_0', [
                         Var('Message', 'm'),
@@ -522,7 +522,7 @@ describe('precompile.nodes', () => {
             )
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n2.messageReceivers,
+                precompilation.output.nodes.n2.messageReceivers,
                 {
                     '0': Func('n2_RCVS_0', [
                         Var('Message', 'm'),
@@ -548,23 +548,23 @@ describe('precompile.nodes', () => {
                 type2: {},
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+            precompilation.output.variableNamesIndex.nodes.n1.messageReceivers.$0 =
                 'n1_RCVS_0'
-            compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
-            compilation.precompilation.variableNamesIndex.nodes.n2.messageReceivers.$0 =
+            precompilation.output.nodes.n1.messageReceivers.$0 = AnonFunc()``
+            precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
-            compilation.precompilation.nodes.n2.messageReceivers.$0 = AnonFunc()``
+            precompilation.output.nodes.n2.messageReceivers.$0 = AnonFunc()``
 
             assert.throws(() =>
-                precompileMessageReceivers(compilation, graph.n1)
+                precompileMessageReceivers(precompilation, graph.n1)
             )
             assert.throws(() =>
-                precompileMessageReceivers(compilation, graph.n2)
+                precompileMessageReceivers(precompilation, graph.n2)
             )
         })
 
@@ -583,17 +583,17 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+            precompilation.output.variableNamesIndex.nodes.n1.messageReceivers.$0 =
                 'n1_RCVS_0'
-            compilation.precompilation.nodes.n1.messageReceivers.$0 = AnonFunc()``
+            precompilation.output.nodes.n1.messageReceivers.$0 = AnonFunc()``
 
             assert.throws(() =>
-                precompileMessageReceivers(compilation, graph.n1)
+                precompileMessageReceivers(precompilation, graph.n1)
             )
         })
     })
@@ -619,22 +619,22 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileCaching(compilation, graph.n1!)
+            precompileCaching(precompilation, graph.n1!)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.caching,
+                precompilation.output.nodes.n1.caching,
                 {}
             )
 
-            precompileCaching(compilation, graph.n2!)
+            precompileCaching(precompilation, graph.n2!)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n2.caching,
+                precompilation.output.nodes.n2.caching,
                 {
                     '0': ast`// caching inlet 0`,
                     '1': ast`// caching inlet 1`,
@@ -662,16 +662,16 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.variableNamesIndex.nodeImplementations.type1.stateClass = 'State_type1'
+            precompilation.output.variableNamesIndex.nodeImplementations.type1.stateClass = 'State_type1'
 
-            precompileState(compilation, graph.n1)
+            precompileState(precompilation, graph.n1)
 
-            assert.deepStrictEqual(compilation.precompilation.nodes.n1.state, {
+            assert.deepStrictEqual(precompilation.output.nodes.n1.state, {
                 className: 'State_type1',
                 initialization: {
                     a: {
@@ -701,15 +701,15 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileInitialization(compilation, graph.n1)
+            precompileInitialization(precompilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.initialization,
+                precompilation.output.nodes.n1.initialization,
                 ast`// initialization type1`
             )
         })
@@ -725,15 +725,15 @@ describe('precompile.nodes', () => {
                 type1: {},
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileInitialization(compilation, graph.n1)
+            precompileInitialization(precompilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.initialization,
+                precompilation.output.nodes.n1.initialization,
                 ast``
             )
         })
@@ -753,15 +753,15 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileLoop(compilation, graph.n1)
+            precompileLoop(precompilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.loop,
+                precompilation.output.nodes.n1.loop,
                 ast`// loop type1`
             )
         })
@@ -782,17 +782,17 @@ describe('precompile.nodes', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.variableNamesIndex.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
+            precompilation.output.variableNamesIndex.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
 
-            precompileLoop(compilation, graph.n1)
+            precompileLoop(precompilation, graph.n1)
 
             assert.deepStrictEqual(
-                compilation.precompilation.nodes.n1.loop,
+                precompilation.output.nodes.n1.loop,
                 ast`n1_OUTS_0 = a + b`
             )
         })
@@ -808,12 +808,12 @@ describe('precompile.nodes', () => {
                 type1: {},
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            assert.throws(() => precompileLoop(compilation, graph.n1))
+            assert.throws(() => precompileLoop(precompilation, graph.n1))
         })
     })
 
@@ -905,18 +905,18 @@ describe('precompile.nodes', () => {
                 nonInlinableType: {},
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileInlineLoop(compilation, {
+            precompileInlineLoop(precompilation, {
                 traversal: ['n2', 'n1', 'n3', 'n4'],
                 outNodesIds: ['n4'],
             })
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n5.generationContext.signalIns
+                precompilation.output.nodes.n5.generationContext.signalIns
                     .$0,
                 `(N4 * (N2 + 1) - N4 * ((N1 + 1) * N3))`
             )
@@ -1001,18 +1001,18 @@ describe('precompile.nodes', () => {
                 nonInlinableType: {},
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileInlineLoop(compilation, {
+            precompileInlineLoop(precompilation, {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             })
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n4.generationContext.signalIns
+                precompilation.output.nodes.n4.generationContext.signalIns
                     .$0,
                 '(((N1 + 1) * N2) * N3)'
             )
@@ -1089,21 +1089,21 @@ describe('precompile.nodes', () => {
                 nonInlinableType: {},
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.nodes.n2.generationContext.signalIns.$1 =
+            precompilation.output.nodes.n2.generationContext.signalIns.$1 =
                 'BLA'
 
-            precompileInlineLoop(compilation, {
+            precompileInlineLoop(precompilation, {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             })
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n4.generationContext.signalIns
+                precompilation.output.nodes.n4.generationContext.signalIns
                     .$0,
                 '((N2 * (N1 + 1) - N2 * BLA) * N3)'
             )
@@ -1163,21 +1163,21 @@ describe('precompile.nodes', () => {
                 nonInlinableType: {},
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.nodes.n1.generationContext.signalIns.$0 =
+            precompilation.output.nodes.n1.generationContext.signalIns.$0 =
                 'nonInline1_OUTS_0'
 
-            precompileInlineLoop(compilation, {
+            precompileInlineLoop(precompilation, {
                 traversal: ['n1', 'n2'],
                 outNodesIds: ['n2'],
             })
 
             assert.strictEqual(
-                compilation.precompilation.nodes.n3.generationContext.signalIns
+                precompilation.output.nodes.n3.generationContext.signalIns
                     .$0,
                 '((nonInline1_OUTS_0 * N1) * N2)'
             )

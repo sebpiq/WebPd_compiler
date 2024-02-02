@@ -19,15 +19,15 @@
  */
 import { assertFuncSignatureEqual } from '../../ast/ast-helpers'
 import { AnonFunc, Func, Var, ast } from '../../ast/declare'
-import render from '../../ast/render'
+import render from '../render'
 import { Code, VariableName } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
-import { IoMessageSpecs, Compilation } from '../types'
-import { attachNodeVariable, attachNodeImplementationVariable } from './variable-names-index'
-import { DspGroup } from '../types'
+import { IoMessageSpecs, CompilationSettings } from '../types'
+import { attachNodeVariable } from './variable-names-index'
+import { DspGroup, PrecompilationOperation } from './types'
 import { isNodeInsideGroup } from './dsp-groups'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
@@ -36,26 +36,24 @@ type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
 const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 
 export const precompileState = (
-    compilation: Compilation,
+    { input: { settings }, output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
-    const { precompilation } = compilation
-    const { variableNamesIndex } = precompilation
+    const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
-    const precompiledNode = precompilation.nodes[node.id]
+    const precompiledNode = output.nodes[node.id]
     const { nodeImplementation } = precompiledNode
     if (nodeImplementation.state) {
         const nodeType = node.type
-        const stateClassName = variableNamesIndex.nodeImplementations[nodeType].stateClass
+        const stateClassName =
+            variableNamesIndex.nodeImplementations[nodeType].stateClass
         if (!stateClassName) {
-            throw new Error(
-                `No stateClass defined for ${nodeType}`
-            )
+            throw new Error(`No stateClass defined for ${nodeType}`)
         }
         const astClass = nodeImplementation.state({
             globs,
             node,
-            compilation,
+            settings,
             stateClassName,
         })
 
@@ -74,11 +72,10 @@ export const precompileState = (
 }
 
 export const precompileSignalOutlet = (
-    compilation: Compilation,
+    { input, output }: PrecompilationOperation,
     node: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
-    const { precompilation, settings } = compilation
     const outletSinks = getters.getSinks(node, outletId)
 
     // Signal inlets can receive input from ONLY ONE signal.
@@ -93,44 +90,37 @@ export const precompileSignalOutlet = (
     //      NODE2_OUT = NODE1_OUT * 2
     //
     const signalOutName = attachNodeVariable(
-        precompilation.variableNamesIndex,
-        settings,
+        output.variableNamesIndex,
+        input.settings,
         'signalOuts',
         node,
         outletId
     )
-    precompilation.nodes[node.id].signalOuts[outletId] = signalOutName
-    precompilation.nodes[node.id].generationContext.signalOuts[outletId] =
-        signalOutName
+    output.nodes[node.id].signalOuts[outletId] = signalOutName
+    output.nodes[node.id].generationContext.signalOuts[outletId] = signalOutName
     outletSinks.forEach(({ portletId: inletId, nodeId: sinkNodeId }) => {
-        precompilation.nodes[sinkNodeId].generationContext.signalIns[inletId] =
+        output.nodes[sinkNodeId].generationContext.signalIns[inletId] =
             signalOutName
     })
 }
 
 export const precompileSignalInletWithNoSource = (
-    compilation: Compilation,
+    { output }: PrecompilationOperation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const { precompilation } = compilation
-    const { variableNamesIndex } = precompilation
-    precompilation.nodes[node.id].generationContext.signalIns[inletId] =
-        variableNamesIndex.globs.nullSignal
+    output.nodes[node.id].generationContext.signalIns[inletId] =
+        output.variableNamesIndex.globs.nullSignal
 }
 
 export const precompileMessageOutlet = (
-    compilation: Compilation,
+    { input: { settings }, output }: PrecompilationOperation,
     sourceNode: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
     const outletSinks = getters.getSinks(sourceNode, outletId)
-    const {
-        precompilation,
-        settings,
-    } = compilation
-    const { variableNamesIndex } = precompilation
-    const precompiledNode = precompilation.nodes[sourceNode.id]
+    const { variableNamesIndex } = output
+    const precompiledNode = output.nodes[sourceNode.id]
 
     const ioSendersPortletIds = _getPortletIdsFromMsgIo(
         settings.io.messageSenders,
@@ -148,7 +138,7 @@ export const precompileMessageOutlet = (
         ...outletSinks.reduce<Array<VariableName>>(
             (coldDspFunctionNames, sink) => {
                 const groupsContainingSink = Object.entries(
-                    precompilation.graph.coldDspGroups
+                    output.graph.coldDspGroups
                 )
                     .filter(([_, dspGroup]) =>
                         isNodeInsideGroup(dspGroup, sink.nodeId)
@@ -174,7 +164,7 @@ export const precompileMessageOutlet = (
     //
     if (functionNames.length > 1) {
         const messageSenderName = attachNodeVariable(
-            precompilation.variableNamesIndex,
+            output.variableNamesIndex,
             settings,
             'messageSenders',
             sourceNode,
@@ -217,15 +207,15 @@ export const precompileMessageOutlet = (
 }
 
 export const precompileMessageInlet = (
-    { precompilation, settings }: Compilation,
+    { input, output }: PrecompilationOperation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const precompiledNode = precompilation.nodes[node.id]
-    if (_getMessageInletTotalSourceCount(settings, node, inletId) >= 1) {
+    const precompiledNode = output.nodes[node.id]
+    if (_getMessageInletTotalSourceCount(input.settings, node, inletId) >= 1) {
         const messageReceiverName = attachNodeVariable(
-            precompilation.variableNamesIndex,
-            settings,
+            output.variableNamesIndex,
+            input.settings,
             'messageReceivers',
             node,
             inletId
@@ -239,7 +229,7 @@ export const precompileMessageInlet = (
             messageReceiverName,
             [Var('Message', 'm')],
             'void'
-        )`throw new Error("This placeholder should have been replaced during compilation")`
+        )`throw new Error("This placeholder should have been replaced during precompilation")`
     } else {
         // If sourcesCount === 0, no need to declare message receiver
     }
@@ -250,12 +240,11 @@ export const precompileMessageInlet = (
  * all variable names defined before we can precompile message receivers.
  */
 export const precompileMessageReceivers = (
-    compilation: Compilation,
+    { input: { settings }, output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
-    const { precompilation } = compilation
-    const { variableNamesIndex } = precompilation
-    const precompiledNode = precompilation.nodes[node.id]
+    const { variableNamesIndex } = output
+    const precompiledNode = output.nodes[node.id]
     const { globs } = variableNamesIndex
     const { nodeImplementation } = precompiledNode
     const { state, messageSenders: snds } = precompiledNode.generationContext
@@ -267,7 +256,7 @@ export const precompileMessageReceivers = (
                   state,
                   snds,
                   node,
-                  compilation,
+                  settings,
               })
             : {}
     )
@@ -288,14 +277,13 @@ export const precompileMessageReceivers = (
 }
 
 export const precompileInitialization = (
-    compilation: Compilation,
+    { input: { settings }, output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
-    const { precompilation } = compilation
-    const { variableNamesIndex } = precompilation
+    const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
 
-    const precompiledNode = precompilation.nodes[node.id]
+    const precompiledNode = output.nodes[node.id]
     const { state, messageSenders: snds } = precompiledNode.generationContext
     const { nodeImplementation } = precompiledNode
     precompiledNode.initialization = nodeImplementation.initialization
@@ -304,18 +292,17 @@ export const precompileInitialization = (
               state,
               snds,
               node,
-              compilation,
+              settings,
           })
         : ast``
 }
 
 export const precompileLoop = (
-    compilation: Compilation,
+    { input: { settings }, output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
-    const { precompilation } = compilation
-    const { variableNamesIndex } = precompilation
-    const precompiledNode = precompilation.nodes[node.id]
+    const { variableNamesIndex } = output
+    const precompiledNode = output.nodes[node.id]
     const { globs } = variableNamesIndex
     const {
         signalOuts: outs,
@@ -329,7 +316,7 @@ export const precompileLoop = (
         node,
         state,
         ins,
-        compilation,
+        settings,
     }
 
     // Nodes that come here might have an inlinable loop, but still can't
@@ -369,15 +356,14 @@ export const precompileLoop = (
  * ```
  */
 export const precompileInlineLoop = (
-    compilation: Compilation,
+    { input: { graph, settings }, output }: PrecompilationOperation,
     dspGroup: DspGroup
 ): void => {
-    const { precompilation, graph, target } = compilation
-    const { variableNamesIndex } = precompilation
+    const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
     const inlinedNodes = dspGroup.traversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
-            const precompiledNode = precompilation.nodes[nodeId]
+            const precompiledNode = output.nodes[nodeId]
             const { signalIns: ins, state } = precompiledNode.generationContext
             const { nodeImplementation } = precompiledNode
             const node = getters.getNode(graph, nodeId)
@@ -423,7 +409,7 @@ export const precompileInlineLoop = (
                     ...inlinedInputs,
                 }),
                 node,
-                compilation,
+                settings,
             })
             const needsFix =
                 inlined.content.length > 1 ||
@@ -437,25 +423,24 @@ export const precompileInlineLoop = (
             // END TODO
             return {
                 ...inlinedNodes,
-                [nodeId]: render(getMacros(target), inlined),
+                [nodeId]: render(getMacros(settings.target), inlined),
             }
         },
         {}
     )
 
     const groupSinkNode = _getInlinableGroupSinkNode(graph, dspGroup)
-    precompilation.nodes[groupSinkNode.nodeId].generationContext.signalIns[
+    output.nodes[groupSinkNode.nodeId].generationContext.signalIns[
         groupSinkNode.portletId
     ] = inlinedNodes[dspGroup.outNodesIds[0]]
 }
 
 export const precompileCaching = (
-    compilation: Compilation,
+    { input: { settings }, output }: PrecompilationOperation,
     node: DspGraph.Node
 ): void => {
-    const { precompilation } = compilation
-    const { variableNamesIndex } = precompilation
-    const precompiledNode = precompilation.nodes[node.id]
+    const { variableNamesIndex } = output
+    const precompiledNode = output.nodes[node.id]
     const { globs } = variableNamesIndex
     const { nodeImplementation } = precompiledNode
     const { state, signalIns: ins } = precompiledNode.generationContext
@@ -467,7 +452,7 @@ export const precompileCaching = (
                   state,
                   ins,
                   node,
-                  compilation,
+                  settings,
               })
             : {}
     )
@@ -495,13 +480,11 @@ const _getInlinableGroupSinkNode = (
 }
 
 const _getMessageInletTotalSourceCount = (
-    settings: Compilation['settings'],
+    settings: CompilationSettings,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const {
-        io
-    } = settings
+    const { io } = settings
     const ioReceiversPortletIds = _getPortletIdsFromMsgIo(
         io.messageReceivers,
         node.id

@@ -1,7 +1,6 @@
 export { default as default } from './compile'
 export {
-    CompilationSettings,
-    Compilation,
+    UserCompilationSettings as CompilationSettings,
     NodeImplementations,
     CompilerTarget,
     AudioSettings,
@@ -13,7 +12,7 @@ export { createEngine as createAssemblyScriptWasmEngine } from './engine-assembl
 export { createEngine as createJavaScriptEngine } from './engine-javascript/run'
 export { readMetadata } from './run'
 export { getFloatArrayType } from './run/run-helpers'
-export { createNamespace } from './compile/namespace'
+export { createNamespace } from './compile/compile-helpers'
 export * as functional from './functional-helpers'
 export * as dspGraph from './dsp-graph'
 export { DspGraph } from './dsp-graph'

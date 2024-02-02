@@ -23,12 +23,12 @@ import {
     AstElement,
     AstFunc,
     AstSequence,
-    AstVarBase,
 } from '../ast/types'
-import { VariableName, Code } from '../ast/types'
+import { VariableName } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
+import { VariableNamesIndex } from './precompile/types'
+import { PrecompiledNodeCode } from './precompile/types'
 
-// -------------------------------- COMPILATION -------------------------------- //
 type PortletsSpecMetadataBasicValue = boolean | string | number
 
 export type IoMessageSpecs = {
@@ -53,7 +53,7 @@ export interface AudioSettings {
     bitDepth: 32 | 64
 }
 
-export interface CompilationSettings {
+export interface UserCompilationSettings {
     audio?: AudioSettings
     arrays?: DspGraph.Arrays
     io?: {
@@ -63,139 +63,15 @@ export interface CompilationSettings {
     debug?: boolean
 }
 
-export interface Compilation {
-    readonly settings: {
-        audio: AudioSettings
-        arrays: DspGraph.Arrays
-        io: {
-            messageReceivers: IoMessageSpecs
-            messageSenders: IoMessageSpecs
-        }
-        debug: boolean
-    }
-    readonly target: CompilerTarget
-    readonly graph: DspGraph.Graph
-    readonly nodeImplementations: NodeImplementations
-    readonly precompilation: Precompilation
-}
-
-/**
- * Precompilation for a graph, allowing mostly to implement various optimizations.
- * This map is then used in code generation to replace variables with their precompiled counterparts.
- */
-export type Precompilation = {
-    variableNamesIndex: VariableNamesIndex
-    nodes: {
-        [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
-    }
-    nodeImplementations: {
-        [nodeType: DspGraph.NodeType]: {
-            nodeImplementation: NodeImplementation<any>
-            stateClass: AstClass | null
-            core: AstElement | null
-        }
-    }
-    dependencies: {
-        imports: NonNullable<GlobalCodeGeneratorWithSettings['imports']>
-        exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
-        ast: AstSequence
-    }
-    graph: {
-        fullTraversal: DspGraph.GraphTraversal
-        hotDspGroup: DspGroup
-        coldDspGroups: { [groupId: string]: ColdDspGroup }
-    }
-}
-
-export interface PrecompiledNodeCode {
-    nodeImplementation: NodeImplementation<any>
-    generationContext: {
-        signalOuts: { [portletId: DspGraph.PortletId]: Code }
-        messageSenders: { [portletId: DspGraph.PortletId]: Code }
-        messageReceivers: { [portletId: DspGraph.PortletId]: Code }
-        signalIns: { [portletId: DspGraph.PortletId]: Code }
-        state: VariableName
-    }
-    state: null | {
-        className: VariableName
-        initialization: { [key: string]: NonNullable<AstVarBase['value']> }
-    }
-    messageReceivers: { [inletId: DspGraph.PortletId]: AstFunc }
-    messageSenders: {
-        [outletId: DspGraph.PortletId]: {
-            messageSenderName: VariableName
-            functionNames: Array<VariableName>
-        }
-    }
-    signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
-    initialization: AstElement
-    loop: AstElement
-    caching: { [inletId: DspGraph.PortletId]: AstElement }
-}
-
-export interface DspGroup {
-    traversal: DspGraph.GraphTraversal
-    outNodesIds: Array<DspGraph.NodeId>
-}
-
-export interface ColdDspGroup extends DspGroup {
-    sinkConnections: Array<DspGraph.Connection>
-}
-
-// -------------------------------- CODE GENERATION -------------------------------- //
-export interface NodeVariableNames {
-    signalOuts: { [portletId: DspGraph.PortletId]: VariableName }
-    messageSenders: { [portletId: DspGraph.PortletId]: VariableName }
-    messageReceivers: { [portletId: DspGraph.PortletId]: VariableName }
-    state: VariableName
-}
-
-interface NodeImplementationVariableNames {
-    stateClass?: VariableName
-}
-
-/**
- * Map of all global variable names used for compilation.
- *
- * @todo : for the sake of completeness, this should include also all global variables dependencies, etc ...
- */
-export interface VariableNamesIndex {
-    /** Namespace for individual nodes */
-    nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
-
-    nodeImplementations: {
-        [nodeType: DspGraph.NodeType]: NodeImplementationVariableNames
-    }
-
-    /** Namespace for global variables */
-    globs: {
-        /** Frame count, reinitialized at each loop start */
-        iterFrame: string
-        /** Frame count, never reinitialized */
-        frame: string
-        blockSize: string
-        sampleRate: string
-        output: string
-        input: string
-        nullMessageReceiver: string
-        nullSignal: string
-        emptyMessage: string
-    }
-
+export interface CompilationSettings {
+    target: CompilerTarget
+    audio: AudioSettings
+    arrays: DspGraph.Arrays
     io: {
-        messageReceivers: {
-            [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: VariableName
-            }
-        }
-        messageSenders: {
-            [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: VariableName
-            }
-        }
+        messageReceivers: IoMessageSpecs
+        messageSenders: IoMessageSpecs
     }
-
-    coldDspGroups: { [groupId: string]: VariableName }
+    debug: boolean
 }
 
 export interface GlobalCodeGeneratorContext {
@@ -245,13 +121,13 @@ export interface NodeImplementation<NodeArgsType = any> {
         globs: VariableNamesIndex['globs']
         node: DspGraph.Node<NodeArgsType>
         stateClassName: VariableName
-        compilation: Compilation
+        settings: CompilationSettings
     }) => AstClass
 
     core?: (context: {
         globs: VariableNamesIndex['globs']
         stateClassName?: VariableName
-        compilation: Compilation
+        settings: CompilationSettings
     }) => AstElement
 
     initialization?: (context: {
@@ -259,7 +135,7 @@ export interface NodeImplementation<NodeArgsType = any> {
         state: PrecompiledNodeCode['generationContext']['state']
         snds: PrecompiledNodeCode['generationContext']['messageSenders']
         node: DspGraph.Node<NodeArgsType>
-        compilation: Compilation
+        settings: CompilationSettings
     }) => AstSequence
 
     /**
@@ -275,7 +151,7 @@ export interface NodeImplementation<NodeArgsType = any> {
         outs: PrecompiledNodeCode['generationContext']['signalOuts']
         snds: PrecompiledNodeCode['generationContext']['messageSenders']
         node: DspGraph.Node<NodeArgsType>
-        compilation: Compilation
+        settings: CompilationSettings
     }) => AstSequence
 
     /**
@@ -291,7 +167,7 @@ export interface NodeImplementation<NodeArgsType = any> {
         state: PrecompiledNodeCode['generationContext']['state']
         ins: PrecompiledNodeCode['generationContext']['signalIns']
         node: DspGraph.Node<NodeArgsType>
-        compilation: Compilation
+        settings: CompilationSettings
     }) => AstSequence
 
     /**
@@ -302,7 +178,7 @@ export interface NodeImplementation<NodeArgsType = any> {
         state: PrecompiledNodeCode['generationContext']['state']
         snds: PrecompiledNodeCode['generationContext']['messageSenders']
         node: DspGraph.Node<NodeArgsType>
-        compilation: Compilation
+        settings: CompilationSettings
     }) => {
         [inletId: DspGraph.PortletId]: AstFunc
     }
@@ -312,7 +188,7 @@ export interface NodeImplementation<NodeArgsType = any> {
         state: PrecompiledNodeCode['generationContext']['state']
         ins: PrecompiledNodeCode['generationContext']['signalIns']
         node: DspGraph.Node<NodeArgsType>
-        compilation: Compilation
+        settings: CompilationSettings
     }) => {
         [inletId: DspGraph.PortletId]: AstElement
     }

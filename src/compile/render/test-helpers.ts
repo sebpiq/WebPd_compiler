@@ -18,7 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { AstElement, AstSequence, Code } from './types'
+import { AstElement, AstSequence, Code } from '../../ast/types'
+import { makePrecompilation } from '../precompile/test-helpers'
+import { RenderInput } from './types'
 
 const LINE_NORMALIZE_INDENTS_RE = /\s*\n\s*/g
 const LINE_TRIM_START_RE = /^[\s\n]*/
@@ -68,11 +70,13 @@ export const normalizeAstSequence = <T extends AstElement>(element: T): T => {
         case 'ConstVar':
             return {
                 ...element,
-                value: element.value ? normalizeAstSequence(element.value): element.value,
+                value: element.value
+                    ? normalizeAstSequence(element.value)
+                    : element.value,
             }
 
         default:
-            return {...element}
+            return { ...element }
     }
 }
 
@@ -81,3 +85,13 @@ const _normalizeCode = (code: Code) =>
         .replaceAll(LINE_NORMALIZE_INDENTS_RE, '\n')
         .replace(LINE_TRIM_START_RE, '')
         .replace(LINE_TRIM_END_RE, '')
+
+export const makeRenderInput = (
+    ...args: Parameters<typeof makePrecompilation>
+): RenderInput => {
+    const precompilation = makePrecompilation(...args)
+    return {
+        precompiledCode: precompilation.output,
+        settings: precompilation.input.settings,
+    }
+}

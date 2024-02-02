@@ -23,7 +23,6 @@ import {
     GlobalCodeDefinition,
     GlobalCodeGenerator,
     GlobalCodeGeneratorWithSettings,
-    Precompilation,
 } from '../types'
 import precompileDependencies, {
     collectAndDedupeExports,
@@ -32,13 +31,12 @@ import precompileDependencies, {
     flattenDependencies,
     instantiateAndDedupeDependencies,
 } from './dependencies'
-import { makeCompilation } from '../../test-helpers'
 import { Func, Sequence, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
+import { PrecompilationOperation, PrecompiledCode } from './types'
+import { makePrecompilation } from './test-helpers'
 
 describe('precompile.dependencies', () => {
-    const COMPILATION = makeCompilation({})
-
     describe('default', () => {
         it('should collect, precompile and deduplicate nested dependencies code and add minimal dependencies', () => {
             const codeDefinition1 = {
@@ -68,22 +66,23 @@ describe('precompile.dependencies', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['node1']
+            precompilation.output.graph.fullTraversal = ['node1']
 
-            precompileDependencies(compilation)
+            precompileDependencies(precompilation)
 
-            assert.deepStrictEqual<Precompilation['dependencies']>(
-                compilation.precompilation.dependencies,
+            assert.deepStrictEqual<PrecompiledCode['dependencies']>(
+                precompilation.output.dependencies,
                 {
                     ast: Sequence([
                         instantiateAndDedupeDependencies(
-                            compilation,
-                            flattenDependencies(engineMinimalDependencies())
+                            precompilation.input.settings,
+                            flattenDependencies(engineMinimalDependencies()),
+                            precompilation.output.variableNamesIndex.globs
                         ),
                         ast`"bla"`,
                         ast`"bly"`,
@@ -107,9 +106,7 @@ describe('precompile.dependencies', () => {
             }
             const codeDefinition2 = {
                 codeGenerator: () => ast`"blu"`,
-                dependencies: [
-                    codeDefinition1,
-                ],
+                dependencies: [codeDefinition1],
                 imports: [Func('bli')``],
                 exports: [{ name: 'blo' }],
             }
@@ -128,21 +125,21 @@ describe('precompile.dependencies', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            compilation.precompilation.graph.fullTraversal = ['node1']
+            precompilation.output.graph.fullTraversal = ['node1']
 
-            precompileDependencies(compilation)
+            precompileDependencies(precompilation)
 
-            assert.deepStrictEqual<Precompilation['dependencies']['exports']>(
-                compilation.precompilation.dependencies.exports,
+            assert.deepStrictEqual<PrecompiledCode['dependencies']['exports']>(
+                precompilation.output.dependencies.exports,
                 [{ name: 'ble' }, { name: 'blo' }]
             )
-            assert.deepStrictEqual<Precompilation['dependencies']['imports']>(
-                compilation.precompilation.dependencies.imports,
+            assert.deepStrictEqual<PrecompiledCode['dependencies']['imports']>(
+                precompilation.output.dependencies.imports,
                 [Func('bla')``, Func('bli')``]
             )
         })
@@ -150,6 +147,8 @@ describe('precompile.dependencies', () => {
 
     describe('collectDependencies', () => {
         it('should compile the global code, removing duplicates', () => {
+            const precompilation = makePrecompilation({})
+
             const bli = ast`"bli"`
             const blo = ast`"blo"`
             const bla1 = ast`"bla"`
@@ -158,15 +157,19 @@ describe('precompile.dependencies', () => {
             const bloGenerator: GlobalCodeGenerator = () => blo
             const blaGenerator1: GlobalCodeGenerator = () => bla1
             const blaGenerator2: GlobalCodeGenerator = () => bla2
-            const astSequence = instantiateAndDedupeDependencies(COMPILATION, [
-                bloGenerator,
-                blaGenerator1,
-                {
-                    codeGenerator: () => bli,
-                    dependencies: [bloGenerator],
-                },
-                blaGenerator2,
-            ])
+            const astSequence = instantiateAndDedupeDependencies(
+                precompilation.input.settings,
+                [
+                    bloGenerator,
+                    blaGenerator1,
+                    {
+                        codeGenerator: () => bli,
+                        dependencies: [bloGenerator],
+                    },
+                    blaGenerator2,
+                ],
+                precompilation.output.variableNamesIndex.globs
+            )
             assert.deepStrictEqual(astSequence, Sequence([blo, bla1, bli]))
         })
     })
@@ -207,6 +210,7 @@ describe('precompile.dependencies', () => {
 
     describe('collectAndDedupeExports', () => {
         it('should collect exports and remove duplicates', () => {
+            const precompilation = makePrecompilation({})
             const codeDefinition1: GlobalCodeGeneratorWithSettings = {
                 codeGenerator: () => Sequence([]),
                 exports: [{ name: 'ex1' }, { name: 'ex3' }],
@@ -229,12 +233,18 @@ describe('precompile.dependencies', () => {
             ]
 
             assert.deepStrictEqual(
-                collectAndDedupeExports('javascript', dependencies),
+                collectAndDedupeExports(
+                    precompilation.input.settings.target,
+                    dependencies
+                ),
                 [{ name: 'ex1' }, { name: 'ex3' }, { name: 'ex4' }]
             )
         })
 
         it('should keep only exports for specified target', () => {
+            const precompilation = makePrecompilation({
+                settings: { target: 'assemblyscript' },
+            })
             const codeGenerator1 = () => Sequence([])
             const codeGenerator2 = () => Sequence([])
 
@@ -260,7 +270,10 @@ describe('precompile.dependencies', () => {
             ]
 
             assert.deepStrictEqual(
-                collectAndDedupeExports('assemblyscript', dependencies),
+                collectAndDedupeExports(
+                    precompilation.input.settings.target,
+                    dependencies
+                ),
                 [
                     { name: 'ex1' },
                     { name: 'ex4', targets: ['assemblyscript'] },

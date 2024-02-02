@@ -28,8 +28,8 @@ import {
 import {
     IoMessageSpecs,
     NodeImplementations,
-    VariableNamesIndex,
 } from '../types'
+import { VariableNamesIndex } from './types'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { DspGraph } from '../../dsp-graph'
 import { validateSettings } from '..'
@@ -44,7 +44,7 @@ describe('variable-names-index', () => {
 
             const nodeImplementations: NodeImplementations = { type1: {} }
 
-            const settings = validateSettings({ debug: false })
+            const settings = validateSettings({ debug: false }, 'javascript')
 
             const variableNamesIndex = generateVariableNamesIndex(
                 settings,
@@ -82,7 +82,7 @@ describe('variable-names-index', () => {
                 type2: {},
             }
 
-            const settings = validateSettings({ debug: false })
+            const settings = validateSettings({ debug: false }, 'javascript')
 
             const variableNamesIndex = generateVariableNamesIndex(
                 settings,
@@ -110,7 +110,7 @@ describe('variable-names-index', () => {
 
             const nodeImplementations: NodeImplementations = { type1: {} }
 
-            const settings = validateSettings({ debug: false })
+            const settings = validateSettings({ debug: false }, 'javascript')
 
             const variableNamesIndex = generateVariableNamesIndex(
                 settings,
@@ -159,7 +159,7 @@ describe('variable-names-index', () => {
 
             const nodeImplementations: NodeImplementations = { type1: {} }
 
-            const settings = validateSettings({ debug: false })
+            const settings = validateSettings({ debug: false }, 'javascript')
 
             const variableNamesIndex = generateVariableNamesIndex(
                 settings,
@@ -248,7 +248,7 @@ describe('variable-names-index', () => {
                 'dac~bla*wow!': {},
             }
 
-            const settings = validateSettings({ debug: true })
+            const settings = validateSettings({ debug: true }, 'javascript')
 
             const variableNamesIndex = generateVariableNamesIndex(
                 settings,
@@ -304,7 +304,7 @@ describe('variable-names-index', () => {
 
             const nodeImplementations: NodeImplementations = { type1: {} }
 
-            const settings = validateSettings({ debug: false })
+            const settings = validateSettings({ debug: false }, 'javascript')
 
             const variableNamesIndex = generateVariableNamesIndex(
                 settings,
@@ -355,7 +355,7 @@ describe('variable-names-index', () => {
                 n2: { type: 'type2+-Bla' },
             })
 
-            const settings = validateSettings({ debug: false })
+            const settings = validateSettings({ debug: false }, 'javascript')
 
             const variableNamesIndex = generateVariableNamesIndex(
                 settings,
@@ -431,7 +431,7 @@ describe('variable-names-index', () => {
                     messageSenders,
                     messageReceivers,
                 },
-            })
+            }, 'javascript')
 
             const variableNamesIndex: VariableNamesIndex =
                 generateVariableNamesIndex(settings, graph, nodeImplementations)

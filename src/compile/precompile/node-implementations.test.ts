@@ -1,10 +1,10 @@
 import assert from 'assert'
 import { Class, Func, Sequence, Var, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
-import { makeCompilation } from '../../test-helpers'
 import { NodeImplementations } from '../types'
 import { precompileCore, precompileStateClass } from './node-implementations'
 import { AstClass, AstSequence } from '../../ast/types'
+import { makePrecompilation } from './test-helpers'
 
 describe('precompile.node-implementations', () => {
     describe('precompileStateClass', () => {
@@ -26,16 +26,16 @@ describe('precompile.node-implementations', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileStateClass(compilation, 'type1')
+            precompileStateClass(precompilation, 'type1')
 
-            assert.strictEqual(compilation.precompilation.variableNamesIndex.nodeImplementations.type1.stateClass, 'State_type1')
+            assert.strictEqual(precompilation.output.variableNamesIndex.nodeImplementations.type1.stateClass, 'State_type1')
             assert.deepStrictEqual<AstClass>(
-                compilation.precompilation.nodeImplementations.type1.stateClass,
+                precompilation.output.nodeImplementations.type1.stateClass,
                 {
                     astType: 'Class',
                     name: 'State_type1',
@@ -73,15 +73,15 @@ describe('precompile.node-implementations', () => {
                 },
             }
 
-            const compilation = makeCompilation({
+            const precompilation = makePrecompilation({
                 graph,
                 nodeImplementations,
             })
 
-            precompileCore(compilation, 'type1')
+            precompileCore(precompilation, 'type1')
 
             assert.deepStrictEqual<AstSequence>(
-                compilation.precompilation.nodeImplementations.type1.core,
+                precompilation.output.nodeImplementations.type1.core,
                 {
                     astType: 'Sequence',
                     content: [

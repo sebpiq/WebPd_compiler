@@ -1,11 +1,10 @@
 import { DspGraph, helpers, traversers } from '../../dsp-graph'
 import { endpointsEqual } from '../../dsp-graph/graph-helpers'
 import { buildGraphTraversalSignal } from '../compile-helpers'
-import { ColdDspGroup, DspGroup } from '../types'
-import { Compilation } from '../types'
+import { ColdDspGroup, DspGroup, PrecompilationOperation } from './types'
 
 export const buildHotDspGroup = (
-    { graph }: Compilation,
+    { input: { graph } }: PrecompilationOperation,
     parentDspGroup: DspGroup,
     coldDspGroups: Array<DspGroup>
 ): DspGroup => ({
@@ -18,11 +17,9 @@ export const buildHotDspGroup = (
 })
 
 export const buildColdDspGroups = (
-    compilation: Compilation,
+    precompilation: PrecompilationOperation,
     parentDspGroup: DspGroup
-): Array<DspGroup> => {
-    const { graph } = compilation
-
+): Array<DspGroup> =>
     // Go through all nodes in the signal traversal, and find groups of signal nodes
     // that can be cached / computed only when needed (cold dsp), outside
     // of the main dsp loop (hot dsp). We proceed in the following way :
@@ -49,65 +46,66 @@ export const buildColdDspGroups = (
     // 1. We start by finding 2 single flow dsp groups : [c3, c2, c1] and [c5, c4, c1]
     // 2. We detect that these 2 groups are connected, so we merge them into one group : [c3, c2, c1, c5, c4, c1]
     // 3. ...
-    return (
-        _buildSingleFlowColdDspGroups(compilation, parentDspGroup)
-            // Combine all connected single flow dsp groups.
-            .reduce<Array<DspGroup>>((dspGroups, singleFlowDspGroup) => {
-                const groupToMergeInto = dspGroups.find((otherGroup) =>
-                    otherGroup.traversal.some((nodeId) =>
-                        singleFlowDspGroup.traversal.includes(nodeId)
-                    )
+    _buildSingleFlowColdDspGroups(precompilation, parentDspGroup)
+        // Combine all connected single flow dsp groups.
+        .reduce<Array<DspGroup>>((dspGroups, singleFlowDspGroup) => {
+            const groupToMergeInto = dspGroups.find((otherGroup) =>
+                otherGroup.traversal.some((nodeId) =>
+                    singleFlowDspGroup.traversal.includes(nodeId)
                 )
-                if (groupToMergeInto) {
-                    return [
-                        ...dspGroups.filter(
-                            (dspGroup) => dspGroup !== groupToMergeInto
-                        ),
-                        // Merging here is incomplete, we don't recompute the traversal
-                        // and don't remove the duplicate nodes until all groups are combined.
-                        {
-                            traversal: [
-                                ...groupToMergeInto.traversal,
-                                ...singleFlowDspGroup.traversal,
-                            ],
-                            outNodesIds: [
-                                ...groupToMergeInto.outNodesIds,
-                                ...singleFlowDspGroup.outNodesIds,
-                            ],
-                        },
-                    ]
-                } else {
-                    return [...dspGroups, singleFlowDspGroup]
-                }
-            }, [])
+            )
+            if (groupToMergeInto) {
+                return [
+                    ...dspGroups.filter(
+                        (dspGroup) => dspGroup !== groupToMergeInto
+                    ),
+                    // Merging here is incomplete, we don't recompute the traversal
+                    // and don't remove the duplicate nodes until all groups are combined.
+                    {
+                        traversal: [
+                            ...groupToMergeInto.traversal,
+                            ...singleFlowDspGroup.traversal,
+                        ],
+                        outNodesIds: [
+                            ...groupToMergeInto.outNodesIds,
+                            ...singleFlowDspGroup.outNodesIds,
+                        ],
+                    },
+                ]
+            } else {
+                return [...dspGroups, singleFlowDspGroup]
+            }
+        }, [])
 
-            // Compute the signal traversal, therefore fixing the order in which
-            // nodes are visited and removing potential duplicates.
-            .map<DspGroup>((dspGroup) => ({
-                traversal: traversers.signalTraversal(
-                    graph,
-                    traversers.toNodes(graph, dspGroup.outNodesIds)
-                ),
-                outNodesIds: dspGroup.outNodesIds,
-            }))
-    )
-}
+        // Compute the signal traversal, therefore fixing the order in which
+        // nodes are visited and removing potential duplicates.
+        .map<DspGroup>((dspGroup) => ({
+            traversal: traversers.signalTraversal(
+                precompilation.input.graph,
+                traversers.toNodes(
+                    precompilation.input.graph,
+                    dspGroup.outNodesIds
+                )
+            ),
+            outNodesIds: dspGroup.outNodesIds,
+        }))
 
 export const _buildSingleFlowColdDspGroups = (
-    compilation: Compilation,
+    precompilation: PrecompilationOperation,
     parentDspGroup: DspGroup
-): Array<DspGroup> => {
-    const { graph } = compilation
-    return traversers
-        .toNodes(graph, parentDspGroup.traversal)
+): Array<DspGroup> =>
+    traversers
+        .toNodes(precompilation.input.graph, parentDspGroup.traversal)
         .reduce<Array<DspGroup>>((dspGroups, node) => {
             // If one of `node`'s sinks is a also cold, then `node` is not the
             // out node of a dsp group.
             if (
-                !_isNodeDspCold(compilation, node) ||
+                !_isNodeDspCold(precompilation, node) ||
                 traversers
-                    .listSinkNodes(graph, node, 'signal')
-                    .every((sinkNode) => _isNodeDspCold(compilation, sinkNode))
+                    .listSinkNodes(precompilation.input.graph, node, 'signal')
+                    .every((sinkNode) =>
+                        _isNodeDspCold(precompilation, sinkNode)
+                    )
             ) {
                 return dspGroups
             }
@@ -117,12 +115,12 @@ export const _buildSingleFlowColdDspGroups = (
             const dspGroup: DspGroup = {
                 outNodesIds: [node.id],
                 traversal: traversers.signalTraversal(
-                    graph,
+                    precompilation.input.graph,
                     [node],
                     (sourceNode) => {
                         areAllSourcesCold =
                             areAllSourcesCold &&
-                            _isNodeDspCold(compilation, sourceNode)
+                            _isNodeDspCold(precompilation, sourceNode)
                         return areAllSourcesCold
                     }
                 ),
@@ -134,25 +132,27 @@ export const _buildSingleFlowColdDspGroups = (
                 return dspGroups
             }
         }, [])
-}
 
 export const buildInlinableDspGroups = (
-    compilation: Compilation,
+    precompilation: PrecompilationOperation,
     parentDspGroup: DspGroup
-): Array<DspGroup> => {
-    const { graph } = compilation
-    return traversers
-        .toNodes(graph, parentDspGroup.traversal)
+): Array<DspGroup> =>
+    traversers
+        .toNodes(precompilation.input.graph, parentDspGroup.traversal)
         .reduce<Array<DspGroup>>((dspGroups, node) => {
-            const sinkNodes = traversers.listSinkNodes(graph, node, 'signal')
+            const sinkNodes = traversers.listSinkNodes(
+                precompilation.input.graph,
+                node,
+                'signal'
+            )
             // We're looking for the out node of an inlinable dsp group.
             if (
-                _isNodeDspInlinable(compilation, node) &&
+                _isNodeDspInlinable(precompilation, node) &&
                 // If node is the out node of its parent dsp group, then its not inlinable,
                 // because it needs to declare output variables.
                 !parentDspGroup.outNodesIds.includes(node.id) &&
                 // If `node`'s sink is itself inlinable, then `node` is not the out node.
-                (!_isNodeDspInlinable(compilation, sinkNodes[0]) ||
+                (!_isNodeDspInlinable(precompilation, sinkNodes[0]) ||
                     // However, if `node`'s sink is also is the out node of the parent group,
                     // then it can't actually be inlined, so `node` is the out node.
                     parentDspGroup.outNodesIds.includes(sinkNodes[0].id))
@@ -161,10 +161,10 @@ export const buildInlinableDspGroups = (
                     ...dspGroups,
                     {
                         traversal: traversers.signalTraversal(
-                            graph,
+                            precompilation.input.graph,
                             [node],
                             (sourceNode) =>
-                                _isNodeDspInlinable(compilation, sourceNode)
+                                _isNodeDspInlinable(precompilation, sourceNode)
                         ),
                         outNodesIds: [node.id],
                     },
@@ -173,7 +173,6 @@ export const buildInlinableDspGroups = (
                 return dspGroups
             }
         }, [])
-}
 
 export const isNodeInsideGroup = (
     dspGroup: DspGroup,
@@ -205,17 +204,17 @@ export const removeNodesFromTraversal = (
 ) => traversal.filter((nodeId) => !toRemove.includes(nodeId))
 
 const _isNodeDspCold = (
-    { precompilation }: Compilation,
+    { output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
-    const nodeImplementation = precompilation.nodes[node.id].nodeImplementation
+    const nodeImplementation = output.nodes[node.id].nodeImplementation
     return nodeImplementation.flags
         ? nodeImplementation.flags.isPureFunction
         : false
 }
 
 export const _isNodeDspInlinable = (
-    { precompilation }: Compilation,
+    { output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
     const sinks = traversers
@@ -223,7 +222,11 @@ export const _isNodeDspInlinable = (
         .map(([_, sink]) => sink)
         // De-duplicate sinks
         .reduce<Array<DspGraph.ConnectionEndpoint>>((dedupedSinks, sink) => {
-            if (dedupedSinks.every((otherSink) => !endpointsEqual(otherSink, sink))) {
+            if (
+                dedupedSinks.every(
+                    (otherSink) => !endpointsEqual(otherSink, sink)
+                )
+            ) {
                 return [...dedupedSinks, sink]
             } else {
                 return dedupedSinks
@@ -231,7 +234,7 @@ export const _isNodeDspInlinable = (
         }, [])
 
     return (
-        !!precompilation.nodes[node.id].nodeImplementation.inlineLoop &&
+        !!output.nodes[node.id].nodeImplementation.inlineLoop &&
         sinks.length === 1
     )
 }

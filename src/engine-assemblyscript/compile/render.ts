@@ -18,60 +18,46 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata } from '../../compile/compile-helpers'
-import {
-    generatePortletsDeclarations,
-    generateGlobs,
-    generateNodeImplementationsCoreAndStateClasses,
-    generateNodeInitializations,
-    generateLoop,
-    generateColdDspFunctions,
-    generateIoMessageReceivers,
-    generateIoMessageSenders,
-    generateEmbeddedArrays,
-    generateImportsExports,
-    generateNodeStateInstances,
-    generateColdDspInitialization,
-} from '../../compile/generate'
-import { Compilation } from '../../compile/types'
+import { buildMetadata } from '../../compile/render/metadata'
+import templates from '../../compile/render/templates'
 import { AssemblyScriptWasmEngineCode } from './types'
-import render from '../../ast/render'
+import render from '../../compile/render'
 import macros from './macros'
 import { ast } from '../../ast/declare'
+import { RenderInput } from '../../compile/render/types'
 
-export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
-    const {
-        settings,
-        precompilation,
-    } = compilation
+export default (
+    renderInput: RenderInput,
+): AssemblyScriptWasmEngineCode => {
+    const { precompiledCode, settings } = renderInput
     const { channelCount } = settings.audio
-    const variableNamesIndex = precompilation.variableNamesIndex
+    const variableNamesIndex = precompiledCode.variableNamesIndex
     const globs = variableNamesIndex.globs
-    const metadata = buildMetadata(compilation)
+    const metadata = buildMetadata(renderInput)
 
     // prettier-ignore
     return render(macros, ast`
         const metadata: string = '${JSON.stringify(metadata)}'
 
-        ${precompilation.dependencies.ast}
-        ${generateNodeImplementationsCoreAndStateClasses(precompilation)}
+        ${templates.dependencies(renderInput)}
+        ${templates.nodeImplementationsCoreAndStateClasses(renderInput)}
 
-        ${generateGlobs(precompilation)}
+        ${templates.globs(renderInput)}
         let ${globs.input}: FloatArray = createFloatArray(0)
         let ${globs.output}: FloatArray = createFloatArray(0)
 
-        ${generateEmbeddedArrays(settings)}
+        ${templates.embeddedArrays(renderInput)}
 
-        ${generateNodeStateInstances(precompilation)}
-        ${generatePortletsDeclarations(precompilation, settings)}
+        ${templates.nodeStateInstances(renderInput)}
+        ${templates.portletsDeclarations(renderInput)}
 
-        ${generateColdDspFunctions(precompilation)}
-        ${generateIoMessageReceivers(precompilation, settings)}
-        ${generateIoMessageSenders(precompilation, settings, (variableName) => 
+        ${templates.coldDspFunctions(renderInput)}
+        ${templates.ioMessageReceivers(renderInput)}
+        ${templates.ioMessageSenders(renderInput, (variableName) => 
             ast`export declare function ${variableName}(m: Message): void`)}
 
-        ${generateNodeInitializations(precompilation)}
-        ${generateColdDspInitialization(precompilation)}
+        ${templates.nodeInitializations(renderInput)}
+        ${templates.coldDspInitialization(renderInput)}
 
         export function configure(sampleRate: Float, blockSize: Int): void {
             ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
@@ -86,7 +72,7 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
         export function getOutput(): FloatArray { return ${globs.output} }
 
         export function loop(): void {
-            ${generateLoop(precompilation)}
+            ${templates.loop(renderInput)}
         }
 
         export {
@@ -98,8 +84,8 @@ export default (compilation: Compilation): AssemblyScriptWasmEngineCode => {
             )}
         }
 
-        ${generateImportsExports(
-            precompilation,
+        ${templates.importsExports(
+            renderInput,
             ({ name, args, returnType }) => ast`export declare function ${name} (${
                 args.map((a) => `${a.name}: ${a.type}`).join(',')
             }): ${returnType}`, 

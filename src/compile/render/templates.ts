@@ -17,22 +17,29 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import { GlobalCodeDefinitionExport } from '../types'
 import {
-    Precompilation,
-    GlobalCodeDefinitionExport,
-    Compilation,
-} from './types'
-import { AstConstVar, AstFunc, AstSequence, VariableName } from '../ast/types'
-import { Sequence, Func, Var, ast, ConstVar } from '../ast/declare'
-import { DspGraph } from '../dsp-graph'
+    AstConstVar,
+    AstFunc,
+    AstSequence,
+    VariableName,
+} from '../../ast/types'
+import { Sequence, Func, Var, ast, ConstVar } from '../../ast/declare'
+import { DspGraph } from '../../dsp-graph'
 import {
     findColdDspGroupFromSink,
     isNodeInsideGroup,
-} from './precompile/dsp-groups'
+} from '../precompile/dsp-groups'
+import { RenderInput } from './types'
 
-export const generateGlobs = ({
-    variableNamesIndex: { globs },
-}: Precompilation): AstSequence =>
+const dependencies = ({ precompiledCode }: RenderInput) =>
+    precompiledCode.dependencies.ast
+
+const globs = ({
+    precompiledCode: {
+        variableNamesIndex: { globs },
+    },
+}: RenderInput): AstSequence =>
     // prettier-ignore
     Sequence([
         Var('Int', globs.iterFrame, '0'),
@@ -46,10 +53,7 @@ export const generateGlobs = ({
         Var('Message', globs.emptyMessage, 'msg_create([])'),
     ])
 
-/**
- * Embed arrays passed to the compiler in the compiled module.
- */
-export const generateEmbeddedArrays = ({ arrays }: Compilation['settings']) =>
+const embeddedArrays = ({ settings: { arrays } }: RenderInput) =>
     Sequence(
         Object.entries(arrays).map(([arrayName, array]) =>
             Sequence([
@@ -61,9 +65,9 @@ export const generateEmbeddedArrays = ({ arrays }: Compilation['settings']) =>
         )
     )
 
-export const generateNodeImplementationsCoreAndStateClasses = ({
-    nodeImplementations,
-}: Precompilation): AstSequence =>
+const nodeImplementationsCoreAndStateClasses = ({
+    precompiledCode: { nodeImplementations },
+}: RenderInput): AstSequence =>
     Sequence(
         Object.values(nodeImplementations).map((precompiledImplementation) => [
             precompiledImplementation.stateClass,
@@ -71,11 +75,9 @@ export const generateNodeImplementationsCoreAndStateClasses = ({
         ])
     )
 
-export const generateNodeStateInstances = ({
-    variableNamesIndex,
-    graph,
-    nodes,
-}: Precompilation): AstSequence =>
+const nodeStateInstances = ({
+    precompiledCode: { variableNamesIndex, graph, nodes },
+}: RenderInput): AstSequence =>
     Sequence([
         graph.fullTraversal.reduce<Array<AstConstVar>>(
             (declarations, nodeId) => {
@@ -93,7 +95,7 @@ export const generateNodeStateInstances = ({
                                 ${Object.entries(
                                     precompiledNode.state.initialization
                                 ).map(([key, value]) => ast`${key}: ${value},`)}
-                                }`
+                            }`
                         ),
                     ]
                 }
@@ -102,18 +104,17 @@ export const generateNodeStateInstances = ({
         ),
     ])
 
-export const generateNodeInitializations = ({
-    graph,
-    nodes,
-}: Precompilation): AstSequence =>
+const nodeInitializations = ({
+    precompiledCode: { graph, nodes },
+}: RenderInput): AstSequence =>
     Sequence([
         graph.fullTraversal.map((nodeId) => nodes[nodeId].initialization),
     ])
 
-export const generateIoMessageReceivers = (
-    { variableNamesIndex, graph }: Precompilation,
-    { io }: Compilation['settings']
-): AstSequence =>
+const ioMessageReceivers = ({
+    precompiledCode: { variableNamesIndex, graph },
+    settings: { io },
+}: RenderInput): AstSequence =>
     Sequence(
         Object.entries(io.messageReceivers).map(([nodeId, spec]) => {
             // TODO : todo-io-messageReceivers This lookup should be done in precompile
@@ -126,6 +127,7 @@ export const generateIoMessageReceivers = (
             )
             // END TODO
 
+            // prettier-ignore
             return spec.portletIds.map(
                 (inletId) =>
                     Func(
@@ -133,20 +135,15 @@ export const generateIoMessageReceivers = (
                         [Var('Message', 'm')],
                         'void'
                     )`
-                        ${
-                            variableNamesIndex.nodes[nodeId].messageReceivers[
-                                inletId
-                            ]
-                        }(m)
+                        ${variableNamesIndex.nodes[nodeId].messageReceivers[inletId]}(m)
                         ${coldDspFunctionNames.map((name) => `${name}(m)`)}
                     `
             )
         })
     )
 
-export const generateIoMessageSenders = (
-    { variableNamesIndex }: Precompilation,
-    { io }: Compilation['settings'],
+const ioMessageSenders = (
+    { precompiledCode: { variableNamesIndex }, settings: { io } }: RenderInput,
     generateIoMessageSender: (
         variableName: VariableName,
         nodeId: DspGraph.NodeId,
@@ -167,10 +164,10 @@ export const generateIoMessageSenders = (
         )
     )
 
-export const generatePortletsDeclarations = (
-    { graph, nodes }: Precompilation,
-    { debug }: Compilation['settings']
-): AstSequence =>
+const portletsDeclarations = ({
+    precompiledCode: { graph, nodes },
+    settings: { debug },
+}: RenderInput): AstSequence =>
     Sequence([
         graph.fullTraversal
             .map((nodeId) => [nodes[nodeId], nodeId] as const)
@@ -211,45 +208,40 @@ export const generatePortletsDeclarations = (
             ),
     ])
 
-export const generateLoop = ({
-    variableNamesIndex,
-    nodes,
-    graph: { hotDspGroup, coldDspGroups },
-}: Precompilation) => {
-    const { globs } = variableNamesIndex
-
+const loop = ({
+    precompiledCode: {
+        variableNamesIndex: { globs },
+        nodes,
+        graph: { hotDspGroup, coldDspGroups },
+    },
+}: RenderInput) =>
     // prettier-ignore
-    return ast`
+    ast`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
-            ${hotDspGroup.traversal.map((nodeId) => {
-                const precompiledNode = nodes[nodeId]
-                return [
-                    // For all caching functions, we render those that are not
-                    // the sink of a cold dsp group.
-                    ...Object.entries(precompiledNode.caching)
-                        .filter(([inletId]) => 
-                            findColdDspGroupFromSink(
-                                coldDspGroups, { 
-                                    nodeId, 
-                                    portletId: inletId 
-                                }
-                            ) === undefined)
-                        .map(([_, astElement]) => 
-                            astElement
-                        ),
-                    precompiledNode.loop
-                ]
-            })}
+            ${hotDspGroup.traversal.map((nodeId) => [
+                // For all caching functions, we render those that are not
+                // the sink of a cold dsp group.
+                ...Object.entries(nodes[nodeId].caching)
+                    .filter(([inletId]) => 
+                        findColdDspGroupFromSink(
+                            coldDspGroups, { 
+                                nodeId, 
+                                portletId: inletId 
+                            }
+                        ) === undefined)
+                    .map(([_, astElement]) => 
+                        astElement
+                    ),
+                nodes[nodeId].loop
+            ])}
             ${globs.frame}++
         }
     `
-}
 
-export const generateColdDspInitialization = ({
-    variableNamesIndex,
-    graph,
-}: Precompilation) =>
+const coldDspInitialization = ({
+    precompiledCode: { variableNamesIndex, graph },
+}: RenderInput) =>
     Sequence(
         Object.keys(graph.coldDspGroups).map(
             (groupId) =>
@@ -257,16 +249,20 @@ export const generateColdDspInitialization = ({
         )
     )
 
-export const generateColdDspFunctions = ({
-    variableNamesIndex,
-    graph: { coldDspGroups },
-    nodes,
-}: Precompilation): AstSequence =>
+const coldDspFunctions = ({
+    precompiledCode: {
+        variableNamesIndex,
+        graph: { coldDspGroups },
+        nodes,
+    },
+}: RenderInput): AstSequence =>
     Sequence(
-        Object.entries(coldDspGroups).map(([groupId, dspGroup]) => {
-            const funcName = variableNamesIndex.coldDspGroups[groupId]
-            // prettier-ignore
-            return Func(funcName, [Var('Message', 'm')], 'void')`
+        Object.entries(coldDspGroups).map(
+            ([groupId, dspGroup]) =>
+                // prettier-ignore
+                Func(variableNamesIndex.coldDspGroups[groupId], [
+                Var('Message', 'm')
+            ], 'void')`
                 ${dspGroup.traversal.map((nodeId) => 
                     nodes[nodeId].loop
                 )}
@@ -277,11 +273,11 @@ export const generateColdDspFunctions = ({
                     )
                 }
             `
-        })
+        )
     )
 
-export const generateImportsExports = (
-    { dependencies }: Precompilation,
+const importsExports = (
+    { precompiledCode: { dependencies } }: RenderInput,
     generateImport: (imprt: AstFunc) => AstSequence,
     generateExport: (xprt: GlobalCodeDefinitionExport) => AstSequence
 ): AstSequence =>
@@ -289,3 +285,19 @@ export const generateImportsExports = (
         dependencies.imports.map(generateImport),
         dependencies.exports.map(generateExport),
     ])
+
+export default {
+    globs,
+    dependencies,
+    embeddedArrays,
+    nodeImplementationsCoreAndStateClasses,
+    nodeStateInstances,
+    nodeInitializations,
+    ioMessageReceivers,
+    ioMessageSenders,
+    portletsDeclarations,
+    loop,
+    coldDspInitialization,
+    coldDspFunctions,
+    importsExports,
+}

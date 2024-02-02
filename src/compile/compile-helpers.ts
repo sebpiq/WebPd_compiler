@@ -18,19 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph, getters, traversers } from '../dsp-graph'
-import packageInfo from '../../package.json'
 import jsMacros from '../engine-javascript/compile/macros'
 import ascMacros from '../engine-assemblyscript/compile/macros'
 import {
-    Compilation,
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeGeneratorWithSettings,
     NodeImplementation,
     NodeImplementations,
+    CompilationSettings,
 } from './types'
-import { EngineMetadata } from '../run/types'
-import { CodeMacros } from '../ast/types'
+import { CodeMacros } from "./render/types"
 
 /** Helper to get code macros from compile target. */
 export const getMacros = (target: CompilerTarget): CodeMacros =>
@@ -71,29 +69,6 @@ export const getNodeImplementationsUsedInGraph = (
         }
     }, {})
 
-/** Helper to build engine metadata from compilation object */
-export const buildMetadata = (compilation: Compilation): EngineMetadata => {
-    const {
-        settings: { audio: audioSettings, io },
-        precompilation: { variableNamesIndex },
-    } = compilation
-    return {
-        libVersion: packageInfo.version,
-        audioSettings: {
-            ...audioSettings,
-            // Determined at configure
-            sampleRate: 0,
-            blockSize: 0,
-        },
-        compilation: {
-            io,
-            variableNamesIndex: {
-                io: variableNamesIndex.io,
-            },
-        },
-    }
-}
-
 /**
  * Build graph traversal for all nodes.
  * This should be exhaustive so that all nodes that are connected
@@ -103,7 +78,7 @@ export const buildMetadata = (compilation: Compilation): EngineMetadata => {
  */
 export const buildFullGraphTraversal = (
     graph: DspGraph.Graph,
-    { io }: Compilation['settings']
+    { io }: CompilationSettings,
 ): DspGraph.GraphTraversal => {
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
@@ -141,7 +116,8 @@ export const buildGraphTraversalSignal = (
 export const isGlobalDefinitionWithSettings = (
     globalCodeDefinition: GlobalCodeDefinition
 ): globalCodeDefinition is GlobalCodeGeneratorWithSettings =>
-    !(typeof globalCodeDefinition === 'function')/**
+    !(typeof globalCodeDefinition === 'function')
+/**
  * Helper to declare namespace objects enforcing stricter access rules. Specifically, it forbids :
  * - reading an unknown property.
  * - trying to overwrite an existing property.
@@ -162,15 +138,17 @@ export const createNamespace = <T extends Object>(
                 // Whitelist some fields that are undefined but accessed at
                 // some point or another by our code.
                 // TODO : find a better way to do this.
-                if ([
-                    'toJSON',
-                    'Symbol(Symbol.toStringTag)',
-                    'constructor',
-                    '$typeof',
-                    '$$typeof',
-                    '@@__IMMUTABLE_ITERABLE__@@',
-                    '@@__IMMUTABLE_RECORD__@@',
-                ].includes(key)) {
+                if (
+                    [
+                        'toJSON',
+                        'Symbol(Symbol.toStringTag)',
+                        'constructor',
+                        '$typeof',
+                        '$$typeof',
+                        '@@__IMMUTABLE_ITERABLE__@@',
+                        '@@__IMMUTABLE_RECORD__@@',
+                    ].includes(key)
+                ) {
                     return undefined
                 }
                 throw new Error(
@@ -184,7 +162,9 @@ export const createNamespace = <T extends Object>(
             const key = _trimDollarKey(String(k)) as keyof T
             if (target.hasOwnProperty(key)) {
                 throw new Error(
-                    `Key "${String(key)}" is protected and cannot be overwritten.`
+                    `Key "${String(
+                        key
+                    )}" is protected and cannot be overwritten.`
                 )
             } else {
                 target[key] = newValue
@@ -206,4 +186,3 @@ const _trimDollarKey = (key: string) => {
         return match[1]
     }
 }
-
