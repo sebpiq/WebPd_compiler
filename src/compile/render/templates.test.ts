@@ -34,11 +34,10 @@ import {
     assertAstSequencesAreEqual,
     normalizeAstSequence,
     makeRenderInput,
-} from './test-helpers'
+    makeSettings,
+} from '../test-helpers'
 import templates from './templates'
 import { AstSequence } from '../../ast/types'
-import { makePrecompilation } from '../precompile/test-helpers'
-import { validateSettings } from '..'
 import { createNamespace } from '../compile-helpers'
 
 describe('templates', () => {
@@ -139,7 +138,7 @@ describe('templates', () => {
         })
 
         it('should render correct error throw if debug = true', () => {
-            const settings = validateSettings({ debug: true }, 'javascript')
+            const settings = makeSettings({ debug: true })
 
             const graph = makeGraph({
                 n1: {},
@@ -403,15 +402,12 @@ describe('templates', () => {
 
     describe('templates.ioMessageReceivers', () => {
         it('should compile declared inlet callers', () => {
-            const settings = validateSettings(
-                {
-                    io: {
-                        messageReceivers: { n1: { portletIds: ['0'] } },
-                        messageSenders: {},
-                    },
+            const settings = makeSettings({
+                io: {
+                    messageReceivers: { n1: { portletIds: ['0'] } },
+                    messageSenders: {},
                 },
-                'javascript'
-            )
+            })
 
             const graph = makeGraph({
                 n1: {

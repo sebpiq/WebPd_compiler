@@ -34,6 +34,7 @@ import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../compile/render'
 import { generateVariableNamesGlobs } from '../../compile/precompile/variable-names-index'
+import { makeSettings } from '../../compile/test-helpers'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {
@@ -57,8 +58,10 @@ describe('core-bindings', () => {
 
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => render(macros, Sequence([
         core.codeGenerator({
-            target: 'assemblyscript',
-            audioSettings: { bitDepth, channelCount: { in: 2, out: 2 } },
+            settings: makeSettings({
+                target: 'assemblyscript',
+                audio: { bitDepth, channelCount: { in: 2, out: 2 } },
+            }),
             globs: generateVariableNamesGlobs(),
         }),
         core.exports.map(({ name }) => `export { ${name} }`)

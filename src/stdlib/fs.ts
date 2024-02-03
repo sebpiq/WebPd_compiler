@@ -18,9 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    GlobalCodeGeneratorWithSettings,
-} from '../compile/types'
+import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 import { bufCore, bufPushPull } from './buf'
 import { msg } from './msg'
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
@@ -30,7 +28,7 @@ export const FS_OPERATION_SUCCESS = 0
 export const FS_OPERATION_FAILURE = 1
 
 export const fsCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ target }) => {
+    codeGenerator: ({ settings: { target } }) => {
         const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`
@@ -41,6 +39,7 @@ export const fsCore: GlobalCodeGeneratorWithSettings = {
                 type fs_Url = string
             `)
         }
+        // prettier-ignore
         return Sequence([
             ...content,
             ConstVar('Int', 'FS_OPERATION_SUCCESS', FS_OPERATION_SUCCESS.toString()),
@@ -112,6 +111,7 @@ export const fsCore: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
+    // prettier-ignore
     codeGenerator: () => Sequence([
         Func('fs_readSoundFile', [
             Var('fs_Url', 'url'),
@@ -152,7 +152,7 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
                 Var('fs_Url', 'url'),
                 Var('Message', 'info'),
             ],
-            'void',
+            'void'
         )``,
     ],
 
@@ -160,6 +160,7 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
+    // prettier-ignore
     codeGenerator: () => Sequence([
         Func('fs_writeSoundFile', [
             Var('FloatArray[]', 'sound'),
@@ -201,7 +202,7 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
                 Var('fs_Url', 'url'),
                 Var('Message', 'info'),
             ],
-            'void',
+            'void'
         )``,
     ],
 
@@ -209,6 +210,7 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
+    // prettier-ignore
     codeGenerator: () => Sequence([
         ConstVar(
             'Map<fs_OperationId, Array<buf_SoundBuffer>>',
@@ -258,11 +260,8 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
     imports: [
         Func(
             'i_fs_closeSoundStream',
-            [
-                Var('fs_OperationId', 'id'),
-                Var('fs_OperationStatus', 'status'),
-            ],
-            'void',
+            [Var('fs_OperationId', 'id'), Var('fs_OperationStatus', 'status')],
+            'void'
         )``,
     ],
 
@@ -270,6 +269,7 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
+    // prettier-ignore
     codeGenerator: () => Sequence([
         Func('fs_openSoundReadStream', [
             Var('fs_Url', 'url'),
@@ -314,7 +314,7 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
                 Var('fs_Url', 'url'),
                 Var('Message', 'info'),
             ],
-            'void',
+            'void'
         )``,
     ],
 
@@ -322,6 +322,7 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
 }
 
 export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
+    // prettier-ignore
     codeGenerator: () => Sequence([
         Func('fs_openSoundWriteStream', [
                 Var('fs_Url', 'url'),
@@ -354,15 +355,12 @@ export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
                 Var('fs_Url', 'url'),
                 Var('Message', 'info'),
             ],
-            'void',
+            'void'
         )``,
         Func(
             'i_fs_sendSoundStreamData',
-            [
-                Var('fs_OperationId', 'id'),
-                Var('FloatArray[]', 'block'),
-            ],
-            'void',
+            [Var('fs_OperationId', 'id'), Var('FloatArray[]', 'block')],
+            'void'
         )``,
     ],
 

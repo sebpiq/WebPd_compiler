@@ -33,7 +33,7 @@ import {
     precompileState,
     precompileCaching,
 } from './nodes'
-import { makePrecompilation } from './test-helpers'
+import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.nodes', () => {
     describe('precompileSignalOutlet', () => {
@@ -72,14 +72,12 @@ describe('precompile.nodes', () => {
                 'n1_OUTS_0'
             )
             assert.strictEqual(
-                precompilation.output.nodes.n1.generationContext.signalOuts
-                    .$0,
+                precompilation.output.nodes.n1.generationContext.signalOuts.$0,
                 'n1_OUTS_0'
             )
             // Assigns n1's out to n2's in in generation context
             assert.strictEqual(
-                precompilation.output.nodes.n2.generationContext.signalIns
-                    .$0,
+                precompilation.output.nodes.n2.generationContext.signalIns.$0,
                 'n1_OUTS_0'
             )
         })
@@ -103,8 +101,7 @@ describe('precompile.nodes', () => {
 
             // Substitute with empty signal in generation context
             assert.strictEqual(
-                precompilation.output.nodes.n1.generationContext.signalIns
-                    .$0,
+                precompilation.output.nodes.n1.generationContext.signalIns.$0,
                 precompilation.output.variableNamesIndex.globs.nullSignal
             )
         })
@@ -149,7 +146,8 @@ describe('precompile.nodes', () => {
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n1.messageSenders.$0,
+                precompilation.output.variableNamesIndex.nodes.n1.messageSenders
+                    .$0,
                 'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
@@ -162,8 +160,8 @@ describe('precompile.nodes', () => {
             )
             // Add the sender name in generation context
             assert.strictEqual(
-                precompilation.output.nodes.n1.generationContext
-                    .messageSenders.$0,
+                precompilation.output.nodes.n1.generationContext.messageSenders
+                    .$0,
                 'n1_SNDS_0'
             )
         })
@@ -197,13 +195,15 @@ describe('precompile.nodes', () => {
 
             precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0 =
                 'n2_RCVS_0'
-            precompilation.output.variableNamesIndex.coldDspGroups['0'] = 'DSP_0'
+            precompilation.output.variableNamesIndex.coldDspGroups['0'] =
+                'DSP_0'
 
             precompileMessageOutlet(precompilation, graph.n1, '0')
 
             // Creates a variable name for the message sender
             assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n1.messageSenders.$0,
+                precompilation.output.variableNamesIndex.nodes.n1.messageSenders
+                    .$0,
                 'n1_SNDS_0'
             )
             // Add precompilation info for the message sender
@@ -216,8 +216,8 @@ describe('precompile.nodes', () => {
             )
             // Add the sender name in generation context
             assert.strictEqual(
-                precompilation.output.nodes.n1.generationContext
-                    .messageSenders.$0,
+                precompilation.output.nodes.n1.generationContext.messageSenders
+                    .$0,
                 'n1_SNDS_0'
             )
         })
@@ -240,9 +240,10 @@ describe('precompile.nodes', () => {
 
             // Substitute with null function in generation context
             assert.strictEqual(
-                precompilation.output.nodes.n1.generationContext
-                    .messageSenders.$0,
-                precompilation.output.variableNamesIndex.globs.nullMessageReceiver
+                precompilation.output.nodes.n1.generationContext.messageSenders
+                    .$0,
+                precompilation.output.variableNamesIndex.globs
+                    .nullMessageReceiver
             )
         })
 
@@ -274,8 +275,8 @@ describe('precompile.nodes', () => {
 
             // Substitute with receiver name in generation context
             assert.strictEqual(
-                precompilation.output.nodes.n1.generationContext
-                    .messageSenders.$0,
+                precompilation.output.nodes.n1.generationContext.messageSenders
+                    .$0,
                 'n2_RCVS_0'
             )
         })
@@ -309,8 +310,8 @@ describe('precompile.nodes', () => {
 
             // Substitute with receiver name in generation context
             assert.strictEqual(
-                precompilation.output.nodes.n1.generationContext
-                    .messageSenders.$0,
+                precompilation.output.nodes.n1.generationContext.messageSenders
+                    .$0,
                 'ioSnd_n1_0'
             )
         })
@@ -366,15 +367,18 @@ describe('precompile.nodes', () => {
 
             // Creates a variable names for message receivers
             assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n2.messageReceivers.$0,
+                precompilation.output.variableNamesIndex.nodes.n2
+                    .messageReceivers.$0,
                 'n2_RCVS_0'
             )
             assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n3.messageReceivers.$0,
+                precompilation.output.variableNamesIndex.nodes.n3
+                    .messageReceivers.$0,
                 'n3_RCVS_0'
             )
             assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n4.messageReceivers.$0,
+                precompilation.output.variableNamesIndex.nodes.n4
+                    .messageReceivers.$0,
                 'n4_RCVS_0'
             )
 
@@ -440,7 +444,8 @@ describe('precompile.nodes', () => {
             assert.ok(
                 !(
                     '0' in
-                    precompilation.output.variableNamesIndex.nodes.n1.messageReceivers
+                    precompilation.output.variableNamesIndex.nodes.n1
+                        .messageReceivers
                 )
             )
             assert.ok(
@@ -450,9 +455,7 @@ describe('precompile.nodes', () => {
                         .messageReceivers
                 )
             )
-            assert.ok(
-                !('0' in precompilation.output.nodes.n1.messageReceivers)
-            )
+            assert.ok(!('0' in precompilation.output.nodes.n1.messageReceivers))
         })
     })
 
@@ -626,20 +629,14 @@ describe('precompile.nodes', () => {
 
             precompileCaching(precompilation, graph.n1!)
 
-            assert.deepStrictEqual(
-                precompilation.output.nodes.n1.caching,
-                {}
-            )
+            assert.deepStrictEqual(precompilation.output.nodes.n1.caching, {})
 
             precompileCaching(precompilation, graph.n2!)
 
-            assert.deepStrictEqual(
-                precompilation.output.nodes.n2.caching,
-                {
-                    '0': ast`// caching inlet 0`,
-                    '1': ast`// caching inlet 1`,
-                }
-            )
+            assert.deepStrictEqual(precompilation.output.nodes.n2.caching, {
+                '0': ast`// caching inlet 0`,
+                '1': ast`// caching inlet 1`,
+            })
         })
     })
 
@@ -667,7 +664,8 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompilation.output.variableNamesIndex.nodeImplementations.type1.stateClass = 'State_type1'
+            precompilation.output.variableNamesIndex.nodeImplementations.type1.stateClass =
+                'State_type1'
 
             precompileState(precompilation, graph.n1)
 
@@ -778,7 +776,10 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 type1: {
-                    inlineLoop: () => ast`a + b`,
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: () => ast`a + b`,
                 },
             }
 
@@ -787,7 +788,8 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompilation.output.variableNamesIndex.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
+            precompilation.output.variableNamesIndex.nodes.n1.signalOuts.$0 =
+                'n1_OUTS_0'
 
             precompileLoop(precompilation, graph.n1)
 
@@ -797,7 +799,7 @@ describe('precompile.nodes', () => {
             )
         })
 
-        it('should throw an error if not loop nor inlineLoop', () => {
+        it('should throw an error if no loop', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -892,14 +894,23 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlinableType0: {
-                    inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlinableType1: {
-                    inlineLoop: ({ node: { args }, ins }) =>
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 inlinableType2: {
-                    inlineLoop: ({ node: { args }, ins }) =>
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
                 nonInlinableType: {},
@@ -916,8 +927,7 @@ describe('precompile.nodes', () => {
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n5.generationContext.signalIns
-                    .$0,
+                precompilation.output.nodes.n5.generationContext.signalIns.$0,
                 `(N4 * (N2 + 1) - N4 * ((N1 + 1) * N3))`
             )
         })
@@ -992,10 +1002,17 @@ describe('precompile.nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 messageType: {},
                 inlinableType0: {
-                    inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args } }) => 
+                        ast`${args.value} + 1`,
                 },
                 inlinableType1: {
-                    inlineLoop: ({ node: { args }, ins }) =>
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 nonInlinableType: {},
@@ -1012,8 +1029,7 @@ describe('precompile.nodes', () => {
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n4.generationContext.signalIns
-                    .$0,
+                precompilation.output.nodes.n4.generationContext.signalIns.$0,
                 '(((N1 + 1) * N2) * N3)'
             )
         })
@@ -1076,14 +1092,23 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlinableType0: {
-                    inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlinableType1: {
-                    inlineLoop: ({ node: { args }, ins }) =>
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 inlinableType2: {
-                    inlineLoop: ({ node: { args }, ins }) =>
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
                 nonInlinableType: {},
@@ -1103,8 +1128,7 @@ describe('precompile.nodes', () => {
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n4.generationContext.signalIns
-                    .$0,
+                precompilation.output.nodes.n4.generationContext.signalIns.$0,
                 '((N2 * (N1 + 1) - N2 * BLA) * N3)'
             )
         })
@@ -1156,7 +1180,10 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlinableType1: {
-                    inlineLoop: ({ node: { args }, ins }) =>
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 signalType: {},
@@ -1177,8 +1204,7 @@ describe('precompile.nodes', () => {
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n3.generationContext.signalIns
-                    .$0,
+                precompilation.output.nodes.n3.generationContext.signalIns.$0,
                 '((nonInline1_OUTS_0 * N1) * N2)'
             )
         })

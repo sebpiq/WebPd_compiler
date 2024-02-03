@@ -22,7 +22,8 @@ import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 
 export const msg: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ target }) => {
+    codeGenerator: ({ settings: { target } }) => {
+        // prettier-ignore
         const declareFuncs = {
             msg_create: Func('msg_create', [Var('MessageTemplate', 'template')], 'Message'),
             msg_writeStringToken: Func('msg_writeStringToken', [
@@ -73,6 +74,7 @@ export const msg: GlobalCodeGeneratorWithSettings = {
             ], 'string')
         }
         if (target === 'assemblyscript') {
+            // prettier-ignore
             return Sequence([
                 `
                 type MessageFloatToken = Float
@@ -318,6 +320,7 @@ export const msg: GlobalCodeGeneratorWithSettings = {
                 `,
             ])
         } else if (target === 'javascript') {
+            // prettier-ignore
             return Sequence([
                 ConstVar('string', 'MSG_FLOAT_TOKEN', '"number"'),
                 ConstVar('string', 'MSG_STRING_TOKEN', '"string"'),

@@ -4,7 +4,7 @@ import { makeGraph } from '../../dsp-graph/test-helpers'
 import { NodeImplementations } from '../types'
 import { precompileCore, precompileStateClass } from './node-implementations'
 import { AstClass, AstSequence } from '../../ast/types'
-import { makePrecompilation } from './test-helpers'
+import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.node-implementations', () => {
     describe('precompileStateClass', () => {

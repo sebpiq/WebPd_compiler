@@ -74,16 +74,11 @@ export interface CompilationSettings {
     debug: boolean
 }
 
-export interface GlobalCodeGeneratorContext {
-    target: CompilerTarget
-    audioSettings: AudioSettings
-    globs: VariableNamesIndex['globs']
-}
-
 /** Simplest form of generator for global code */
-export type GlobalCodeGenerator = (
-    context: GlobalCodeGeneratorContext
-) => AstElement
+export type GlobalCodeGenerator = (context: {
+    globs: VariableNamesIndex['globs']
+    settings: CompilationSettings
+}) => AstElement
 
 export interface GlobalCodeDefinitionExport {
     name: VariableName
@@ -113,6 +108,8 @@ export interface NodeImplementation<NodeArgsType = any> {
          * time step of the dsp.
          */
         isPureFunction?: true
+
+        isLoopInline?: true
 
         alphaName?: string
     }
@@ -155,22 +152,6 @@ export interface NodeImplementation<NodeArgsType = any> {
     }) => AstSequence
 
     /**
-     * Generates the code that will be ran each iteration of the loop for that node instance.
-     * This should only generate an expression without side effects : no variable declaration,
-     * no variable assignment, ... Therefore, this can only be used if the node has a unique
-     * signal outlet.
-     *
-     * @see loop for more complexe loop code generation.
-     */
-    inlineLoop?: (context: {
-        globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['generationContext']['state']
-        ins: PrecompiledNodeCode['generationContext']['signalIns']
-        node: DspGraph.Node<NodeArgsType>
-        settings: CompilationSettings
-    }) => AstSequence
-
-    /**
      * Generate code for message receivers for a given node instance.
      */
     messageReceivers?: (context: {
@@ -198,5 +179,5 @@ export interface NodeImplementation<NodeArgsType = any> {
 }
 
 export type NodeImplementations = {
-    [nodeType: string]: NodeImplementation<any>
+    [nodeType: string]: NodeImplementation
 }

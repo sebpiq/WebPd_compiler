@@ -20,7 +20,6 @@
 
 import {
     AudioSettings,
-    UserCompilationSettings,
     CompilerTarget,
     GlobalCodeDefinition,
     GlobalCodeDefinitionExport,
@@ -46,7 +45,6 @@ import {
     createBindings as createJavaScriptEngineBindings,
 } from './engine-javascript/run'
 import { createModule } from './run/run-helpers'
-import { initializePrecompiledCode } from './compile/precompile'
 import render from './compile/render'
 import {
     collectAndDedupeExports,
@@ -55,6 +53,7 @@ import {
 } from './compile/precompile/dependencies'
 import { validateSettings } from './compile'
 import { generateVariableNamesGlobs } from './compile/precompile/variable-names-index'
+import { makeSettings } from './compile/test-helpers'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
@@ -178,12 +177,13 @@ export const runTestSuite = (
     beforeAll(async () => {
         for (let testParameters of TEST_PARAMETERS) {
             const { target, bitDepth } = testParameters
-            const settings = validateSettings({
+            const settings = makeSettings({
                 audio: {
                     bitDepth,
                     channelCount: { in: 2, out: 2 },
                 },
-            }, target)
+                target,
+            })
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
                 tests.map(({ testFunction }, i) => {
                     const astTestFunc = testFunction(target)

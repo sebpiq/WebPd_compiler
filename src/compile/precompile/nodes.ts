@@ -311,27 +311,25 @@ export const precompileLoop = (
         state,
     } = precompiledNode.generationContext
     const { nodeImplementation } = precompiledNode
-    const baseContext = {
+    const context = {
         globs,
         node,
         state,
         ins,
+        outs,
+        snds,
         settings,
     }
 
     // Nodes that come here might have an inlinable loop, but still can't
     // be inlined because, for example, they have 2 sinks.
-    if (nodeImplementation.inlineLoop) {
+    if (nodeImplementation.flags && nodeImplementation.flags.isLoopInline) {
         const outletId = Object.keys(node.outlets)[0]
         precompiledNode.loop = ast`${
             variableNamesIndex.nodes[node.id].signalOuts[outletId]
-        } = ${nodeImplementation.inlineLoop(baseContext)}`
+        } = ${nodeImplementation.loop(context)}`
     } else if (nodeImplementation.loop) {
-        precompiledNode.loop = nodeImplementation.loop({
-            ...baseContext,
-            outs,
-            snds,
-        })
+        precompiledNode.loop = nodeImplementation.loop(context)
     } else {
         throw new Error(`No loop to generate for node ${node.type}:${node.id}`)
     }
@@ -364,7 +362,12 @@ export const precompileInlineLoop = (
     const inlinedNodes = dspGroup.traversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
             const precompiledNode = output.nodes[nodeId]
-            const { signalIns: ins, state } = precompiledNode.generationContext
+            const {
+                signalIns: ins,
+                signalOuts: outs,
+                messageSenders: snds,
+                state,
+            } = precompiledNode.generationContext
             const { nodeImplementation } = precompiledNode
             const node = getters.getNode(graph, nodeId)
             const inlinedInputs: InlinedInputs = mapArray(
@@ -401,13 +404,15 @@ export const precompileInlineLoop = (
             // to be fixed in latest version. Remove when upgrading.
             // Bugs when a single variable name is surrounded with brackets : e.g. `(node1_OUTS_0)`
             // causes compilation error.
-            const inlined = nodeImplementation.inlineLoop({
+            const inlined = nodeImplementation.loop({
                 globs,
                 state,
                 ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
                     ...ins,
                     ...inlinedInputs,
                 }),
+                outs,
+                snds,
                 node,
                 settings,
             })

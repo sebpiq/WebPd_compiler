@@ -29,7 +29,7 @@ import {
 } from './compile-helpers'
 import { NodeImplementation, NodeImplementations } from './types'
 import { Sequence } from '../ast/declare'
-import { validateSettings } from '.'
+import { makeSettings } from './test-helpers'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
@@ -47,7 +47,7 @@ describe('compile-helpers', () => {
         })
 
         it('should fill-in all fields with default functions', () => {
-            const referenceImplementation: NodeImplementation<any> = {
+            const referenceImplementation: NodeImplementation = {
                 dependencies: [],
             }
             const defaultImplementation = getNodeImplementation(
@@ -120,12 +120,12 @@ describe('compile-helpers', () => {
                 },
             })
 
-            const settings = validateSettings({
+            const settings = makeSettings({
                 io: {
                     messageReceivers: {},
                     messageSenders: {},
                 },
-            }, 'javascript')
+            })
 
             const traversal = buildFullGraphTraversal(graph, settings)
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
@@ -157,14 +157,14 @@ describe('compile-helpers', () => {
                 },
             })
 
-            const settings = validateSettings({
+            const settings = makeSettings({
                 io: {
                     messageReceivers: {
                         n1: { portletIds: ['0'] },
                     },
                     messageSenders: {},
                 },
-            }, 'javascript')
+            })
 
             const traversal = buildFullGraphTraversal(graph, settings)
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [

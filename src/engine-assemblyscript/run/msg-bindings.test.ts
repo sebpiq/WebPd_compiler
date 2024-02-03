@@ -25,7 +25,7 @@ import {
     liftMessage,
     lowerMessage,
 } from './msg-bindings'
-import { AudioSettings, GlobalCodeGeneratorContext } from '../../compile/types'
+import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import { getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
@@ -36,6 +36,7 @@ import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
 import macros from '../compile/macros'
 import { generateVariableNamesGlobs } from '../../compile/precompile/variable-names-index'
+import { makeSettings } from '../../compile/test-helpers'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {
@@ -62,24 +63,29 @@ describe('msg-bindings', () => {
     }
 
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => {
-        const context: GlobalCodeGeneratorContext = {
-            target: 'assemblyscript',
-            audioSettings: {
-                bitDepth,
-                channelCount: { in: 2, out: 2 },
-            },
+        const context = {
+            settings: makeSettings({
+                target: 'assemblyscript',
+                audio: {
+                    bitDepth,
+                    channelCount: { in: 2, out: 2 },
+                },
+            }),
             globs: generateVariableNamesGlobs(),
-        }
-        return render(macros, Sequence([
-            core.codeGenerator(context),
-            sked(context),
-            msg.codeGenerator(context),
-            `export function testReadMessageData(message: Message, index: Int): Int {
+        } as const
+        return render(
+            macros,
+            Sequence([
+                core.codeGenerator(context),
+                sked(context),
+                msg.codeGenerator(context),
+                `export function testReadMessageData(message: Message, index: Int): Int {
                 return message.dataView.getInt32(index * sizeof<Int>())
             }`,
-            core.exports.map(({ name }) => `export { ${name} }`),
-            msg.exports.map(({ name }) => `export { ${name} }`),
-        ]))
+                core.exports.map(({ name }) => `export { ${name} }`),
+                msg.exports.map(({ name }) => `export { ${name} }`),
+            ])
+        )
     }
 
     describe('lowerMessage', () => {

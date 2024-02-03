@@ -1,26 +1,59 @@
-/*
- * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
- *
- * This file is part of WebPd
- * (see https://github.com/sebpiq/WebPd).
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 import assert from 'assert'
-import { AstElement, AstSequence, Code } from '../../ast/types'
-import { makePrecompilation } from '../precompile/test-helpers'
-import { RenderInput } from './types'
+import { validateSettings } from '.'
+import { buildFullGraphTraversal } from './compile-helpers'
+import { initializePrecompiledCode } from './precompile'
+import {
+    PrecompilationInput,
+    PrecompilationOperation,
+} from './precompile/types'
+import { RenderInput } from './render/types'
+import { AstSequence, AstElement, Code } from '../ast/types'
+import { CompilationSettings } from './types'
+
+export type TestingPrecompilationInput = Partial<{
+    [property in keyof PrecompilationInput]: Partial<
+        PrecompilationInput[property]
+    >
+}>
+
+export const makeSettings = (
+    settings: Partial<CompilationSettings>
+): CompilationSettings =>
+    validateSettings(settings, settings.target || 'javascript')
+
+export const makePrecompilation = (
+    testingInput: TestingPrecompilationInput
+): PrecompilationOperation => {
+    const target = (testingInput.settings || {}).target || 'javascript'
+    const settings = validateSettings(testingInput.settings || {}, target)
+    const nodeImplementations = testingInput.nodeImplementations || {
+        DUMMY: {},
+    }
+    const graph = testingInput.graph || {}
+    const input: PrecompilationInput = {
+        settings,
+        graph,
+        nodeImplementations,
+    }
+    const output = initializePrecompiledCode(
+        input,
+        buildFullGraphTraversal(graph, settings)
+    )
+    return {
+        input,
+        output,
+    }
+}
+
+export const makeRenderInput = (
+    ...args: Parameters<typeof makePrecompilation>
+): RenderInput => {
+    const precompilation = makePrecompilation(...args)
+    return {
+        precompiledCode: precompilation.output,
+        settings: precompilation.input.settings,
+    }
+}
 
 const LINE_NORMALIZE_INDENTS_RE = /\s*\n\s*/g
 const LINE_TRIM_START_RE = /^[\s\n]*/
@@ -85,13 +118,3 @@ const _normalizeCode = (code: Code) =>
         .replaceAll(LINE_NORMALIZE_INDENTS_RE, '\n')
         .replace(LINE_TRIM_START_RE, '')
         .replace(LINE_TRIM_END_RE, '')
-
-export const makeRenderInput = (
-    ...args: Parameters<typeof makePrecompilation>
-): RenderInput => {
-    const precompilation = makePrecompilation(...args)
-    return {
-        precompiledCode: precompilation.output,
-        settings: precompilation.input.settings,
-    }
-}

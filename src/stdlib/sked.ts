@@ -22,7 +22,7 @@ import { GlobalCodeGenerator } from '../compile/types'
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 import { AstSequenceContent } from '../ast/types'
 
-export const sked: GlobalCodeGenerator = ({target}) => {
+export const sked: GlobalCodeGenerator = ({ settings: { target } }) => {
     const content: Array<AstSequenceContent> = []
     if (target === 'assemblyscript') {
         content.push(`
@@ -33,6 +33,7 @@ export const sked: GlobalCodeGenerator = ({target}) => {
         `)
     }
 
+    // prettier-ignore
     return Sequence([
         ...content,
         
@@ -188,5 +189,5 @@ export const sked: GlobalCodeGenerator = ({target}) => {
         ], 'SkedId')`
             return skeduler.idCounter++
         `,
-    ]) 
+    ])
 }

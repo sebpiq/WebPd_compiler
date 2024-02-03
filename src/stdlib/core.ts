@@ -22,7 +22,8 @@ import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 import { Sequence, Func, Var } from '../ast/declare'
 
 export const core: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ target, audioSettings: { bitDepth } }) => {
+    // prettier-ignore
+    codeGenerator: ({settings: { target, audio: { bitDepth } }}) => {
         const Int = 'i32'
         const Float = bitDepth === 32 ? 'f32' : 'f64'
         const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'

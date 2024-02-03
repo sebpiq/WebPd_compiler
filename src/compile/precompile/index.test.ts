@@ -24,11 +24,11 @@ import { NodeImplementations } from '../types'
 import { ColdDspGroup, DspGroup } from './types'
 import { ast } from '../../ast/declare'
 import { AstSequence } from '../../ast/types'
-import { validateSettings } from '..'
 import { buildFullGraphTraversal } from '../compile-helpers'
+import { makeSettings } from '../test-helpers'
 
 describe('precompile', () => {
-    const SETTINGS = validateSettings({}, 'javascript')
+    const SETTINGS = makeSettings({})
 
     it('should precompile the inline loop code', () => {
         //       [  nonInline1  ]
@@ -113,14 +113,23 @@ describe('precompile', () => {
 
         const nodeImplementations: NodeImplementations = {
             inlinableType0: {
-                inlineLoop: ({ node: { args } }) => ast`${args.value} + 1`,
+                flags: {
+                    isLoopInline: true,
+                },
+                loop: ({ node: { args } }) => ast`${args.value} + 1`,
             },
             inlinableType1: {
-                inlineLoop: ({ node: { args }, ins }) =>
+                flags: {
+                    isLoopInline: true,
+                },
+                loop: ({ node: { args }, ins }) =>
                     ast`${ins.$0} * ${args.value}`,
             },
             inlinableType2: {
-                inlineLoop: ({ node: { args }, ins }) =>
+                flags: {
+                    isLoopInline: true,
+                },
+                loop: ({ node: { args }, ins }) =>
                     ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
             },
             signalType: {
@@ -209,8 +218,9 @@ describe('precompile', () => {
             inlinableAndColdType: {
                 flags: {
                     isPureFunction: true,
+                    isLoopInline: true,
                 },
-                inlineLoop: ({ ins }) => ast`1 + ${ins.$0}`,
+                loop: ({ ins }) => ast`1 + ${ins.$0}`,
             },
         }
 
@@ -288,8 +298,9 @@ describe('precompile', () => {
             coldNodeType: {
                 flags: {
                     isPureFunction: true,
+                    isLoopInline: true,
                 },
-                inlineLoop: ({ ins }) => ast`1 + ${ins.$0}`,
+                loop: ({ ins }) => ast`1 + ${ins.$0}`,
             },
         }
 

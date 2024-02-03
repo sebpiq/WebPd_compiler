@@ -28,7 +28,11 @@ import { AstElement, AstFunc, AstSequence } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { core, commonsCore, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
-import { PrecompilationOperation, PrecompiledCode, VariableNamesIndex } from './types'
+import {
+    PrecompilationOperation,
+    PrecompiledCode,
+    VariableNamesIndex,
+} from './types'
 
 export default (precompilation: PrecompilationOperation) => {
     const dependencies = flattenDependencies([
@@ -40,7 +44,7 @@ export default (precompilation: PrecompilationOperation) => {
     precompilation.output.dependencies.ast = instantiateAndDedupeDependencies(
         precompilation.input.settings,
         dependencies,
-        precompilation.output.variableNamesIndex.globs,
+        precompilation.output.variableNamesIndex.globs
     )
 
     // Collect and attach imports / exports info
@@ -58,8 +62,7 @@ export const instantiateAndDedupeDependencies = (
     globs: VariableNamesIndex['globs']
 ): AstSequence => {
     const context = {
-        target: settings.target,
-        audioSettings: settings.audio,
+        settings,
         globs,
     }
     return Sequence(

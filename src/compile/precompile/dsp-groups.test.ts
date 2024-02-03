@@ -10,7 +10,7 @@ import {
 } from './dsp-groups'
 import { DspGroup } from './types'
 import { ast } from '../../ast/declare'
-import { makePrecompilation } from './test-helpers'
+import { makePrecompilation } from '../test-helpers'
 
 describe('dsp-groups', () => {
     describe('_buildSingleFlowColdDspGroups', () => {
@@ -501,7 +501,10 @@ describe('dsp-groups', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlinableType: {
-                    inlineLoop: () => ast``,
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: () => ast``,
                 },
                 nonInlinableType: {},
             }
@@ -569,7 +572,10 @@ describe('dsp-groups', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlinableType: {
-                    inlineLoop: () => ast``,
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: () => ast``,
                 },
                 nonInlinableType: {},
             }
@@ -617,7 +623,10 @@ describe('dsp-groups', () => {
 
             const nodeImplementations: NodeImplementations = {
                 inlinableType: {
-                    inlineLoop: () => ast``,
+                    flags: {
+                        isLoopInline: true,
+                    },
+                    loop: () => ast``,
                 }
             }
 

@@ -152,7 +152,7 @@ export const attachNodeImplementationVariable = (
     variableNamesIndex: VariableNamesIndex,
     nsKey: 'stateClass',
     nodeType: DspGraph.NodeType,
-    nodeImplementation: NodeImplementation<any>
+    nodeImplementation: NodeImplementation
 ) => {
     switch (nsKey) {
         case 'stateClass':

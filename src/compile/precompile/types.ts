@@ -29,7 +29,7 @@ export type PrecompiledCode = {
     }
     nodeImplementations: {
         [nodeType: DspGraph.NodeType]: {
-            nodeImplementation: NodeImplementation<any>
+            nodeImplementation: NodeImplementation
             stateClass: AstClass | null
             core: AstElement | null
         }
@@ -47,7 +47,7 @@ export type PrecompiledCode = {
 }
 
 export interface PrecompiledNodeCode {
-    nodeImplementation: NodeImplementation<any>
+    nodeImplementation: NodeImplementation
     generationContext: {
         signalOuts: { [portletId: DspGraph.PortletId]: Code }
         messageSenders: { [portletId: DspGraph.PortletId]: Code }
