@@ -847,7 +847,7 @@ describe('Engine', () => {
                     )
                     assert.ok(engine.testOperationCleaned(operationId))
                     // Test host callback was called
-                    assert.deepStrictEqual(calledClose[0].slice(0, 2), [
+                    assert.deepStrictEqual(calledClose[0]!.slice(0, 2), [
                         operationId,
                         FS_OPERATION_SUCCESS,
                     ])
@@ -1019,7 +1019,7 @@ describe('Engine', () => {
                     )
                     assert.ok(engine.testOperationCleaned(operationId))
                     // Test host callback was called
-                    assert.deepStrictEqual(calledClose[0].slice(0, 2), [
+                    assert.deepStrictEqual(calledClose[0]!.slice(0, 2), [
                         operationId,
                         FS_OPERATION_SUCCESS,
                     ])
@@ -1234,27 +1234,27 @@ describe('Engine', () => {
                 const called21: Array<Message> = []
 
                 assert.ok(
-                    engine.io.messageSenders.someNode1.someOutlet1
+                    engine.io.messageSenders.someNode1!.someOutlet1!
                         .onMessage instanceof Function
                 )
                 assert.ok(
-                    engine.io.messageSenders.someNode1.someOutlet2
+                    engine.io.messageSenders.someNode1!.someOutlet2!
                         .onMessage instanceof Function
                 )
                 assert.ok(
-                    engine.io.messageSenders.someNode2.someOutlet1
+                    engine.io.messageSenders.someNode2!.someOutlet1!
                         .onMessage instanceof Function
                 )
 
-                engine.io.messageSenders.someNode1.someOutlet1.onMessage = (
+                engine.io.messageSenders.someNode1!.someOutlet1!.onMessage = (
                     message: Message
                 ) => called11.push(message)
 
-                engine.io.messageSenders.someNode1.someOutlet2.onMessage = (
+                engine.io.messageSenders.someNode1!.someOutlet2!.onMessage = (
                     message: Message
                 ) => called12.push(message)
 
-                engine.io.messageSenders.someNode2.someOutlet1.onMessage = (
+                engine.io.messageSenders.someNode2!.someOutlet1!.onMessage = (
                     message: Message
                 ) => called21.push(message)
 
@@ -1356,14 +1356,14 @@ describe('Engine', () => {
                 })
 
                 assert.ok(
-                    engine.io.messageReceivers.someNode1.someInlet1 instanceof
+                    engine.io.messageReceivers.someNode1!.someInlet1 instanceof
                         Function
                 )
 
                 assert.ok(!engine.testMessageReceived())
-                engine.io.messageReceivers.someNode1.someInlet1([666, 'n4t4s'])
-                engine.io.messageReceivers.someNode1.someInlet2([666, 'n4t4s'])
-                engine.io.messageReceivers.someNode2.someInlet1([666, 'n4t4s'])
+                engine.io.messageReceivers.someNode1!.someInlet1!([666, 'n4t4s'])
+                engine.io.messageReceivers.someNode1!.someInlet2!([666, 'n4t4s'])
+                engine.io.messageReceivers.someNode2!.someInlet1!([666, 'n4t4s'])
                 assert.ok(engine.testMessageReceived())
             }
         )
@@ -1422,11 +1422,11 @@ describe('Engine', () => {
                             '0': AnonFunc(
                                 [Var('Message', 'm')],
                                 'void'
-                            )`${snds['0']}(m);return`,
+                            )`${snds['0']!}(m);return`,
                             '1': AnonFunc(
                                 [Var('Message', 'm')],
                                 'void'
-                            )`${snds['1']}(m);return`,
+                            )`${snds['1']!}(m);return`,
                         }),
                     },
                 }
@@ -1444,12 +1444,12 @@ describe('Engine', () => {
 
                 const calledOutlet0: Array<Message> = []
                 const calledOutlet1: Array<Message> = []
-                engine.io.messageSenders.node2['0'].onMessage = (m) =>
+                engine.io.messageSenders.node2!['0']!.onMessage = (m) =>
                     calledOutlet0.push(m)
-                engine.io.messageSenders.node2['1'].onMessage = (m) =>
+                engine.io.messageSenders.node2!['1']!.onMessage = (m) =>
                     calledOutlet1.push(m)
 
-                engine.io.messageReceivers.node1['0']([123, 'bla', 456])
+                engine.io.messageReceivers.node1!['0']!([123, 'bla', 456])
                 assert.deepStrictEqual(calledOutlet0, [[123, 'bla', 456]])
                 assert.deepStrictEqual(calledOutlet1, [[123, 'bla', 456]])
             }
@@ -1495,7 +1495,7 @@ describe('Engine', () => {
                 })
 
                 await expect(() =>
-                    engine.io.messageReceivers.someNode.someInlet([123, 'bla'])
+                    engine.io.messageReceivers.someNode!.someInlet!([123, 'bla'])
                 ).toThrow(
                     /Node "someNode", inlet "someInlet", unsupported message : \[123(.0)*, "bla"\]( at [0-9]+:[0-9]+)?/
                 )

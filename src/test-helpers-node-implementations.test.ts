@@ -38,7 +38,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     dsp: ({ ins, outs }) =>
-                        ast`${outs.$0} = ${ins.$0} + 0.1`,
+                        ast`${outs.$0!} = ${ins.$0!} + 0.1`,
                 }
 
                 const node: DspGraph.Node = {
@@ -69,7 +69,7 @@ describe('test-helpers-node-implementations', () => {
                         '0': AnonFunc([
                             Var('Message', 'm')
                         ], 'void')`
-                            ${snds.$0}(msg_floats([ msg_readFloatToken(m, 0) + 0.1 ]))
+                            ${snds.$0!}(msg_floats([ msg_readFloatToken(m, 0) + 0.1 ]))
                             return
                         `,
                     }),
@@ -103,7 +103,7 @@ describe('test-helpers-node-implementations', () => {
                         '0': AnonFunc([
                             Var('Message', 'm')
                         ], 'void')`
-                        ${snds.$0}(msg_floats([toFloat(${globs.frame})]))
+                        ${snds.$0!}(msg_floats([toFloat(${globs.frame})]))
                         return
                     `,
                     }),

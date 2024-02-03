@@ -89,7 +89,7 @@ const _listSourceOrSinkNodes = (
     portletGetter: typeof getInlet | typeof getOutlet,
     graph: DspGraph.Graph,
     node: DspGraph.Node,
-    portletType: DspGraph.PortletType
+    portletType?: DspGraph.PortletType
 ): Array<DspGraph.Node> =>
     _listSourcesOrSinks(sourcesOrSinks, portletGetter, node, portletType)
         .reduce<Array<DspGraph.NodeId>>(

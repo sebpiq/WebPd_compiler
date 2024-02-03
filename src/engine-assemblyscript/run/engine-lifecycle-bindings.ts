@@ -101,7 +101,7 @@ export const createEngineLifecycleBindings = (
             value: (input: Array<FloatArray>, output: Array<FloatArray>) => {
                 for (let channel = 0; channel < input.length; channel++) {
                     engineData.wasmInput.set(
-                        input[channel],
+                        input[channel]!,
                         channel * engineData.blockSize
                     )
                 }
@@ -109,7 +109,7 @@ export const createEngineLifecycleBindings = (
                 rawModule.dspLoop()
                 updateWasmInOuts(rawModule, engineData)
                 for (let channel = 0; channel < output.length; channel++) {
-                    output[channel].set(
+                    output[channel]!.set(
                         engineData.wasmOutput.subarray(
                             engineData.blockSize * channel,
                             engineData.blockSize * (channel + 1)
@@ -135,7 +135,7 @@ export const createIoMessageReceiversBindings = (
                     const messagePointer = lowerMessage(rawModule, message)
                     ;(rawModule as any)[
                         engineData.metadata.compilation.variableNamesIndex.io
-                            .messageReceivers[nodeId][inletId]
+                            .messageReceivers[nodeId]![inletId]!
                     ](messagePointer)
                 },
             ]),
@@ -168,15 +168,15 @@ export const ioMsgSendersImports = (
         ([nodeId, spec]) => {
             spec.portletIds.forEach((outletId) => {
                 const listenerName =
-                    variableNamesIndex.io.messageSenders[nodeId][outletId]
+                    variableNamesIndex.io.messageSenders[nodeId]![outletId]!
                 wasmImports[listenerName] = (messagePointer) => {
                     const message = liftMessage(
-                        forwardReferences.rawModule,
+                        forwardReferences.rawModule!,
                         messagePointer
                     )
-                    forwardReferences.modules.io.messageSenders[nodeId][
+                    forwardReferences.modules.io!.messageSenders[nodeId]![
                         outletId
-                    ].onMessage(message)
+                    ]!.onMessage(message)
                 }
             })
         }

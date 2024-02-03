@@ -152,10 +152,10 @@ export const buildInlinableDspGroups = (
                 // because it needs to declare output variables.
                 !parentDspGroup.outNodesIds.includes(node.id) &&
                 // If `node`'s sink is itself inlinable, then `node` is not the out node.
-                (!_isNodeDspInlinable(precompilation, sinkNodes[0]) ||
+                (!_isNodeDspInlinable(precompilation, sinkNodes[0]!) ||
                     // However, if `node`'s sink is also is the out node of the parent group,
                     // then it can't actually be inlined, so `node` is the out node.
-                    parentDspGroup.outNodesIds.includes(sinkNodes[0].id))
+                    parentDspGroup.outNodesIds.includes(sinkNodes[0]!.id))
             ) {
                 return [
                     ...dspGroups,
@@ -207,9 +207,9 @@ const _isNodeDspCold = (
     { output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
-    const nodeImplementation = output.nodes[node.id].nodeImplementation
+    const nodeImplementation = output.nodes[node.id]!.nodeImplementation
     return nodeImplementation.flags
-        ? nodeImplementation.flags.isPureFunction
+        ? !!nodeImplementation.flags.isPureFunction
         : false
 }
 
@@ -234,8 +234,8 @@ export const _isNodeDspInlinable = (
         }, [])
 
     return (
-        output.nodes[node.id].nodeImplementation.flags &&
-        output.nodes[node.id].nodeImplementation.flags.isDspInline &&
+        !!output.nodes[node.id]!.nodeImplementation.flags &&
+        !!output.nodes[node.id]!.nodeImplementation.flags!.isDspInline &&
         sinks.length === 1
     )
 }

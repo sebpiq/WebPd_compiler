@@ -18,36 +18,34 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { AstElement, Code } from '../../ast/types'
-import { CodeMacros } from "./types"
+import { CodeMacros } from './types'
 
 const render = (macros: CodeMacros, element: AstElement | string): Code => {
     if (typeof element === 'string') {
         return element
     } else if (element.astType === 'Var') {
-        return macros.Var(
-            element,
-            element.value ? render(macros, element.value) : undefined
-        )
+        return element.value
+            ? macros.Var(element, render(macros, element.value))
+            : macros.Var(element)
     } else if (element.astType === 'ConstVar') {
-        return macros.ConstVar(
-            element,
-            element.value ? render(macros, element.value) : undefined
-        )
+        if (!element.value) {
+            throw new Error(
+                `ConstVar ${element.name} must have an initial value`
+            )
+        }
+        return macros.ConstVar(element, render(macros, element.value))
     } else if (element.astType === 'Func') {
         return macros.Func(
-            element, 
-            element.args.map(
-                arg => arg.value ? render(macros, arg.value): null),
-            render(
-                macros, 
-                element.body
-            )
+            element,
+            element.args.map((arg) =>
+                arg.value ? render(macros, arg.value) : null
+            ),
+            render(macros, element.body)
         )
     } else if (element.astType === 'Class') {
         return macros.Class(element)
     } else if (element.astType === 'Sequence') {
         return element.content.map((child) => render(macros, child)).join('')
-    
     } else {
         throw new Error(`Unexpected element in AST ${element}`)
     }

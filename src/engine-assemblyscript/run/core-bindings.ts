@@ -55,11 +55,13 @@ export interface CoreRawModule {
 
 /** @copyright Assemblyscript ESM bindings */
 export const liftString = (wasmExports: CoreRawModule, pointer: number) => {
-    if (!pointer) return null
+    if (!pointer) {
+        throw new Error('Cannot lift a null pointer')
+    }
     pointer = pointer >>> 0
     const end =
         (pointer +
-            new Uint32Array(wasmExports.memory.buffer)[(pointer - 4) >>> 2]) >>>
+            new Uint32Array(wasmExports.memory.buffer)[(pointer - 4) >>> 2]!) >>>
         1
     const memoryU16 = new Uint16Array(wasmExports.memory.buffer)
     let start = pointer >>> 1
@@ -74,7 +76,9 @@ export const liftString = (wasmExports: CoreRawModule, pointer: number) => {
 
 /** @copyright Assemblyscript ESM bindings */
 export const lowerString = (wasmExports: CoreRawModule, value: string) => {
-    if (value == null) return 0
+    if (value == null) {
+        throw new Error('Cannot lower a null string')
+    }
     const length = value.length,
         pointer = wasmExports.__new(length << 1, 1) >>> 0,
         memoryU16 = new Uint16Array(wasmExports.memory.buffer)
@@ -85,7 +89,9 @@ export const lowerString = (wasmExports: CoreRawModule, value: string) => {
 
 /** @copyright Assemblyscript ESM bindings */
 export const lowerBuffer = (wasmExports: CoreRawModule, value: ArrayBuffer) => {
-    if (value == null) return 0
+    if (value == null) {
+        throw new Error('Cannot lower a null buffer')
+    }
     const pointer = wasmExports.__new(value.byteLength, 0) >>> 0
     new Uint8Array(wasmExports.memory.buffer).set(
         new Uint8Array(value),
@@ -107,12 +113,14 @@ export const readTypedArray = <
     constructor: _TypedArrayConstructor,
     pointer: FloatArrayPointer
 ) => {
-    if (!pointer) return null
+    if (!pointer) {
+        throw new Error('Cannot lift a null pointer')
+    }
     const memoryU32 = new Uint32Array(wasmExports.memory.buffer)
     return new constructor(
         wasmExports.memory.buffer,
         memoryU32[(pointer + 4) >>> 2],
-        memoryU32[(pointer + 8) >>> 2] / constructor.BYTES_PER_ELEMENT
+        memoryU32[(pointer + 8) >>> 2]! / constructor.BYTES_PER_ELEMENT
     ) as InstanceType<_TypedArrayConstructor>
 }
 
@@ -162,7 +170,7 @@ export const readListOfFloatArrays = (
             listOfArraysPointer,
             i
         )
-        arrays.push(readTypedArray(wasmExports, arrayType, arrayPointer))
+        arrays.push(readTypedArray(wasmExports, arrayType, arrayPointer)!)
     }
     return arrays
 }

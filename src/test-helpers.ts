@@ -135,13 +135,13 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
     return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
-        javascript: async (rawModule: RawJavaScriptEngine) => {
+        javascript: async (rawModule) => {
             return createModule(rawModule, {
                 ...mapArray(exports, ({ name }) => [
                     String(name),
                     { type: 'raw' },
                 ]),
-                ...createJavaScriptEngineBindings(rawModule),
+                ...createJavaScriptEngineBindings(rawModule as RawJavaScriptEngine),
             })
         },
         assemblyscript: async (buffer) => {
@@ -185,15 +185,16 @@ export const runTestSuite = (
                 target,
             })
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
-                tests.map(({ testFunction }, i) => {
+                tests.map<GlobalCodeGeneratorWithSettings>(({ testFunction }, i) => {
                     const astTestFunc = testFunction(target)
-                    return {
+                    const codeGeneratorWithSettings: GlobalCodeGeneratorWithSettings = {
                         codeGenerator: () => ({
                             ...astTestFunc,
-                            name: testFunctionNames[i],
+                            name: testFunctionNames[i]!,
                         }),
-                        exports: [{ name: testFunctionNames[i] }],
+                        exports: [{ name: testFunctionNames[i]! }],
                     }
+                    return codeGeneratorWithSettings
                 })
 
             let sequence = Sequence([
@@ -313,7 +314,7 @@ export const runTestSuite = (
 
     tests.forEach(({ description }, i) => {
         it.each(TEST_PARAMETERS)(description, (testParameters) => {
-            ;(_findTestModule(testParameters) as any)[testFunctionNames[i]]()
+            ;(_findTestModule(testParameters) as any)[testFunctionNames[i]!]()
         })
     })
 }

@@ -55,9 +55,9 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
-            renderInput.precompiledCode.nodes.n1.signalOuts.$0 = 'n1_OUTS_0'
-            renderInput.precompiledCode.nodes.n1.signalOuts.$1 = 'n1_OUTS_1'
-            renderInput.precompiledCode.nodes.n2.signalOuts.$0 = 'n2_OUTS_0'
+            renderInput.precompiledCode.nodes.n1!.signalOuts.$0 = 'n1_OUTS_0'
+            renderInput.precompiledCode.nodes.n1!.signalOuts.$1 = 'n1_OUTS_1'
+            renderInput.precompiledCode.nodes.n2!.signalOuts.$0 = 'n2_OUTS_0'
 
             const sequence = templates.portletsDeclarations(renderInput)
 
@@ -82,15 +82,15 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
-            renderInput.precompiledCode.nodes.n1.messageReceivers.$0 = Func(
+            renderInput.precompiledCode.nodes.n1!.messageReceivers.$0 = Func(
                 'n1_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 0`
-            renderInput.precompiledCode.nodes.n1.messageReceivers.$1 = Func(
+            renderInput.precompiledCode.nodes.n1!.messageReceivers.$1 = Func(
                 'n1_RCVS_1',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 1`
-            renderInput.precompiledCode.nodes.n2.messageReceivers.$0 = Func(
+            renderInput.precompiledCode.nodes.n2!.messageReceivers.$0 = Func(
                 'n2_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n2] message receiver 0`
@@ -150,7 +150,7 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1']
-            renderInput.precompiledCode.nodes.n1.messageReceivers.$0 = Func(
+            renderInput.precompiledCode.nodes.n1!.messageReceivers.$0 = Func(
                 'n1_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 0`
@@ -196,15 +196,15 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
-            renderInput.precompiledCode.nodes.n1.messageSenders.$0 = {
+            renderInput.precompiledCode.nodes.n1!.messageSenders.$0 = {
                 messageSenderName: 'n1_SNDS_0',
                 functionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
             }
-            renderInput.precompiledCode.nodes.n1.messageSenders.$1 = {
+            renderInput.precompiledCode.nodes.n1!.messageSenders.$1 = {
                 messageSenderName: 'n1_SNDS_1',
                 functionNames: ['outlerListener_n1_0'],
             }
-            renderInput.precompiledCode.nodes.n2.messageSenders.$0 = {
+            renderInput.precompiledCode.nodes.n2!.messageSenders.$0 = {
                 messageSenderName: 'n2_SNDS_0',
                 functionNames: ['n3_RCVS_0'],
             }
@@ -256,21 +256,21 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
-            renderInput.precompiledCode.nodes.n1.state = {
+            renderInput.precompiledCode.nodes.n1!.state = {
                 className: 'State',
                 initialization: {
                     a: Sequence(['111']),
                     b: Sequence([AnonFunc([Var('Float', 'x')])`return x * 2`]),
                 },
             }
-            renderInput.precompiledCode.nodes.n2.state = {
+            renderInput.precompiledCode.nodes.n2!.state = {
                 className: 'State',
                 initialization: {
                     a: Sequence(['333']),
                     b: Sequence(['444']),
                 },
             }
-            renderInput.precompiledCode.nodes.n3.state = null
+            renderInput.precompiledCode.nodes.n3!.state = null
 
             const sequence = templates.nodeStateInstances(renderInput)
 
@@ -385,11 +385,11 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
-            renderInput.precompiledCode.nodes.n1.initialization = ast`
+            renderInput.precompiledCode.nodes.n1!.initialization = ast`
                 ${Var('Float', 'n1', '0')}
                 console.log(n1)
             `
-            renderInput.precompiledCode.nodes.n2.initialization = ast``
+            renderInput.precompiledCode.nodes.n2!.initialization = ast``
 
             const sequence = templates.nodeInitializations(renderInput)
 
@@ -435,7 +435,7 @@ describe('templates', () => {
                 nodeImplementations,
             })
 
-            renderInput.precompiledCode.variableNamesIndex.nodes.n1.messageReceivers.$0 =
+            renderInput.precompiledCode.variableNamesIndex.nodes.n1!.messageReceivers.$0 =
                 'n1_RCVS_0'
             renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1 =
                 createNamespace('test.n1', { '0': 'ioRcv_n1_0' })
@@ -483,9 +483,9 @@ describe('templates', () => {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             }
-            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.dsp.loop = ast`// n2`
-            renderInput.precompiledCode.nodes.n3.dsp.loop = ast`// n3`
+            renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2!.dsp.loop = ast`// n2`
+            renderInput.precompiledCode.nodes.n3!.dsp.loop = ast`// n3`
 
             const sequence = templates.dspLoop(renderInput)
 
@@ -513,8 +513,8 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.dsp.inlets.$0 = ast`// inlet dsp 0`
-            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n1!.dsp.inlets.$0 = ast`// inlet dsp 0`
+            renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
             renderInput.precompiledCode.graph.hotDspGroup = {
                 traversal: ['n1'],
                 outNodesIds: ['n1'],
@@ -585,9 +585,9 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.dsp.loop = ast`// n2`
-            renderInput.precompiledCode.nodes.n3.dsp.loop = ast`// n3`
+            renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2!.dsp.loop = ast`// n2`
+            renderInput.precompiledCode.nodes.n3!.dsp.loop = ast`// n3`
 
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
@@ -660,8 +660,8 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.dsp.inlets.$0 = ast`// inlet dsp n2`
+            renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2!.dsp.inlets.$0 = ast`// inlet dsp n2`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1'],
@@ -713,7 +713,7 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1'],

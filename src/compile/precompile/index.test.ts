@@ -123,14 +123,14 @@ describe('precompile', () => {
                     isDspInline: true,
                 },
                 dsp: ({ node: { args }, ins }) =>
-                    ast`${ins.$0} * ${args.value}`,
+                    ast`${ins.$0!} * ${args.value}`,
             },
             inlinableType2: {
                 flags: {
                     isDspInline: true,
                 },
                 dsp: ({ node: { args }, ins }) =>
-                    ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
+                    ast`${args.value} * ${ins.$0!} - ${args.value} * ${ins.$1!}`,
             },
             signalType: {
                 dsp: () => ast`// dsp signalType`,
@@ -143,7 +143,7 @@ describe('precompile', () => {
         )
 
         assert.strictEqual(
-            precompiledCode.nodes.nonInline2.generationContext.signalIns
+            precompiledCode.nodes.nonInline2!.generationContext.signalIns
                 .$0,
             '(N4 * (N2 + 1) - N4 * ((nonInline1_OUTS_0 * N1) * N3))'
         )
@@ -220,7 +220,7 @@ describe('precompile', () => {
                     isPureFunction: true,
                     isDspInline: true,
                 },
-                dsp: ({ ins }) => ast`1 + ${ins.$0}`,
+                dsp: ({ ins }) => ast`1 + ${ins.$0!}`,
             },
         }
 
@@ -255,7 +255,7 @@ describe('precompile', () => {
         )
 
         assert.strictEqual(
-            precompiledCode.nodes.n2.generationContext.signalIns.$0,
+            precompiledCode.nodes.n2!.generationContext.signalIns.$0,
             '(1 + NULL_SIGNAL)'
         )
     })
@@ -302,7 +302,7 @@ describe('precompile', () => {
                     isPureFunction: true,
                     isDspInline: true,
                 },
-                dsp: ({ ins }) => ast`1 + ${ins.$0}`,
+                dsp: ({ ins }) => ast`1 + ${ins.$0!}`,
             },
         }
 
@@ -328,7 +328,7 @@ describe('precompile', () => {
         )
 
         assert.deepStrictEqual<AstSequence>(
-            precompiledCode.nodes.n2.dsp.inlets['0'],
+            precompiledCode.nodes.n2!.dsp.inlets['0'],
             {
                 astType: 'Sequence',
                 content: ['// inlet dsp 0'],

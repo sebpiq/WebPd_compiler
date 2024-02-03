@@ -153,12 +153,12 @@ export const createFsImports = (
 ): FsImports => {
     let wasmImports: FsImports = {
         i_fs_readSoundFile: (operationId, urlPointer, infoPointer) => {
-            const url = liftString(forwardReferences.rawModule, urlPointer)
+            const url = liftString(forwardReferences.rawModule!, urlPointer)
             const info = liftMessage(
-                forwardReferences.rawModule,
+                forwardReferences.rawModule!,
                 infoPointer
             ) as SoundFileInfo
-            forwardReferences.modules.fs.onReadSoundFile(operationId, url, info)
+            forwardReferences.modules.fs!.onReadSoundFile(operationId, url, info)
         },
 
         i_fs_writeSoundFile: (
@@ -168,66 +168,66 @@ export const createFsImports = (
             infoPointer
         ) => {
             const sound = readListOfFloatArrays(
-                forwardReferences.rawModule,
-                forwardReferences.engineData.bitDepth,
+                forwardReferences.rawModule!,
+                forwardReferences.engineData!.bitDepth,
                 soundPointer
             ) as Array<FloatArray>
-            const url = liftString(forwardReferences.rawModule, urlPointer)
+            const url = liftString(forwardReferences.rawModule!, urlPointer)
             const info = liftMessage(
-                forwardReferences.rawModule,
+                forwardReferences.rawModule!,
                 infoPointer
             ) as SoundFileInfo
-            forwardReferences.modules.fs.onWriteSoundFile(
+            forwardReferences.modules.fs!.onWriteSoundFile(
                 operationId,
                 sound,
-                url,
+                url!,
                 info
             )
         },
 
         i_fs_openSoundReadStream: (operationId, urlPointer, infoPointer) => {
-            const url = liftString(forwardReferences.rawModule, urlPointer)
+            const url = liftString(forwardReferences.rawModule!, urlPointer)
             const info = liftMessage(
-                forwardReferences.rawModule,
+                forwardReferences.rawModule!,
                 infoPointer
             ) as SoundFileInfo
             // Called here because this call means that some sound buffers were allocated
             // inside the wasm module.
             updateWasmInOuts(
-                forwardReferences.rawModule,
-                forwardReferences.engineData
+                forwardReferences.rawModule!,
+                forwardReferences.engineData!
             )
-            forwardReferences.modules.fs.onOpenSoundReadStream(
+            forwardReferences.modules.fs!.onOpenSoundReadStream(
                 operationId,
-                url,
+                url!,
                 info
             )
         },
 
         i_fs_openSoundWriteStream: (operationId, urlPointer, infoPointer) => {
-            const url = liftString(forwardReferences.rawModule, urlPointer)
+            const url = liftString(forwardReferences.rawModule!, urlPointer)
             const info = liftMessage(
-                forwardReferences.rawModule,
+                forwardReferences.rawModule!,
                 infoPointer
             ) as SoundFileInfo
-            forwardReferences.modules.fs.onOpenSoundWriteStream(
+            forwardReferences.modules.fs!.onOpenSoundWriteStream(
                 operationId,
-                url,
+                url!,
                 info
             )
         },
 
         i_fs_sendSoundStreamData: (operationId, blockPointer) => {
             const block = readListOfFloatArrays(
-                forwardReferences.rawModule,
-                forwardReferences.engineData.bitDepth,
+                forwardReferences.rawModule!,
+                forwardReferences.engineData!.bitDepth,
                 blockPointer
             ) as Array<FloatArray>
-            forwardReferences.modules.fs.onSoundStreamData(operationId, block)
+            forwardReferences.modules.fs!.onSoundStreamData(operationId, block)
         },
 
         i_fs_closeSoundStream: (...args) =>
-            forwardReferences.modules.fs.onCloseSoundStream(...args),
+            forwardReferences.modules.fs!.onCloseSoundStream(...args),
     }
     return wasmImports
 }

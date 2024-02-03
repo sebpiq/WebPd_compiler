@@ -42,7 +42,7 @@ describe('compile-helpers', () => {
             assert.strictEqual(
                 getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType')
                     .dsp,
-                NODE_IMPLEMENTATIONS['someNodeType'].dsp
+                NODE_IMPLEMENTATIONS.someNodeType!.dsp!
             )
         })
 

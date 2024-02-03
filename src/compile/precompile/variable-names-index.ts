@@ -99,7 +99,7 @@ export const attachNodeVariable = (
     node: DspGraph.Node,
     portletId: DspGraph.PortletId
 ) => {
-    const nodeVariableNames = variableNamesIndex.nodes[node.id]
+    const nodeVariableNames = variableNamesIndex.nodes[node.id]!
     const prefix = _namePrefix(settings.debug, node)
     // Shouldnt throw an error if the variable already exists, as precompile might try to
     // declare it several times.
@@ -110,7 +110,7 @@ export const attachNodeVariable = (
             messageReceivers: `${prefix}_RCVS_${_v(portletId)}`,
         }[nsKey]
     }
-    return nodeVariableNames[nsKey][portletId]
+    return nodeVariableNames[nsKey][portletId]!
 }
 
 /**
@@ -134,7 +134,7 @@ export const attachIoMessages = (
                 {}
             )
             spec.portletIds.forEach((outletId) => {
-                variableNamesIndex.io[nsKey][nodeId][outletId] = `io${
+                variableNamesIndex.io[nsKey][nodeId]![outletId] = `io${
                     nsKey === 'messageReceivers' ? 'Rcv' : 'Snd'
                 }_${nodeId}_${outletId}`
             })
@@ -158,7 +158,7 @@ export const attachNodeImplementationVariable = (
         case 'stateClass':
             return (variableNamesIndex.nodeImplementations[
                 nodeType
-            ].stateClass = `State_${_v(
+            ]!.stateClass = `State_${_v(
                 (nodeImplementation.flags
                     ? nodeImplementation.flags.alphaName
                     : null) || nodeType

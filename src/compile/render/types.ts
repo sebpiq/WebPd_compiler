@@ -7,7 +7,7 @@ import { CompilationSettings } from '../types'
  * Each target language supported must implement the full set of macros.
  */
 export interface CodeMacros {
-    Var: (declaration: AstVar, renderedValue: Code) => Code
+    Var: (declaration: AstVar, renderedValue?: Code) => Code
     ConstVar: (declaration: AstConstVar, renderedValue: Code) => Code
     Func: (
         declaration: AstFunc,

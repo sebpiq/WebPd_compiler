@@ -64,7 +64,7 @@ describe('core-bindings', () => {
             }),
             globs: generateVariableNamesGlobs(),
         }),
-        core.exports.map(({ name }) => `export { ${name} }`)
+        core.exports!.map(({ name }) => `export { ${name} }`)
     ]))
 
     describe('readTypedArray', () => {
@@ -375,7 +375,7 @@ describe('core-bindings', () => {
                     bitDepth,
                     arraysPointer
                 )
-                arrays[1][1] = 88
+                arrays[1]![1] = 88
                 assert.deepStrictEqual(
                     wasmExports.testReadSomeValueFromFloatArrays(),
                     88

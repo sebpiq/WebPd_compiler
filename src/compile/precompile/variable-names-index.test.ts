@@ -38,8 +38,8 @@ describe('variable-names-index', () => {
     describe('generate', () => {
         it('should create state variable names for each node', () => {
             const graph = makeGraph({
-                node1: { type: 'type1' },
-                node2: { type: 'type1' },
+                n1: { type: 'type1' },
+                n2: { type: 'type1' },
             })
 
             const nodeImplementations: NodeImplementations = { type1: {} }
@@ -55,17 +55,17 @@ describe('variable-names-index', () => {
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
-                    node1: {
+                    n1: {
                         signalOuts: {},
                         messageSenders: {},
                         messageReceivers: {},
-                        state: 'node1_STATE',
+                        state: 'n1_STATE',
                     },
-                    node2: {
+                    n2: {
                         signalOuts: {},
                         messageReceivers: {},
                         messageSenders: {},
-                        state: 'node2_STATE',
+                        state: 'n2_STATE',
                     },
                 }
             )
@@ -73,8 +73,8 @@ describe('variable-names-index', () => {
 
         it('should create namespace for each node node implementation encountered in the graph', () => {
             const graph = makeGraph({
-                node1: { type: 'type1' },
-                node2: { type: 'type2' },
+                n1: { type: 'type1' },
+                n2: { type: 'type2' },
             })
 
             const nodeImplementations: NodeImplementations = {
@@ -105,7 +105,7 @@ describe('variable-names-index', () => {
 
         it('should throw error for unknown namespaces', () => {
             const graph = makeGraph({
-                node1: { type: 'type1' },
+                n1: { type: 'type1' },
             })
 
             const nodeImplementations: NodeImplementations = { type1: {} }
@@ -121,17 +121,17 @@ describe('variable-names-index', () => {
             assert.throws(() => variableNamesIndex.nodes.unknownNode)
             assert.throws(
                 () =>
-                    variableNamesIndex.nodes.node1.messageReceivers[
+                    variableNamesIndex.nodes.n1!.messageReceivers[
                         'unknown receiver'
                     ]
             )
             assert.throws(
                 () =>
-                    variableNamesIndex.nodes.node1.signalOuts['unknown portlet']
+                    variableNamesIndex.nodes.n1!.signalOuts['unknown portlet']
             )
             assert.throws(
                 () =>
-                    variableNamesIndex.nodes.node1.messageSenders[
+                    variableNamesIndex.nodes.n1!.messageSenders[
                         'unknown sender'
                     ]
             )
@@ -141,7 +141,7 @@ describe('variable-names-index', () => {
     describe('attachNodeVariable', () => {
         it('should attach portlet variable names for a node', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                     inlets: {
                         '0': { type: 'signal', id: '0' },
@@ -154,7 +154,7 @@ describe('variable-names-index', () => {
                         '3': { type: 'message', id: '3' },
                     },
                 },
-                node2: { type: 'type1' },
+                n2: { type: 'type1' },
             })
 
             const nodeImplementations: NodeImplementations = { type1: {} }
@@ -171,60 +171,60 @@ describe('variable-names-index', () => {
                 variableNamesIndex,
                 settings,
                 'signalOuts',
-                graph.node1,
+                graph.n1!,
                 '0'
             )
             attachNodeVariable(
                 variableNamesIndex,
                 settings,
                 'signalOuts',
-                graph.node1,
+                graph.n1!,
                 '2'
             )
             attachNodeVariable(
                 variableNamesIndex,
                 settings,
                 'messageSenders',
-                graph.node1,
+                graph.n1!,
                 '1'
             )
             attachNodeVariable(
                 variableNamesIndex,
                 settings,
                 'messageSenders',
-                graph.node1,
+                graph.n1!,
                 '3'
             )
             attachNodeVariable(
                 variableNamesIndex,
                 settings,
                 'messageReceivers',
-                graph.node1,
+                graph.n1!,
                 '1'
             )
 
             assert.deepStrictEqual(
                 JSON.parse(JSON.stringify({ ...variableNamesIndex.nodes })),
                 {
-                    node1: {
+                    n1: {
                         signalOuts: {
-                            '0': 'node1_OUTS_0',
-                            '2': 'node1_OUTS_2',
+                            '0': 'n1_OUTS_0',
+                            '2': 'n1_OUTS_2',
                         },
                         messageSenders: {
-                            '1': 'node1_SNDS_1',
-                            '3': 'node1_SNDS_3',
+                            '1': 'n1_SNDS_1',
+                            '3': 'n1_SNDS_3',
                         },
                         messageReceivers: {
-                            '1': 'node1_RCVS_1',
+                            '1': 'n1_RCVS_1',
                         },
-                        state: 'node1_STATE',
+                        state: 'n1_STATE',
                     },
-                    node2: {
+                    n2: {
                         signalOuts: {},
                         messageReceivers: {},
                         messageSenders: {},
-                        state: 'node2_STATE',
+                        state: 'n2_STATE',
                     },
                 }
             )
@@ -260,21 +260,21 @@ describe('variable-names-index', () => {
                 variableNamesIndex,
                 settings,
                 'signalOuts',
-                graph.someObj,
+                graph.someObj!,
                 '0'
             )
             attachNodeVariable(
                 variableNamesIndex,
                 settings,
                 'messageSenders',
-                graph.someObj,
+                graph.someObj!,
                 '1'
             )
             attachNodeVariable(
                 variableNamesIndex,
                 settings,
                 'messageReceivers',
-                graph.someObj,
+                graph.someObj!,
                 '2'
             )
 
@@ -299,7 +299,7 @@ describe('variable-names-index', () => {
 
         it('should not throw an error if variable already assigned', () => {
             const graph = makeGraph({
-                node1: { type: 'type1' },
+                n1: { type: 'type1' },
             })
 
             const nodeImplementations: NodeImplementations = { type1: {} }
@@ -316,25 +316,25 @@ describe('variable-names-index', () => {
                 variableNamesIndex,
                 settings,
                 'messageReceivers',
-                graph.node1,
+                graph.n1!,
                 '0'
             )
             assert.strictEqual(
-                variableNamesIndex.nodes.node1.messageReceivers.$0,
-                'node1_RCVS_0'
+                variableNamesIndex.nodes.n1!.messageReceivers.$0,
+                'n1_RCVS_0'
             )
             assert.doesNotThrow(() =>
                 attachNodeVariable(
                     variableNamesIndex,
                     settings,
                     'messageReceivers',
-                    graph.node1,
+                    graph.n1!,
                     '0'
                 )
             )
             assert.strictEqual(
-                variableNamesIndex.nodes.node1.messageReceivers.$0,
-                'node1_RCVS_0'
+                variableNamesIndex.nodes.n1!.messageReceivers.$0,
+                'n1_RCVS_0'
             )
         })
     })
@@ -367,13 +367,13 @@ describe('variable-names-index', () => {
                 variableNamesIndex,
                 'stateClass',
                 'type1',
-                nodeImplementations.type1
+                nodeImplementations.type1!
             )
             attachNodeImplementationVariable(
                 variableNamesIndex,
                 'stateClass',
                 'type2+-Bla',
-                nodeImplementations['type2+-Bla']
+                nodeImplementations['type2+-Bla']!
             )
 
             assert.deepStrictEqual(
@@ -404,7 +404,7 @@ describe('variable-names-index', () => {
     describe('attachIoMessages', () => {
         it('should attach outlet listeners variable names', () => {
             const graph = makeGraph({
-                node1: {
+                n1: {
                     type: 'type1',
                     inlets: {
                         inlet1: { type: 'message', id: 'inlet1' },
@@ -419,10 +419,10 @@ describe('variable-names-index', () => {
             const nodeImplementations: NodeImplementations = { type1: {} }
 
             const messageSenders: IoMessageSpecs = {
-                node1: { portletIds: ['outlet1'] },
+                n1: { portletIds: ['outlet1'] },
             }
             const messageReceivers: IoMessageSpecs = {
-                node1: { portletIds: ['inlet1'] },
+                n1: { portletIds: ['inlet1'] },
             }
 
             const settings = makeSettings({
@@ -438,13 +438,13 @@ describe('variable-names-index', () => {
 
             attachIoMessages(variableNamesIndex, settings, graph)
             assert.deepStrictEqual(variableNamesIndex.io.messageSenders, {
-                node1: {
-                    outlet1: 'ioSnd_node1_outlet1',
+                n1: {
+                    outlet1: 'ioSnd_n1_outlet1',
                 },
             })
             assert.deepStrictEqual(variableNamesIndex.io.messageReceivers, {
-                node1: {
-                    inlet1: 'ioRcv_node1_inlet1',
+                n1: {
+                    inlet1: 'ioRcv_n1_inlet1',
                 },
             })
         })

@@ -2,5 +2,8 @@
     "extends": "./node_modules/@webpd/dev/tsconfig.json",
     "include": [
         "./src/**/*.ts"
-    ]
+    ],
+    "compilerOptions": {
+        "strict": true
+    }
 }

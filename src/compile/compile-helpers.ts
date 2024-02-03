@@ -134,7 +134,7 @@ export const createNamespace = <T extends Object>(
     return new Proxy<T>(namespace, {
         get: (target, k) => {
             const key = _trimDollarKey(String(k))
-            if (!target.hasOwnProperty(key)) {
+            if (!target.hasOwnProperty(key as PropertyKey)) {
                 // Whitelist some fields that are undefined but accessed at
                 // some point or another by our code.
                 // TODO : find a better way to do this.
@@ -183,6 +183,6 @@ const _trimDollarKey = (key: string) => {
     if (!match) {
         return key
     } else {
-        return match[1]
+        return match[1]!
     }
 }

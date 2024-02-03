@@ -33,9 +33,9 @@ describe('precompile.node-implementations', () => {
 
             precompileStateClass(precompilation, 'type1')
 
-            assert.strictEqual(precompilation.output.variableNamesIndex.nodeImplementations.type1.stateClass, 'State_type1')
+            assert.strictEqual(precompilation.output.variableNamesIndex.nodeImplementations.type1!.stateClass, 'State_type1')
             assert.deepStrictEqual<AstClass>(
-                precompilation.output.nodeImplementations.type1.stateClass,
+                precompilation.output.nodeImplementations.type1!.stateClass,
                 {
                     astType: 'Class',
                     name: 'State_type1',
@@ -81,7 +81,7 @@ describe('precompile.node-implementations', () => {
             precompileCore(precompilation, 'type1')
 
             assert.deepStrictEqual<AstSequence>(
-                precompilation.output.nodeImplementations.type1.core,
+                precompilation.output.nodeImplementations.type1!.core,
                 {
                     astType: 'Sequence',
                     content: [

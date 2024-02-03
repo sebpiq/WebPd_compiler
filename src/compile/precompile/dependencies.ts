@@ -96,9 +96,8 @@ export const collectAndDedupeExports = (
 ): PrecompiledCode['dependencies']['exports'] =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
-        .filter((codeDefinition) => codeDefinition.exports)
         .reduce<Array<GlobalCodeDefinitionExport>>(
-            (exports, codeDefinition) => [
+            (exports, codeDefinition) => codeDefinition.exports ? [
                 ...exports,
                 ...codeDefinition.exports.filter(
                     (xprt) =>
@@ -107,7 +106,7 @@ export const collectAndDedupeExports = (
                             (otherExport) => xprt.name !== otherExport.name
                         )
                 ),
-            ],
+            ]: exports,
             []
         )
 
@@ -116,16 +115,15 @@ export const collectAndDedupeImports = (
 ): PrecompiledCode['dependencies']['imports'] =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
-        .filter((codeDefinition) => codeDefinition.imports)
         .reduce<Array<AstFunc>>(
-            (imports, codeDefinition) => [
+            (imports, codeDefinition) => codeDefinition.imports ? [
                 ...imports,
                 ...codeDefinition.imports.filter((imprt) =>
                     imports.every(
                         (otherImport) => imprt.name !== otherImport.name
                     )
                 ),
-            ],
+            ]: imports,
             []
         )
 
@@ -155,7 +153,7 @@ const _collectDependenciesFromTraversal = ({
         .reduce<Array<GlobalCodeDefinition>>(
             (definitions, node) => [
                 ...definitions,
-                ...output.nodes[node.id].nodeImplementation.dependencies,
+                ...(output.nodes[node.id]!.nodeImplementation.dependencies || []),
             ],
             []
         )

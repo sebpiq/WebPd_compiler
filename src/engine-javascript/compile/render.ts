@@ -74,7 +74,7 @@ export default (
                     ${Object.entries(settings.io.messageReceivers).map(([nodeId, spec]) =>
                         ast`${nodeId}: {
                             ${spec.portletIds.map(inletId => 
-                                `"${inletId}": ${variableNamesIndex.io.messageReceivers[nodeId][inletId]},`)}
+                                `"${inletId}": ${variableNamesIndex.io.messageReceivers[nodeId]![inletId]!},`)}
                         },`
                     )}
                 },

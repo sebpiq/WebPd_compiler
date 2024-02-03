@@ -20,7 +20,7 @@
 import { assertFuncSignatureEqual } from '../../ast/ast-helpers'
 import { AnonFunc, Func, Var, ast } from '../../ast/declare'
 import render from '../render'
-import { AstElement, AstSequence, Code, VariableName } from '../../ast/types'
+import { Code, VariableName } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
@@ -41,12 +41,12 @@ export const precompileState = (
 ) => {
     const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
-    const precompiledNode = output.nodes[node.id]
+    const precompiledNode = output.nodes[node.id]!
     const { nodeImplementation } = precompiledNode
     if (nodeImplementation.state) {
         const nodeType = node.type
         const stateClassName =
-            variableNamesIndex.nodeImplementations[nodeType].stateClass
+            variableNamesIndex.nodeImplementations[nodeType]!.stateClass
         if (!stateClassName) {
             throw new Error(`No stateClass defined for ${nodeType}`)
         }
@@ -96,10 +96,11 @@ export const precompileSignalOutlet = (
         node,
         outletId
     )
-    output.nodes[node.id].signalOuts[outletId] = signalOutName
-    output.nodes[node.id].generationContext.signalOuts[outletId] = signalOutName
+    const precompiledNode = output.nodes[node.id]!
+    precompiledNode.signalOuts[outletId] = signalOutName
+    precompiledNode.generationContext.signalOuts[outletId] = signalOutName
     outletSinks.forEach(({ portletId: inletId, nodeId: sinkNodeId }) => {
-        output.nodes[sinkNodeId].generationContext.signalIns[inletId] =
+        output.nodes[sinkNodeId]!.generationContext.signalIns[inletId] =
             signalOutName
     })
 }
@@ -109,7 +110,7 @@ export const precompileSignalInletWithNoSource = (
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    output.nodes[node.id].generationContext.signalIns[inletId] =
+    output.nodes[node.id]!.generationContext.signalIns[inletId] =
         output.variableNamesIndex.globs.nullSignal
 }
 
@@ -120,7 +121,7 @@ export const precompileMessageOutlet = (
 ) => {
     const outletSinks = getters.getSinks(sourceNode, outletId)
     const { variableNamesIndex } = output
-    const precompiledNode = output.nodes[sourceNode.id]
+    const precompiledNode = output.nodes[sourceNode.id]!
 
     const ioSendersPortletIds = _getPortletIdsFromMsgIo(
         settings.io.messageSenders,
@@ -130,10 +131,10 @@ export const precompileMessageOutlet = (
     const functionNames = [
         ...outletSinks.map(
             ({ nodeId: sinkNodeId, portletId: inletId }) =>
-                variableNamesIndex.nodes[sinkNodeId].messageReceivers[inletId]
+                variableNamesIndex.nodes[sinkNodeId]!.messageReceivers[inletId]!
         ),
         ...(hasIoSender
-            ? [variableNamesIndex.io.messageSenders[sourceNode.id][outletId]]
+            ? [variableNamesIndex.io.messageSenders[sourceNode.id]![outletId]!]
             : []),
         ...outletSinks.reduce<Array<VariableName>>(
             (coldDspFunctionNames, sink) => {
@@ -146,7 +147,7 @@ export const precompileMessageOutlet = (
                     .map(([groupId]) => groupId)
 
                 const functionNames = groupsContainingSink.map(
-                    (groupId) => variableNamesIndex.coldDspGroups[groupId]
+                    (groupId) => variableNamesIndex.coldDspGroups[groupId]!
                 )
                 return [...coldDspFunctionNames, ...functionNames]
             },
@@ -195,7 +196,7 @@ export const precompileMessageOutlet = (
     //
     else if (functionNames.length === 1) {
         precompiledNode.generationContext.messageSenders[outletId] =
-            functionNames[0]
+            functionNames[0]!
     }
 
     // If no function to call, we assign the node SND
@@ -211,7 +212,7 @@ export const precompileMessageInlet = (
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const precompiledNode = output.nodes[node.id]
+    const precompiledNode = output.nodes[node.id]!
     if (_getMessageInletTotalSourceCount(input.settings, node, inletId) >= 1) {
         const messageReceiverName = attachNodeVariable(
             output.variableNamesIndex,
@@ -244,7 +245,7 @@ export const precompileMessageReceivers = (
     node: DspGraph.Node
 ) => {
     const { variableNamesIndex } = output
-    const precompiledNode = output.nodes[node.id]
+    const precompiledNode = output.nodes[node.id]!
     const { globs } = variableNamesIndex
     const { nodeImplementation } = precompiledNode
     const { state, messageSenders: snds } = precompiledNode.generationContext
@@ -262,14 +263,14 @@ export const precompileMessageReceivers = (
     )
 
     Object.keys(precompiledNode.messageReceivers).forEach((inletId) => {
-        const implementedFunc = messageReceivers[inletId]
+        const implementedFunc = messageReceivers[inletId]!
         assertFuncSignatureEqual(implementedFunc, MESSAGE_RECEIVER_SIGNATURE)
-        const targetFunc = precompiledNode.messageReceivers[inletId]
+        const targetFunc = precompiledNode.messageReceivers[inletId]!
 
         // We can't override values in the namespace, so we need to copy
         // the function's properties one by one.
         targetFunc.name =
-            variableNamesIndex.nodes[node.id].messageReceivers[inletId]
+            variableNamesIndex.nodes[node.id]!.messageReceivers[inletId]!
         targetFunc.args = implementedFunc.args
         targetFunc.body = implementedFunc.body
         targetFunc.returnType = implementedFunc.returnType
@@ -283,7 +284,7 @@ export const precompileInitialization = (
     const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
 
-    const precompiledNode = output.nodes[node.id]
+    const precompiledNode = output.nodes[node.id]!
     const { state, messageSenders: snds } = precompiledNode.generationContext
     const { nodeImplementation } = precompiledNode
     precompiledNode.initialization = nodeImplementation.initialization
@@ -302,7 +303,7 @@ export const precompileDsp = (
     node: DspGraph.Node
 ) => {
     const { variableNamesIndex } = output
-    const precompiledNode = output.nodes[node.id]
+    const precompiledNode = output.nodes[node.id]!
     const { globs } = variableNamesIndex
     const {
         signalOuts: outs,
@@ -312,8 +313,6 @@ export const precompileDsp = (
     } = precompiledNode.generationContext
     const { nodeImplementation } = precompiledNode
 
-    // Nodes that come here might have inlinable dsp, but still can't
-    // be inlined because, for example, they have 2 sinks.
     if (!nodeImplementation.dsp) {
         throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
     }
@@ -328,15 +327,17 @@ export const precompileDsp = (
         settings,
     })
 
+    // Nodes that come here might have inlinable dsp, but still can't
+    // be inlined because, for example, they have 2 sinks.
     if (nodeImplementation.flags && nodeImplementation.flags.isDspInline) {
         if ('loop' in compiledDsp) {
             throw new Error(
                 `Invalid dsp definition for inlinable node ${node.type}:${node.id}`
             )
         }
-        const outletId = Object.keys(node.outlets)[0]
+        const outletId = Object.keys(node.outlets)[0]!
         precompiledNode.dsp.loop = ast`${
-            variableNamesIndex.nodes[node.id].signalOuts[outletId]
+            variableNamesIndex.nodes[node.id]!.signalOuts[outletId]!
         } = ${compiledDsp}`
     } else if ('loop' in compiledDsp) {
         precompiledNode.dsp.loop = compiledDsp.loop
@@ -376,7 +377,7 @@ export const precompileInlineDsp = (
     const { globs } = variableNamesIndex
     const inlinedNodes = dspGroup.traversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
-            const precompiledNode = output.nodes[nodeId]
+            const precompiledNode = output.nodes[nodeId]!
             const {
                 signalIns: ins,
                 signalOuts: outs,
@@ -399,21 +400,25 @@ export const precompileInlineDsp = (
                             // We filter out sources that are not inlinable.
                             // These sources will just be represented by their outlet's
                             // variable name.
-                            dspGroup.traversal.includes(sources[0].nodeId)
+                            dspGroup.traversal.includes(sources[0]!.nodeId)
                     ),
 
                 // Build map of inlined inputs
                 ([inlet, sources]) => {
                     // Because it's a signal connection, we have only one source per inlet
-                    const source = sources[0]
+                    const source = sources[0]!
                     if (!(source.nodeId in inlinedNodes)) {
                         throw new Error(
                             `Unexpected error : inlining failed, missing inlined source ${source.nodeId}`
                         )
                     }
-                    return [inlet.id, inlinedNodes[source.nodeId]]
+                    return [inlet.id, inlinedNodes[source.nodeId]!]
                 }
             )
+
+            if (!nodeImplementation.dsp) {
+                throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
+            }
 
             const compiledDsp = nodeImplementation.dsp({
                 globs,
@@ -442,20 +447,20 @@ export const precompileInlineDsp = (
     )
 
     const groupSinkNode = _getInlinableGroupSinkNode(graph, dspGroup)
-    output.nodes[groupSinkNode.nodeId].generationContext.signalIns[
+    output.nodes[groupSinkNode.nodeId]!.generationContext.signalIns[
         groupSinkNode.portletId
-    ] = inlinedNodes[dspGroup.outNodesIds[0]]
+    ] = inlinedNodes[dspGroup.outNodesIds[0]!]!
 }
 
 const _getInlinableGroupSinkNode = (
     graph: DspGraph.Graph,
     dspGroup: DspGroup
 ) => {
-    const groupOutNode = getters.getNode(graph, dspGroup.outNodesIds[0])
+    const groupOutNode = getters.getNode(graph, dspGroup.outNodesIds[0]!)
     return Object.entries(groupOutNode.sinks).find(([outletId]) => {
         const outlet = getters.getOutlet(groupOutNode, outletId)
         return outlet.type === 'signal'
-    })[1][0]
+    })![1][0]!
 }
 
 const _getMessageInletTotalSourceCount = (
@@ -476,4 +481,4 @@ const _getPortletIdsFromMsgIo = (
     specs: IoMessageSpecs,
     nodeId: DspGraph.NodeId
 ): Array<DspGraph.PortletId> =>
-    (specs[nodeId] && specs[nodeId].portletIds) || []
+    (specs[nodeId] && specs[nodeId]!.portletIds) || []

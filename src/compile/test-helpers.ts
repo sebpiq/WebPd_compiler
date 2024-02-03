@@ -10,26 +10,24 @@ import { RenderInput } from './render/types'
 import { AstSequence, AstElement, Code } from '../ast/types'
 import { CompilationSettings } from './types'
 
-export type TestingPrecompilationInput = Partial<{
-    [property in keyof PrecompilationInput]: Partial<
-        PrecompilationInput[property]
-    >
-}>
+type PartialSettings = Partial<CompilationSettings>
 
-export const makeSettings = (
-    settings: Partial<CompilationSettings>
-): CompilationSettings =>
+type PartialPrecompilationInput = Partial<
+    Omit<PrecompilationInput, 'settings'> & { settings: PartialSettings }
+>
+
+export const makeSettings = (settings: PartialSettings): CompilationSettings =>
     validateSettings(settings, settings.target || 'javascript')
 
 export const makePrecompilation = (
-    testingInput: TestingPrecompilationInput
+    precompilationInput: PartialPrecompilationInput
 ): PrecompilationOperation => {
-    const target = (testingInput.settings || {}).target || 'javascript'
-    const settings = validateSettings(testingInput.settings || {}, target)
-    const nodeImplementations = testingInput.nodeImplementations || {
+    const target = (precompilationInput.settings || {}).target || 'javascript'
+    const settings = validateSettings(precompilationInput.settings || {}, target)
+    const nodeImplementations = precompilationInput.nodeImplementations || {
         DUMMY: {},
     }
-    const graph = testingInput.graph || {}
+    const graph = precompilationInput.graph || {}
     const input: PrecompilationInput = {
         settings,
         graph,

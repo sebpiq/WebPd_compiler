@@ -30,7 +30,10 @@ export const assertFuncSignatureEqual = (
         throw new Error(`Expected an ast Func, got : ${actual}`)
     } else if (
         actual.args.length !== expected.args.length ||
-        actual.args.some((arg, i) => arg.type !== expected.args[i].type) ||
+        actual.args.some((arg, i) => {
+            const expectedArg = expected.args[i]
+            return !expectedArg || arg.type !== expectedArg.type
+        }) ||
         actual.returnType !== expected.returnType
     ) {
         throw new Error(

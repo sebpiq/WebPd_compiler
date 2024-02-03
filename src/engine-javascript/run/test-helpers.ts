@@ -41,10 +41,10 @@ const getJSEvalErrorSite = async (code: string) => {
     writeFileSync(filepath, code)
     try {
         await execPromise('node --experimental-vm-modules ' + filepath)
-    } catch (error) {
+    } catch (error: any) {
         const matched = new RegExp(`${filepath}:([0-9]+)`).exec(error.stack)
         if (matched) {
-            const lineNumber = parseInt(matched[1], 10)
+            const lineNumber = parseInt(matched[1]!, 10)
             const lineBefore = Math.max(lineNumber - 3, 0)
             const lineAfter = lineNumber + 3
             const codeLines = code

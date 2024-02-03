@@ -82,8 +82,8 @@ describe('msg-bindings', () => {
                 `export function testReadMessageData(message: Message, index: Int): Int {
                 return message.dataView.getInt32(index * sizeof<Int>())
             }`,
-                core.exports.map(({ name }) => `export { ${name} }`),
-                msg.exports.map(({ name }) => `export { ${name} }`),
+                core.exports!.map(({ name }) => `export { ${name} }`),
+                msg.exports!.map(({ name }) => `export { ${name} }`),
             ])
         )
     }

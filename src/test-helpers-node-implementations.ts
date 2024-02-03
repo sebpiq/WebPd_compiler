@@ -45,9 +45,11 @@ interface NodeTestSettings<NodeArguments> {
     arrays?: { [arrayName: string]: Array<number> }
 }
 
+type EngineFsKeys = keyof Engine['fs']
+
 type FrameNode = {
     fs?: {
-        [FsFuncName in keyof Engine['fs']]?: Parameters<
+        [FsFuncName in EngineFsKeys]?: Parameters<
             Engine['fs'][FsFuncName]
         >
     }
@@ -147,9 +149,9 @@ export const generateFramesForNode = async <NodeArguments>(
             messageReceivers: ({ snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
-                    if (fakeSourceNode.outlets[outletId].type === 'message') {
+                    if (fakeSourceNode.outlets[outletId]!.type === 'message') {
                         return AnonFunc([Var('Message', 'm')])`
-                            ${snds[outletId]}(m)
+                            ${snds[outletId]!}(m)
                             return
                         `
 
@@ -167,7 +169,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     Object.keys(fakeSourceNode.outlets)
                         .filter(
                             (outletId) =>
-                                fakeSourceNode.outlets[outletId].type ===
+                                fakeSourceNode.outlets[outletId]!.type ===
                                 'signal'
                         )
                         .map(
@@ -184,7 +186,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     ${Object.keys(fakeSourceNode.outlets)
                         .filter(
                             (outletId) =>
-                                fakeSourceNode.outlets[outletId].type ===
+                                fakeSourceNode.outlets[outletId]!.type ===
                                 'signal'
                         )
                         .map((outletId) => `VALUE_${outletId}: 0,`)}
@@ -199,7 +201,7 @@ export const generateFramesForNode = async <NodeArguments>(
                         Object.keys(fakeSourceNode.outlets)
                             .filter(
                                 (outletId) =>
-                                    fakeSourceNode.outlets[outletId].type ===
+                                    fakeSourceNode.outlets[outletId]!.type ===
                                     'signal'
                             )
                             .map((outletId) =>
@@ -216,7 +218,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     Object.keys(testNode.sinks)
                         .filter(
                             (outletId) =>
-                                testNode.outlets[outletId].type === 'signal'
+                                testNode.outlets[outletId]!.type === 'signal'
                         )
                         .map(
                             (outletId) =>
@@ -230,12 +232,12 @@ export const generateFramesForNode = async <NodeArguments>(
                 mapArray(
                     Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>
-                            fakeSinkNode.inlets[inletId].type === 'message'
+                            fakeSinkNode.inlets[inletId]!.type === 'message'
                     ),
                     (inletId) => [
                         inletId,
                         AnonFunc([Var('Message', 'm')])`
-                            ${snds[inletId]}(m)
+                            ${snds[inletId]!}(m)
                             return
                         `,
                     ]
@@ -315,14 +317,14 @@ export const generateFramesForNode = async <NodeArguments>(
 
         // Set up listeners for fs
         const _fsCallback = (
-            funcName: keyof typeof outputFrame.fs,
+            funcName: EngineFsKeys,
             args: any
         ) => {
             outputFrame.fs = outputFrame.fs || {}
-            outputFrame.sequence.push(funcName)
+            outputFrame.sequence!.push(funcName)
             // When receiving FloatArrays we need to make copies immediately
             // because they might be garbage collected or reused afterwards by the engine.
-            if (['onWriteSoundFile', 'onSoundStreamData'].includes(funcName)) {
+            if ((['onWriteSoundFile', 'onSoundStreamData']).includes(funcName)) {
                 outputFrame.fs[funcName] = [
                     args[0],
                     args[1].map((array: FloatArray) => array.slice(0)),
@@ -346,12 +348,12 @@ export const generateFramesForNode = async <NodeArguments>(
             _fsCallback('onWriteSoundFile', args)
 
         // Set up engine outs to receive sent messages
-        Object.keys(engine.io.messageSenders['fakeSinkNode']).forEach(
+        Object.keys(engine.io.messageSenders['fakeSinkNode']!).forEach(
             (outletId) => {
-                engine.io.messageSenders['fakeSinkNode'][outletId] = {
+                engine.io.messageSenders['fakeSinkNode']![outletId] = {
                     onMessage: (m) => {
-                        if (testNode.outlets[outletId].type === 'message') {
-                            outputFrame.sequence.push(outletId)
+                        if (testNode.outlets[outletId]!.type === 'message') {
+                            outputFrame.sequence!.push(outletId)
                             outputFrame.outs[outletId] =
                                 outputFrame.outs[outletId] || []
                             const output = outputFrame.outs[
@@ -368,12 +370,12 @@ export const generateFramesForNode = async <NodeArguments>(
 
         // We make sure we configure AFTER assigning the io.messageSenders,
         // so we can receive messages sent during configure.
-        engine.configure(nodeTestSettings.sampleRate, blockSize)
+        engine.configure(nodeTestSettings.sampleRate!, blockSize)
 
         // Send in fs commands
         if (inputFrame.fs) {
             Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
-                engine.fs[funcName as keyof FrameNodeIn['fs']].apply(null, args)
+                (engine.fs[funcName as EngineFsKeys] as any).apply(null, args)
             })
         }
 
@@ -383,7 +385,7 @@ export const generateFramesForNode = async <NodeArguments>(
                 outputFrame.commons = {}
                 outputFrame.commons.getArray = {}
                 inputFrame.commons.getArray.forEach((arrayName) => {
-                    outputFrame.commons.getArray[arrayName] = Array.from(
+                    outputFrame.commons!.getArray![arrayName] = Array.from(
                         engine.commons.getArray(arrayName)
                     )
                 })
@@ -403,14 +405,14 @@ export const generateFramesForNode = async <NodeArguments>(
                 throw new Error(
                     `Unknown inlet ${inletId} for node ${testNode.type}`
                 )
-            } else if (testNode.inlets[inletId].type === 'message') {
+            } else if (testNode.inlets[inletId]!.type === 'message') {
                 if (!Array.isArray(value)) {
                     throw new Error(
                         `message inlet ${inletId} : unexpected value ${value} of type <${typeof value}>`
                     )
                 }
                 value.forEach((message) =>
-                    engine.io.messageReceivers['fakeSourceNode'][inletId](message)
+                    engine.io.messageReceivers['fakeSourceNode']![inletId]!(message)
                 )
             } else {
                 if (typeof value !== 'number') {
@@ -418,7 +420,7 @@ export const generateFramesForNode = async <NodeArguments>(
                         `signal inlet ${inletId} : unexpected value ${value} of type <${typeof value}>`
                     )
                 }
-                engine.io.messageReceivers['fakeSourceNode'][inletId]([value])
+                engine.io.messageReceivers['fakeSourceNode']![inletId]!([value])
             }
         })
 
@@ -452,7 +454,7 @@ export const assertNodeOutput = async <NodeArguments>(
     )
 
     frames.forEach(([_, expectedOutputFrame], i) => {
-        const actualOutputFrame = actualOutputFrames[i]
+        const actualOutputFrame = actualOutputFrames[i]!
         if (!expectedOutputFrame.sequence) {
             delete actualOutputFrame.sequence
         }
@@ -492,13 +494,13 @@ export const generateFrames = (
     for (let i = 0; i < iterations; i++) {
         engine.dspLoop(engineInput, engineOutput)
         // Block size 1, so we flatten the array and get just the first sample
-        results.push(engineOutput.map((channelValues) => channelValues[0]))
+        results.push(engineOutput.map((channelValues) => channelValues[0]!))
     }
     return results
 }
 
 /** Helper to round test results even nested in complex objects / arrays. */
-export const roundNestedFloats = <T>(obj: T): T => {
+export const roundNestedFloats = <T extends Object>(obj: T): T => {
     const roundDecimal = 4
     if (typeof obj === 'number') {
         return round(obj, roundDecimal) as unknown as T

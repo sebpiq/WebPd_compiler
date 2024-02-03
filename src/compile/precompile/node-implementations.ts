@@ -8,10 +8,10 @@ export const precompileStateClass = (
 ) => {
     const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
-    const precompiledImplementation = output.nodeImplementations[nodeType]
+    const precompiledImplementation = output.nodeImplementations[nodeType]!
 
     if (precompiledImplementation.nodeImplementation.state) {
-        if (!variableNamesIndex.nodeImplementations[nodeType].stateClass) {
+        if (!variableNamesIndex.nodeImplementations[nodeType]!.stateClass) {
             attachNodeImplementationVariable(
                 variableNamesIndex,
                 'stateClass',
@@ -28,14 +28,19 @@ export const precompileStateClass = (
             )
         }
         const stateClassName =
-            variableNamesIndex.nodeImplementations[nodeType].stateClass
+            variableNamesIndex.nodeImplementations[nodeType]!.stateClass
+        if (!stateClassName) {
+            throw new Error(
+                `No state class name defined for node type "${nodeType}".`
+            )
+        }
         const astClass = precompiledImplementation.nodeImplementation.state({
             globs,
             node: sampleNode,
             settings,
             stateClassName,
         })
-        output.nodeImplementations[nodeType].stateClass = {
+        precompiledImplementation.stateClass = {
             ...astClass,
             // Reset member values which are irrelevant in the state class.
             members: astClass.members.map((member) => ({
@@ -52,12 +57,13 @@ export const precompileCore = (
 ) => {
     const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
-    const nodeImplementation =
-        output.nodeImplementations[nodeType].nodeImplementation
+    const precompiledImplementation = output.nodeImplementations[nodeType]!
+    const nodeImplementation = precompiledImplementation.nodeImplementation
     const stateClassName =
-        variableNamesIndex.nodeImplementations[nodeType].stateClass || undefined
+        variableNamesIndex.nodeImplementations[nodeType]!.stateClass ||
+        undefined
     if (nodeImplementation.core) {
-        output.nodeImplementations[nodeType].core = nodeImplementation.core({
+        precompiledImplementation.core = nodeImplementation.core({
             settings,
             globs,
             stateClassName,

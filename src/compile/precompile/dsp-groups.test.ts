@@ -633,7 +633,7 @@ describe('dsp-groups', () => {
             const precompilation = makePrecompilation({ graph, nodeImplementations })
 
             assert.strictEqual(
-                _isNodeDspInlinable(precompilation, graph.n1),
+                _isNodeDspInlinable(precompilation, graph.n1!),
                 false
             )
         })

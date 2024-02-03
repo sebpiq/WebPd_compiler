@@ -24,14 +24,15 @@ import { compileAssemblyscript } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
 import { readMetadata } from './engine-lifecycle-bindings'
 import compile from '../../compile'
-import { UserCompilationSettings, NodeImplementations } from '../../compile/types'
+import { NodeImplementations } from '../../compile/types'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { AnonFunc, Var } from '../../ast/declare'
+import { makeSettings } from '../../compile/test-helpers'
 
 describe('engine-lifecycle-bindings', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
-            const compilationSettings: UserCompilationSettings = {
+            const compilationSettings = makeSettings({
                 audio: {
                     bitDepth: 32,
                     channelCount: { in: 11, out: 22 },
@@ -44,7 +45,7 @@ describe('engine-lifecycle-bindings', () => {
                         node1: { portletIds: ['0'] },
                     },
                 }
-            }
+            })
 
             const graph = makeGraph({
                 node1: {
@@ -74,7 +75,7 @@ describe('engine-lifecycle-bindings', () => {
 
             const wasmBuffer = await compileAssemblyscript(
                 result.code,
-                compilationSettings.audio.bitDepth
+                compilationSettings.audio!.bitDepth
             )
 
             const metadata = await readMetadata(wasmBuffer)

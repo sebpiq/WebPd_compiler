@@ -232,7 +232,7 @@ export const initializePrecompiledCode = (
                         nodeNamespaceLabel(node, 'generationContext:signalIns'),
                         {}
                     ),
-                    state: variableNamesIndex.nodes[node.id].state,
+                    state: variableNamesIndex.nodes[node.id]!.state,
                 },
                 messageReceivers: createNamespace(
                     nodeNamespaceLabel(node, 'messageReceivers'),

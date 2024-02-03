@@ -81,7 +81,7 @@ export const liftMessage = (
         wasmExports,
         Int32Array,
         messageTokenTypesPointer
-    )
+    )!
     const message: Message = []
     messageTokenTypes.forEach((tokenType, tokenIndex) => {
         if (tokenType === wasmExports.MSG_FLOAT_TOKEN.valueOf()) {
@@ -93,7 +93,7 @@ export const liftMessage = (
                 messagePointer,
                 tokenIndex
             )
-            message.push(liftString(wasmExports, stringPointer))
+            message.push(liftString(wasmExports, stringPointer)!)
         }
     })
     return message
