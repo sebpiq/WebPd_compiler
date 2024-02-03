@@ -41,7 +41,7 @@ import { instantiateWasmModule } from './wasm-helpers'
 
 export interface EngineLifecycleRawModule extends RawModule {
     configure: (sampleRate: number, blockSize: number) => void
-    loop: () => void
+    dspLoop: () => void
 
     // Pointers to input and output buffers
     getOutput: () => FloatArrayPointer
@@ -57,7 +57,7 @@ export type EngineLifecycleWithDependenciesRawModule = CoreRawModule &
 
 interface EngineLifecycleBindings {
     configure: Engine['configure']
-    loop: Engine['loop']
+    dspLoop: Engine['dspLoop']
 }
 
 // This must be called again when doing something on the wasm module
@@ -96,7 +96,7 @@ export const createEngineLifecycleBindings = (
             },
         },
 
-        loop: {
+        dspLoop: {
             type: 'proxy',
             value: (input: Array<FloatArray>, output: Array<FloatArray>) => {
                 for (let channel = 0; channel < input.length; channel++) {
@@ -106,7 +106,7 @@ export const createEngineLifecycleBindings = (
                     )
                 }
                 updateWasmInOuts(rawModule, engineData)
-                rawModule.loop()
+                rawModule.dspLoop()
                 updateWasmInOuts(rawModule, engineData)
                 for (let channel = 0; channel < output.length; channel++) {
                     output[channel].set(

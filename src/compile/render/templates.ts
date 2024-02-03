@@ -208,7 +208,7 @@ const portletsDeclarations = ({
             ),
     ])
 
-const loop = ({
+const dspLoop = ({
     precompiledCode: {
         variableNamesIndex: { globs },
         nodes,
@@ -233,7 +233,7 @@ const loop = ({
                     .map(([_, astElement]) => 
                         astElement
                     ),
-                nodes[nodeId].loop
+                nodes[nodeId].dsp
             ])}
             ${globs.frame}++
         }
@@ -264,7 +264,7 @@ const coldDspFunctions = ({
                 Var('Message', 'm')
             ], 'void')`
                 ${dspGroup.traversal.map((nodeId) => 
-                    nodes[nodeId].loop
+                    nodes[nodeId].dsp
                 )}
                 ${dspGroup.sinkConnections
                     .filter(([_, sink]) => sink.portletId in nodes[sink.nodeId].caching)
@@ -296,7 +296,7 @@ export default {
     ioMessageReceivers,
     ioMessageSenders,
     portletsDeclarations,
-    loop,
+    dspLoop,
     coldDspInitialization,
     coldDspFunctions,
     importsExports,

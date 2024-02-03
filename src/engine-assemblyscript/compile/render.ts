@@ -71,8 +71,8 @@ export default (
 
         export function getOutput(): FloatArray { return ${globs.output} }
 
-        export function loop(): void {
-            ${templates.loop(renderInput)}
+        export function dspLoop(): void {
+            ${templates.dspLoop(renderInput)}
         }
 
         export {

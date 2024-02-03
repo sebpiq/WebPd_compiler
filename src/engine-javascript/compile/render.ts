@@ -66,8 +66,8 @@ export default (
                 ${globs.blockSize} = blockSize
                 _commons_emitEngineConfigure()
             },
-            loop: (${globs.input}, ${globs.output}) => {
-                ${templates.loop(renderInput)}
+            dspLoop: (${globs.input}, ${globs.output}) => {
+                ${templates.dspLoop(renderInput)}
             },
             io: {
                 messageReceivers: {

@@ -92,7 +92,7 @@ export interface Engine {
 
     configure: (sampleRate: number, blockSize: number) => void
 
-    loop: (input: Array<FloatArray>, output: Array<FloatArray>) => void
+    dspLoop: (input: Array<FloatArray>, output: Array<FloatArray>) => void
 
     io: {
         messageReceivers: {

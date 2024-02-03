@@ -30,7 +30,7 @@ import { makeSettings } from '../test-helpers'
 describe('precompile', () => {
     const SETTINGS = makeSettings({})
 
-    it('should precompile the inline loop code', () => {
+    it('should precompile the inline dsp code', () => {
         //       [  nonInline1  ]
         //         |
         //       [  n1  ]
@@ -114,26 +114,26 @@ describe('precompile', () => {
         const nodeImplementations: NodeImplementations = {
             inlinableType0: {
                 flags: {
-                    isLoopInline: true,
+                    isDspInline: true,
                 },
-                loop: ({ node: { args } }) => ast`${args.value} + 1`,
+                dsp: ({ node: { args } }) => ast`${args.value} + 1`,
             },
             inlinableType1: {
                 flags: {
-                    isLoopInline: true,
+                    isDspInline: true,
                 },
-                loop: ({ node: { args }, ins }) =>
+                dsp: ({ node: { args }, ins }) =>
                     ast`${ins.$0} * ${args.value}`,
             },
             inlinableType2: {
                 flags: {
-                    isLoopInline: true,
+                    isDspInline: true,
                 },
-                loop: ({ node: { args }, ins }) =>
+                dsp: ({ node: { args }, ins }) =>
                     ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
             },
             signalType: {
-                loop: () => ast`// loop signalType`,
+                dsp: () => ast`// dsp signalType`,
             },
         }
 
@@ -157,7 +157,7 @@ describe('precompile', () => {
         )
     })
 
-    it('should precompile cold dsp groups and play well with inline loops', () => {
+    it('should precompile cold dsp groups and play well with inline dsp', () => {
         //
         //           [  n1  ]  <- inlinable & cold dsp
         //             |
@@ -213,14 +213,14 @@ describe('precompile', () => {
 
         const nodeImplementations: NodeImplementations = {
             signalType: {
-                loop: () => ast`// loop signalType`,
+                dsp: () => ast`// dsp signalType`,
             },
             inlinableAndColdType: {
                 flags: {
                     isPureFunction: true,
-                    isLoopInline: true,
+                    isDspInline: true,
                 },
-                loop: ({ ins }) => ast`1 + ${ins.$0}`,
+                dsp: ({ ins }) => ast`1 + ${ins.$0}`,
             },
         }
 
@@ -293,14 +293,14 @@ describe('precompile', () => {
                 caching: () => ({
                     '0': ast`// caching 0`,
                 }),
-                loop: () => ast`// loop signalType`,
+                dsp: () => ast`// dsp signalType`,
             },
             coldNodeType: {
                 flags: {
                     isPureFunction: true,
-                    isLoopInline: true,
+                    isDspInline: true,
                 },
-                loop: ({ ins }) => ast`1 + ${ins.$0}`,
+                dsp: ({ ins }) => ast`1 + ${ins.$0}`,
             },
         }
 

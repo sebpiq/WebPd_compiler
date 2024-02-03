@@ -68,7 +68,7 @@ export interface PrecompiledNodeCode {
     }
     signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
     initialization: AstElement
-    loop: AstElement
+    dsp: AstElement
     caching: { [inletId: DspGraph.PortletId]: AstElement }
 }
 
@@ -107,7 +107,7 @@ export interface VariableNamesIndex {
 
     /** Namespace for global variables */
     globs: {
-        /** Frame count, reinitialized at each loop start */
+        /** Frame count, reinitialized at each dsp loop start */
         iterFrame: string
         /** Frame count, never reinitialized */
         frame: string

@@ -109,7 +109,7 @@ export interface NodeImplementation<NodeArgsType = any> {
          */
         isPureFunction?: true
 
-        isLoopInline?: true
+        isDspInline?: true
 
         alphaName?: string
     }
@@ -136,12 +136,10 @@ export interface NodeImplementation<NodeArgsType = any> {
     }) => AstSequence
 
     /**
-     * Generates the code that will be ran each iteration of the loop for that node instance.
+     * Generates the code that will be ran each iteration of the dsp loop for that node instance.
      * Typically reads from ins, runs some calculations, and write results to outs.
-     *
-     * @see generateInlineLoop for more complexe loop code generation.
      */
-    loop?: (context: {
+    dsp?: (context: {
         globs: VariableNamesIndex['globs']
         state: PrecompiledNodeCode['generationContext']['state']
         ins: PrecompiledNodeCode['generationContext']['signalIns']

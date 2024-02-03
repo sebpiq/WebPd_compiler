@@ -235,7 +235,7 @@ export const _isNodeDspInlinable = (
 
     return (
         output.nodes[node.id].nodeImplementation.flags &&
-        output.nodes[node.id].nodeImplementation.flags.isLoopInline &&
+        output.nodes[node.id].nodeImplementation.flags.isDspInline &&
         sinks.length === 1
     )
 }

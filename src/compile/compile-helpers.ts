@@ -102,7 +102,7 @@ export const buildFullGraphTraversal = (
 }
 
 /**
- * Build graph traversal for generating the loop.
+ * Build graph traversal for all signal nodes.
  */
 export const buildGraphTraversalSignal = (
     graph: DspGraph.Graph

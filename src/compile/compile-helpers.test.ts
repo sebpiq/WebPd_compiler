@@ -34,15 +34,15 @@ import { makeSettings } from './test-helpers'
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
         const NODE_IMPLEMENTATIONS: NodeImplementations = {
-            someNodeType: { loop: () => Sequence([]) },
+            someNodeType: { dsp: () => Sequence([]) },
             boringNodeType: {},
         }
 
         it('should return node implementation if it exists', () => {
             assert.strictEqual(
                 getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType')
-                    .loop,
-                NODE_IMPLEMENTATIONS['someNodeType'].loop
+                    .dsp,
+                NODE_IMPLEMENTATIONS['someNodeType'].dsp
             )
         })
 
@@ -174,7 +174,7 @@ describe('compile-helpers', () => {
         })
     })
 
-    describe('buildGraphTraversalLoop', () => {
+    describe('buildGraphTraversalSignal', () => {
         it('should return signal traversal and remove duplicates', () => {
             // [  n1  ]
             //    / \

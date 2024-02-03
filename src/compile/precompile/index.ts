@@ -41,8 +41,8 @@ import {
     precompileMessageOutlet,
     precompileInitialization,
     precompileMessageReceivers,
-    precompileInlineLoop,
-    precompileLoop,
+    precompileInlineDsp,
+    precompileDsp,
     precompileState,
     precompileCaching,
 } from './nodes'
@@ -166,13 +166,13 @@ export default (
 
     // ------------------------ DSP ------------------------ //
     inlinableDspGroups.forEach((dspGroup) => {
-        precompileInlineLoop(precompilation, dspGroup)
+        precompileInlineDsp(precompilation, dspGroup)
     })
 
     allDspGroups.forEach((dspGroup) => {
         traversers.toNodes(graph, dspGroup.traversal).forEach((node) => {
             precompileCaching(precompilation, node)
-            precompileLoop(precompilation, node)
+            precompileDsp(precompilation, node)
         })
     })
 
@@ -250,7 +250,7 @@ export const initializePrecompiledCode = (
                 ),
                 stateInitialization: null,
                 initialization: ast``,
-                loop: ast``,
+                dsp: ast``,
                 caching: createNamespace(
                     nodeNamespaceLabel(node, 'caching'),
                     {}

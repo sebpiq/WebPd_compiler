@@ -297,7 +297,7 @@ export const precompileInitialization = (
         : ast``
 }
 
-export const precompileLoop = (
+export const precompileDsp = (
     { input: { settings }, output }: PrecompilationOperation,
     node: DspGraph.Node
 ) => {
@@ -321,17 +321,17 @@ export const precompileLoop = (
         settings,
     }
 
-    // Nodes that come here might have an inlinable loop, but still can't
+    // Nodes that come here might have inlinable dsp, but still can't
     // be inlined because, for example, they have 2 sinks.
-    if (nodeImplementation.flags && nodeImplementation.flags.isLoopInline) {
+    if (nodeImplementation.flags && nodeImplementation.flags.isDspInline) {
         const outletId = Object.keys(node.outlets)[0]
-        precompiledNode.loop = ast`${
+        precompiledNode.dsp = ast`${
             variableNamesIndex.nodes[node.id].signalOuts[outletId]
-        } = ${nodeImplementation.loop(context)}`
-    } else if (nodeImplementation.loop) {
-        precompiledNode.loop = nodeImplementation.loop(context)
+        } = ${nodeImplementation.dsp(context)}`
+    } else if (nodeImplementation.dsp) {
+        precompiledNode.dsp = nodeImplementation.dsp(context)
     } else {
-        throw new Error(`No loop to generate for node ${node.type}:${node.id}`)
+        throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
     }
 }
 
@@ -353,7 +353,7 @@ export const precompileLoop = (
  *
  * ```
  */
-export const precompileInlineLoop = (
+export const precompileInlineDsp = (
     { input: { graph, settings }, output }: PrecompilationOperation,
     dspGroup: DspGroup
 ): void => {
@@ -400,35 +400,20 @@ export const precompileInlineLoop = (
                 }
             )
 
-            // TODO assemblyscript-upgrade : we need this because of a assemblyscript bug that seems
-            // to be fixed in latest version. Remove when upgrading.
-            // Bugs when a single variable name is surrounded with brackets : e.g. `(node1_OUTS_0)`
-            // causes compilation error.
-            const inlined = nodeImplementation.loop({
-                globs,
-                state,
-                ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
-                    ...ins,
-                    ...inlinedInputs,
-                }),
-                outs,
-                snds,
-                node,
-                settings,
-            })
-            const needsFix =
-                inlined.content.length > 1 ||
-                (typeof inlined.content[0] === 'string' &&
-                    inlined.content[0].includes(' '))
-
-            if (needsFix) {
-                inlined.content.unshift('(')
-                inlined.content.push(')')
-            }
-            // END TODO
             return {
                 ...inlinedNodes,
-                [nodeId]: render(getMacros(settings.target), inlined),
+                [nodeId]: '(' + render(getMacros(settings.target), nodeImplementation.dsp({
+                    globs,
+                    state,
+                    ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
+                        ...ins,
+                        ...inlinedInputs,
+                    }),
+                    outs,
+                    snds,
+                    node,
+                    settings,
+                })) + ')',
             }
         },
         {}

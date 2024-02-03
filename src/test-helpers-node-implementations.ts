@@ -153,7 +153,7 @@ export const generateFramesForNode = async <NodeArguments>(
                             return
                         `
 
-                        // Messages received for signal outlets are written to the loop
+                        // Messages received for signal outlets are written to the dspLoop
                     } else {
                         return AnonFunc([Var('Message', 'm')])`
                             ${state}.VALUE_${outletId} = msg_readFloatToken(m, 0)
@@ -162,7 +162,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     }
                 }),
 
-            loop: ({ outs, state }) =>
+            dsp: ({ outs, state }) =>
                 Sequence(
                     Object.keys(fakeSourceNode.outlets)
                         .filter(
@@ -211,7 +211,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            loop: ({ ins, snds }) =>
+            dsp: ({ ins, snds }) =>
                 Sequence(
                     Object.keys(testNode.sinks)
                         .filter(
@@ -423,7 +423,7 @@ export const generateFramesForNode = async <NodeArguments>(
         })
 
         // Run the loop
-        engine.loop(engineInput, engineOutput)
+        engine.dspLoop(engineInput, engineOutput)
         outputFrames.push(outputFrame)
     })
 
@@ -490,7 +490,7 @@ export const generateFrames = (
 
     const results: Array<Array<number>> = []
     for (let i = 0; i < iterations; i++) {
-        engine.loop(engineInput, engineOutput)
+        engine.dspLoop(engineInput, engineOutput)
         // Block size 1, so we flatten the array and get just the first sample
         results.push(engineOutput.map((channelValues) => channelValues[0]))
     }

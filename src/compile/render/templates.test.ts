@@ -467,8 +467,8 @@ describe('templates', () => {
         })
     })
 
-    describe('templates.loop', () => {
-        it('should compile the loop function', () => {
+    describe('templates.dspLoop', () => {
+        it('should compile the dsp loop function', () => {
             const graph = makeGraph({
                 n1: {},
                 n2: {},
@@ -483,11 +483,11 @@ describe('templates', () => {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             }
-            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.loop = ast`// n2`
-            renderInput.precompiledCode.nodes.n3.loop = ast`// n3`
+            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.dsp = ast`// n2`
+            renderInput.precompiledCode.nodes.n3.dsp = ast`// n3`
 
-            const sequence = templates.loop(renderInput)
+            const sequence = templates.dspLoop(renderInput)
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
@@ -504,7 +504,7 @@ describe('templates', () => {
             )
         })
 
-        it('should add to the loop caching functions not connected to cold dsp', () => {
+        it('should add to the dsp loop caching functions not connected to cold dsp', () => {
             const graph = makeGraph({
                 n1: {},
             })
@@ -514,14 +514,14 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.nodes.n1.caching.$0 = ast`// caching 0`
-            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
             renderInput.precompiledCode.graph.hotDspGroup = {
                 traversal: ['n1'],
                 outNodesIds: ['n1'],
             }
             renderInput.precompiledCode.graph.coldDspGroups = {}
 
-            const sequence = templates.loop(renderInput)
+            const sequence = templates.dspLoop(renderInput)
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
@@ -585,9 +585,9 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.loop = ast`// n2`
-            renderInput.precompiledCode.nodes.n3.loop = ast`// n3`
+            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.dsp = ast`// n2`
+            renderInput.precompiledCode.nodes.n3.dsp = ast`// n3`
 
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
@@ -660,7 +660,7 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
             renderInput.precompiledCode.nodes.n2.caching.$0 = ast`// caching n2`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
@@ -713,7 +713,7 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1'],

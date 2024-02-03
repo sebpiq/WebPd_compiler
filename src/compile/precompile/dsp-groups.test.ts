@@ -502,9 +502,9 @@ describe('dsp-groups', () => {
             const nodeImplementations: NodeImplementations = {
                 inlinableType: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: () => ast``,
+                    dsp: () => ast``,
                 },
                 nonInlinableType: {},
             }
@@ -573,9 +573,9 @@ describe('dsp-groups', () => {
             const nodeImplementations: NodeImplementations = {
                 inlinableType: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: () => ast``,
+                    dsp: () => ast``,
                 },
                 nonInlinableType: {},
             }
@@ -624,9 +624,9 @@ describe('dsp-groups', () => {
             const nodeImplementations: NodeImplementations = {
                 inlinableType: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: () => ast``,
+                    dsp: () => ast``,
                 }
             }
 

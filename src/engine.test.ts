@@ -99,7 +99,7 @@ describe('Engine', () => {
                 },
             },
             {
-                DUMMY: { loop: () => Sequence([]) },
+                DUMMY: { dsp: () => Sequence([]) },
                 ...(nodeImplementations || {}),
                 [dependenciesInjectorType]: {
                     dependencies: injectedDependencies,
@@ -129,7 +129,7 @@ describe('Engine', () => {
         return engine
     }
 
-    describe('configure/loop', () => {
+    describe('configure/dspLoop', () => {
         it.each(
             TEST_PARAMETERS.map((params, i) => ({
                 ...params,
@@ -142,7 +142,7 @@ describe('Engine', () => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        loop: ({
+                        dsp: ({
                             globs,
                             settings: {
                                 audio: { channelCount },
@@ -197,17 +197,17 @@ describe('Engine', () => {
                 }
 
                 engine.configure(44100, blockSize)
-                engine.loop(input, output)
+                engine.dspLoop(input, output)
                 assert.deepStrictEqual(output, expected)
             }
         )
 
         it.each(TEST_PARAMETERS)(
-            'should take input block and pass it to the loop %s',
+            'should take input block and pass it to the dspLoop %s',
             async ({ target, bitDepth }) => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        loop: ({
+                        dsp: ({
                             globs,
                             settings: {
                                 target,
@@ -261,7 +261,7 @@ describe('Engine', () => {
                 })
 
                 engine.configure(44100, blockSize)
-                engine.loop(input, output)
+                engine.dspLoop(input, output)
                 assert.deepStrictEqual(output, [
                     new Float32Array([2, 4, 6, 8]),
                     new Float32Array([1, 3, 5, 7]),
@@ -367,7 +367,7 @@ describe('Engine', () => {
                                 globs.sampleRate
                             }})
                             `,
-                            loop: ({ globs, state, settings: { target } }) =>
+                            dsp: ({ globs, state, settings: { target } }) =>
                                 target === 'assemblyscript'
                                     ? ast`${globs.output}[0] = ${state}.configureCalled`
                                     : ast`${globs.output}[0][0] = ${state}.configureCalled`,
@@ -407,7 +407,7 @@ describe('Engine', () => {
                     )
 
                     engine.configure(44100, 1)
-                    engine.loop([], output)
+                    engine.dspLoop([], output)
                     assert.deepStrictEqual(output, [
                         new floatArrayType([44100]),
                     ])

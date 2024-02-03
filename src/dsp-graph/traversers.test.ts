@@ -369,7 +369,7 @@ describe('graph-traversal', () => {
             assert.deepStrictEqual(traversal, ['n1', 'n2', 'n3'])
         })
 
-        it('traverses fine with a loop in the graph', () => {
+        it('traverses fine with a cycle in the graph', () => {
             //           /\
             //    [  n1  ] |
             //     |       |
@@ -504,7 +504,7 @@ describe('graph-traversal', () => {
             assert.deepStrictEqual(traversal, ['n1', 'n3', 'n2'])
         })
 
-        it('traverses fine with a loop in the graph', () => {
+        it('traverses fine with a cycle in the graph', () => {
             //           /\
             //    [  n1  ] |
             //     |       |

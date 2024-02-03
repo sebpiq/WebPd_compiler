@@ -28,8 +28,8 @@ import {
     precompileMessageInlet,
     precompileMessageReceivers,
     precompileInitialization,
-    precompileLoop,
-    precompileInlineLoop,
+    precompileDsp,
+    precompileInlineDsp,
     precompileState,
     precompileCaching,
 } from './nodes'
@@ -737,8 +737,8 @@ describe('precompile.nodes', () => {
         })
     })
 
-    describe('precompileLoop', () => {
-        it('should precompile node loop', () => {
+    describe('precompileDsp', () => {
+        it('should precompile node dsp', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -747,7 +747,7 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 type1: {
-                    loop: () => ast`// loop type1`,
+                    dsp: () => ast`// dsp type1`,
                 },
             }
 
@@ -756,15 +756,15 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileLoop(precompilation, graph.n1)
+            precompileDsp(precompilation, graph.n1)
 
             assert.deepStrictEqual(
-                precompilation.output.nodes.n1.loop,
-                ast`// loop type1`
+                precompilation.output.nodes.n1.dsp,
+                ast`// dsp type1`
             )
         })
 
-        it('should precompile inline node loop', () => {
+        it('should precompile inline node dsp', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -777,9 +777,9 @@ describe('precompile.nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 type1: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: () => ast`a + b`,
+                    dsp: () => ast`a + b`,
                 },
             }
 
@@ -791,15 +791,15 @@ describe('precompile.nodes', () => {
             precompilation.output.variableNamesIndex.nodes.n1.signalOuts.$0 =
                 'n1_OUTS_0'
 
-            precompileLoop(precompilation, graph.n1)
+            precompileDsp(precompilation, graph.n1)
 
             assert.deepStrictEqual(
-                precompilation.output.nodes.n1.loop,
+                precompilation.output.nodes.n1.dsp,
                 ast`n1_OUTS_0 = a + b`
             )
         })
 
-        it('should throw an error if no loop', () => {
+        it('should throw an error if no dsp', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -815,12 +815,12 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            assert.throws(() => precompileLoop(precompilation, graph.n1))
+            assert.throws(() => precompileDsp(precompilation, graph.n1))
         })
     })
 
-    describe('precompileInlineLoop', () => {
-        it('should compile the inline loop code', () => {
+    describe('precompileInlineDsp', () => {
+        it('should compile the inline dsp code', () => {
             //       [  n1  ]
             //            \
             // [  n2  ]  [  n3  ]
@@ -895,22 +895,22 @@ describe('precompile.nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 inlinableType0: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args } }) => ast`${args.value} + 1`,
+                    dsp: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlinableType1: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args }, ins }) =>
+                    dsp: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 inlinableType2: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args }, ins }) =>
+                    dsp: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
                 nonInlinableType: {},
@@ -921,7 +921,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileInlineLoop(precompilation, {
+            precompileInlineDsp(precompilation, {
                 traversal: ['n2', 'n1', 'n3', 'n4'],
                 outNodesIds: ['n4'],
             })
@@ -1003,16 +1003,16 @@ describe('precompile.nodes', () => {
                 messageType: {},
                 inlinableType0: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args } }) => 
+                    dsp: ({ node: { args } }) => 
                         ast`${args.value} + 1`,
                 },
                 inlinableType1: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args }, ins }) =>
+                    dsp: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 nonInlinableType: {},
@@ -1023,7 +1023,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileInlineLoop(precompilation, {
+            precompileInlineDsp(precompilation, {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             })
@@ -1093,22 +1093,22 @@ describe('precompile.nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 inlinableType0: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args } }) => ast`${args.value} + 1`,
+                    dsp: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlinableType1: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args }, ins }) =>
+                    dsp: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 inlinableType2: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args }, ins }) =>
+                    dsp: ({ node: { args }, ins }) =>
                         ast`${args.value} * ${ins.$0} - ${args.value} * ${ins.$1}`,
                 },
                 nonInlinableType: {},
@@ -1122,7 +1122,7 @@ describe('precompile.nodes', () => {
             precompilation.output.nodes.n2.generationContext.signalIns.$1 =
                 'BLA'
 
-            precompileInlineLoop(precompilation, {
+            precompileInlineDsp(precompilation, {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             })
@@ -1181,9 +1181,9 @@ describe('precompile.nodes', () => {
             const nodeImplementations: NodeImplementations = {
                 inlinableType1: {
                     flags: {
-                        isLoopInline: true,
+                        isDspInline: true,
                     },
-                    loop: ({ node: { args }, ins }) =>
+                    dsp: ({ node: { args }, ins }) =>
                         ast`${ins.$0} * ${args.value}`,
                 },
                 signalType: {},
@@ -1198,7 +1198,7 @@ describe('precompile.nodes', () => {
             precompilation.output.nodes.n1.generationContext.signalIns.$0 =
                 'nonInline1_OUTS_0'
 
-            precompileInlineLoop(precompilation, {
+            precompileInlineDsp(precompilation, {
                 traversal: ['n1', 'n2'],
                 outNodesIds: ['n2'],
             })
