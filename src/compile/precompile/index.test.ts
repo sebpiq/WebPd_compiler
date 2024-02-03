@@ -260,11 +260,11 @@ describe('precompile', () => {
         )
     })
 
-    it('should precompile cold dsp groups and caching functions', () => {
+    it('should precompile cold dsp groups and inlets dsp functions', () => {
         //
         //  [  n1  ]  <- out node of the dsp group
         //    |
-        //  [  n2  ]  <- sink node with caching function
+        //  [  n2  ]  <- sink node with inlet dsp function
         //
         const graph = makeGraph({
             n1: {
@@ -290,10 +290,12 @@ describe('precompile', () => {
 
         const nodeImplementations: NodeImplementations = {
             signalType: {
-                caching: () => ({
-                    '0': ast`// caching 0`,
+                dsp: () => ({
+                    inlets: {
+                        '0': ast`// inlet dsp 0`,
+                    },
+                    loop: ast`// dsp signalType`,
                 }),
-                dsp: () => ast`// dsp signalType`,
             },
             coldNodeType: {
                 flags: {
@@ -326,10 +328,10 @@ describe('precompile', () => {
         )
 
         assert.deepStrictEqual<AstSequence>(
-            precompiledCode.nodes.n2.caching['0'],
+            precompiledCode.nodes.n2.dsp.inlets['0'],
             {
                 astType: 'Sequence',
-                content: ['// caching 0'],
+                content: ['// inlet dsp 0'],
             }
         )
     })

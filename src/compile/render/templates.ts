@@ -220,9 +220,9 @@ const dspLoop = ({
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
             _commons_emitFrame(${globs.frame})
             ${hotDspGroup.traversal.map((nodeId) => [
-                // For all caching functions, we render those that are not
+                // For all inlets dsp functions, we render those that are not
                 // the sink of a cold dsp group.
-                ...Object.entries(nodes[nodeId].caching)
+                ...Object.entries(nodes[nodeId].dsp.inlets)
                     .filter(([inletId]) => 
                         findColdDspGroupFromSink(
                             coldDspGroups, { 
@@ -233,7 +233,7 @@ const dspLoop = ({
                     .map(([_, astElement]) => 
                         astElement
                     ),
-                nodes[nodeId].dsp
+                nodes[nodeId].dsp.loop
             ])}
             ${globs.frame}++
         }
@@ -261,18 +261,23 @@ const coldDspFunctions = ({
             ([groupId, dspGroup]) =>
                 // prettier-ignore
                 Func(variableNamesIndex.coldDspGroups[groupId], [
-                Var('Message', 'm')
-            ], 'void')`
-                ${dspGroup.traversal.map((nodeId) => 
-                    nodes[nodeId].dsp
-                )}
-                ${dspGroup.sinkConnections
-                    .filter(([_, sink]) => sink.portletId in nodes[sink.nodeId].caching)
-                    .map(([_, sink]) => 
-                        nodes[sink.nodeId].caching[sink.portletId]
-                    )
-                }
-            `
+                    Var('Message', 'm')
+                ], 'void')`
+                    ${dspGroup.traversal.map((nodeId) => 
+                        nodes[nodeId].dsp.loop
+                    )}
+                    ${
+                        // For all sinks of the cold dsp group, we also render 
+                        // the inlets dsp functions that are connected to it. 
+                        dspGroup.sinkConnections
+                        .filter(([_, sink]) => 
+                            sink.portletId in nodes[sink.nodeId].dsp.inlets
+                        )
+                        .map(([_, sink]) => 
+                            nodes[sink.nodeId].dsp.inlets[sink.portletId]
+                        )
+                    }
+                `
         )
     )
 

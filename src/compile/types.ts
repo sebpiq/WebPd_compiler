@@ -138,6 +138,9 @@ export interface NodeImplementation<NodeArgsType = any> {
     /**
      * Generates the code that will be ran each iteration of the dsp loop for that node instance.
      * Typically reads from ins, runs some calculations, and write results to outs.
+     * 
+     * Can also define dsp per inlet, in which case that dsp will be ran only when the inlet value changes.
+     * This allows to optimize the dsp loop by only running the code that is necessary.
      */
     dsp?: (context: {
         globs: VariableNamesIndex['globs']
@@ -147,7 +150,12 @@ export interface NodeImplementation<NodeArgsType = any> {
         snds: PrecompiledNodeCode['generationContext']['messageSenders']
         node: DspGraph.Node<NodeArgsType>
         settings: CompilationSettings
-    }) => AstSequence
+    }) =>
+        | AstSequence
+        | {
+              loop: AstSequence
+              inlets: { [inletId: DspGraph.PortletId]: AstElement }
+          }
 
     /**
      * Generate code for message receivers for a given node instance.
@@ -160,16 +168,6 @@ export interface NodeImplementation<NodeArgsType = any> {
         settings: CompilationSettings
     }) => {
         [inletId: DspGraph.PortletId]: AstFunc
-    }
-
-    caching?: (context: {
-        globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['generationContext']['state']
-        ins: PrecompiledNodeCode['generationContext']['signalIns']
-        node: DspGraph.Node<NodeArgsType>
-        settings: CompilationSettings
-    }) => {
-        [inletId: DspGraph.PortletId]: AstElement
     }
 
     /** List of dependencies for this node type */

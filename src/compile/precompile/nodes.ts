@@ -20,7 +20,7 @@
 import { assertFuncSignatureEqual } from '../../ast/ast-helpers'
 import { AnonFunc, Func, Var, ast } from '../../ast/declare'
 import render from '../render'
-import { Code, VariableName } from '../../ast/types'
+import { AstElement, AstSequence, Code, VariableName } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
@@ -311,7 +311,14 @@ export const precompileDsp = (
         state,
     } = precompiledNode.generationContext
     const { nodeImplementation } = precompiledNode
-    const context = {
+
+    // Nodes that come here might have inlinable dsp, but still can't
+    // be inlined because, for example, they have 2 sinks.
+    if (!nodeImplementation.dsp) {
+        throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
+    }
+
+    const compiledDsp = nodeImplementation.dsp({
         globs,
         node,
         state,
@@ -319,19 +326,27 @@ export const precompileDsp = (
         outs,
         snds,
         settings,
-    }
+    })
 
-    // Nodes that come here might have inlinable dsp, but still can't
-    // be inlined because, for example, they have 2 sinks.
     if (nodeImplementation.flags && nodeImplementation.flags.isDspInline) {
+        if ('loop' in compiledDsp) {
+            throw new Error(
+                `Invalid dsp definition for inlinable node ${node.type}:${node.id}`
+            )
+        }
         const outletId = Object.keys(node.outlets)[0]
-        precompiledNode.dsp = ast`${
+        precompiledNode.dsp.loop = ast`${
             variableNamesIndex.nodes[node.id].signalOuts[outletId]
-        } = ${nodeImplementation.dsp(context)}`
-    } else if (nodeImplementation.dsp) {
-        precompiledNode.dsp = nodeImplementation.dsp(context)
+        } = ${compiledDsp}`
+    } else if ('loop' in compiledDsp) {
+        precompiledNode.dsp.loop = compiledDsp.loop
+        Object.entries(compiledDsp.inlets).forEach(
+            ([inletId, precompiledDspForInlet]) => {
+                precompiledNode.dsp.inlets[inletId] = precompiledDspForInlet
+            }
+        )
     } else {
-        throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
+        precompiledNode.dsp.loop = compiledDsp
     }
 }
 
@@ -400,20 +415,27 @@ export const precompileInlineDsp = (
                 }
             )
 
+            const compiledDsp = nodeImplementation.dsp({
+                globs,
+                state,
+                ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
+                    ...ins,
+                    ...inlinedInputs,
+                }),
+                outs,
+                snds,
+                node,
+                settings,
+            })
+
+            if (!('astType' in compiledDsp)) {
+                throw new Error(`Inlined dsp can only be an AstSequence`)
+            }
+
             return {
                 ...inlinedNodes,
-                [nodeId]: '(' + render(getMacros(settings.target), nodeImplementation.dsp({
-                    globs,
-                    state,
-                    ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
-                        ...ins,
-                        ...inlinedInputs,
-                    }),
-                    outs,
-                    snds,
-                    node,
-                    settings,
-                })) + ')',
+                [nodeId]:
+                    '(' + render(getMacros(settings.target), compiledDsp) + ')',
             }
         },
         {}
@@ -423,39 +445,6 @@ export const precompileInlineDsp = (
     output.nodes[groupSinkNode.nodeId].generationContext.signalIns[
         groupSinkNode.portletId
     ] = inlinedNodes[dspGroup.outNodesIds[0]]
-}
-
-export const precompileCaching = (
-    { input: { settings }, output }: PrecompilationOperation,
-    node: DspGraph.Node
-): void => {
-    const { variableNamesIndex } = output
-    const precompiledNode = output.nodes[node.id]
-    const { globs } = variableNamesIndex
-    const { nodeImplementation } = precompiledNode
-    const { state, signalIns: ins } = precompiledNode.generationContext
-    const caching = createNamespace(
-        nodeNamespaceLabel(node, 'caching'),
-        nodeImplementation.caching
-            ? nodeImplementation.caching({
-                  globs,
-                  state,
-                  ins,
-                  node,
-                  settings,
-              })
-            : {}
-    )
-
-    Object.entries(caching).forEach(([inletId, astElement]) => {
-        // If that sink is directly connected to a cold dsp group,
-        // then the caching function will be ran at the same time
-        // as the cold dsp.
-        //
-        // Otherwise, that caching function will be ran in the same dsp
-        // flow as the node.
-        precompiledNode.caching[inletId] = astElement
-    })
 }
 
 const _getInlinableGroupSinkNode = (

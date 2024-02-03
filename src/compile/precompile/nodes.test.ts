@@ -31,7 +31,6 @@ import {
     precompileDsp,
     precompileInlineDsp,
     precompileState,
-    precompileCaching,
 } from './nodes'
 import { makePrecompilation } from '../test-helpers'
 
@@ -601,45 +600,6 @@ describe('precompile.nodes', () => {
         })
     })
 
-    describe('precompileCaching', () => {
-        it('should precompile caching functions', () => {
-            const graph = makeGraph({
-                n1: {
-                    type: 'type1',
-                },
-                n2: {
-                    type: 'type2',
-                },
-            })
-
-            const nodeImplementations: NodeImplementations = {
-                type1: {},
-                type2: {
-                    caching: () => ({
-                        '0': ast`// caching inlet 0`,
-                        '1': ast`// caching inlet 1`,
-                    }),
-                },
-            }
-
-            const precompilation = makePrecompilation({
-                graph,
-                nodeImplementations,
-            })
-
-            precompileCaching(precompilation, graph.n1!)
-
-            assert.deepStrictEqual(precompilation.output.nodes.n1.caching, {})
-
-            precompileCaching(precompilation, graph.n2!)
-
-            assert.deepStrictEqual(precompilation.output.nodes.n2.caching, {
-                '0': ast`// caching inlet 0`,
-                '1': ast`// caching inlet 1`,
-            })
-        })
-    })
-
     describe('precompileState', () => {
         it('should precompile node state initialization', () => {
             const graph = makeGraph({
@@ -738,7 +698,7 @@ describe('precompile.nodes', () => {
     })
 
     describe('precompileDsp', () => {
-        it('should precompile node dsp', () => {
+        it('should precompile node loop dsp', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -758,13 +718,13 @@ describe('precompile.nodes', () => {
 
             precompileDsp(precompilation, graph.n1)
 
-            assert.deepStrictEqual(
-                precompilation.output.nodes.n1.dsp,
-                ast`// dsp type1`
-            )
+            assert.deepStrictEqual(precompilation.output.nodes.n1.dsp, {
+                loop: ast`// dsp type1`,
+                inlets: {},
+            })
         })
 
-        it('should precompile inline node dsp', () => {
+        it('should precompile inline node loop dsp', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
@@ -793,10 +753,45 @@ describe('precompile.nodes', () => {
 
             precompileDsp(precompilation, graph.n1)
 
-            assert.deepStrictEqual(
-                precompilation.output.nodes.n1.dsp,
-                ast`n1_OUTS_0 = a + b`
-            )
+            assert.deepStrictEqual(precompilation.output.nodes.n1.dsp, {
+                loop: ast`n1_OUTS_0 = a + b`,
+                inlets: {},
+            })
+        })
+
+        it('should precompile node inlets dsp', () => {
+            const graph = makeGraph({
+                n1: {
+                    type: 'type1',
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                type1: {
+                    dsp: () => ({
+                        inlets: {
+                            '0': ast`// inlet dsp 0`,
+                            '1': ast`// inlet dsp 1`,
+                        },
+                        loop: ast``,
+                    }),
+                },
+            }
+
+            const precompilation = makePrecompilation({
+                graph,
+                nodeImplementations,
+            })
+
+            precompileDsp(precompilation, graph.n1!)
+
+            assert.deepStrictEqual(precompilation.output.nodes.n1.dsp, {
+                loop: ast``,
+                inlets: {
+                    '0': ast`// inlet dsp 0`,
+                    '1': ast`// inlet dsp 1`,
+                },
+            })
         })
 
         it('should throw an error if no dsp', () => {
@@ -1005,8 +1000,7 @@ describe('precompile.nodes', () => {
                     flags: {
                         isDspInline: true,
                     },
-                    dsp: ({ node: { args } }) => 
-                        ast`${args.value} + 1`,
+                    dsp: ({ node: { args } }) => ast`${args.value} + 1`,
                 },
                 inlinableType1: {
                     flags: {

@@ -44,7 +44,6 @@ import {
     precompileInlineDsp,
     precompileDsp,
     precompileState,
-    precompileCaching,
 } from './nodes'
 import {
     buildColdDspGroups,
@@ -171,7 +170,6 @@ export default (
 
     allDspGroups.forEach((dspGroup) => {
         traversers.toNodes(graph, dspGroup.traversal).forEach((node) => {
-            precompileCaching(precompilation, node)
             precompileDsp(precompilation, node)
         })
     })
@@ -250,11 +248,10 @@ export const initializePrecompiledCode = (
                 ),
                 stateInitialization: null,
                 initialization: ast``,
-                dsp: ast``,
-                caching: createNamespace(
-                    nodeNamespaceLabel(node, 'caching'),
-                    {}
-                ),
+                dsp: {
+                    loop: ast``,
+                    inlets: createNamespace('dsp:inlets', {}),
+                },
                 state: null,
             }))
         ),

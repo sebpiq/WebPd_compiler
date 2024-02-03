@@ -483,9 +483,9 @@ describe('templates', () => {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             }
-            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.dsp = ast`// n2`
-            renderInput.precompiledCode.nodes.n3.dsp = ast`// n3`
+            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.dsp.loop = ast`// n2`
+            renderInput.precompiledCode.nodes.n3.dsp.loop = ast`// n3`
 
             const sequence = templates.dspLoop(renderInput)
 
@@ -504,7 +504,7 @@ describe('templates', () => {
             )
         })
 
-        it('should add to the dsp loop caching functions not connected to cold dsp', () => {
+        it('should add to the dsp loop inlet dsp functions not connected to cold dsp', () => {
             const graph = makeGraph({
                 n1: {},
             })
@@ -513,8 +513,8 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.caching.$0 = ast`// caching 0`
-            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
+            renderInput.precompiledCode.nodes.n1.dsp.inlets.$0 = ast`// inlet dsp 0`
+            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
             renderInput.precompiledCode.graph.hotDspGroup = {
                 traversal: ['n1'],
                 outNodesIds: ['n1'],
@@ -529,7 +529,7 @@ describe('templates', () => {
                     astType: 'Sequence',
                     content: [
                         `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
-                            '// caching 0\n' +
+                            '// inlet dsp 0\n' +
                             '// n1\n' +
                             `FRAME++\n}`,
                     ],
@@ -585,9 +585,9 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.dsp = ast`// n2`
-            renderInput.precompiledCode.nodes.n3.dsp = ast`// n3`
+            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.dsp.loop = ast`// n2`
+            renderInput.precompiledCode.nodes.n3.dsp.loop = ast`// n3`
 
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
@@ -650,7 +650,7 @@ describe('templates', () => {
             })
         })
 
-        it('should add calls to caching functions which are connected to cold dsp groups', () => {
+        it('should add calls to inlet dsp functions which are connected to cold dsp groups', () => {
             const graph = makeGraph({
                 n1: {},
                 n2: {},
@@ -660,8 +660,8 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
-            renderInput.precompiledCode.nodes.n2.caching.$0 = ast`// caching n2`
+            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
+            renderInput.precompiledCode.nodes.n2.dsp.inlets.$0 = ast`// inlet dsp n2`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1'],
@@ -696,14 +696,14 @@ describe('templates', () => {
                         returnType: 'void',
                         body: {
                             astType: 'Sequence',
-                            content: ['// n1\n// caching n2'],
+                            content: ['// n1\n// inlet dsp n2'],
                         },
                     },
                 ],
             })
         })
 
-        it('should not add calls to caching if not defined by the sink node', () => {
+        it('should not add calls to inlet dsp if not defined by the sink node', () => {
             const graph = makeGraph({
                 n1: {},
                 n2: {},
@@ -713,7 +713,7 @@ describe('templates', () => {
                 graph,
             })
 
-            renderInput.precompiledCode.nodes.n1.dsp = ast`// n1`
+            renderInput.precompiledCode.nodes.n1.dsp.loop = ast`// n1`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
                     traversal: ['n1'],

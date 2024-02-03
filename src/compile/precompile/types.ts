@@ -68,8 +68,10 @@ export interface PrecompiledNodeCode {
     }
     signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
     initialization: AstElement
-    dsp: AstElement
-    caching: { [inletId: DspGraph.PortletId]: AstElement }
+    dsp: {
+        loop: AstElement,
+        inlets: { [inletId: DspGraph.PortletId]: AstElement }
+    }
 }
 
 export interface DspGroup {
