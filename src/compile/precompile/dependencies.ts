@@ -29,12 +29,12 @@ import { traversers } from '../../dsp-graph'
 import { core, commonsCore, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
 import {
-    PrecompilationOperation,
+    Precompilation,
     PrecompiledCode,
     VariableNamesIndex,
 } from './types'
 
-export default (precompilation: PrecompilationOperation) => {
+export default (precompilation: Precompilation) => {
     const dependencies = flattenDependencies([
         ...engineMinimalDependencies(),
         ..._collectDependenciesFromTraversal(precompilation),
@@ -147,7 +147,7 @@ export const flattenDependencies = (
 const _collectDependenciesFromTraversal = ({
     input: { graph },
     output,
-}: PrecompilationOperation): Array<GlobalCodeDefinition> => {
+}: Precompilation): Array<GlobalCodeDefinition> => {
     return traversers
         .toNodes(graph, output.graph.fullTraversal)
         .reduce<Array<GlobalCodeDefinition>>(

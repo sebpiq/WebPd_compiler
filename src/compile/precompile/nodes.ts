@@ -27,7 +27,7 @@ import { getMacros } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
 import { IoMessageSpecs, CompilationSettings } from '../types'
 import { attachNodeVariable } from './variable-names-index'
-import { DspGroup, PrecompilationOperation } from './types'
+import { DspGroup, Precompilation } from './types'
 import { isNodeInsideGroup } from './dsp-groups'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
@@ -36,7 +36,7 @@ type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
 const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 
 export const precompileState = (
-    { input: { settings }, output }: PrecompilationOperation,
+    { input: { settings }, output }: Precompilation,
     node: DspGraph.Node
 ) => {
     const { variableNamesIndex } = output
@@ -72,7 +72,7 @@ export const precompileState = (
 }
 
 export const precompileSignalOutlet = (
-    { input, output }: PrecompilationOperation,
+    { input, output }: Precompilation,
     node: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
@@ -106,7 +106,7 @@ export const precompileSignalOutlet = (
 }
 
 export const precompileSignalInletWithNoSource = (
-    { output }: PrecompilationOperation,
+    { output }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
@@ -115,7 +115,7 @@ export const precompileSignalInletWithNoSource = (
 }
 
 export const precompileMessageOutlet = (
-    { input: { settings }, output }: PrecompilationOperation,
+    { input: { settings }, output }: Precompilation,
     sourceNode: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
@@ -208,7 +208,7 @@ export const precompileMessageOutlet = (
 }
 
 export const precompileMessageInlet = (
-    { input, output }: PrecompilationOperation,
+    { input, output }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
@@ -241,7 +241,7 @@ export const precompileMessageInlet = (
  * all variable names defined before we can precompile message receivers.
  */
 export const precompileMessageReceivers = (
-    { input: { settings }, output }: PrecompilationOperation,
+    { input: { settings }, output }: Precompilation,
     node: DspGraph.Node
 ) => {
     const { variableNamesIndex } = output
@@ -278,7 +278,7 @@ export const precompileMessageReceivers = (
 }
 
 export const precompileInitialization = (
-    { input: { settings }, output }: PrecompilationOperation,
+    { input: { settings }, output }: Precompilation,
     node: DspGraph.Node
 ) => {
     const { variableNamesIndex } = output
@@ -299,7 +299,7 @@ export const precompileInitialization = (
 }
 
 export const precompileDsp = (
-    { input: { settings }, output }: PrecompilationOperation,
+    { input: { settings }, output }: Precompilation,
     node: DspGraph.Node
 ) => {
     const { variableNamesIndex } = output
@@ -370,7 +370,7 @@ export const precompileDsp = (
  * ```
  */
 export const precompileInlineDsp = (
-    { input: { graph, settings }, output }: PrecompilationOperation,
+    { input: { graph, settings }, output }: Precompilation,
     dspGroup: DspGroup
 ): void => {
     const { variableNamesIndex } = output

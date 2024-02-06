@@ -11,7 +11,7 @@ import {
 import { DspGraph } from '../../dsp-graph'
 import { NodeImplementations, CompilationSettings } from '../types'
 
-export interface PrecompilationOperation {
+export interface Precompilation {
     readonly input: PrecompilationInput
     readonly output: PrecompiledCode
 }

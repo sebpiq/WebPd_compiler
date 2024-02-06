@@ -33,7 +33,7 @@ import precompileDependencies, {
 } from './dependencies'
 import { Func, Sequence, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
-import { PrecompilationOperation, PrecompiledCode } from './types'
+import { Precompilation, PrecompiledCode } from './types'
 import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.dependencies', () => {

@@ -1,9 +1,9 @@
 import { DspGraph } from '../../dsp-graph'
-import { PrecompilationOperation } from './types'
+import { Precompilation } from './types'
 import { attachNodeImplementationVariable } from './variable-names-index'
 
 export const precompileStateClass = (
-    { input: { graph, settings }, output }: PrecompilationOperation,
+    { input: { graph, settings }, output }: Precompilation,
     nodeType: DspGraph.NodeType
 ) => {
     const { variableNamesIndex } = output
@@ -52,7 +52,7 @@ export const precompileStateClass = (
 }
 
 export const precompileCore = (
-    { input: { settings }, output }: PrecompilationOperation,
+    { input: { settings }, output }: Precompilation,
     nodeType: DspGraph.NodeType
 ) => {
     const { variableNamesIndex } = output

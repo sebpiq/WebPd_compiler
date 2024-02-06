@@ -4,7 +4,7 @@ import { buildFullGraphTraversal } from './compile-helpers'
 import { initializePrecompiledCode } from './precompile'
 import {
     PrecompilationInput,
-    PrecompilationOperation,
+    Precompilation,
 } from './precompile/types'
 import { RenderInput } from './render/types'
 import { AstSequence, AstElement, Code } from '../ast/types'
@@ -21,7 +21,7 @@ export const makeSettings = (settings: PartialSettings): CompilationSettings =>
 
 export const makePrecompilation = (
     precompilationInput: PartialPrecompilationInput
-): PrecompilationOperation => {
+): Precompilation => {
     const target = (precompilationInput.settings || {}).target || 'javascript'
     const settings = validateSettings(precompilationInput.settings || {}, target)
     const nodeImplementations = precompilationInput.nodeImplementations || {

@@ -1,10 +1,10 @@
 import { DspGraph, helpers, traversers } from '../../dsp-graph'
 import { endpointsEqual } from '../../dsp-graph/graph-helpers'
 import { buildGraphTraversalSignal } from '../compile-helpers'
-import { ColdDspGroup, DspGroup, PrecompilationOperation } from './types'
+import { ColdDspGroup, DspGroup, Precompilation } from './types'
 
 export const buildHotDspGroup = (
-    { input: { graph } }: PrecompilationOperation,
+    { input: { graph } }: Precompilation,
     parentDspGroup: DspGroup,
     coldDspGroups: Array<DspGroup>
 ): DspGroup => ({
@@ -17,7 +17,7 @@ export const buildHotDspGroup = (
 })
 
 export const buildColdDspGroups = (
-    precompilation: PrecompilationOperation,
+    precompilation: Precompilation,
     parentDspGroup: DspGroup
 ): Array<DspGroup> =>
     // Go through all nodes in the signal traversal, and find groups of signal nodes
@@ -91,7 +91,7 @@ export const buildColdDspGroups = (
         }))
 
 export const _buildSingleFlowColdDspGroups = (
-    precompilation: PrecompilationOperation,
+    precompilation: Precompilation,
     parentDspGroup: DspGroup
 ): Array<DspGroup> =>
     traversers
@@ -134,7 +134,7 @@ export const _buildSingleFlowColdDspGroups = (
         }, [])
 
 export const buildInlinableDspGroups = (
-    precompilation: PrecompilationOperation,
+    precompilation: Precompilation,
     parentDspGroup: DspGroup
 ): Array<DspGroup> =>
     traversers
@@ -204,7 +204,7 @@ export const removeNodesFromTraversal = (
 ) => traversal.filter((nodeId) => !toRemove.includes(nodeId))
 
 const _isNodeDspCold = (
-    { output }: PrecompilationOperation,
+    { output }: Precompilation,
     node: DspGraph.Node
 ) => {
     const nodeImplementation = output.nodes[node.id]!.nodeImplementation
@@ -214,7 +214,7 @@ const _isNodeDspCold = (
 }
 
 export const _isNodeDspInlinable = (
-    { output }: PrecompilationOperation,
+    { output }: Precompilation,
     node: DspGraph.Node
 ) => {
     const sinks = traversers

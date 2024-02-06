@@ -31,7 +31,7 @@ import {
     getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
-import { PrecompilationInput, PrecompilationOperation, PrecompiledCode } from './types'
+import { PrecompilationInput, Precompilation, PrecompiledCode } from './types'
 import { Sequence, ast } from '../../ast/declare'
 import precompileDependencies from './dependencies'
 import {
@@ -59,7 +59,7 @@ export default (
     precompilationInput: PrecompilationInput,
     fullTraversal: DspGraph.GraphTraversal
 ) => {
-    const precompilation: PrecompilationOperation = {
+    const precompilation: Precompilation = {
         input: precompilationInput,
         output: initializePrecompiledCode(precompilationInput, fullTraversal),
     }
