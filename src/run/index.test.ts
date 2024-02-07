@@ -76,7 +76,14 @@ describe('readMetadata', () => {
             },
             variableNamesIndex: {
                 io: {
-                    messageReceivers: { node1: { '0': 'ioRcv_node1_0' } },
+                    messageReceivers: {
+                        node1: {
+                            '0': {
+                                nodeId: 'n_ioRcv_node1_0',
+                                funcName: 'ioRcv_node1_0',
+                            },
+                        },
+                    },
                     messageSenders: {},
                 },
             },

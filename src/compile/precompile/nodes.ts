@@ -25,8 +25,7 @@ import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
-import { IoMessageSpecs, CompilationSettings } from '../types'
-import { attachNodeVariable } from './variable-names-index'
+import { attachNodePortlet, attachNodeState } from './variable-names-index'
 import { DspGroup, Precompilation } from './types'
 import { isNodeInsideGroup } from './dsp-groups'
 
@@ -56,6 +55,9 @@ export const precompileState = (
             settings,
             stateClassName,
         })
+
+        const stateInstanceName = attachNodeState(variableNamesIndex, settings, node)
+        precompiledNode.generationContext.state = stateInstanceName
 
         // Add state iniialization to the node.
         precompiledNode.state = {
@@ -89,7 +91,7 @@ export const precompileSignalOutlet = (
     //
     //      NODE2_OUT = NODE1_OUT * 2
     //
-    const signalOutName = attachNodeVariable(
+    const signalOutName = attachNodePortlet(
         output.variableNamesIndex,
         input.settings,
         'signalOuts',
@@ -122,20 +124,11 @@ export const precompileMessageOutlet = (
     const outletSinks = getters.getSinks(sourceNode, outletId)
     const { variableNamesIndex } = output
     const precompiledNode = output.nodes[sourceNode.id]!
-
-    const ioSendersPortletIds = _getPortletIdsFromMsgIo(
-        settings.io.messageSenders,
-        sourceNode.id
-    )
-    const hasIoSender = ioSendersPortletIds.includes(outletId)
     const functionNames = [
         ...outletSinks.map(
             ({ nodeId: sinkNodeId, portletId: inletId }) =>
                 variableNamesIndex.nodes[sinkNodeId]!.messageReceivers[inletId]!
         ),
-        ...(hasIoSender
-            ? [variableNamesIndex.io.messageSenders[sourceNode.id]![outletId]!]
-            : []),
         ...outletSinks.reduce<Array<VariableName>>(
             (coldDspFunctionNames, sink) => {
                 const groupsContainingSink = Object.entries(
@@ -164,7 +157,7 @@ export const precompileMessageOutlet = (
     //      }
     //
     if (functionNames.length > 1) {
-        const messageSenderName = attachNodeVariable(
+        const messageSenderName = attachNodePortlet(
             output.variableNamesIndex,
             settings,
             'messageSenders',
@@ -213,8 +206,8 @@ export const precompileMessageInlet = (
     inletId: DspGraph.PortletId
 ) => {
     const precompiledNode = output.nodes[node.id]!
-    if (_getMessageInletTotalSourceCount(input.settings, node, inletId) >= 1) {
-        const messageReceiverName = attachNodeVariable(
+    if (getters.getSources(node, inletId).length >= 1) {
+        const messageReceiverName = attachNodePortlet(
             output.variableNamesIndex,
             input.settings,
             'messageReceivers',
@@ -462,23 +455,3 @@ const _getInlinableGroupSinkNode = (
         return outlet.type === 'signal'
     })![1][0]!
 }
-
-const _getMessageInletTotalSourceCount = (
-    settings: CompilationSettings,
-    node: DspGraph.Node,
-    inletId: DspGraph.PortletId
-) => {
-    const { io } = settings
-    const ioReceiversPortletIds = _getPortletIdsFromMsgIo(
-        io.messageReceivers,
-        node.id
-    )
-    const inletSources = getters.getSources(node, inletId)
-    return inletSources.length + +ioReceiversPortletIds.includes(inletId)
-}
-
-const _getPortletIdsFromMsgIo = (
-    specs: IoMessageSpecs,
-    nodeId: DspGraph.NodeId
-): Array<DspGraph.PortletId> =>
-    (specs[nodeId] && specs[nodeId]!.portletIds) || []

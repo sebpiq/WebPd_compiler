@@ -19,13 +19,13 @@
  */
 import assert from 'assert'
 import { makeGraph } from '../../dsp-graph/test-helpers'
-import precompile from '.'
+import precompile, { generatePrecompiledCode } from '.'
 import { NodeImplementations } from '../types'
-import { ColdDspGroup, DspGroup } from './types'
+import { ColdDspGroup, DspGroup, PrecompiledCode } from './types'
 import { ast } from '../../ast/declare'
 import { AstSequence } from '../../ast/types'
-import { buildFullGraphTraversal } from '../compile-helpers'
 import { makeSettings } from '../test-helpers'
+import { generateVariableNamesIndex } from './variable-names-index'
 
 describe('precompile', () => {
     const SETTINGS = makeSettings({})
@@ -130,31 +130,30 @@ describe('precompile', () => {
                     isDspInline: true,
                 },
                 dsp: ({ node: { args }, ins }) =>
-                    ast`${args.value} * ${ins.$0!} - ${args.value} * ${ins.$1!}`,
+                    ast`${args.value} * ${ins.$0!} - ${
+                        args.value
+                    } * ${ins.$1!}`,
             },
             signalType: {
                 dsp: () => ast`// dsp signalType`,
             },
         }
 
-        const precompiledCode = precompile(
-            { graph, nodeImplementations, settings: SETTINGS },
-            buildFullGraphTraversal(graph, SETTINGS)
-        )
+        const precompiledCode = precompile({
+            graph,
+            nodeImplementations,
+            settings: SETTINGS,
+        })
 
         assert.strictEqual(
-            precompiledCode.nodes.nonInline2!.generationContext.signalIns
-                .$0,
+            precompiledCode.nodes.nonInline2!.generationContext.signalIns.$0,
             '(N4 * (N2 + 1) - N4 * ((nonInline1_OUTS_0 * N1) * N3))'
         )
 
-        assert.deepStrictEqual<DspGroup>(
-            precompiledCode.graph.hotDspGroup,
-            {
-                traversal: ['nonInline1', 'nonInline2'],
-                outNodesIds: ['nonInline2'],
-            }
-        )
+        assert.deepStrictEqual<DspGroup>(precompiledCode.graph.hotDspGroup, {
+            traversal: ['nonInline1', 'nonInline2'],
+            outNodesIds: ['nonInline2'],
+        })
     })
 
     it('should precompile cold dsp groups and play well with inline dsp', () => {
@@ -224,18 +223,16 @@ describe('precompile', () => {
             },
         }
 
-        const precompiledCode = precompile(
-            { graph, nodeImplementations, settings: SETTINGS },
-            buildFullGraphTraversal(graph, SETTINGS)
-        )
+        const precompiledCode = precompile({
+            graph,
+            nodeImplementations,
+            settings: SETTINGS,
+        })
 
-        assert.deepStrictEqual<DspGroup>(
-            precompiledCode.graph.hotDspGroup,
-            {
-                traversal: ['n3', 'n4'],
-                outNodesIds: ['n4'],
-            }
-        )
+        assert.deepStrictEqual<DspGroup>(precompiledCode.graph.hotDspGroup, {
+            traversal: ['n3', 'n4'],
+            outNodesIds: ['n4'],
+        })
 
         assert.deepStrictEqual<{ [groupId: string]: ColdDspGroup }>(
             precompiledCode.graph.coldDspGroups,
@@ -306,10 +303,11 @@ describe('precompile', () => {
             },
         }
 
-        const precompiledCode = precompile(
-            { graph, nodeImplementations, settings: SETTINGS },
-            buildFullGraphTraversal(graph, SETTINGS)
-        )
+        const precompiledCode = precompile({
+            graph,
+            nodeImplementations,
+            settings: SETTINGS,
+        })
 
         assert.deepStrictEqual<{ [groupId: string]: ColdDspGroup }>(
             precompiledCode.graph.coldDspGroups,
@@ -334,5 +332,127 @@ describe('precompile', () => {
                 content: ['// inlet dsp 0'],
             }
         )
+    })
+
+    describe('generatePrecompiledCode', () => {
+        it('should create a namespace for each node', () => {
+            const graph = makeGraph({
+                n1: {
+                    type: 'type1',
+                    isPullingSignal: true,
+                },
+                n2: {
+                    type: 'type1',
+                    isPullingSignal: true,
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                type1: {
+                    dsp: () => ast`// type1`,
+                    dependencies: [],
+                },
+            }
+
+            const variableNamesIndex = generateVariableNamesIndex()
+
+            const precompiledCode = generatePrecompiledCode(
+                graph,
+                nodeImplementations,
+                variableNamesIndex
+            )
+
+            assert.deepStrictEqual<PrecompiledCode['nodes']>(
+                precompiledCode.nodes,
+                {
+                    n1: {
+                        nodeImplementation: nodeImplementations.type1!,
+                        generationContext: {
+                            messageReceivers: {},
+                            signalOuts: {},
+                            messageSenders: {},
+                            signalIns: {},
+                            state: '',
+                        },
+                        messageReceivers: {},
+                        messageSenders: {},
+                        signalOuts: {},
+                        initialization: ast``,
+                        dsp: {
+                            loop: ast``,
+                            inlets: {},
+                        },
+                        state: null,
+                    },
+                    n2: {
+                        nodeImplementation: nodeImplementations.type1!,
+                        generationContext: {
+                            messageReceivers: {},
+                            signalOuts: {},
+                            messageSenders: {},
+                            signalIns: {},
+                            state: '',
+                        },
+                        messageReceivers: {},
+                        messageSenders: {},
+                        signalOuts: {},
+                        initialization: ast``,
+                        dsp: {
+                            loop: ast``,
+                            inlets: {},
+                        },
+                        state: null,
+                    },
+                }
+            )
+        })
+
+        it('should create a namespace for each nodeImplementation', () => {
+            const graph = makeGraph({
+                n1: {
+                    type: 'type1',
+                    isPullingSignal: true,
+                },
+                n2: {
+                    type: 'type2',
+                    isPullingSignal: true,
+                },
+            })
+
+            const nodeImplementations: NodeImplementations = {
+                type1: {
+                    dsp: () => ast`// type1`,
+                    dependencies: [],
+                },
+                type2: {
+                    dsp: () => ast`// type2`,
+                    dependencies: [],
+                },
+            }
+
+            const variableNamesIndex = generateVariableNamesIndex()
+
+            const precompiledCode = generatePrecompiledCode(
+                graph,
+                nodeImplementations,
+                variableNamesIndex
+            )
+
+            assert.deepStrictEqual<PrecompiledCode['nodeImplementations']>(
+                precompiledCode.nodeImplementations,
+                {
+                    type1: {
+                        nodeImplementation: nodeImplementations.type1!,
+                        stateClass: null,
+                        core: null,
+                    },
+                    type2: {
+                        nodeImplementation: nodeImplementations.type2!,
+                        stateClass: null,
+                        core: null,
+                    },
+                }
+            )
+        })
     })
 })

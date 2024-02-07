@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { DspGraph, getters, traversers } from '../dsp-graph'
+import { DspGraph, traversers } from '../dsp-graph'
 import jsMacros from '../engine-javascript/compile/macros'
 import ascMacros from '../engine-assemblyscript/compile/macros'
 import {
@@ -74,11 +74,9 @@ export const getNodeImplementationsUsedInGraph = (
  * This should be exhaustive so that all nodes that are connected
  * to an input or output of the graph are declared correctly.
  * Order of nodes doesn't matter.
- * @TODO : messageSenders should also be included ?
  */
 export const buildFullGraphTraversal = (
     graph: DspGraph.Graph,
-    { io }: CompilationSettings,
 ): DspGraph.GraphTraversal => {
     const nodesPullingSignal = Object.values(graph).filter(
         (node) => !!node.isPullingSignal
@@ -86,12 +84,6 @@ export const buildFullGraphTraversal = (
     const nodesPushingMessages = Object.values(graph).filter(
         (node) => !!node.isPushingMessages
     )
-    Object.keys(io.messageReceivers || {}).forEach((nodeId) => {
-        if (nodesPushingMessages.find((node) => node.id === nodeId)) {
-            return
-        }
-        nodesPushingMessages.push(getters.getNode(graph, nodeId))
-    })
 
     return Array.from(
         new Set([

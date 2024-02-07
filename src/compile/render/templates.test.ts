@@ -38,7 +38,6 @@ import {
 } from '../test-helpers'
 import templates from './templates'
 import { AstSequence } from '../../ast/types'
-import { createNamespace } from '../compile-helpers'
 
 describe('templates', () => {
     describe('templates.portletsDeclarations', () => {
@@ -46,8 +45,12 @@ describe('templates', () => {
 
         it('should compile declarations for signal outlets', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
+                n1: {
+                    isPullingSignal: true,
+                },
+                n2: {
+                    isPullingSignal: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -73,8 +76,12 @@ describe('templates', () => {
 
         it('should compile node message receivers', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
+                n1: {
+                    isPushingMessages: true
+                },
+                n2: {
+                    isPushingMessages: true
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -141,7 +148,9 @@ describe('templates', () => {
             const settings = makeSettings({ debug: true })
 
             const graph = makeGraph({
-                n1: {},
+                n1: {
+                    isPushingMessages: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -186,9 +195,15 @@ describe('templates', () => {
 
         it('should compile node message senders', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
-                n3: {},
+                n1: {
+                    isPushingMessages: true,
+                },
+                n2: {
+                    isPushingMessages: true,
+                },
+                n3: {
+                    isPushingMessages: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -246,9 +261,15 @@ describe('templates', () => {
     describe('templates.nodeStateInstances', () => {
         it('should compile declarations for node state and filter out nodes with no state declaration', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
-                n3: {},
+                n1: {
+                    isPushingMessages: true,
+                },
+                n2: {
+                    isPushingMessages: true,
+                },
+                n3: {
+                    isPushingMessages: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -376,8 +397,12 @@ describe('templates', () => {
     describe('templates.nodeInitializations', () => {
         it('should generate initializations for nodes', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
+                n1: {
+                    isPushingMessages: true,
+                },
+                n2: {
+                    isPushingMessages: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -412,6 +437,7 @@ describe('templates', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPushingMessages: true,
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -437,8 +463,9 @@ describe('templates', () => {
 
             renderInput.precompiledCode.variableNamesIndex.nodes.n1!.messageReceivers.$0 =
                 'n1_RCVS_0'
-            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1 =
-                createNamespace('test.n1', { '0': 'ioRcv_n1_0' })
+            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.nodeId = 'n_ioRcv_n1_0'
+            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.funcName = 'ioRcv_n1_0'
+            renderInput.precompiledCode.nodes.n_ioRcv_n1_0!.generationContext.messageSenders.$0 = 'n1_SNDS_0'
 
             const sequence = templates.ioMessageReceivers(renderInput)
 
@@ -459,7 +486,7 @@ describe('templates', () => {
                         returnType: 'void',
                         body: {
                             astType: 'Sequence',
-                            content: ['n1_RCVS_0(m)'],
+                            content: ['n1_SNDS_0(m)'],
                         },
                     },
                 ],
@@ -470,9 +497,15 @@ describe('templates', () => {
     describe('templates.dspLoop', () => {
         it('should compile the dsp loop function', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
-                n3: {},
+                n1: {
+                    isPullingSignal: true,
+                },
+                n2: {
+                    isPullingSignal: true,
+                },
+                n3: {
+                    isPullingSignal: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -506,7 +539,9 @@ describe('templates', () => {
 
         it('should add to the dsp loop inlet dsp functions not connected to cold dsp', () => {
             const graph = makeGraph({
-                n1: {},
+                n1: {
+                    isPullingSignal: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -576,9 +611,15 @@ describe('templates', () => {
     describe('templates.coldDspFunctions', () => {
         it('should compile cold dsp functions', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
-                n3: {},
+                n1: {
+                    isPullingSignal: true,
+                },
+                n2: {
+                    isPullingSignal: true,
+                },
+                n3: {
+                    isPullingSignal: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -652,8 +693,12 @@ describe('templates', () => {
 
         it('should add calls to inlet dsp functions which are connected to cold dsp groups', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
+                n1: {
+                    isPullingSignal: true,
+                },
+                n2: {
+                    isPullingSignal: true,
+                },
             })
 
             const renderInput = makeRenderInput({
@@ -705,8 +750,12 @@ describe('templates', () => {
 
         it('should not add calls to inlet dsp if not defined by the sink node', () => {
             const graph = makeGraph({
-                n1: {},
-                n2: {},
+                n1: {
+                    isPullingSignal: true,
+                },
+                n2: {
+                    isPullingSignal: true,
+                },
             })
 
             const renderInput = makeRenderInput({

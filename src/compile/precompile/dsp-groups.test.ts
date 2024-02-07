@@ -48,6 +48,7 @@ describe('dsp-groups', () => {
                 },
                 n3: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -64,6 +65,7 @@ describe('dsp-groups', () => {
                 },
                 n5: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -136,12 +138,14 @@ describe('dsp-groups', () => {
                 },
                 n3: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
                 },
                 n4: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -210,6 +214,7 @@ describe('dsp-groups', () => {
                 },
                 n3: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -277,6 +282,7 @@ describe('dsp-groups', () => {
                 },
                 n3: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -296,6 +302,7 @@ describe('dsp-groups', () => {
                 },
                 n5: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -312,6 +319,7 @@ describe('dsp-groups', () => {
                 },
                 n7: {
                     type: 'type2',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -479,6 +487,7 @@ describe('dsp-groups', () => {
                 },
                 n5: {
                     type: 'nonInlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -493,6 +502,7 @@ describe('dsp-groups', () => {
                 },
                 n7: {
                     type: 'nonInlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -564,6 +574,7 @@ describe('dsp-groups', () => {
                 },
                 n3: {
                     type: 'inlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -614,6 +625,7 @@ describe('dsp-groups', () => {
                 },
                 n2: {
                     type: 'inlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                         '1': { type: 'signal', id: '1' },

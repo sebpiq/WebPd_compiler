@@ -47,6 +47,7 @@ describe('precompile.nodes', () => {
                     },
                 },
                 n2: {
+                    isPullingSignal: true,
                     inlets: {
                         '0': { id: '0', type: 'signal' },
                     },
@@ -86,6 +87,7 @@ describe('precompile.nodes', () => {
         it('should put empty signal for unconnected inlet', () => {
             const graph = makeGraph({
                 n1: {
+                    isPullingSignal: true,
                     inlets: {
                         '0': { id: '0', type: 'signal' },
                     },
@@ -110,6 +112,7 @@ describe('precompile.nodes', () => {
         it('should create messageSender if several sinks or io.messageSender', () => {
             const graph = makeGraph({
                 n1: {
+                    isPushingMessages: true,
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -168,6 +171,7 @@ describe('precompile.nodes', () => {
         it('should create messageSender and add cold dsp function', () => {
             const graph = makeGraph({
                 n1: {
+                    isPushingMessages: true,
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -224,6 +228,7 @@ describe('precompile.nodes', () => {
         it('should substitute message sender with null function if no sink and not outlet listener', () => {
             const graph = makeGraph({
                 n1: {
+                    isPushingMessages: true,
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -249,6 +254,7 @@ describe('precompile.nodes', () => {
         it("should substitute message sender with the sink's receiver if only one sink", () => {
             const graph = makeGraph({
                 n1: {
+                    isPushingMessages: true,
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -279,47 +285,13 @@ describe('precompile.nodes', () => {
                 'n2_RCVS_0'
             )
         })
-
-        it('should substitute message sender with outlet listener if no sinks', () => {
-            const graph = makeGraph({
-                n1: {
-                    outlets: {
-                        '0': { id: '0', type: 'message' },
-                    },
-                },
-            })
-
-            const precompilation = makePrecompilation({
-                graph,
-                settings: {
-                    io: {
-                        messageSenders: {
-                            n1: { portletIds: ['0'] },
-                        },
-                        messageReceivers: {},
-                    },
-                },
-            })
-
-            precompilation.output.variableNamesIndex.io.messageSenders.n1 = {
-                '0': 'ioSnd_n1_0',
-            }
-
-            precompileMessageOutlet(precompilation, graph.n1!, '0')
-
-            // Substitute with receiver name in generation context
-            assert.strictEqual(
-                precompilation.output.nodes.n1!.generationContext.messageSenders
-                    .$0,
-                'ioSnd_n1_0'
-            )
-        })
     })
 
     describe('precompileMessageInlet', () => {
-        it('should declare message inlet when it has one or more sources or io.messageReceivers', () => {
+        it('should declare message inlet when it has one or more sources', () => {
             const graph = makeGraph({
                 n1: {
+                    isPushingMessages: true,
                     outlets: {
                         '0': { id: '0', type: 'message' },
                         '1': { id: '1', type: 'message' },
@@ -342,27 +314,12 @@ describe('precompile.nodes', () => {
                         '0': { id: '0', type: 'message' },
                     },
                 },
-                // Works the same if no connection but io.messageReceivers is declared
-                n4: {
-                    inlets: {
-                        '0': { id: '0', type: 'message' },
-                    },
-                },
             })
 
-            const precompilation = makePrecompilation({
-                graph,
-                settings: {
-                    io: {
-                        messageReceivers: { n4: { portletIds: ['0'] } },
-                        messageSenders: {},
-                    },
-                },
-            })
+            const precompilation = makePrecompilation({ graph })
 
             precompileMessageInlet(precompilation, graph.n2!, '0')
             precompileMessageInlet(precompilation, graph.n3!, '0')
-            precompileMessageInlet(precompilation, graph.n4!, '0')
 
             // Creates a variable names for message receivers
             assert.strictEqual(
@@ -375,11 +332,6 @@ describe('precompile.nodes', () => {
                     .messageReceivers.$0,
                 'n3_RCVS_0'
             )
-            assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n4!
-                    .messageReceivers.$0,
-                'n4_RCVS_0'
-            )
 
             // Add this variable names to generationContext
             assert.strictEqual(
@@ -391,11 +343,6 @@ describe('precompile.nodes', () => {
                 precompilation.output.nodes.n3!.generationContext
                     .messageReceivers.$0,
                 'n3_RCVS_0'
-            )
-            assert.strictEqual(
-                precompilation.output.nodes.n4!.generationContext
-                    .messageReceivers.$0,
-                'n4_RCVS_0'
             )
 
             // Add placeholder messageReceivers
@@ -415,19 +362,12 @@ describe('precompile.nodes', () => {
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
-            assert.deepStrictEqual(
-                precompilation.output.nodes.n4!.messageReceivers.$0,
-                Func(
-                    'n4_RCVS_0',
-                    [Var('Message', 'm')],
-                    'void'
-                )`throw new Error("This placeholder should have been replaced during precompilation")`
-            )
         })
 
         it('should declare no message receivers when inlet has no source', () => {
             const graph = makeGraph({
                 n1: {
+                    isPushingMessages: true,
                     inlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -463,9 +403,11 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPushingMessages: true,
                 },
                 n2: {
                     type: 'type2',
+                    isPushingMessages: true,
                 },
             })
 
@@ -537,9 +479,11 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPushingMessages: true,
                 },
                 n2: {
                     type: 'type2',
+                    isPushingMessages: true,
                 },
             })
 
@@ -574,6 +518,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPushingMessages: true,
                 },
             })
 
@@ -605,6 +550,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPushingMessages: true,
                     args: { a: 22, b: 33 },
                 },
             })
@@ -629,6 +575,8 @@ describe('precompile.nodes', () => {
 
             precompileState(precompilation, graph.n1!)
 
+            assert.strictEqual(precompilation.output.variableNamesIndex.nodes.n1!.state, 'n1_STATE')
+            assert.strictEqual(precompilation.output.nodes.n1!.generationContext.state, 'n1_STATE')
             assert.deepStrictEqual(precompilation.output.nodes.n1!.state, {
                 className: 'State_type1',
                 initialization: {
@@ -650,6 +598,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPushingMessages: true,
                 },
             })
 
@@ -676,6 +625,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPushingMessages: true,
                 },
             })
 
@@ -702,6 +652,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPullingSignal: true,
                 },
             })
 
@@ -728,6 +679,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPullingSignal: true,
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
@@ -763,6 +715,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPullingSignal: true,
                 },
             })
 
@@ -798,6 +751,7 @@ describe('precompile.nodes', () => {
             const graph = makeGraph({
                 n1: {
                     type: 'type1',
+                    isPullingSignal: true,
                 },
             })
 
@@ -881,6 +835,7 @@ describe('precompile.nodes', () => {
                 },
                 n5: {
                     type: 'nonInlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -988,6 +943,7 @@ describe('precompile.nodes', () => {
                 },
                 n4: {
                     type: 'nonInlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -1033,9 +989,9 @@ describe('precompile.nodes', () => {
             //       \    /
             //      [  n2  ]
             //         |
-            //         |
-            //         |
             //      [  n3  ]
+            //         |
+            //      [  n4  ]
             const graph = makeGraph({
                 n1: {
                     type: 'inlinableType0',
@@ -1078,6 +1034,7 @@ describe('precompile.nodes', () => {
                 },
                 n4: {
                     type: 'nonInlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },
@@ -1166,6 +1123,7 @@ describe('precompile.nodes', () => {
                 },
                 n3: {
                     type: 'nonInlinableType',
+                    isPullingSignal: true,
                     inlets: {
                         '0': { type: 'signal', id: '0' },
                     },

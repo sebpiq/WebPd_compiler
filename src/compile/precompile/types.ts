@@ -12,34 +12,34 @@ import { DspGraph } from '../../dsp-graph'
 import { NodeImplementations, CompilationSettings } from '../types'
 
 export interface Precompilation {
-    readonly input: PrecompilationInput
-    readonly output: PrecompiledCode
+    readonly input: Readonly<PrecompilationInput>
+    readonly output: Readonly<PrecompiledCode>
 }
 
 export interface PrecompilationInput {
-    readonly graph: DspGraph.Graph
-    readonly nodeImplementations: NodeImplementations
-    readonly settings: CompilationSettings
+    readonly graph: Readonly<DspGraph.Graph>
+    readonly nodeImplementations: Readonly<NodeImplementations>
+    readonly settings: Readonly<CompilationSettings>
 }
 
 export type PrecompiledCode = {
-    variableNamesIndex: VariableNamesIndex
-    nodes: {
-        [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
-    }
-    nodeImplementations: {
+    readonly variableNamesIndex: VariableNamesIndex
+    readonly nodeImplementations: {
         [nodeType: DspGraph.NodeType]: {
             nodeImplementation: NodeImplementation
             stateClass: AstClass | null
             core: AstElement | null
         }
     }
-    dependencies: {
+    readonly nodes: {
+        [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
+    }
+    readonly dependencies: {
         imports: NonNullable<GlobalCodeGeneratorWithSettings['imports']>
         exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
         ast: AstSequence
     }
-    graph: {
+    readonly graph: {
         fullTraversal: DspGraph.GraphTraversal
         hotDspGroup: DspGroup
         coldDspGroups: { [groupId: string]: ColdDspGroup }
@@ -47,28 +47,28 @@ export type PrecompiledCode = {
 }
 
 export interface PrecompiledNodeCode {
-    nodeImplementation: NodeImplementation
-    generationContext: {
-        signalOuts: { [portletId: DspGraph.PortletId]: Code }
-        messageSenders: { [portletId: DspGraph.PortletId]: Code }
-        messageReceivers: { [portletId: DspGraph.PortletId]: Code }
-        signalIns: { [portletId: DspGraph.PortletId]: Code }
+    readonly nodeImplementation: NodeImplementation
+    readonly generationContext: {
+        readonly signalOuts: { [portletId: DspGraph.PortletId]: Code }
+        readonly messageSenders: { [portletId: DspGraph.PortletId]: Code }
+        readonly messageReceivers: { [portletId: DspGraph.PortletId]: Code }
+        readonly signalIns: { [portletId: DspGraph.PortletId]: Code }
         state: VariableName
     }
     state: null | {
-        className: VariableName
-        initialization: { [key: string]: NonNullable<AstVarBase['value']> }
+        readonly className: VariableName
+        readonly initialization: { [key: string]: NonNullable<AstVarBase['value']> }
     }
-    messageReceivers: { [inletId: DspGraph.PortletId]: AstFunc }
-    messageSenders: {
+    readonly messageReceivers: { [inletId: DspGraph.PortletId]: AstFunc }
+    readonly messageSenders: {
         [outletId: DspGraph.PortletId]: {
             messageSenderName: VariableName
             functionNames: Array<VariableName>
         }
     }
-    signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
+    readonly signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
     initialization: AstElement
-    dsp: {
+    readonly dsp: {
         loop: AstElement,
         inlets: { [inletId: DspGraph.PortletId]: AstElement }
     }
@@ -84,14 +84,10 @@ export interface ColdDspGroup extends DspGroup {
 }
 
 export interface NodeVariableNames {
-    signalOuts: { [portletId: DspGraph.PortletId]: VariableName }
-    messageSenders: { [portletId: DspGraph.PortletId]: VariableName }
-    messageReceivers: { [portletId: DspGraph.PortletId]: VariableName }
-    state: VariableName
-}
-
-interface NodeImplementationVariableNames {
-    stateClass?: VariableName
+    readonly signalOuts: { [portletId: DspGraph.PortletId]: VariableName }
+    readonly messageSenders: { [portletId: DspGraph.PortletId]: VariableName }
+    readonly messageReceivers: { [portletId: DspGraph.PortletId]: VariableName }
+    state: VariableName | null
 }
 
 /**
@@ -101,14 +97,16 @@ interface NodeImplementationVariableNames {
  */
 export interface VariableNamesIndex {
     /** Namespace for individual nodes */
-    nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
+    readonly nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
-    nodeImplementations: {
-        [nodeType: DspGraph.NodeType]: NodeImplementationVariableNames
+    readonly nodeImplementations: {
+        [nodeType: DspGraph.NodeType]: {
+            stateClass: VariableName | null
+        }
     }
 
     /** Namespace for global variables */
-    globs: {
+    readonly globs: {
         /** Frame count, reinitialized at each dsp loop start */
         iterFrame: string
         /** Frame count, never reinitialized */
@@ -122,18 +120,24 @@ export interface VariableNamesIndex {
         emptyMessage: string
     }
 
-    io: {
-        messageReceivers: {
+    readonly io: {
+        readonly messageReceivers: {
             [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: VariableName
+                [outletId: DspGraph.PortletId]: {
+                    nodeId: DspGraph.NodeId
+                    funcName: VariableName
+                }
             }
         }
-        messageSenders: {
+        readonly messageSenders: {
             [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: VariableName
+                [outletId: DspGraph.PortletId]: {
+                    nodeId: DspGraph.NodeId
+                    funcName: VariableName
+                }
             }
         }
     }
 
-    coldDspGroups: { [groupId: string]: VariableName }
+    readonly coldDspGroups: { [groupId: string]: VariableName }
 }

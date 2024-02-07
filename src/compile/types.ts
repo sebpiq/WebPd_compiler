@@ -98,7 +98,7 @@ export type GlobalCodeDefinition =
     | GlobalCodeGeneratorWithSettings
 
 /** Implementation of a graph node type */
-export interface NodeImplementation<NodeArgsType = any> {
+export interface NodeImplementation<NodeArgsType = {}> {
     flags?: {
         /**
          * true if the node's signal outputs strictly depend
@@ -175,5 +175,5 @@ export interface NodeImplementation<NodeArgsType = any> {
 }
 
 export type NodeImplementations = {
-    [nodeType: string]: NodeImplementation
+    [nodeType: string]: NodeImplementation<any>
 }

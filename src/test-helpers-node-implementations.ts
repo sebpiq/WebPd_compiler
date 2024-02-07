@@ -132,6 +132,7 @@ export const generateFramesForNode = async <NodeArguments>(
             portletId,
             { id: portletId, type: 'message' },
         ]),
+        isPushingMessages: true,
         isPullingSignal: true,
     }
 

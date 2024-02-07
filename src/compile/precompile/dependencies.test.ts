@@ -33,7 +33,7 @@ import precompileDependencies, {
 } from './dependencies'
 import { Func, Sequence, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
-import { Precompilation, PrecompiledCode } from './types'
+import { PrecompiledCode } from './types'
 import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.dependencies', () => {
@@ -57,7 +57,10 @@ describe('precompile.dependencies', () => {
             ]
 
             const graph = makeGraph({
-                node1: { type: 'type1' },
+                node1: { 
+                    type: 'type1', 
+                    isPullingSignal: true,
+                },
             })
 
             const nodeImplementations = {
@@ -116,7 +119,10 @@ describe('precompile.dependencies', () => {
             ]
 
             const graph = makeGraph({
-                node1: { type: 'type1' },
+                node1: { 
+                    type: 'type1',
+                    isPullingSignal: true,
+                },
             })
 
             const nodeImplementations = {

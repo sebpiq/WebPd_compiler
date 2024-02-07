@@ -11,6 +11,7 @@ describe('precompile.node-implementations', () => {
         it('should precompile stateClass', () => {
             const graph = makeGraph({
                 n1: {
+                    isPullingSignal: true,
                     type: 'type1',
                     args: { a: 22, b: 33 },
                 },
@@ -62,6 +63,7 @@ describe('precompile.node-implementations', () => {
         it('should precompile core', () => {
             const graph = makeGraph({
                 n1: {
+                    isPullingSignal: true,
                     type: 'type1',
                     args: { a: 22, b: 33 },
                 },

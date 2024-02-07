@@ -29,7 +29,6 @@ import {
 } from './compile-helpers'
 import { NodeImplementation, NodeImplementations } from './types'
 import { Sequence } from '../ast/declare'
-import { makeSettings } from './test-helpers'
 
 describe('compile-helpers', () => {
     describe('getNodeImplementation', () => {
@@ -120,56 +119,13 @@ describe('compile-helpers', () => {
                 },
             })
 
-            const settings = makeSettings({
-                io: {
-                    messageReceivers: {},
-                    messageSenders: {},
-                },
-            })
-
-            const traversal = buildFullGraphTraversal(graph, settings)
+            const traversal = buildFullGraphTraversal(graph)
             assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
                 'n1',
                 'n2',
                 'n3',
                 'n4',
                 'n5',
-            ])
-        })
-
-        it('should add nodes that have an inlet caller declared', () => {
-            const graph = makeGraph({
-                n1: {
-                    inlets: {
-                        '0': { type: 'message', id: '0' },
-                    },
-                    outlets: {
-                        '0': { type: 'message', id: '0' },
-                    },
-                    sinks: {
-                        '0': [['n2', '0']],
-                    },
-                },
-                n2: {
-                    inlets: {
-                        '0': { type: 'message', id: '0' },
-                    },
-                },
-            })
-
-            const settings = makeSettings({
-                io: {
-                    messageReceivers: {
-                        n1: { portletIds: ['0'] },
-                    },
-                    messageSenders: {},
-                },
-            })
-
-            const traversal = buildFullGraphTraversal(graph, settings)
-            assert.deepStrictEqual<DspGraph.GraphTraversal>(traversal.sort(), [
-                'n1',
-                'n2',
             ])
         })
     })

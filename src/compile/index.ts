@@ -28,9 +28,7 @@ import renderToJavascript from '../engine-javascript/compile/render'
 import renderToAssemblyscript from '../engine-assemblyscript/compile/render'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
 import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/compile/types'
-import { buildFullGraphTraversal } from './compile-helpers'
 import { DspGraph } from '../dsp-graph/types'
-import { traversers } from '../dsp-graph'
 import precompile from './precompile'
 
 interface CompilationSuccess {
@@ -51,12 +49,13 @@ export default (
     compilationSettings: UserCompilationSettings
 ): CompilationResult => {
     const settings = validateSettings(compilationSettings, target)
-    const fullGraphTraversal = buildFullGraphTraversal(graph, settings)
-    const trimmedGraph = traversers.trimGraph(graph, fullGraphTraversal)
-    
+
     const precompiledCode = precompile(
-        { graph: trimmedGraph, nodeImplementations, settings },
-        fullGraphTraversal
+        {
+            graph,
+            nodeImplementations,
+            settings,
+        }
     )
 
     let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode

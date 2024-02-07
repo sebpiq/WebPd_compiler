@@ -1,7 +1,6 @@
 import assert from 'assert'
 import { validateSettings } from '.'
-import { buildFullGraphTraversal } from './compile-helpers'
-import { initializePrecompiledCode } from './precompile'
+import { initializePrecompilation } from './precompile'
 import {
     PrecompilationInput,
     Precompilation,
@@ -22,8 +21,7 @@ export const makeSettings = (settings: PartialSettings): CompilationSettings =>
 export const makePrecompilation = (
     precompilationInput: PartialPrecompilationInput
 ): Precompilation => {
-    const target = (precompilationInput.settings || {}).target || 'javascript'
-    const settings = validateSettings(precompilationInput.settings || {}, target)
+    const settings = makeSettings(precompilationInput.settings || {})
     const nodeImplementations = precompilationInput.nodeImplementations || {
         DUMMY: {},
     }
@@ -33,14 +31,8 @@ export const makePrecompilation = (
         graph,
         nodeImplementations,
     }
-    const output = initializePrecompiledCode(
-        input,
-        buildFullGraphTraversal(graph, settings)
-    )
-    return {
-        input,
-        output,
-    }
+
+    return initializePrecompilation(input)
 }
 
 export const makeRenderInput = (

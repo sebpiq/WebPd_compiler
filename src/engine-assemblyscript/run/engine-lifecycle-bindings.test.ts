@@ -44,11 +44,12 @@ describe('engine-lifecycle-bindings', () => {
                     messageSenders: {
                         node1: { portletIds: ['0'] },
                     },
-                }
+                },
             })
 
             const graph = makeGraph({
                 node1: {
+                    isPushingMessages: true,
                     inlets: { '0': { type: 'message', id: '0' } },
                     outlets: { '0': { type: 'message', id: '0' } },
                 },
@@ -91,16 +92,27 @@ describe('engine-lifecycle-bindings', () => {
                     variableNamesIndex: {
                         io: {
                             messageReceivers: {
-                                node1: { '0': 'ioRcv_node1_0' },
+                                node1: {
+                                    '0': {
+                                        nodeId: 'n_ioRcv_node1_0',
+                                        funcName: 'ioRcv_node1_0',
+                                    },
+                                },
                             },
                             messageSenders: {
-                                node1: { '0': 'ioSnd_node1_0' },
+                                node1: {
+                                    '0': {
+                                        nodeId: 'n_ioSnd_node1_0',
+                                        funcName: 'ioSnd_node1_0',
+                                    },
+                                },
                             },
-                        }
+                        },
                     },
                     io: {
-                        messageReceivers: compilationSettings.io.messageReceivers,
-                        messageSenders: compilationSettings.io.messageSenders
+                        messageReceivers:
+                            compilationSettings.io.messageReceivers,
+                        messageSenders: compilationSettings.io.messageSenders,
                     },
                 },
             })

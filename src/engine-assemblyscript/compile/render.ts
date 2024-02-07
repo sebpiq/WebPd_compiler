@@ -79,7 +79,7 @@ export default (
             metadata,
             ${Object.entries(settings.io.messageReceivers).map(([nodeId, spec]) => 
                 spec.portletIds.map(inletId => 
-                    variableNamesIndex.io.messageReceivers[nodeId]![inletId]! + ','
+                    variableNamesIndex.io.messageReceivers[nodeId]![inletId]!.funcName + ','
                 )
             )}
         }

@@ -51,7 +51,6 @@ import {
     flattenDependencies,
     instantiateAndDedupeDependencies,
 } from './compile/precompile/dependencies'
-import { validateSettings } from './compile'
 import { generateVariableNamesGlobs } from './compile/precompile/variable-names-index'
 import { makeSettings } from './compile/test-helpers'
 

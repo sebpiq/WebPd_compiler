@@ -86,11 +86,15 @@ const nodeStateInstances = ({
                 if (!precompiledNode.state) {
                     return declarations
                 } else {
+                    const stateInstanceName = nodeVariableNames.state
+                    if (!stateInstanceName) {
+                        throw new Error(`Node state instance name should be defined`)
+                    }
                     return [
                         ...declarations,
                         ConstVar(
                             precompiledNode.state.className,
-                            nodeVariableNames.state,
+                            stateInstanceName,
                             ast`{
                                 ${Object.entries(
                                     precompiledNode.state.initialization
@@ -112,33 +116,23 @@ const nodeInitializations = ({
     ])
 
 const ioMessageReceivers = ({
-    precompiledCode: { variableNamesIndex, graph },
+    precompiledCode: { variableNamesIndex, nodes },
     settings: { io },
 }: RenderInput): AstSequence =>
     Sequence(
-        Object.entries(io.messageReceivers).map(([nodeId, spec]) => {
-            // TODO : todo-io-messageReceivers This lookup should be done in precompile
-            const groupsContainingSink = Object.entries(graph.coldDspGroups)
-                .filter(([_, dspGroup]) => isNodeInsideGroup(dspGroup, nodeId))
-                .map(([groupId]) => groupId)
-
-            const coldDspFunctionNames = groupsContainingSink.map(
-                (groupId) => variableNamesIndex.coldDspGroups[groupId]
-            )
-            // END TODO
-
-            // prettier-ignore
-            return spec.portletIds.map(
-                (inletId) =>
-                    Func(
-                        variableNamesIndex.io.messageReceivers[nodeId]![inletId]!,
-                        [Var('Message', 'm')],
-                        'void'
-                    )`
-                        ${variableNamesIndex.nodes[nodeId]!.messageReceivers[inletId]!}(m)
-                        ${coldDspFunctionNames.map((name) => `${name}(m)`)}
-                    `
-            )
+        Object.entries(io.messageReceivers).map(([specNodeId, spec]) => {
+            return spec.portletIds.map((specInletId) => {
+                const { funcName: ioFuncName, nodeId: ioNodeId } =
+                    variableNamesIndex.io.messageReceivers[specNodeId]![
+                        specInletId
+                    ]!
+                // prettier-ignore
+                return Func(ioFuncName, [
+                    Var('Message', 'm')
+                ], 'void')`
+                    ${nodes[ioNodeId]!.generationContext.messageSenders.$0!}(m)
+                `
+            })
         })
     )
 
@@ -153,10 +147,11 @@ const ioMessageSenders = (
     Sequence(
         Object.entries(io.messageSenders).map(([nodeId, spec]) =>
             spec.portletIds.map((outletId) => {
-                const listenerVariableName =
+                const messageSenderName =
                     variableNamesIndex.io.messageSenders[nodeId]![outletId]!
+                        .funcName
                 return generateIoMessageSender(
-                    listenerVariableName,
+                    messageSenderName,
                     nodeId,
                     outletId
                 )

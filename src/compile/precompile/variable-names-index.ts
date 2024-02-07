@@ -19,7 +19,6 @@
  */
 
 import { DspGraph, getters } from '../../dsp-graph'
-import { mapObject } from '../../functional-helpers'
 import { getNodeImplementationsUsedInGraph } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
 import {
@@ -36,41 +35,10 @@ import { VariableNamesIndex } from './types'
  * @param graph
  * @returns
  */
-export const generateVariableNamesIndex = (
-    settings: CompilationSettings,
-    graph: DspGraph.Graph,
-    nodeImplementations: NodeImplementations,
-): VariableNamesIndex =>
+export const generateVariableNamesIndex = (): VariableNamesIndex =>
     createNamespace('variableNamesIndex', {
-        nodes: createNamespace(
-            'nodes',
-            mapObject(graph, (node) =>
-                createNamespace(nodeNamespaceLabel(node), {
-                    // No need for `ins` here, as signal inlets will always directly be assigned
-                    // the outlet from their source node.
-                    messageReceivers: createNamespace(
-                        nodeNamespaceLabel(node, 'messageReceivers'),
-                        {}
-                    ),
-                    messageSenders: createNamespace(
-                        nodeNamespaceLabel(node, 'messageSenders'),
-                        {}
-                    ),
-                    signalOuts: createNamespace(
-                        nodeNamespaceLabel(node, 'signalOuts'),
-                        {}
-                    ),
-                    state: `${_namePrefix(settings.debug, node)}_STATE`,
-                })
-            )
-        ),
-        nodeImplementations: createNamespace(
-            'nodeImplementations',
-            mapObject(
-                getNodeImplementationsUsedInGraph(graph, nodeImplementations),
-                () => ({})
-            )
-        ),
+        nodes: createNamespace('nodes', {}),
+        nodeImplementations: createNamespace('nodeImplementations', {}),
         globs: generateVariableNamesGlobs(),
         io: {
             messageReceivers: createNamespace('io:messageReceivers', {}),
@@ -92,7 +60,46 @@ export const generateVariableNamesGlobs = () =>
         emptyMessage: 'EMPTY_MESSAGE',
     })
 
-export const attachNodeVariable = (
+export const attachNodesNamespaces = (
+    variableNamesIndex: VariableNamesIndex,
+    graph: DspGraph.Graph
+) => {
+    Object.values(graph).forEach((node) => {
+        variableNamesIndex.nodes[node.id] = {
+            // No need for `ins` here, as signal inlets will always directly be assigned
+            // the outlet from their source node.
+            messageReceivers: createNamespace(
+                nodeNamespaceLabel(node, 'messageReceivers'),
+                {}
+            ),
+            messageSenders: createNamespace(
+                nodeNamespaceLabel(node, 'messageSenders'),
+                {}
+            ),
+            signalOuts: createNamespace(
+                nodeNamespaceLabel(node, 'signalOuts'),
+                {}
+            ),
+            state: null,
+        }
+    })
+}
+
+export const attachNodeImplementationsNamespaces = (
+    variableNamesIndex: VariableNamesIndex,
+    nodeImplementations: NodeImplementations,
+    graph: DspGraph.Graph
+) => {
+    Object.keys(
+        getNodeImplementationsUsedInGraph(graph, nodeImplementations)
+    ).forEach((nodeType) => {
+        variableNamesIndex.nodeImplementations[nodeType] = {
+            stateClass: null
+        }
+    })
+}
+
+export const attachNodePortlet = (
     variableNamesIndex: VariableNamesIndex,
     settings: CompilationSettings,
     nsKey: 'signalOuts' | 'messageSenders' | 'messageReceivers',
@@ -113,30 +120,49 @@ export const attachNodeVariable = (
     return nodeVariableNames[nsKey][portletId]!
 }
 
+export const attachNodeState = (
+    variableNamesIndex: VariableNamesIndex,
+    settings: CompilationSettings,
+    node: DspGraph.Node,
+) => {
+    const stateInstanceName = `${_namePrefix(settings.debug, node)}_STATE`
+    variableNamesIndex.nodes[node.id]!.state = stateInstanceName
+    return stateInstanceName
+}
+
 /**
  * Helper that attaches to the generated `variableNamesIndex` the names of specified outlet listeners
  * and inlet callers.
  */
-export const attachIoMessages = (
+export const attachIoMessageSendersAndReceivers = (
     variableNamesIndex: VariableNamesIndex,
     settings: CompilationSettings,
-    graph: DspGraph.Graph,
+    graph: DspGraph.Graph
 ): void =>
     (['messageReceivers', 'messageSenders'] as const).forEach((nsKey) => {
         const specs =
             (nsKey === 'messageReceivers'
                 ? settings.io.messageReceivers
                 : settings.io.messageSenders) || {}
-        Object.entries(specs).forEach(([nodeId, spec]) => {
-            const node = getters.getNode(graph, nodeId)
-            variableNamesIndex.io[nsKey][nodeId] = createNamespace(
+        Object.entries(specs).forEach(([specNodeId, spec]) => {
+            const prefix = nsKey === 'messageReceivers' ? 'Rcv' : 'Snd'
+            const node = getters.getNode(graph, specNodeId)
+            variableNamesIndex.io[nsKey][specNodeId] = createNamespace(
                 nodeNamespaceLabel(node, nsKey),
                 {}
             )
-            spec.portletIds.forEach((outletId) => {
-                variableNamesIndex.io[nsKey][nodeId]![outletId] = `io${
-                    nsKey === 'messageReceivers' ? 'Rcv' : 'Snd'
-                }_${nodeId}_${outletId}`
+
+            spec.portletIds.forEach((specPortletId) => {
+                const nodeId = `n_io${prefix}_${specNodeId}_${specPortletId}`
+                if (graph[nodeId]) {
+                    throw new Error(`Node id ${nodeId} already exists in graph`)
+                }
+                variableNamesIndex.io[nsKey][specNodeId]![specPortletId] = {
+                    nodeId,
+                    funcName: `io${
+                        nsKey === 'messageReceivers' ? 'Rcv' : 'Snd'
+                    }_${specNodeId}_${specPortletId}`,
+                }
             })
         })
     })
