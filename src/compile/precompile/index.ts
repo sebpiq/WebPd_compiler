@@ -76,13 +76,16 @@ export default (rawPrecompilationInput: PrecompilationInput) => {
         precompilation.output.graph.fullTraversal
     )
 
-    // -------------------- NODE IMPLEMENTATIONS ------------------ //
+    // -------------------- NODE IMPLEMENTATIONS & STATES ------------------ //
     Object.keys(precompilation.output.nodeImplementations).forEach(
         (nodeType) => {
             precompileStateClass(precompilation, nodeType)
             precompileCore(precompilation, nodeType)
         }
     )
+    nodes.forEach((node) => {
+        precompileState(precompilation, node)
+    })
 
     // ------------------------ DSP GROUPS ------------------------ //
     const rootDspGroup: DspGroup = {
@@ -189,7 +192,6 @@ export default (rawPrecompilationInput: PrecompilationInput) => {
     // ------------------------ NODE ------------------------ //
     // This must come after we have assigned all node variables.
     nodes.forEach((node) => {
-        precompileState(precompilation, node)
         precompileInitialization(precompilation, node)
         precompileMessageReceivers(precompilation, node)
     })
@@ -213,27 +215,32 @@ export const initializePrecompilation = ({
     attachIoMessageSendersAndReceivers(variableNamesIndex, settings, graph)
 
     const graphWithIoNodes = addGraphNodesForMessageIo(
-        traversers.trimGraph(graph, buildFullGraphTraversal(graph)),
+        graph,
         settings,
         variableNamesIndex
+    )
+
+    const trimmedGraph = traversers.trimGraph(
+        graphWithIoNodes,
+        buildFullGraphTraversal(graphWithIoNodes)
     )
 
     attachNodeImplementationsNamespaces(
         variableNamesIndex,
         nodeImplementationsWithIoNodeTypes,
-        graphWithIoNodes
+        trimmedGraph
     )
 
-    attachNodesNamespaces(variableNamesIndex, graphWithIoNodes)
+    attachNodesNamespaces(variableNamesIndex, trimmedGraph)
 
     return {
         input: {
-            graph: graphWithIoNodes,
+            graph: trimmedGraph,
             nodeImplementations: nodeImplementationsWithIoNodeTypes,
             settings,
         },
         output: generatePrecompiledCode(
-            graphWithIoNodes,
+            trimmedGraph,
             nodeImplementationsWithIoNodeTypes,
             variableNamesIndex
         ),

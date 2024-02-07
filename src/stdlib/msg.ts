@@ -83,6 +83,8 @@ export const msg: GlobalCodeGeneratorWithSettings = {
                 type MessageTemplate = Array<Int>
                 type MessageHeaderEntry = Int
                 type MessageHeader = Int32Array
+
+                type MessageHandler = (m: Message) => void
                 `,
 
                 ConstVar('MessageHeaderEntry', 'MSG_FLOAT_TOKEN', '0'),

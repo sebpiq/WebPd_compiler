@@ -28,7 +28,6 @@ import { Sequence, Func, Var, ast, ConstVar } from '../../ast/declare'
 import { DspGraph } from '../../dsp-graph'
 import {
     findColdDspGroupFromSink,
-    isNodeInsideGroup,
 } from '../precompile/dsp-groups'
 import { RenderInput } from './types'
 

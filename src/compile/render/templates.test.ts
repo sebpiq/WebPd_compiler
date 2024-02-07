@@ -277,6 +277,8 @@ describe('templates', () => {
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
+            renderInput.precompiledCode.variableNamesIndex.nodes.n1!.state = 'n1_STATE'
+            renderInput.precompiledCode.variableNamesIndex.nodes.n2!.state = 'n2_STATE'
             renderInput.precompiledCode.nodes.n1!.state = {
                 className: 'State',
                 initialization: {

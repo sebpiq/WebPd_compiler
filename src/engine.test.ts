@@ -355,29 +355,19 @@ describe('Engine', () => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const nodeImplementations: NodeImplementations = {
                         DUMMY: {
+                            state: ({ stateClassName }) => 
+                                Class(stateClassName, [
+                                    Var('Float', 'configureCalled', 0)
+                                ]),
                             initialization: ({ globs, state }) => ast`
-                                ${ConstVar(
-                                    'DummyNodeState',
-                                    state,
-                                    `{
-                                    configureCalled: 0
-                                }`
-                                )}
-                                commons_waitEngineConfigure(() => {${state}.configureCalled = ${
-                                globs.sampleRate
-                            }})
+                                commons_waitEngineConfigure(() => {
+                                    ${state}.configureCalled = ${globs.sampleRate}
+                                })
                             `,
                             dsp: ({ globs, state, settings: { target } }) =>
                                 target === 'assemblyscript'
                                     ? ast`${globs.output}[0] = ${state}.configureCalled`
                                     : ast`${globs.output}[0][0] = ${state}.configureCalled`,
-
-                            dependencies: [
-                                () =>
-                                    Class('DummyNodeState', [
-                                        Var('Float', 'configureCalled'),
-                                    ]),
-                            ],
                         },
                     }
 

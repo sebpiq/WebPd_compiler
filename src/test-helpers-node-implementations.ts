@@ -147,6 +147,19 @@ export const generateFramesForNode = async <NodeArguments>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
+            state: ({ stateClassName }) => Class(
+                stateClassName,
+                Object.keys(fakeSourceNode.outlets)
+                    .filter(
+                        (outletId) =>
+                            fakeSourceNode.outlets[outletId]!.type ===
+                            'signal'
+                    )
+                    .map((outletId) =>
+                        Var('Float', `VALUE_${outletId}`, 0)
+                    )
+            ),
+            
             messageReceivers: ({ snds, state }) =>
                 mapObject(fakeSourceNode.outlets, (_, outletId) => {
                     // Messages received for message outlets are directly proxied
@@ -178,38 +191,6 @@ export const generateFramesForNode = async <NodeArguments>(
                                 `${outs[outletId]} = ${state}.VALUE_${outletId}`
                         )
                 ),
-
-            initialization: ({ state }) => ast`
-                ${ConstVar(
-                    'TestHelperNodeFakeSourceNode',
-                    state,
-                    ast`{
-                    ${Object.keys(fakeSourceNode.outlets)
-                        .filter(
-                            (outletId) =>
-                                fakeSourceNode.outlets[outletId]!.type ===
-                                'signal'
-                        )
-                        .map((outletId) => `VALUE_${outletId}: 0,`)}
-                }`
-                )}
-            `,
-
-            dependencies: [
-                () =>
-                    Class(
-                        'TestHelperNodeFakeSourceNode',
-                        Object.keys(fakeSourceNode.outlets)
-                            .filter(
-                                (outletId) =>
-                                    fakeSourceNode.outlets[outletId]!.type ===
-                                    'signal'
-                            )
-                            .map((outletId) =>
-                                Var('Float', `VALUE_${outletId}`)
-                            )
-                    ),
-            ],
         },
 
         fake_sink_node: {
