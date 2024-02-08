@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { Func, Var, AnonFunc, ast, Class } from '../../ast/declare'
+import { Func, Var, AnonFunc, ast, Class, Sequence } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { NodeImplementations } from '../types'
 import {
@@ -556,14 +556,8 @@ describe('precompile.nodes', () => {
             assert.deepStrictEqual(precompilation.output.nodes.n1!.state, {
                 name: 'n1_STATE',
                 initialization: {
-                    a: {
-                        astType: 'Sequence',
-                        content: ['22'],
-                    },
-                    b: {
-                        astType: 'Sequence',
-                        content: ['33'],
-                    },
+                    a: Sequence([ast`22`]),
+                    b: Sequence([ast`33`]),
                 },
             })
         })

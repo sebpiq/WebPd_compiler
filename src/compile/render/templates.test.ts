@@ -41,8 +41,6 @@ import { AstSequence } from '../../ast/types'
 
 describe('templates', () => {
     describe('templates.portletsDeclarations', () => {
-        const MESSAGE_RECEIVER_FUNC = AnonFunc([Var('Message', 'm')])``
-
         it('should compile declarations for signal outlets', () => {
             const graph = makeGraph({
                 n1: {
@@ -64,14 +62,14 @@ describe('templates', () => {
 
             const sequence = templates.portletsDeclarations(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([
                     Var('Float', 'n1_OUTS_0', '0'),
                     Var('Float', 'n1_OUTS_1', '0'),
                     Var('Float', 'n2_OUTS_0', '0'),
-                ],
-            })
+                ])
+            )
         })
 
         it('should compile node message receivers', () => {
@@ -104,44 +102,20 @@ describe('templates', () => {
 
             const sequence = templates.portletsDeclarations(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
-                    {
-                        ...MESSAGE_RECEIVER_FUNC,
-                        name: 'n1_RCVS_0',
-                        body: {
-                            astType: 'Sequence',
-                            content: [
-                                '// [n1] message receiver 0\n' +
-                                    `throw new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m))`,
-                            ],
-                        },
-                    },
-                    {
-                        ...MESSAGE_RECEIVER_FUNC,
-                        name: 'n1_RCVS_1',
-                        body: {
-                            astType: 'Sequence',
-                            content: [
-                                '// [n1] message receiver 1\n' +
-                                    `throw new Error('Node "n1", inlet "1", unsupported message : ' + msg_display(m))`,
-                            ],
-                        },
-                    },
-                    {
-                        ...MESSAGE_RECEIVER_FUNC,
-                        name: 'n2_RCVS_0',
-                        body: {
-                            astType: 'Sequence',
-                            content: [
-                                '// [n2] message receiver 0\n' +
-                                    `throw new Error('Node "n2", inlet "0", unsupported message : ' + msg_display(m))`,
-                            ],
-                        },
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([
+                    Func('n1_RCVS_0', [
+                        Var('Message', 'm'),
+                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m))`,
+                    Func('n1_RCVS_1', [
+                        Var('Message', 'm'),
+                    ])`// [n1] message receiver 1\nthrow new Error('Node "n1", inlet "1", unsupported message : ' + msg_display(m))`,
+                    Func('n2_RCVS_0', [
+                        Var('Message', 'm'),
+                    ])`// [n2] message receiver 0\nthrow new Error('Node "n2", inlet "0", unsupported message : ' + msg_display(m))`,
+                ])
+            )
         })
 
         it('should render correct error throw if debug = true', () => {
@@ -166,31 +140,14 @@ describe('templates', () => {
 
             const sequence = templates.portletsDeclarations(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
-                    {
-                        astType: 'Func',
-                        name: 'n1_RCVS_0',
-                        args: [
-                            {
-                                astType: 'Var',
-                                name: 'm',
-                                type: 'Message',
-                                value: undefined,
-                            },
-                        ],
-                        returnType: 'void',
-                        body: {
-                            astType: 'Sequence',
-                            content: [
-                                '// [n1] message receiver 0\n' +
-                                    `throw new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
-                            ],
-                        },
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([
+                    Func('n1_RCVS_0', [
+                        Var('Message', 'm'),
+                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
+                ])
+            )
         })
 
         it('should compile node message senders', () => {
@@ -227,27 +184,17 @@ describe('templates', () => {
 
             const sequence = templates.portletsDeclarations(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
-                    {
-                        ...MESSAGE_RECEIVER_FUNC,
-                        name: 'n1_SNDS_0',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['n2_RCVS_0(m)\nn2_RCVS_1(m)\nDSP_1(m)'],
-                        },
-                    },
-                    {
-                        ...MESSAGE_RECEIVER_FUNC,
-                        name: 'n1_SNDS_1',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['outlerListener_n1_0(m)\nn2_RCVS_0(m)'],
-                        },
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([
+                    Func('n1_SNDS_0', [
+                        Var('Message', 'm'),
+                    ])`n2_RCVS_0(m)\nn2_RCVS_1(m)\nDSP_1(m)`,
+                    Func('n1_SNDS_1', [
+                        Var('Message', 'm'),
+                    ])`outlerListener_n1_0(m)\nn2_RCVS_0(m)`,
+                ])
+            )
         })
     })
 
@@ -302,9 +249,9 @@ describe('templates', () => {
 
             const sequence = templates.nodeStateInstances(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([
                     ConstVar(
                         'State',
                         'n1_STATE',
@@ -313,8 +260,8 @@ describe('templates', () => {
                         ])`return x * 2`},\n}`
                     ),
                     ConstVar('State', 'n2_STATE', ast`{\na: 333,\nb: 444,\n}`),
-                ],
-            })
+                ])
+            )
         })
     })
 
@@ -340,64 +287,16 @@ describe('templates', () => {
             const sequence =
                 templates.nodeImplementationsCoreAndStateClasses(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
-                    {
-                        astType: 'Class',
-                        name: 'State_type1',
-                        members: [
-                            {
-                                astType: 'Var',
-                                name: 'a',
-                                type: 'Float',
-                                value: undefined,
-                            },
-                        ],
-                    },
-                    {
-                        astType: 'ConstVar',
-                        name: 'bla',
-                        type: 'Bla',
-                        value: ast`"hello"`,
-                    },
-                    {
-                        astType: 'Func',
-                        name: 'blo',
-                        args: [
-                            {
-                                astType: 'Var',
-                                name: 'state',
-                                type: 'State_type1',
-                                value: undefined,
-                            },
-                        ],
-                        returnType: 'void',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['// blo'],
-                        },
-                    },
-                    {
-                        astType: 'Class',
-                        name: 'State_type2',
-                        members: [
-                            {
-                                astType: 'Var',
-                                name: 'b',
-                                type: 'Float',
-                                value: undefined,
-                            },
-                        ],
-                    },
-                    {
-                        astType: 'ConstVar',
-                        name: 'i',
-                        type: 'Int',
-                        value: ast`0`,
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([
+                    Class('State_type1', [Var('Float', 'a')]),
+                    ConstVar('Bla', 'bla', '"hello"'),
+                    Func('blo', [Var('State_type1', 'state')])`// blo`,
+                    Class('State_type2', [Var('Float', 'b')]),
+                    ConstVar('Int', 'i', '0'),
+                ])
+            )
         })
     })
 
@@ -425,10 +324,10 @@ describe('templates', () => {
 
             const sequence = templates.nodeInitializations(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [Var('Float', 'n1', '0'), 'console.log(n1)'],
-            })
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([Var('Float', 'n1', '0'), 'console.log(n1)'])
+            )
         })
     })
 
@@ -482,28 +381,12 @@ describe('templates', () => {
 
             const sequence = templates.ioMessageReceivers(renderInput)
 
-            assertAstSequencesAreEqual(sequence, {
-                astType: 'Sequence',
-                content: [
-                    {
-                        astType: 'Func',
-                        name: 'ioRcv_n1_0',
-                        args: [
-                            {
-                                astType: 'Var',
-                                name: 'm',
-                                type: 'Message',
-                                value: undefined,
-                            },
-                        ],
-                        returnType: 'void',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['n1_RCVS_0(m)'],
-                        },
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                sequence,
+                Sequence([
+                    Func('ioRcv_n1_0', [Var('Message', 'm')])`n1_RCVS_0(m)`,
+                ])
+            )
         })
     })
 
@@ -537,16 +420,13 @@ describe('templates', () => {
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
-                {
-                    astType: 'Sequence',
-                    content: [
-                        `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
-                            '// n1\n' +
-                            '// n2\n' +
-                            '// n3\n' +
-                            `FRAME++\n}`,
-                    ],
-                }
+                Sequence([
+                    `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
+                        '// n1\n' +
+                        '// n2\n' +
+                        '// n3\n' +
+                        `FRAME++\n}`,
+                ])
             )
         })
 
@@ -573,15 +453,12 @@ describe('templates', () => {
 
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
-                {
-                    astType: 'Sequence',
-                    content: [
-                        `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
-                            '// inlet dsp 0\n' +
-                            '// n1\n' +
-                            `FRAME++\n}`,
-                    ],
-                }
+                Sequence([
+                    'for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n' +
+                        '// inlet dsp 0\n' +
+                        '// n1\n' +
+                        'FRAME++\n}',
+                ])
             )
         })
     })
@@ -614,10 +491,10 @@ describe('templates', () => {
 
             const sequence = templates.coldDspInitialization(renderInput)
 
-            assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
-                astType: 'Sequence',
-                content: [`DSP_0(EMPTY_MESSAGE)\nDSP_1(EMPTY_MESSAGE)`],
-            })
+            assertAstSequencesAreEqual(
+                normalizeAstSequence(sequence),
+                Sequence([`DSP_0(EMPTY_MESSAGE)\nDSP_1(EMPTY_MESSAGE)`])
+            )
         })
     })
 
@@ -663,45 +540,13 @@ describe('templates', () => {
 
             const sequence = templates.coldDspFunctions(renderInput)
 
-            assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
-                astType: 'Sequence',
-                content: [
-                    {
-                        astType: 'Func',
-                        name: 'DSP_0',
-                        args: [
-                            {
-                                astType: 'Var',
-                                name: 'm',
-                                type: 'Message',
-                                value: undefined,
-                            },
-                        ],
-                        returnType: 'void',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['// n1' + '\n' + '// n2'],
-                        },
-                    },
-                    {
-                        astType: 'Func',
-                        name: 'DSP_1',
-                        args: [
-                            {
-                                astType: 'Var',
-                                name: 'm',
-                                type: 'Message',
-                                value: undefined,
-                            },
-                        ],
-                        returnType: 'void',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['// n3'],
-                        },
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                normalizeAstSequence(sequence),
+                Sequence([
+                    Func('DSP_0', [Var('Message', 'm')])`// n1\n// n2`,
+                    Func('DSP_1', [Var('Message', 'm')])`// n3`,
+                ])
+            )
         })
 
         it('should add calls to inlet dsp functions which are connected to cold dsp groups', () => {
@@ -737,28 +582,14 @@ describe('templates', () => {
 
             const sequence = templates.coldDspFunctions(renderInput)
 
-            assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
-                astType: 'Sequence',
-                content: [
-                    {
-                        astType: 'Func',
-                        name: 'DSP_0',
-                        args: [
-                            {
-                                astType: 'Var',
-                                name: 'm',
-                                type: 'Message',
-                                value: undefined,
-                            },
-                        ],
-                        returnType: 'void',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['// n1\n// inlet dsp n2'],
-                        },
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                normalizeAstSequence(sequence),
+                Sequence([
+                    Func('DSP_0', [
+                        Var('Message', 'm'),
+                    ])`// n1\n// inlet dsp n2`,
+                ])
+            )
         })
 
         it('should not add calls to inlet dsp if not defined by the sink node', () => {
@@ -793,28 +624,10 @@ describe('templates', () => {
 
             const sequence = templates.coldDspFunctions(renderInput)
 
-            assertAstSequencesAreEqual(normalizeAstSequence(sequence), {
-                astType: 'Sequence',
-                content: [
-                    {
-                        astType: 'Func',
-                        name: 'DSP_0',
-                        args: [
-                            {
-                                astType: 'Var',
-                                name: 'm',
-                                type: 'Message',
-                                value: undefined,
-                            },
-                        ],
-                        returnType: 'void',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['// n1'],
-                        },
-                    },
-                ],
-            })
+            assertAstSequencesAreEqual(
+                normalizeAstSequence(sequence),
+                Sequence([Func('DSP_0', [Var('Message', 'm')])`// n1`])
+            )
         })
     })
 })

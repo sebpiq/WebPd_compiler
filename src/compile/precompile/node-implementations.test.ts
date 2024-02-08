@@ -37,24 +37,13 @@ describe('precompile.node-implementations', () => {
             assert.strictEqual(precompilation.output.variableNamesIndex.nodeImplementations.type1!.stateClass, 'State_type1')
             assert.deepStrictEqual<AstClass>(
                 precompilation.output.nodeImplementations.type1!.stateClass,
-                {
-                    astType: 'Class',
-                    name: 'State_type1',
-                    members: [
-                        {
-                            astType: 'Var',
-                            type: 'Int',
-                            name: 'a',
-                            value: undefined,
-                        },
-                        {
-                            astType: 'Var',
-                            type: 'Int',
-                            name: 'b',
-                            value: undefined,
-                        },
+                Class(
+                    'State_type1',
+                    [
+                        Var('Int', 'a'),
+                        Var('Int', 'b'),
                     ],
-                }
+                )
             )
         })
     })
@@ -84,18 +73,9 @@ describe('precompile.node-implementations', () => {
 
             assert.deepStrictEqual<AstSequence>(
                 precompilation.output.nodeImplementations.type1!.core,
-                {
-                    astType: 'Sequence',
-                    content: [
-                        {
-                            astType: 'Func',
-                            name: 'bla',
-                            args: [],
-                            returnType: 'void',
-                            body: ast``,
-                        },
-                    ],
-                }
+                Sequence([
+                    Func('bla')``
+                ])
             )
         })
     })

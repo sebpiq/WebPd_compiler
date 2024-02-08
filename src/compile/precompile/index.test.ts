@@ -327,7 +327,7 @@ describe('precompile', () => {
 
         assert.deepStrictEqual<AstSequence>(
             precompiledCode.nodes.n2!.dsp.inlets['0'],
-            Sequence([ast`// inlet dsp 0`]),
+            Sequence([ast`// inlet dsp 0`])
         )
     })
 
