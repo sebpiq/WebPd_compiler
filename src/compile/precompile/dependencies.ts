@@ -26,7 +26,7 @@ import {
 } from '../types'
 import { AstElement, AstFunc, AstSequence } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
-import { core, commonsCore, msg } from '../../stdlib'
+import { commonsWaitFrame, core, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
 import {
     Precompilation,
@@ -86,7 +86,7 @@ export const instantiateAndDedupeDependencies = (
 
 export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
     core,
-    commonsCore,
+    commonsWaitFrame,
     msg,
 ]
 

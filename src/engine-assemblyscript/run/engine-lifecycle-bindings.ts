@@ -40,7 +40,7 @@ import {
 import { instantiateWasmModule } from './wasm-helpers'
 
 export interface EngineLifecycleRawModule extends RawModule {
-    configure: (sampleRate: number, blockSize: number) => void
+    initialize: (sampleRate: number, blockSize: number) => void
     dspLoop: () => void
 
     // Pointers to input and output buffers
@@ -56,7 +56,7 @@ export type EngineLifecycleWithDependenciesRawModule = CoreRawModule &
     EngineLifecycleRawModule
 
 interface EngineLifecycleBindings {
-    configure: Engine['configure']
+    initialize: Engine['initialize']
     dspLoop: Engine['dspLoop']
 }
 
@@ -85,13 +85,13 @@ export const createEngineLifecycleBindings = (
     engineData: EngineData
 ): Bindings<EngineLifecycleBindings> => {
     return {
-        configure: {
+        initialize: {
             type: 'proxy',
             value: (sampleRate: number, blockSize: number): void => {
                 engineData.metadata.audioSettings.blockSize = blockSize
                 engineData.metadata.audioSettings.sampleRate = sampleRate
                 engineData.blockSize = blockSize
-                rawModule.configure(sampleRate, blockSize)
+                rawModule.initialize(sampleRate, blockSize)
                 updateWasmInOuts(rawModule, engineData)
             },
         },

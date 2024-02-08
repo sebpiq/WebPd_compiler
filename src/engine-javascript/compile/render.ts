@@ -54,17 +54,16 @@ export default (
             outletId
         ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'].onMessage(m)}`)}
 
-        ${templates.nodeInitializations(renderInput)}
-        ${templates.coldDspInitialization(renderInput)}
-
         const exports = {
             metadata: ${JSON.stringify(metadata)},
-            configure: (sampleRate, blockSize) => {
+            initialize: (sampleRate, blockSize) => {
                 exports.metadata.audioSettings.sampleRate = sampleRate
                 exports.metadata.audioSettings.blockSize = blockSize
                 ${globs.sampleRate} = sampleRate
                 ${globs.blockSize} = blockSize
-                _commons_emitEngineConfigure()
+
+                ${templates.nodeInitializations(renderInput)}
+                ${templates.coldDspInitialization(renderInput)}
             },
             dspLoop: (${globs.input}, ${globs.output}) => {
                 ${templates.dspLoop(renderInput)}

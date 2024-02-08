@@ -27,7 +27,6 @@ import {
 import { VariableName } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 import { VariableNamesIndex } from './precompile/types'
-import { PrecompiledNodeCode } from './precompile/types'
 
 type PortletsSpecMetadataBasicValue = boolean | string | number
 

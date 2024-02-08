@@ -56,15 +56,14 @@ export default (
         ${templates.ioMessageSenders(renderInput, (variableName) => 
             ast`export declare function ${variableName}(m: Message): void`)}
 
-        ${templates.nodeInitializations(renderInput)}
-        ${templates.coldDspInitialization(renderInput)}
-
-        export function configure(sampleRate: Float, blockSize: Int): void {
+        export function initialize(sampleRate: Float, blockSize: Int): void {
             ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
             ${globs.output} = createFloatArray(blockSize * ${channelCount.out.toString()})
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
-            _commons_emitEngineConfigure()
+
+            ${templates.nodeInitializations(renderInput)}
+            ${templates.coldDspInitialization(renderInput)}
         }
 
         export function getInput(): FloatArray { return ${globs.input} }

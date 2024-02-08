@@ -55,7 +55,7 @@ interface FsRawModule extends RawModule {
 
 interface EngineLifecycleRawModule extends RawModule {
     metadata: Engine['metadata']
-    configure: Engine['configure']
+    initialize: Engine['initialize']
     dspLoop: Engine['dspLoop']
     io: Engine['io']
 }
@@ -75,7 +75,7 @@ export const createBindings = (
 ): Bindings<Engine> => ({
     fs: { type: 'proxy', value: createFsModule(rawModule) },
     metadata: { type: 'raw' },
-    configure: { type: 'raw' },
+    initialize: { type: 'raw' },
     dspLoop: { type: 'raw' },
     io: { type: 'raw' },
     commons: {

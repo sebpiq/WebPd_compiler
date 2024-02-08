@@ -20,9 +20,7 @@
 import { AnonFunc, ast, ConstVar, Func, Var } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import {
-    commonsCore,
     commonsArrays,
-    commonsWaitEngineConfigure,
     commonsWaitFrame,
 } from './commons'
 import { core } from './core'
@@ -76,9 +74,7 @@ describe('commons', () => {
         [
             core.codeGenerator,
             sked,
-            commonsCore,
             commonsArrays.codeGenerator,
-            commonsWaitEngineConfigure,
             commonsWaitFrame,
             () => Var('Int', 'callbackCallCounter', '0')
         ]

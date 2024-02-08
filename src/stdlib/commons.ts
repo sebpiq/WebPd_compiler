@@ -22,22 +22,6 @@ import { Sequence, ConstVar, Func, Var } from '../ast/declare'
 import { GlobalCodeGeneratorWithSettings } from '../compile/types'
 import { sked } from './sked'
 
-export const commonsCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => Sequence([
-        ConstVar('Skeduler', '_commons_ENGINE_LOGGED_SKEDULER', 'sked_create(true)'),
-        ConstVar('Skeduler', '_commons_FRAME_SKEDULER', 'sked_create(false)'),
-        Func('_commons_emitEngineConfigure')`
-            sked_emit(_commons_ENGINE_LOGGED_SKEDULER, 'configure')
-        `,
-        Func('_commons_emitFrame', [
-            Var('Int', 'frame')
-        ], 'void')`
-            sked_emit(_commons_FRAME_SKEDULER, frame.toString())
-        `
-    ]),
-    dependencies: [sked],
-}
-
 export const commonsArrays: GlobalCodeGeneratorWithSettings = {
     codeGenerator: () => Sequence([
         ConstVar('Map<string, FloatArray>', '_commons_ARRAYS', 'new Map()'),
@@ -96,23 +80,16 @@ export const commonsArrays: GlobalCodeGeneratorWithSettings = {
     exports: [{ name: 'commons_getArray' }, { name: 'commons_setArray' }],
 }
 
-export const commonsWaitEngineConfigure: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => Sequence([
-        /** 
-         * @param callback Called when the engine is configured, or immediately if the engine
-         * was already configured.
-         */
-        Func('commons_waitEngineConfigure',[
-            Var('SkedCallback', 'callback'),
-        ], 'void')`
-            sked_wait(_commons_ENGINE_LOGGED_SKEDULER, 'configure', callback)
-        `
-    ]),
-    dependencies: [commonsCore],
-}
-
 export const commonsWaitFrame: GlobalCodeGeneratorWithSettings = {
     codeGenerator: () => Sequence([
+        ConstVar('Skeduler', '_commons_FRAME_SKEDULER', 'sked_create(false)'),
+
+        Func('_commons_emitFrame', [
+            Var('Int', 'frame')
+        ], 'void')`
+            sked_emit(_commons_FRAME_SKEDULER, frame.toString())
+        `,
+
         /** 
          * Schedules a callback to be called at the given frame.
          * If the frame already occurred, or is the current frame, the callback won't be executed.
@@ -133,5 +110,5 @@ export const commonsWaitFrame: GlobalCodeGeneratorWithSettings = {
             sked_cancel(_commons_FRAME_SKEDULER, id)
         `,
     ]),
-    dependencies: [commonsCore],
+    dependencies: [sked],
 }

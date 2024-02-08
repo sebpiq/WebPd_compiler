@@ -350,9 +350,9 @@ export const generateFramesForNode = async <NodeArguments>(
             }
         )
 
-        // We make sure we configure AFTER assigning the io.messageSenders,
-        // so we can receive messages sent during configure.
-        engine.configure(nodeTestSettings.sampleRate!, blockSize)
+        // We make sure we initialize AFTER assigning the io.messageSenders,
+        // so we can receive messages sent during initialize.
+        engine.initialize(nodeTestSettings.sampleRate!, blockSize)
 
         // Send in fs commands
         if (inputFrame.fs) {
@@ -470,7 +470,7 @@ export const generateFrames = (
         blockSize
     )
 
-    engine.configure(engine.metadata.audioSettings.sampleRate, blockSize)
+    engine.initialize(engine.metadata.audioSettings.sampleRate, blockSize)
 
     const results: Array<Array<number>> = []
     for (let i = 0; i < iterations; i++) {

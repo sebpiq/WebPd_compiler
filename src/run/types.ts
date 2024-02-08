@@ -90,7 +90,7 @@ export interface EngineMetadata {
 export interface Engine {
     metadata: EngineMetadata
 
-    configure: (sampleRate: number, blockSize: number) => void
+    initialize: (sampleRate: number, blockSize: number) => void
 
     dspLoop: (input: Array<FloatArray>, output: Array<FloatArray>) => void
 

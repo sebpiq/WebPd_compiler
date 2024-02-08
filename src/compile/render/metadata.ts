@@ -10,7 +10,7 @@ export const buildMetadata = ({
     libVersion: packageInfo.version,
     audioSettings: {
         ...audioSettings,
-        // Determined at configure
+        // Determined at initialize
         sampleRate: 0,
         blockSize: 0,
     },

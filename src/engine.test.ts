@@ -34,7 +34,6 @@ import {
     Engine,
     Message,
     SoundFileInfo,
-    FloatArray,
     EngineMetadata,
 } from './run/types'
 import { makeGraph } from './dsp-graph/test-helpers'
@@ -47,7 +46,7 @@ import {
     fsWriteSoundFile,
     fsWriteSoundStream,
 } from './stdlib/fs'
-import { commonsArrays, commonsWaitEngineConfigure } from './stdlib/commons'
+import { commonsArrays } from './stdlib/commons'
 import {
     ast,
     Sequence,
@@ -130,7 +129,7 @@ describe('Engine', () => {
         return engine
     }
 
-    describe('configure/dspLoop', () => {
+    describe('initialize/dspLoop', () => {
         it.each(
             TEST_PARAMETERS.map((params, i) => ({
                 ...params,
@@ -138,7 +137,7 @@ describe('Engine', () => {
                 blockSize: i % 2 === 0 ? 4 : 5,
             }))
         )(
-            'should configure and return an output block of the right size %s',
+            'should initialize and return an output block of the right size %s',
             async ({ target, outputChannels, blockSize, bitDepth }) => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
@@ -197,7 +196,7 @@ describe('Engine', () => {
                     expected.push(new floatArrayType(blockSize).fill(2))
                 }
 
-                engine.configure(44100, blockSize)
+                engine.initialize(44100, blockSize)
                 engine.dspLoop(input, output)
                 assert.deepStrictEqual(output, expected)
             }
@@ -261,7 +260,7 @@ describe('Engine', () => {
                     },
                 })
 
-                engine.configure(44100, blockSize)
+                engine.initialize(44100, blockSize)
                 engine.dspLoop(input, output)
                 assert.deepStrictEqual(output, [
                     new Float32Array([2, 4, 6, 8]),
@@ -272,7 +271,7 @@ describe('Engine', () => {
         )
 
         it.each(TEST_PARAMETERS)(
-            'should export metadata audio settings and update it after configure %s',
+            'should export metadata audio settings and update it after initialize %s',
             async ({ target, bitDepth }) => {
                 const graph = makeGraph({
                     bla: {
@@ -334,7 +333,7 @@ describe('Engine', () => {
                         .length
                 )
 
-                engine.configure(44100, 1024)
+                engine.initialize(44100, 1024)
 
                 assert.strictEqual(
                     engine.metadata.audioSettings.blockSize,
@@ -349,63 +348,6 @@ describe('Engine', () => {
     })
 
     describe('commons', () => {
-        describe('wait engine configure', () => {
-            it.each(TEST_PARAMETERS)(
-                'should trigger configure subscribers %s',
-                async ({ target, bitDepth }) => {
-                    const floatArrayType = getFloatArrayType(bitDepth)
-                    const nodeImplementations: NodeImplementations = {
-                        DUMMY: {
-                            state: ({ stateClassName }) => 
-                                Class(stateClassName, [
-                                    Var('Float', 'configureCalled', 0)
-                                ]),
-                            initialization: ({ globs, state }) => ast`
-                                commons_waitEngineConfigure(() => {
-                                    ${state}.configureCalled = ${globs.sampleRate}
-                                })
-                            `,
-                            dsp: ({ globs, state, settings: { target } }) =>
-                                target === 'assemblyscript'
-                                    ? ast`${globs.output}[0] = ${state}.configureCalled`
-                                    : ast`${globs.output}[0][0] = ${state}.configureCalled`,
-                        },
-                    }
-
-                    const graph = makeGraph({
-                        outputNode: {
-                            type: 'DUMMY',
-                            isPullingSignal: true,
-                        },
-                    })
-
-                    const output: Array<FloatArray> = [new floatArrayType(1)]
-
-                    const engine = await initializeEngineTest(
-                        target,
-                        bitDepth,
-                        {
-                            graph,
-                            nodeImplementations,
-                            settings: {
-                                audio: {
-                                    bitDepth,
-                                    channelCount: { in: 0, out: 1 },
-                                },
-                            },
-                            injectedDependencies: [commonsWaitEngineConfigure],
-                        }
-                    )
-
-                    engine.configure(44100, 1)
-                    engine.dspLoop([], output)
-                    assert.deepStrictEqual(output, [
-                        new floatArrayType([44100]),
-                    ])
-                }
-            )
-        })
-
         describe('getArray', () => {
             it.each(TEST_PARAMETERS)(
                 'should get the array %s',
