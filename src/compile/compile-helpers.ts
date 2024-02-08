@@ -98,12 +98,14 @@ export const buildFullGraphTraversal = (
  */
 export const buildGraphTraversalSignal = (
     graph: DspGraph.Graph
-): DspGraph.GraphTraversal => {
-    const nodesPullingSignal = Object.values(graph).filter(
-        (node) => !!node.isPullingSignal
-    )
-    return traversers.signalTraversal(graph, nodesPullingSignal)
-}
+): DspGraph.GraphTraversal => 
+    traversers.signalTraversal(graph, getGraphSignalSinks(graph))
+
+export const getGraphSignalSinks = (
+    graph: DspGraph.Graph
+) => Object.values(graph).filter(
+    (node) => !!node.isPullingSignal
+)
 
 export const isGlobalDefinitionWithSettings = (
     globalCodeDefinition: GlobalCodeDefinition

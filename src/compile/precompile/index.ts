@@ -30,7 +30,7 @@ import {
 import {
     buildFullGraphTraversal,
     buildGraphTraversalSignal,
-    getNodeImplementation,
+    getGraphSignalSinks,
     getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
@@ -43,16 +43,18 @@ import {
 import { Sequence, ast } from '../../ast/declare'
 import precompileDependencies from './dependencies'
 import {
-    precompileSignalInletWithNoSource,
-    precompileMessageInlet,
-    precompileSignalOutlet,
-    precompileMessageOutlet,
     precompileInitialization,
     precompileMessageReceivers,
     precompileInlineDsp,
     precompileDsp,
     precompileState,
 } from './nodes'
+import {
+    precompileSignalInletWithNoSource,
+    precompileMessageInlet,
+    precompileSignalOutlet,
+    precompileMessageOutlet,
+} from './portlets'
 import {
     buildColdDspGroups,
     removeNodesFromTraversal,
@@ -90,10 +92,9 @@ export default (rawPrecompilationInput: PrecompilationInput) => {
     // ------------------------ DSP GROUPS ------------------------ //
     const rootDspGroup: DspGroup = {
         traversal: buildGraphTraversalSignal(precompilation.input.graph),
-        // TODO : this is duplicate from `buildGraphTraversalSignal`
-        outNodesIds: Object.values(precompilation.input.graph)
-            .filter((node) => !!node.isPullingSignal)
-            .map((node) => node.id),
+        outNodesIds: getGraphSignalSinks(precompilation.input.graph).map(
+            (node) => node.id
+        ),
     }
     const coldDspGroups = buildColdDspGroups(precompilation, rootDspGroup)
     const hotDspGroup = buildHotDspGroup(
@@ -176,7 +177,7 @@ export default (rawPrecompilationInput: PrecompilationInput) => {
             })
     })
 
-    // ------------------------ DSP ------------------------ //
+    // ------------------------ NODE ------------------------ //
     inlinableDspGroups.forEach((dspGroup) => {
         precompileInlineDsp(precompilation, dspGroup)
     })
@@ -189,7 +190,6 @@ export default (rawPrecompilationInput: PrecompilationInput) => {
             })
     })
 
-    // ------------------------ NODE ------------------------ //
     // This must come after we have assigned all node variables.
     nodes.forEach((node) => {
         precompileInitialization(precompilation, node)
