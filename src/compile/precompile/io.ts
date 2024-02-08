@@ -5,6 +5,7 @@ import {
     NodeImplementation,
     NodeImplementations,
 } from '../types'
+import { helpers } from '../../dsp-graph'
 import { VariableNamesIndex } from './types'
 
 const MESSAGE_RECEIVER_NODE_TYPE = '_messageReceiver'
@@ -64,19 +65,13 @@ export const addGraphNodesForMessageIo = (
                     variableNamesIndex.io.messageReceivers[specNodeId]![
                         specPortletId
                     ]!.nodeId
-                // TODO : simplify this : todo-node-initializer
                 const messageReceiverNode: DspGraph.Node = {
-                    type: MESSAGE_RECEIVER_NODE_TYPE,
+                    ...helpers.nodeDefaults(nodeId, MESSAGE_RECEIVER_NODE_TYPE),
                     // To force the node to be included in the traversal
                     isPushingMessages: true,
-                    id: nodeId,
-                    args: {},
-                    inlets: {},
-                    sources: {},
                     outlets: {
                         '0': { id: '0', type: 'message' },
                     },
-                    sinks: {},
                 }
                 mutators.addNode(graphWithIoNodes, messageReceiverNode)
                 mutators.connect(
@@ -94,17 +89,13 @@ export const addGraphNodesForMessageIo = (
                     specPortletId
                 ]!
             const messageSenderNode: DspGraph.Node<MessageSenderNodeArgs> = {
-                type: MESSAGE_SENDER_NODE_TYPE,
-                id: nodeId,
+                ...helpers.nodeDefaults(nodeId, MESSAGE_SENDER_NODE_TYPE),
                 args: {
                     messageSenderName: funcName,
                 },
                 inlets: {
                     '0': { id: '0', type: 'message' },
                 },
-                sources: {},
-                outlets: {},
-                sinks: {},
             }
             mutators.addNode(graphWithIoNodes, messageSenderNode)
             mutators.connect(

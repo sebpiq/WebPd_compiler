@@ -37,7 +37,8 @@ import {
     FloatArray,
     EngineMetadata,
 } from './run/types'
-import { makeGraph, nodeDefaults } from './dsp-graph/test-helpers'
+import { makeGraph } from './dsp-graph/test-helpers'
+import { nodeDefaults } from './dsp-graph/graph-helpers'
 import { getFloatArrayType } from './run/run-helpers'
 import {
     FS_OPERATION_SUCCESS,

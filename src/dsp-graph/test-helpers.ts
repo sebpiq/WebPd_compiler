@@ -23,6 +23,7 @@ import { testGraphIntegrity, endpointsEqual } from './graph-helpers'
 import { getNode } from './getters'
 import { listSourceConnections } from './traversers'
 import { DspGraph } from './types'
+import { nodeDefaults } from './graph-helpers'
 
 type GraphConnection = [
     DspGraph.ConnectionEndpoint,
@@ -51,19 +52,6 @@ type ConciseNode = {
 type ConciseGraph = {
     [pdNodeId: string]: ConciseNode
 }
-
-export const nodeDefaults = (
-    id: DspGraph.NodeId,
-    type = 'DUMMY'
-): DspGraph.Node => ({
-    id,
-    type,
-    args: {},
-    sources: {},
-    sinks: {},
-    inlets: {},
-    outlets: {},
-})
 
 export const makeConnectionEndpoint = (
     conciseEndpoint: ConciseConnectionEndpoint

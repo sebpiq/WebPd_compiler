@@ -1,5 +1,6 @@
 import assert from 'assert'
-import { makeGraph, nodeDefaults } from '../../dsp-graph/test-helpers'
+import { makeGraph } from '../../dsp-graph/test-helpers'
+import { nodeDefaults } from '../../dsp-graph/graph-helpers'
 import { makeSettings } from '../test-helpers'
 import { addGraphNodesForMessageIo } from './io'
 import {

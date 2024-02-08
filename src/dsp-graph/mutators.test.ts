@@ -26,7 +26,8 @@ import {
     deleteNode,
     disconnect,
 } from './mutators'
-import { assertGraphConnections, makeGraph, nodeDefaults } from './test-helpers'
+import { assertGraphConnections, makeGraph } from './test-helpers'
+import { nodeDefaults } from './graph-helpers'
 import { DspGraph } from './types'
 
 describe('mutators', () => {

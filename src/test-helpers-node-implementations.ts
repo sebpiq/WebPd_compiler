@@ -31,7 +31,7 @@ import { Signal, Message, FloatArray, Engine } from './run/types'
 import { mapArray, mapObject } from './functional-helpers'
 import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
-import { nodeDefaults } from './dsp-graph/test-helpers'
+import { nodeDefaults } from './dsp-graph/graph-helpers'
 import { commonsArrays } from './stdlib'
 import { AnonFunc, Class, ConstVar, Sequence, Var, ast } from './ast/declare'
 

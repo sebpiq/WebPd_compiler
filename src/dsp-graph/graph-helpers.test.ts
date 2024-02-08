@@ -20,7 +20,7 @@
 
 import { testGraphIntegrity } from './graph-helpers'
 import assert from 'assert'
-import { nodeDefaults } from './test-helpers'
+import { nodeDefaults } from './graph-helpers'
 
 describe('graph-helpers', () => {
     describe('testGraphIntegrity', () => {

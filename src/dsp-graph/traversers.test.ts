@@ -31,7 +31,8 @@ import {
     listSourceNodes,
 } from './traversers'
 import { DspGraph } from './types'
-import { makeGraph, nodeDefaults } from './test-helpers'
+import { makeGraph } from './test-helpers'
+import { nodeDefaults } from './graph-helpers'
 
 describe('graph-traversal', () => {
     describe('listSinkNodes', () => {

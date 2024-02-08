@@ -22,6 +22,19 @@ import { getNode, getSinks, getSources } from './getters'
 import { listSinkConnections, listSourceConnections } from './traversers'
 import { DspGraph } from './types'
 
+export const nodeDefaults = (
+    id: DspGraph.NodeId,
+    type = 'DUMMY'
+): DspGraph.Node => ({
+    id,
+    type,
+    args: {},
+    sources: {},
+    sinks: {},
+    inlets: {},
+    outlets: {},
+})
+
 export const endpointsEqual = (
     a1: DspGraph.ConnectionEndpoint,
     a2: DspGraph.ConnectionEndpoint
