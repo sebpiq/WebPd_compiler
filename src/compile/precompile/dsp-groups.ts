@@ -207,9 +207,11 @@ const _isNodeDspCold = (
     { output }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const nodeImplementation = output.nodes[node.id]!.nodeImplementation
-    return nodeImplementation.flags
-        ? !!nodeImplementation.flags.isPureFunction
+    const precompiledNode = output.nodes[node.id]!
+    const precompiledNodeImplementation =
+        output.nodeImplementations[precompiledNode.nodeType]!
+    return precompiledNodeImplementation.nodeImplementation.flags
+        ? !!precompiledNodeImplementation.nodeImplementation.flags.isPureFunction
         : false
 }
 
@@ -233,9 +235,13 @@ export const _isNodeDspInlinable = (
             }
         }, [])
 
+    const precompiledNode = output.nodes[node.id]!
+    const precompiledNodeImplementation =
+        output.nodeImplementations[precompiledNode.nodeType]!
+
     return (
-        !!output.nodes[node.id]!.nodeImplementation.flags &&
-        !!output.nodes[node.id]!.nodeImplementation.flags!.isDspInline &&
+        !!precompiledNodeImplementation.nodeImplementation.flags &&
+        !!precompiledNodeImplementation.nodeImplementation.flags!.isDspInline &&
         sinks.length === 1
     )
 }

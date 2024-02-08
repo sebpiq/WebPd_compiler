@@ -77,10 +77,10 @@ describe('templates', () => {
         it('should compile node message receivers', () => {
             const graph = makeGraph({
                 n1: {
-                    isPushingMessages: true
+                    isPushingMessages: true,
                 },
                 n2: {
-                    isPushingMessages: true
+                    isPushingMessages: true,
                 },
             })
 
@@ -213,15 +213,16 @@ describe('templates', () => {
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
             renderInput.precompiledCode.nodes.n1!.messageSenders.$0 = {
                 messageSenderName: 'n1_SNDS_0',
-                functionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
+                sinkFunctionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
             }
             renderInput.precompiledCode.nodes.n1!.messageSenders.$1 = {
                 messageSenderName: 'n1_SNDS_1',
-                functionNames: ['outlerListener_n1_0'],
+                sinkFunctionNames: ['outlerListener_n1_0', 'n2_RCVS_0'],
             }
+            // Will not be rendered because no sinks
             renderInput.precompiledCode.nodes.n2!.messageSenders.$0 = {
-                messageSenderName: 'n2_SNDS_0',
-                functionNames: ['n3_RCVS_0'],
+                messageSenderName: 'n3_RCVS_0',
+                sinkFunctionNames: [],
             }
 
             const sequence = templates.portletsDeclarations(renderInput)
@@ -242,15 +243,7 @@ describe('templates', () => {
                         name: 'n1_SNDS_1',
                         body: {
                             astType: 'Sequence',
-                            content: ['outlerListener_n1_0(m)'],
-                        },
-                    },
-                    {
-                        ...MESSAGE_RECEIVER_FUNC,
-                        name: 'n2_SNDS_0',
-                        body: {
-                            astType: 'Sequence',
-                            content: ['n3_RCVS_0(m)'],
+                            content: ['outlerListener_n1_0(m)\nn2_RCVS_0(m)'],
                         },
                     },
                 ],
@@ -262,32 +255,44 @@ describe('templates', () => {
         it('should compile declarations for node state and filter out nodes with no state declaration', () => {
             const graph = makeGraph({
                 n1: {
+                    type: 'type1',
                     isPushingMessages: true,
                 },
                 n2: {
+                    type: 'type1',
                     isPushingMessages: true,
                 },
                 n3: {
+                    type: 'type1',
                     isPushingMessages: true,
                 },
             })
 
+            const nodeImplementations = {
+                type1: {},
+            }
+
             const renderInput = makeRenderInput({
                 graph,
+                nodeImplementations,
             })
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
-            renderInput.precompiledCode.variableNamesIndex.nodes.n1!.state = 'n1_STATE'
-            renderInput.precompiledCode.variableNamesIndex.nodes.n2!.state = 'n2_STATE'
+            renderInput.precompiledCode.variableNamesIndex.nodes.n1!.state =
+                'n1_STATE'
+            renderInput.precompiledCode.variableNamesIndex.nodes.n2!.state =
+                'n2_STATE'
+            renderInput.precompiledCode.nodeImplementations.type1!.stateClass =
+                Class('State', [Var('Float', 'a'), Var('Float', 'b')])
             renderInput.precompiledCode.nodes.n1!.state = {
-                className: 'State',
+                name: 'n1_STATE',
                 initialization: {
                     a: Sequence(['111']),
                     b: Sequence([AnonFunc([Var('Float', 'x')])`return x * 2`]),
                 },
             }
             renderInput.precompiledCode.nodes.n2!.state = {
-                className: 'State',
+                name: 'n2_STATE',
                 initialization: {
                     a: Sequence(['333']),
                     b: Sequence(['444']),
@@ -428,7 +433,7 @@ describe('templates', () => {
     })
 
     describe('templates.ioMessageReceivers', () => {
-        it('should compile declared inlet callers', () => {
+        it('should compile declared io.messageReceivers', () => {
             const settings = makeSettings({
                 io: {
                     messageReceivers: { n1: { portletIds: ['0'] } },
@@ -465,9 +470,15 @@ describe('templates', () => {
 
             renderInput.precompiledCode.variableNamesIndex.nodes.n1!.messageReceivers.$0 =
                 'n1_RCVS_0'
-            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.nodeId = 'n_ioRcv_n1_0'
-            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.funcName = 'ioRcv_n1_0'
-            renderInput.precompiledCode.nodes.n_ioRcv_n1_0!.generationContext.messageSenders.$0 = 'n1_SNDS_0'
+            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.nodeId =
+                'n_ioRcv_n1_0'
+            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.funcName =
+                'ioRcv_n1_0'
+            renderInput.precompiledCode.nodes.n_ioRcv_n1_0!.messageSenders.$0 =
+                {
+                    messageSenderName: 'n1_RCVS_0',
+                    sinkFunctionNames: ['n1_RCVS_0'],
+                }
 
             const sequence = templates.ioMessageReceivers(renderInput)
 
@@ -488,7 +499,7 @@ describe('templates', () => {
                         returnType: 'void',
                         body: {
                             astType: 'Sequence',
-                            content: ['n1_SNDS_0(m)'],
+                            content: ['n1_RCVS_0(m)'],
                         },
                     },
                 ],

@@ -151,10 +151,14 @@ const _collectDependenciesFromTraversal = ({
     return traversers
         .toNodes(graph, output.graph.fullTraversal)
         .reduce<Array<GlobalCodeDefinition>>(
-            (definitions, node) => [
+            (definitions, node) => {
+                const precompiledNode = output.nodes[node.id]!
+                const precompiledNodeImplementation =
+                    output.nodeImplementations[precompiledNode.nodeType]!
+                return [
                 ...definitions,
-                ...(output.nodes[node.id]!.nodeImplementation.dependencies || []),
-            ],
+                ...(precompiledNodeImplementation.nodeImplementation.dependencies || []),
+            ]},
             []
         )
 }

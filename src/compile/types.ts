@@ -129,8 +129,8 @@ export interface NodeImplementation<NodeArgsType = {}> {
 
     initialization?: (context: {
         globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['generationContext']['state']
-        snds: PrecompiledNodeCode['generationContext']['messageSenders']
+        state: NodePrecompilationContext['state']
+        snds: NodePrecompilationContext['snds']
         node: DspGraph.Node<NodeArgsType>
         settings: CompilationSettings
     }) => AstSequence
@@ -144,10 +144,10 @@ export interface NodeImplementation<NodeArgsType = {}> {
      */
     dsp?: (context: {
         globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['generationContext']['state']
-        ins: PrecompiledNodeCode['generationContext']['signalIns']
-        outs: PrecompiledNodeCode['generationContext']['signalOuts']
-        snds: PrecompiledNodeCode['generationContext']['messageSenders']
+        state: NodePrecompilationContext['state']
+        ins: NodePrecompilationContext['ins']
+        outs: NodePrecompilationContext['outs']
+        snds: NodePrecompilationContext['snds']
         node: DspGraph.Node<NodeArgsType>
         settings: CompilationSettings
     }) =>
@@ -162,8 +162,8 @@ export interface NodeImplementation<NodeArgsType = {}> {
      */
     messageReceivers?: (context: {
         globs: VariableNamesIndex['globs']
-        state: PrecompiledNodeCode['generationContext']['state']
-        snds: PrecompiledNodeCode['generationContext']['messageSenders']
+        state: NodePrecompilationContext['state']
+        snds: NodePrecompilationContext['snds']
         node: DspGraph.Node<NodeArgsType>
         settings: CompilationSettings
     }) => {
@@ -172,6 +172,13 @@ export interface NodeImplementation<NodeArgsType = {}> {
 
     /** List of dependencies for this node type */
     dependencies?: Array<GlobalCodeDefinition>
+}
+
+interface NodePrecompilationContext {
+    state: VariableName
+    ins: {[portletId: DspGraph.PortletId]: VariableName}
+    outs: {[portletId: DspGraph.PortletId]: VariableName}
+    snds: {[portletId: DspGraph.PortletId]: VariableName}
 }
 
 export type NodeImplementations = {

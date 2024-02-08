@@ -47,26 +47,20 @@ export type PrecompiledCode = {
 }
 
 export interface PrecompiledNodeCode {
-    readonly nodeImplementation: NodeImplementation
-    readonly generationContext: {
-        readonly signalOuts: { [portletId: DspGraph.PortletId]: Code }
-        readonly messageSenders: { [portletId: DspGraph.PortletId]: Code }
-        readonly messageReceivers: { [portletId: DspGraph.PortletId]: Code }
-        readonly signalIns: { [portletId: DspGraph.PortletId]: Code }
-        state: VariableName
-    }
+    readonly nodeType: DspGraph.NodeType
     state: null | {
-        readonly className: VariableName
+        readonly name: VariableName
         readonly initialization: { [key: string]: NonNullable<AstVarBase['value']> }
     }
     readonly messageReceivers: { [inletId: DspGraph.PortletId]: AstFunc }
     readonly messageSenders: {
         [outletId: DspGraph.PortletId]: {
             messageSenderName: VariableName
-            functionNames: Array<VariableName>
+            sinkFunctionNames: Array<VariableName>
         }
     }
     readonly signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
+    readonly signalIns: { [portletId: DspGraph.PortletId]: Code }
     initialization: AstElement
     readonly dsp: {
         loop: AstElement,

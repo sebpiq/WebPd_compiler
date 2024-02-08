@@ -75,25 +75,26 @@ const nodeImplementationsCoreAndStateClasses = ({
     )
 
 const nodeStateInstances = ({
-    precompiledCode: { variableNamesIndex, graph, nodes },
+    precompiledCode: { graph, nodes, nodeImplementations },
 }: RenderInput): AstSequence =>
     Sequence([
         graph.fullTraversal.reduce<Array<AstConstVar>>(
             (declarations, nodeId) => {
                 const precompiledNode = nodes[nodeId]!
-                const nodeVariableNames = variableNamesIndex.nodes[nodeId]!
+                const precompiledNodeImplementation = nodeImplementations[precompiledNode.nodeType]!
                 if (!precompiledNode.state) {
                     return declarations
                 } else {
-                    const stateInstanceName = nodeVariableNames.state
-                    if (!stateInstanceName) {
-                        throw new Error(`Node state instance name should be defined`)
+                    if (!precompiledNodeImplementation.stateClass) {
+                        throw new Error(
+                            `Node "${nodeId}" of type ${precompiledNode.nodeType} has a state but no state class`
+                        )
                     }
                     return [
                         ...declarations,
                         ConstVar(
-                            precompiledNode.state.className,
-                            stateInstanceName,
+                            precompiledNodeImplementation.stateClass.name,
+                            precompiledNode.state.name,
                             ast`{
                                 ${Object.entries(
                                     precompiledNode.state.initialization
@@ -129,7 +130,7 @@ const ioMessageReceivers = ({
                 return Func(ioFuncName, [
                     Var('Message', 'm')
                 ], 'void')`
-                    ${nodes[ioNodeId]!.generationContext.messageSenders.$0!}(m)
+                    ${nodes[ioNodeId]!.messageSenders.$0!.messageSenderName}(m)
                 `
             })
         })
@@ -190,13 +191,17 @@ const portletsDeclarations = ({
         // This needs to come after all message receivers are declared since we reference them here.
         graph.fullTraversal
             .flatMap((nodeId) => Object.values(nodes[nodeId]!.messageSenders))
+            // If only one sink declared, we don't need to declare the messageSender,
+            // as precompilation takes care of substituting the messageSender name
+            // with the sink name.
+            .filter(({ sinkFunctionNames }) => sinkFunctionNames.length > 0)
             .map(
-                ({ messageSenderName: sndName, functionNames }) =>
+                ({ messageSenderName, sinkFunctionNames }) =>
                     // prettier-ignore
-                    Func(sndName, [
+                    Func(messageSenderName, [
                         Var('Message', 'm')
                     ], 'void')`
-                        ${functionNames.map(functionName => 
+                        ${sinkFunctionNames.map(functionName => 
                             `${functionName}(m)`)}
                     `
             ),

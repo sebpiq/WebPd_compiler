@@ -26,7 +26,7 @@ import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
 import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
 import { attachNodePortlet, attachNodeState } from './variable-names-index'
-import { DspGroup, Precompilation } from './types'
+import { DspGroup, Precompilation, PrecompiledNodeCode } from './types'
 import { isNodeInsideGroup } from './dsp-groups'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
@@ -41,27 +41,33 @@ export const precompileState = (
     const { variableNamesIndex } = output
     const { globs } = variableNamesIndex
     const precompiledNode = output.nodes[node.id]!
-    const { nodeImplementation } = precompiledNode
-    if (nodeImplementation.state) {
+    const precompiledNodeImplementation =
+        output.nodeImplementations[precompiledNode.nodeType]!
+    if (precompiledNodeImplementation.nodeImplementation.state) {
         const nodeType = node.type
         const stateClassName =
             variableNamesIndex.nodeImplementations[nodeType]!.stateClass
         if (!stateClassName) {
             throw new Error(`No stateClass defined for ${nodeType}`)
         }
-        const astClass = nodeImplementation.state({
-            globs,
-            node,
-            settings,
-            stateClassName,
-        })
+        const astClass = precompiledNodeImplementation.nodeImplementation.state(
+            {
+                globs,
+                node,
+                settings,
+                stateClassName,
+            }
+        )
 
-        const stateInstanceName = attachNodeState(variableNamesIndex, settings, node)
-        precompiledNode.generationContext.state = stateInstanceName
+        const stateInstanceName = attachNodeState(
+            variableNamesIndex,
+            settings,
+            node
+        )
 
         // Add state iniialization to the node.
         precompiledNode.state = {
-            className: stateClassName,
+            name: stateInstanceName,
             initialization: astClass.members.reduce(
                 (stateInitialization, astVar) => ({
                     ...stateInitialization,
@@ -100,10 +106,8 @@ export const precompileSignalOutlet = (
     )
     const precompiledNode = output.nodes[node.id]!
     precompiledNode.signalOuts[outletId] = signalOutName
-    precompiledNode.generationContext.signalOuts[outletId] = signalOutName
     outletSinks.forEach(({ portletId: inletId, nodeId: sinkNodeId }) => {
-        output.nodes[sinkNodeId]!.generationContext.signalIns[inletId] =
-            signalOutName
+        output.nodes[sinkNodeId]!.signalIns[inletId] = signalOutName
     })
 }
 
@@ -112,7 +116,7 @@ export const precompileSignalInletWithNoSource = (
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    output.nodes[node.id]!.generationContext.signalIns[inletId] =
+    output.nodes[node.id]!.signalIns[inletId] =
         output.variableNamesIndex.globs.nullSignal
 }
 
@@ -124,7 +128,7 @@ export const precompileMessageOutlet = (
     const outletSinks = getters.getSinks(sourceNode, outletId)
     const { variableNamesIndex } = output
     const precompiledNode = output.nodes[sourceNode.id]!
-    const functionNames = [
+    const sinkFunctionNames = [
         ...outletSinks.map(
             ({ nodeId: sinkNodeId, portletId: inletId }) =>
                 variableNamesIndex.nodes[sinkNodeId]!.messageReceivers[inletId]!
@@ -156,7 +160,7 @@ export const precompileMessageOutlet = (
     //          NODE2_RCV(m)
     //      }
     //
-    if (functionNames.length > 1) {
+    if (sinkFunctionNames.length > 1) {
         const messageSenderName = attachNodePortlet(
             output.variableNamesIndex,
             settings,
@@ -164,11 +168,9 @@ export const precompileMessageOutlet = (
             sourceNode,
             outletId
         )
-        precompiledNode.generationContext.messageSenders[outletId] =
-            messageSenderName
         precompiledNode.messageSenders[outletId] = {
             messageSenderName,
-            functionNames,
+            sinkFunctionNames,
         }
     }
 
@@ -187,16 +189,20 @@ export const precompileMessageOutlet = (
     //
     //      NODE2_RCV(m)
     //
-    else if (functionNames.length === 1) {
-        precompiledNode.generationContext.messageSenders[outletId] =
-            functionNames[0]!
+    else if (sinkFunctionNames.length === 1) {
+        precompiledNode.messageSenders[outletId] = {
+            messageSenderName: sinkFunctionNames[0]!,
+            sinkFunctionNames: [],
+        }
     }
 
     // If no function to call, we assign the node SND
     // a function that does nothing
     else {
-        precompiledNode.generationContext.messageSenders[outletId] =
-            variableNamesIndex.globs.nullMessageReceiver
+        precompiledNode.messageSenders[outletId] = {
+            messageSenderName: variableNamesIndex.globs.nullMessageReceiver,
+            sinkFunctionNames: [],
+        }
     }
 }
 
@@ -214,8 +220,6 @@ export const precompileMessageInlet = (
             node,
             inletId
         )
-        precompiledNode.generationContext.messageReceivers[inletId] =
-            messageReceiverName
 
         // Add a placeholder message receiver that should be substituted when
         // precompiling message receivers.
@@ -239,19 +243,22 @@ export const precompileMessageReceivers = (
 ) => {
     const { variableNamesIndex } = output
     const precompiledNode = output.nodes[node.id]!
+    const precompiledNodeImplementation =
+        output.nodeImplementations[precompiledNode.nodeType]!
     const { globs } = variableNamesIndex
-    const { nodeImplementation } = precompiledNode
-    const { state, messageSenders: snds } = precompiledNode.generationContext
+    const { state, snds } = _getContext(precompiledNode)
     const messageReceivers = createNamespace(
         nodeNamespaceLabel(node, 'messageReceivers'),
-        nodeImplementation.messageReceivers
-            ? nodeImplementation.messageReceivers({
-                  globs,
-                  state,
-                  snds,
-                  node,
-                  settings,
-              })
+        precompiledNodeImplementation.nodeImplementation.messageReceivers
+            ? precompiledNodeImplementation.nodeImplementation.messageReceivers(
+                  {
+                      globs,
+                      state,
+                      snds,
+                      node,
+                      settings,
+                  }
+              )
             : {}
     )
 
@@ -278,10 +285,12 @@ export const precompileInitialization = (
     const { globs } = variableNamesIndex
 
     const precompiledNode = output.nodes[node.id]!
-    const { state, messageSenders: snds } = precompiledNode.generationContext
-    const { nodeImplementation } = precompiledNode
-    precompiledNode.initialization = nodeImplementation.initialization
-        ? nodeImplementation.initialization({
+    const precompiledNodeImplementation =
+        output.nodeImplementations[precompiledNode.nodeType]!
+    const { state, snds } = _getContext(precompiledNode)
+    precompiledNode.initialization = precompiledNodeImplementation
+        .nodeImplementation.initialization
+        ? precompiledNodeImplementation.nodeImplementation.initialization({
               globs,
               state,
               snds,
@@ -297,20 +306,16 @@ export const precompileDsp = (
 ) => {
     const { variableNamesIndex } = output
     const precompiledNode = output.nodes[node.id]!
+    const precompiledNodeImplementation =
+        output.nodeImplementations[precompiledNode.nodeType]!
     const { globs } = variableNamesIndex
-    const {
-        signalOuts: outs,
-        signalIns: ins,
-        messageSenders: snds,
-        state,
-    } = precompiledNode.generationContext
-    const { nodeImplementation } = precompiledNode
+    const { outs, ins, snds, state } = _getContext(precompiledNode)
 
-    if (!nodeImplementation.dsp) {
+    if (!precompiledNodeImplementation.nodeImplementation.dsp) {
         throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
     }
 
-    const compiledDsp = nodeImplementation.dsp({
+    const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp({
         globs,
         node,
         state,
@@ -322,16 +327,18 @@ export const precompileDsp = (
 
     // Nodes that come here might have inlinable dsp, but still can't
     // be inlined because, for example, they have 2 sinks.
-    if (nodeImplementation.flags && nodeImplementation.flags.isDspInline) {
+    if (
+        precompiledNodeImplementation.nodeImplementation.flags &&
+        precompiledNodeImplementation.nodeImplementation.flags.isDspInline
+    ) {
         if ('loop' in compiledDsp) {
             throw new Error(
                 `Invalid dsp definition for inlinable node ${node.type}:${node.id}`
             )
         }
         const outletId = Object.keys(node.outlets)[0]!
-        precompiledNode.dsp.loop = ast`${
-            variableNamesIndex.nodes[node.id]!.signalOuts[outletId]!
-        } = ${compiledDsp}`
+        precompiledNode.dsp.loop = ast`${variableNamesIndex.nodes[node.id]!
+            .signalOuts[outletId]!} = ${compiledDsp}`
     } else if ('loop' in compiledDsp) {
         precompiledNode.dsp.loop = compiledDsp.loop
         Object.entries(compiledDsp.inlets).forEach(
@@ -371,13 +378,9 @@ export const precompileInlineDsp = (
     const inlinedNodes = dspGroup.traversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
             const precompiledNode = output.nodes[nodeId]!
-            const {
-                signalIns: ins,
-                signalOuts: outs,
-                messageSenders: snds,
-                state,
-            } = precompiledNode.generationContext
-            const { nodeImplementation } = precompiledNode
+            const precompiledNodeImplementation =
+                output.nodeImplementations[precompiledNode.nodeType]!
+            const { ins, outs, snds, state } = _getContext(precompiledNode)
             const node = getters.getNode(graph, nodeId)
             const inlinedInputs: InlinedInputs = mapArray(
                 // Select signal inlets with sources
@@ -409,22 +412,25 @@ export const precompileInlineDsp = (
                 }
             )
 
-            if (!nodeImplementation.dsp) {
-                throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
+            if (!precompiledNodeImplementation.nodeImplementation.dsp) {
+                throw new Error(
+                    `No dsp to generate for node ${node.type}:${node.id}`
+                )
             }
 
-            const compiledDsp = nodeImplementation.dsp({
-                globs,
-                state,
-                ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
-                    ...ins,
-                    ...inlinedInputs,
-                }),
-                outs,
-                snds,
-                node,
-                settings,
-            })
+            const compiledDsp =
+                precompiledNodeImplementation.nodeImplementation.dsp({
+                    globs,
+                    state,
+                    ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
+                        ...ins,
+                        ...inlinedInputs,
+                    }),
+                    outs,
+                    snds,
+                    node,
+                    settings,
+                })
 
             if (!('astType' in compiledDsp)) {
                 throw new Error(`Inlined dsp can only be an AstSequence`)
@@ -440,10 +446,35 @@ export const precompileInlineDsp = (
     )
 
     const groupSinkNode = _getInlinableGroupSinkNode(graph, dspGroup)
-    output.nodes[groupSinkNode.nodeId]!.generationContext.signalIns[
-        groupSinkNode.portletId
-    ] = inlinedNodes[dspGroup.outNodesIds[0]!]!
+    output.nodes[groupSinkNode.nodeId]!.signalIns[groupSinkNode.portletId] =
+        inlinedNodes[dspGroup.outNodesIds[0]!]!
 }
+
+const _getContext = (precompiledNode: PrecompiledNodeCode) => ({
+    state: precompiledNode.state ? precompiledNode.state.name : '',
+    ins: precompiledNode.signalIns,
+    outs: precompiledNode.signalOuts,
+    snds: createNamespace(
+        'snds',
+        Object.entries(precompiledNode.messageSenders).reduce(
+            (snds, [outletId, { messageSenderName }]) => ({
+                ...snds,
+                [outletId]: messageSenderName,
+            }),
+            {}
+        )
+    ),
+    rcvs: createNamespace(
+        'rcvs',
+        Object.entries(precompiledNode.messageReceivers).reduce(
+            (rcvs, [inletId, astFunc]) => ({
+                ...rcvs,
+                [inletId]: astFunc.name,
+            }),
+            {}
+        )
+    ),
+})
 
 const _getInlinableGroupSinkNode = (
     graph: DspGraph.Graph,

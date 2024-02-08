@@ -284,38 +284,7 @@ export const generatePrecompiledCode = (
         nodes: createNamespace(
             'nodes',
             mapObject(graph, (node) => ({
-                nodeImplementation: getNodeImplementation(
-                    nodeImplementations,
-                    node.type
-                ),
-                generationContext: {
-                    messageReceivers: createNamespace(
-                        nodeNamespaceLabel(
-                            node,
-                            'generationContext:messageReceivers'
-                        ),
-                        {}
-                    ),
-                    signalOuts: createNamespace(
-                        nodeNamespaceLabel(
-                            node,
-                            'generationContext:signalOuts'
-                        ),
-                        {}
-                    ),
-                    messageSenders: createNamespace(
-                        nodeNamespaceLabel(
-                            node,
-                            'generationContext:messageSenders'
-                        ),
-                        {}
-                    ),
-                    signalIns: createNamespace(
-                        nodeNamespaceLabel(node, 'generationContext:signalIns'),
-                        {}
-                    ),
-                    state: '',
-                },
+                nodeType: node.type,
                 messageReceivers: createNamespace(
                     nodeNamespaceLabel(node, 'messageReceivers'),
                     {}
@@ -325,6 +294,10 @@ export const generatePrecompiledCode = (
                     {}
                 ),
                 signalOuts: createNamespace(
+                    nodeNamespaceLabel(node, 'signalOuts'),
+                    {}
+                ),
+                signalIns: createNamespace(
                     nodeNamespaceLabel(node, 'signalOuts'),
                     {}
                 ),
