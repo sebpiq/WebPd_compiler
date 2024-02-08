@@ -22,7 +22,7 @@ import { makeGraph } from '../../dsp-graph/test-helpers'
 import precompile, { generatePrecompiledCode } from '.'
 import { NodeImplementations } from '../types'
 import { ColdDspGroup, DspGroup, PrecompiledCode } from './types'
-import { ast } from '../../ast/declare'
+import { Sequence, ast } from '../../ast/declare'
 import { AstSequence } from '../../ast/types'
 import { makeSettings } from '../test-helpers'
 import { generateVariableNamesIndex } from './variable-names-index'
@@ -327,10 +327,7 @@ describe('precompile', () => {
 
         assert.deepStrictEqual<AstSequence>(
             precompiledCode.nodes.n2!.dsp.inlets['0'],
-            {
-                astType: 'Sequence',
-                content: ['// inlet dsp 0'],
-            }
+            Sequence([ast`// inlet dsp 0`]),
         )
     })
 

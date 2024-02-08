@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { validateSettings } from '.'
+import { validateSettings } from './settings'
 import { initializePrecompilation } from './precompile'
 import {
     PrecompilationInput,

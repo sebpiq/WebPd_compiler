@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import compile, { validateSettings } from '.'
+import compile from './index'
 import { UserCompilationSettings } from './types'
 
 describe('compile', () => {
@@ -46,32 +46,5 @@ describe('compile', () => {
         const compileResult = compile({}, {}, 'javascript', COMPILER_SETTINGS_JS)
         assert.ok(compileResult.status === 0)
         assert.strictEqual(typeof compileResult.code, 'string')
-    })
-
-    describe('validateSettings', () => {
-        it('should validate settings and set defaults', () => {
-            const settings = validateSettings({}, 'javascript')
-            assert.deepStrictEqual(settings.io, {
-                messageReceivers: {},
-                messageSenders: {},
-            })
-            assert.deepStrictEqual(settings.arrays, {})
-            assert.deepStrictEqual(settings.audio, {
-                channelCount: { in: 2, out: 2 },
-                bitDepth: 64,
-            },)
-        })
-
-        it('should throw error if bitDepth invalid', () => {
-            assert.throws(() =>
-                validateSettings({
-                    target: 'assemblyscript',
-                    audio: {
-                        channelCount: { in: 2, out: 2 },
-                        bitDepth: 666,
-                    },
-                } as any, 'javascript')
-            )
-        })
     })
 })
