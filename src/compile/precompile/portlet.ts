@@ -1,3 +1,7 @@
+
+// !!! This file is not named `portlets` because somehow this makes 
+// jest tests crash with a TS error in consumer packages (e.g. in WebPd package).
+// See : https://github.com/kulshekhar/ts-jest/issues/4263
 import { Func, Var } from '../../ast/declare'
 import { VariableName } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'

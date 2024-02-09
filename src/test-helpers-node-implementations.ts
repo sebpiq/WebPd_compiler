@@ -288,6 +288,8 @@ export const generateFramesForNode = async <NodeArguments>(
         blockSize
     )
 
+    let isInitialized = false
+
     inputFrames.forEach((inputFrame) => {
         const outputFrame: FrameNodeOut = { outs: {}, sequence: [] }
         // Set default values for output frame
@@ -352,7 +354,10 @@ export const generateFramesForNode = async <NodeArguments>(
 
         // We make sure we initialize AFTER assigning the io.messageSenders,
         // so we can receive messages sent during initialize.
-        engine.initialize(nodeTestSettings.sampleRate!, blockSize)
+        if (!isInitialized) {
+            engine.initialize(nodeTestSettings.sampleRate!, blockSize)
+            isInitialized = true
+        }
 
         // Send in fs commands
         if (inputFrame.fs) {
@@ -469,8 +474,6 @@ export const generateFrames = (
         engine.metadata.audioSettings.channelCount.out,
         blockSize
     )
-
-    engine.initialize(engine.metadata.audioSettings.sampleRate, blockSize)
 
     const results: Array<Array<number>> = []
     for (let i = 0; i < iterations; i++) {

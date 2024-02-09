@@ -54,7 +54,7 @@ import {
     precompileMessageInlet,
     precompileSignalOutlet,
     precompileMessageOutlet,
-} from './portlets'
+} from './portlet'
 import {
     buildColdDspGroups,
     removeNodesFromTraversal,

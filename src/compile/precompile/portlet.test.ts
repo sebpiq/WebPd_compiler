@@ -7,7 +7,7 @@ import {
     precompileSignalInletWithNoSource,
     precompileMessageOutlet,
     precompileMessageInlet,
-} from './portlets'
+} from './portlet'
 
 describe('precompile.portlets', () => {
     describe('precompileSignalOutlet', () => {
