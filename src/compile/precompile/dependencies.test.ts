@@ -35,6 +35,7 @@ import { Func, Sequence, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { PrecompiledCode } from './types'
 import { makePrecompilation } from '../test-helpers'
+import { attachNode, attachNodeImplementation } from '.'
 
 describe('precompile.dependencies', () => {
     describe('default', () => {
@@ -43,6 +44,7 @@ describe('precompile.dependencies', () => {
                 codeGenerator: () => ast`"bli"`,
                 dependencies: [() => ast`"bla"`, () => ast`"ble"`],
             }
+
             const codeDefinition2 = {
                 codeGenerator: () => ast`"blu"`,
                 dependencies: [
@@ -51,6 +53,7 @@ describe('precompile.dependencies', () => {
                     codeDefinition1,
                 ],
             }
+            
             const dependencies: Array<GlobalCodeDefinition> = [
                 () => ast`"bla"`,
                 codeDefinition2,
@@ -74,6 +77,10 @@ describe('precompile.dependencies', () => {
                 nodeImplementations,
             })
 
+            attachNode(precompilation.output, graph.node1!)
+
+            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
+
             precompilation.output.graph.fullTraversal = ['node1']
 
             precompileDependencies(precompilation)
@@ -85,7 +92,7 @@ describe('precompile.dependencies', () => {
                         instantiateAndDedupeDependencies(
                             precompilation.input.settings,
                             flattenDependencies(engineMinimalDependencies()),
-                            precompilation.output.variableNamesIndex.globs
+                            precompilation.variableNamesIndex.globs
                         ),
                         ast`"bla"`,
                         ast`"bly"`,
@@ -138,6 +145,10 @@ describe('precompile.dependencies', () => {
 
             precompilation.output.graph.fullTraversal = ['node1']
 
+            attachNode(precompilation.output, graph.node1!)
+
+            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1)
+
             precompileDependencies(precompilation)
 
             assert.deepStrictEqual<PrecompiledCode['dependencies']['exports']>(
@@ -174,7 +185,7 @@ describe('precompile.dependencies', () => {
                     },
                     blaGenerator2,
                 ],
-                precompilation.output.variableNamesIndex.globs
+                precompilation.variableNamesIndex.globs
             )
             assert.deepStrictEqual(astSequence, Sequence([blo, bla1, bli]))
         })

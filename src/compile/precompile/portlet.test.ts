@@ -27,6 +27,7 @@ import {
     precompileMessageOutlet,
     precompileMessageInlet,
 } from './portlet'
+import { attachNode } from '.'
 
 describe('precompile.portlets', () => {
     describe('precompileSignalOutlet', () => {
@@ -52,23 +53,26 @@ describe('precompile.portlets', () => {
                 graph,
             })
 
+            attachNode(precompilation.output, graph.n1!)
+            attachNode(precompilation.output, graph.n2!)
+
             precompileSignalOutlet(precompilation, graph.n1!, '0')
             precompileSignalOutlet(precompilation, graph.n2!, '0')
 
             // Creates a variable name for the signal out
-            assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n1!.signalOuts
-                    .$0,
-                'n1_OUTS_0'
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n1!.signalOuts,
+                { '0': 'n1_OUTS_0' }
             )
+
             // Adds this variable name to precompilation `signalOuts`
-            assert.strictEqual(
+            assert.deepStrictEqual(
                 precompilation.output.nodes.n1!.signalOuts.$0,
                 'n1_OUTS_0'
             )
 
             // Assigns n1's out to n2's signalIn
-            assert.strictEqual(
+            assert.deepStrictEqual(
                 precompilation.output.nodes.n2!.signalIns.$0,
                 'n1_OUTS_0'
             )
@@ -90,12 +94,14 @@ describe('precompile.portlets', () => {
                 graph,
             })
 
+            attachNode(precompilation.output, graph.n1!)
+
             precompileSignalInletWithNoSource(precompilation, graph.n1!, '0')
 
             // Substitute with empty signal in signalIns
             assert.strictEqual(
                 precompilation.output.nodes.n1!.signalIns.$0,
-                precompilation.output.variableNamesIndex.globs.nullSignal
+                precompilation.variableNamesIndex.globs.nullSignal
             )
         })
     })
@@ -131,18 +137,16 @@ describe('precompile.portlets', () => {
                 graph,
             })
 
-            precompilation.output.variableNamesIndex.nodes.n2!.messageReceivers.$0 =
-                'n2_RCVS_0'
-            precompilation.output.variableNamesIndex.nodes.n3!.messageReceivers.$0 =
-                'n3_RCVS_0'
+            attachNode(precompilation.output, graph.n1!)
+            attachNode(precompilation.output, graph.n2!)
+            attachNode(precompilation.output, graph.n3!)
 
             precompileMessageOutlet(precompilation, graph.n1!, '0')
 
             // Creates a variable name for the message sender
-            assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n1!
-                    .messageSenders.$0,
-                'n1_SNDS_0'
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n1!.messageSenders,
+                { '0': 'n1_SNDS_0' }
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
@@ -174,33 +178,33 @@ describe('precompile.portlets', () => {
                 graph,
             })
 
+            attachNode(precompilation.output, graph.n1!)
+            attachNode(precompilation.output, graph.n2!)
+
             precompilation.output.graph.coldDspGroups = {
                 '0': {
-                    traversal: ['n2'],
-                    outNodesIds: ['n2'],
+                    dspGroup: {
+                        traversal: ['n2'],
+                        outNodesIds: ['n2'],
+                    },
                     sinkConnections: [],
+                    functionName: 'coldDsp_0',
                 },
             }
-
-            precompilation.output.variableNamesIndex.nodes.n2!.messageReceivers.$0 =
-                'n2_RCVS_0'
-            precompilation.output.variableNamesIndex.coldDspGroups['0'] =
-                'DSP_0'
 
             precompileMessageOutlet(precompilation, graph.n1!, '0')
 
             // Creates a variable name for the message sender
-            assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n1!
-                    .messageSenders.$0,
-                'n1_SNDS_0'
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n1!.messageSenders,
+                { '0': 'n1_SNDS_0' }
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
                 precompilation.output.nodes.n1!.messageSenders.$0,
                 {
                     messageSenderName: 'n1_SNDS_0',
-                    sinkFunctionNames: ['n2_RCVS_0', 'DSP_0'],
+                    sinkFunctionNames: ['n2_RCVS_0', 'coldDsp_0'],
                 }
             )
         })
@@ -219,6 +223,8 @@ describe('precompile.portlets', () => {
                 graph,
             })
 
+            attachNode(precompilation.output, graph.n1!)
+
             precompilation.output.graph.fullTraversal = ['n1']
             precompileMessageOutlet(precompilation, graph.n1!, '0')
 
@@ -227,7 +233,7 @@ describe('precompile.portlets', () => {
                 precompilation.output.nodes.n1!.messageSenders.$0,
                 {
                     messageSenderName:
-                        precompilation.output.variableNamesIndex.globs
+                        precompilation.variableNamesIndex.globs
                             .nullMessageReceiver,
                     sinkFunctionNames: [],
                 }
@@ -256,8 +262,8 @@ describe('precompile.portlets', () => {
                 graph,
             })
 
-            precompilation.output.variableNamesIndex.nodes.n2!.messageReceivers.$0 =
-                'n2_RCVS_0'
+            attachNode(precompilation.output, graph.n1!)
+            attachNode(precompilation.output, graph.n2!)
 
             precompileMessageOutlet(precompilation, graph.n1!, '0')
 
@@ -303,19 +309,21 @@ describe('precompile.portlets', () => {
 
             const precompilation = makePrecompilation({ graph })
 
+            attachNode(precompilation.output, graph.n1!)
+            attachNode(precompilation.output, graph.n2!)
+            attachNode(precompilation.output, graph.n3!)
+
             precompileMessageInlet(precompilation, graph.n2!, '0')
             precompileMessageInlet(precompilation, graph.n3!, '0')
 
             // Creates a variable names for message receivers
-            assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n2!
-                    .messageReceivers.$0,
-                'n2_RCVS_0'
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n2!.messageReceivers,
+                { '0': 'n2_RCVS_0' }
             )
-            assert.strictEqual(
-                precompilation.output.variableNamesIndex.nodes.n3!
-                    .messageReceivers.$0,
-                'n3_RCVS_0'
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n3!.messageReceivers,
+                { '0': 'n3_RCVS_0' }
             )
 
             // Add placeholder messageReceivers
@@ -351,15 +359,11 @@ describe('precompile.portlets', () => {
                 graph,
             })
 
+            attachNode(precompilation.output, graph.n1!)
+
             precompileMessageInlet(precompilation, graph.n1!, '0')
 
-            assert.ok(
-                !(
-                    '0' in
-                    precompilation.output.variableNamesIndex.nodes.n1!
-                        .messageReceivers
-                )
-            )
+            assert.ok(!('n1' in precompilation.variableNamesIndex.nodes))
             assert.ok(
                 !('0' in precompilation.output.nodes.n1!.messageReceivers)
             )

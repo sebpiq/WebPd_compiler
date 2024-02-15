@@ -202,8 +202,8 @@ export const findColdDspGroupFromSink = (
     coldDspGroupMap: { [groupId: string]: ColdDspGroup },
     sink: DspGraph.ConnectionEndpoint
 ) =>
-    Object.values(coldDspGroupMap).find((dspGroup) =>
-        dspGroup.sinkConnections.find(([_, otherSink]) =>
+    Object.values(coldDspGroupMap).find(({ sinkConnections }) =>
+        sinkConnections.find(([_, otherSink]) =>
             helpers.endpointsEqual(otherSink, sink)
         )
     )

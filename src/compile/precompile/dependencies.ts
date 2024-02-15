@@ -35,24 +35,25 @@ import {
 } from './types'
 
 export default (precompilation: Precompilation) => {
+    const { output, input: { settings }, proxies: { variableNamesAssigner } } = precompilation
     const dependencies = flattenDependencies([
         ...engineMinimalDependencies(),
         ..._collectDependenciesFromTraversal(precompilation),
     ])
 
     // Flatten and de-duplicate all the module's dependencies
-    precompilation.output.dependencies.ast = instantiateAndDedupeDependencies(
-        precompilation.input.settings,
+    output.dependencies.ast = instantiateAndDedupeDependencies(
+        settings,
         dependencies,
-        precompilation.output.variableNamesIndex.globs
+        variableNamesAssigner.globs
     )
 
     // Collect and attach imports / exports info
-    precompilation.output.dependencies.exports = collectAndDedupeExports(
-        precompilation.input.settings.target,
+    output.dependencies.exports = collectAndDedupeExports(
+        settings.target,
         dependencies
     )
-    precompilation.output.dependencies.imports =
+    output.dependencies.imports =
         collectAndDedupeImports(dependencies)
 }
 

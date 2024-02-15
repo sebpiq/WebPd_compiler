@@ -23,7 +23,7 @@ import { RenderInput } from './types'
 
 /** Helper to build engine metadata from compilation object */
 export const buildMetadata = ({
-    precompiledCode: { variableNamesIndex },
+    variableNamesIndex,
     settings: { audio: audioSettings, io }
 }: RenderInput): EngineMetadata => ({
     libVersion: packageInfo.version,

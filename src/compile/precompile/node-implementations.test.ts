@@ -24,6 +24,7 @@ import { NodeImplementations } from '../types'
 import { precompileCore, precompileStateClass } from './node-implementations'
 import { AstClass, AstSequence } from '../../ast/types'
 import { makePrecompilation } from '../test-helpers'
+import { attachNodeImplementation } from '.'
 
 describe('precompile.node-implementations', () => {
     describe('precompileStateClass', () => {
@@ -51,9 +52,11 @@ describe('precompile.node-implementations', () => {
                 nodeImplementations,
             })
 
+            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
+
             precompileStateClass(precompilation, 'type1')
 
-            assert.strictEqual(precompilation.output.variableNamesIndex.nodeImplementations.type1!.stateClass, 'State_type1')
+            assert.strictEqual(precompilation.variableNamesIndex.nodeImplementations.type1!.stateClass, 'State_type1')
             assert.deepStrictEqual<AstClass>(
                 precompilation.output.nodeImplementations.type1!.stateClass,
                 Class(
@@ -87,6 +90,8 @@ describe('precompile.node-implementations', () => {
                 graph,
                 nodeImplementations,
             })
+
+            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
 
             precompileCore(precompilation, 'type1')
 

@@ -33,8 +33,8 @@ import { FloatArrayPointer, InternalPointer } from './types'
 import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../compile/render'
-import { generateVariableNamesGlobs } from '../../compile/precompile/variable-names-index'
 import { makeSettings } from '../../compile/test-helpers'
+import { createVariableNamesIndex } from '../../compile/precompile/variable-names-index'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {
@@ -62,7 +62,7 @@ describe('core-bindings', () => {
                 target: 'assemblyscript',
                 audio: { bitDepth, channelCount: { in: 2, out: 2 } },
             }),
-            globs: generateVariableNamesGlobs(),
+            globs: createVariableNamesIndex().globs,
         }),
         core.exports!.map(({ name }) => `export { ${name} }`)
     ]))

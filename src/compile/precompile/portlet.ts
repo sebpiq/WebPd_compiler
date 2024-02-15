@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2022-2023 Sébastien Piquemal <sebpiq@protonmail.com>, Chris McCormick.
  *
@@ -23,13 +22,16 @@ import { VariableName } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { isNodeInsideGroup } from './dsp-groups'
 import { Precompilation } from './types'
-import { attachNodePortlet } from './variable-names-index'
 
 export const precompileSignalOutlet = (
-    { input, output }: Precompilation,
+    precompilation: Precompilation,
     node: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
+    const {
+        output,
+        proxies: { variableNamesAssigner },
+    } = precompilation
     const outletSinks = getters.getSinks(node, outletId)
 
     // Signal inlets can receive input from ONLY ONE signal.
@@ -43,54 +45,49 @@ export const precompileSignalOutlet = (
     //
     //      NODE2_OUT = NODE1_OUT * 2
     //
-    const signalOutName = attachNodePortlet(
-        output.variableNamesIndex,
-        input.settings,
-        'signalOuts',
-        node,
-        outletId
-    )
-    const precompiledNode = output.nodes[node.id]!
-    precompiledNode.signalOuts[outletId] = signalOutName
+    const signalOutName =
+        variableNamesAssigner.nodes[node.id]!.signalOuts[outletId]!
+    output.nodes[node.id]!.signalOuts[outletId] = signalOutName
     outletSinks.forEach(({ portletId: inletId, nodeId: sinkNodeId }) => {
         output.nodes[sinkNodeId]!.signalIns[inletId] = signalOutName
     })
 }
 
 export const precompileSignalInletWithNoSource = (
-    { output }: Precompilation,
+    { output, proxies: { variableNamesAssigner } }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
     output.nodes[node.id]!.signalIns[inletId] =
-        output.variableNamesIndex.globs.nullSignal
+        variableNamesAssigner.globs.nullSignal
 }
 
 export const precompileMessageOutlet = (
-    { input: { settings }, output }: Precompilation,
+    { output, proxies: { variableNamesAssigner } }: Precompilation,
     sourceNode: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
     const outletSinks = getters.getSinks(sourceNode, outletId)
-    const { variableNamesIndex } = output
     const precompiledNode = output.nodes[sourceNode.id]!
     const sinkFunctionNames = [
         ...outletSinks.map(
             ({ nodeId: sinkNodeId, portletId: inletId }) =>
-                variableNamesIndex.nodes[sinkNodeId]!.messageReceivers[inletId]!
+                variableNamesAssigner.nodes[sinkNodeId]!.messageReceivers[
+                    inletId
+                ]!
         ),
         ...outletSinks.reduce<Array<VariableName>>(
             (coldDspFunctionNames, sink) => {
                 const groupsContainingSink = Object.entries(
                     output.graph.coldDspGroups
                 )
-                    .filter(([_, dspGroup]) =>
+                    .filter(([_, { dspGroup }]) =>
                         isNodeInsideGroup(dspGroup, sink.nodeId)
                     )
                     .map(([groupId]) => groupId)
 
                 const functionNames = groupsContainingSink.map(
-                    (groupId) => variableNamesIndex.coldDspGroups[groupId]!
+                    (groupId) => variableNamesAssigner.coldDspGroups[groupId]!
                 )
                 return [...coldDspFunctionNames, ...functionNames]
             },
@@ -107,15 +104,11 @@ export const precompileMessageOutlet = (
     //      }
     //
     if (sinkFunctionNames.length > 1) {
-        const messageSenderName = attachNodePortlet(
-            output.variableNamesIndex,
-            settings,
-            'messageSenders',
-            sourceNode,
-            outletId
-        )
         precompiledNode.messageSenders[outletId] = {
-            messageSenderName,
+            messageSenderName:
+                variableNamesAssigner.nodes[sourceNode.id]!.messageSenders[
+                    outletId
+                ]!,
             sinkFunctionNames,
         }
     }
@@ -146,26 +139,21 @@ export const precompileMessageOutlet = (
     // a function that does nothing
     else {
         precompiledNode.messageSenders[outletId] = {
-            messageSenderName: variableNamesIndex.globs.nullMessageReceiver,
+            messageSenderName: variableNamesAssigner.globs.nullMessageReceiver,
             sinkFunctionNames: [],
         }
     }
 }
 
 export const precompileMessageInlet = (
-    { input, output }: Precompilation,
+    { output, proxies: { variableNamesAssigner } }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
     const precompiledNode = output.nodes[node.id]!
     if (getters.getSources(node, inletId).length >= 1) {
-        const messageReceiverName = attachNodePortlet(
-            output.variableNamesIndex,
-            input.settings,
-            'messageReceivers',
-            node,
-            inletId
-        )
+        const messageReceiverName =
+            variableNamesAssigner.nodes[node.id]!.messageReceivers[inletId]!
 
         // Add a placeholder message receiver that should be substituted when
         // precompiling message receivers.

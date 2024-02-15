@@ -19,25 +19,18 @@
  */
 import { DspGraph } from '../../dsp-graph'
 import { Precompilation } from './types'
-import { attachNodeImplementationVariable } from './variable-names-index'
 
 export const precompileStateClass = (
-    { input: { graph, settings }, output }: Precompilation,
+    {
+        input: { graph, settings },
+        output,
+        proxies: { variableNamesAssigner },
+    }: Precompilation,
     nodeType: DspGraph.NodeType
 ) => {
-    const { variableNamesIndex } = output
-    const { globs } = variableNamesIndex
     const precompiledImplementation = output.nodeImplementations[nodeType]!
 
     if (precompiledImplementation.nodeImplementation.state) {
-        if (!variableNamesIndex.nodeImplementations[nodeType]!.stateClass) {
-            attachNodeImplementationVariable(
-                variableNamesIndex,
-                'stateClass',
-                nodeType,
-                precompiledImplementation.nodeImplementation
-            )
-        }
         const sampleNode = Object.values(graph).find(
             (node) => node.type === nodeType
         )
@@ -46,15 +39,12 @@ export const precompileStateClass = (
                 `No node of type "${nodeType}" exists in the graph.`
             )
         }
+
         const stateClassName =
-            variableNamesIndex.nodeImplementations[nodeType]!.stateClass
-        if (!stateClassName) {
-            throw new Error(
-                `No state class name defined for node type "${nodeType}".`
-            )
-        }
+            variableNamesAssigner.nodeImplementations[nodeType]!.stateClass!
+
         const astClass = precompiledImplementation.nodeImplementation.state({
-            globs,
+            globs: variableNamesAssigner.globs,
             node: sampleNode,
             settings,
             stateClassName,
@@ -71,20 +61,22 @@ export const precompileStateClass = (
 }
 
 export const precompileCore = (
-    { input: { settings }, output }: Precompilation,
+    {
+        input: { settings },
+        output,
+        proxies: { variableNamesAssigner },
+    }: Precompilation,
     nodeType: DspGraph.NodeType
 ) => {
-    const { variableNamesIndex } = output
-    const { globs } = variableNamesIndex
     const precompiledImplementation = output.nodeImplementations[nodeType]!
     const nodeImplementation = precompiledImplementation.nodeImplementation
     const stateClassName =
-        variableNamesIndex.nodeImplementations[nodeType]!.stateClass ||
+        variableNamesAssigner.nodeImplementations[nodeType]!.stateClass ||
         undefined
     if (nodeImplementation.core) {
         precompiledImplementation.core = nodeImplementation.core({
             settings,
-            globs,
+            globs: variableNamesAssigner.globs,
             stateClassName,
         })
     }

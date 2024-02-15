@@ -31,18 +31,21 @@ import { DspGraph } from '../../dsp-graph'
 import { NodeImplementations, CompilationSettings } from '../types'
 
 export interface Precompilation {
-    readonly input: Readonly<PrecompilationInput>
-    readonly output: Readonly<PrecompiledCode>
+    readonly input: PrecompilationInput
+    readonly output: PrecompiledCode
+    readonly variableNamesIndex: VariableNamesIndex
+    readonly proxies: {
+        variableNamesAssigner: VariableNamesIndex
+    }
 }
 
 export interface PrecompilationInput {
-    readonly graph: Readonly<DspGraph.Graph>
-    readonly nodeImplementations: Readonly<NodeImplementations>
+    graph: Readonly<DspGraph.Graph>
+    nodeImplementations: Readonly<NodeImplementations>
     readonly settings: Readonly<CompilationSettings>
 }
 
-export type PrecompiledCode = {
-    readonly variableNamesIndex: VariableNamesIndex
+export interface PrecompiledCode {
     readonly nodeImplementations: {
         [nodeType: DspGraph.NodeType]: {
             nodeImplementation: NodeImplementation
@@ -61,15 +64,44 @@ export type PrecompiledCode = {
     readonly graph: {
         fullTraversal: DspGraph.GraphTraversal
         hotDspGroup: DspGroup
-        coldDspGroups: { [groupId: string]: ColdDspGroup }
+        coldDspGroups: {
+            [groupId: string]: ColdDspGroup
+        }
     }
+    readonly io: {
+        messageReceivers: {
+            [nodeId: DspGraph.NodeId]: {
+                [inletId: DspGraph.PortletId]: {
+                    functionName: VariableName
+                    // Function because relies on other 
+                    // precompiled code values.
+                    getSinkFunctionName: () => VariableName
+                }
+            }
+        }
+        messageSenders: {
+            [nodeId: DspGraph.NodeId]: {
+                [inletId: DspGraph.PortletId]: {
+                    functionName: VariableName
+                }
+            }
+        }
+    }
+}
+
+export interface ColdDspGroup {
+    dspGroup: DspGroup
+    sinkConnections: Array<DspGraph.Connection>
+    functionName: VariableName
 }
 
 export interface PrecompiledNodeCode {
     readonly nodeType: DspGraph.NodeType
     state: null | {
         readonly name: VariableName
-        readonly initialization: { [key: string]: NonNullable<AstVarBase['value']> }
+        readonly initialization: {
+            [key: string]: NonNullable<AstVarBase['value']>
+        }
     }
     readonly messageReceivers: { [inletId: DspGraph.PortletId]: AstFunc }
     readonly messageSenders: {
@@ -82,7 +114,7 @@ export interface PrecompiledNodeCode {
     readonly signalIns: { [portletId: DspGraph.PortletId]: Code }
     initialization: AstElement
     readonly dsp: {
-        loop: AstElement,
+        loop: AstElement
         inlets: { [inletId: DspGraph.PortletId]: AstElement }
     }
 }
@@ -92,21 +124,15 @@ export interface DspGroup {
     outNodesIds: Array<DspGraph.NodeId>
 }
 
-export interface ColdDspGroup extends DspGroup {
-    sinkConnections: Array<DspGraph.Connection>
-}
-
 export interface NodeVariableNames {
-    readonly signalOuts: { [portletId: DspGraph.PortletId]: VariableName }
-    readonly messageSenders: { [portletId: DspGraph.PortletId]: VariableName }
-    readonly messageReceivers: { [portletId: DspGraph.PortletId]: VariableName }
+    readonly signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
+    readonly messageSenders: { [outletId: DspGraph.PortletId]: VariableName }
+    readonly messageReceivers: { [inletId: DspGraph.PortletId]: VariableName }
     state: VariableName | null
 }
 
 /**
  * Map of all global variable names used for compilation.
- *
- * @todo : for the sake of completeness, this should include also all global variables dependencies, etc ...
  */
 export interface VariableNamesIndex {
     /** Namespace for individual nodes */
@@ -136,18 +162,12 @@ export interface VariableNamesIndex {
     readonly io: {
         readonly messageReceivers: {
             [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: {
-                    nodeId: DspGraph.NodeId
-                    funcName: VariableName
-                }
+                [inletId: DspGraph.PortletId]: VariableName
             }
         }
         readonly messageSenders: {
             [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: {
-                    nodeId: DspGraph.NodeId
-                    funcName: VariableName
-                }
+                [outletId: DspGraph.PortletId]: VariableName
             }
         }
     }

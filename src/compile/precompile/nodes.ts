@@ -24,8 +24,7 @@ import { Code } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
-import { createNamespace, nodeNamespaceLabel } from '../compile-helpers'
-import { attachNodeState } from './variable-names-index'
+import { createNamespace } from '../compile-helpers'
 import { DspGroup, Precompilation, PrecompiledNodeCode } from './types'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
@@ -34,39 +33,35 @@ type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
 const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 
 export const precompileState = (
-    { input: { settings }, output }: Precompilation,
+    {
+        input: { settings },
+        output,
+        proxies: { variableNamesAssigner },
+    }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const { variableNamesIndex } = output
-    const { globs } = variableNamesIndex
     const precompiledNode = output.nodes[node.id]!
     const precompiledNodeImplementation =
         output.nodeImplementations[precompiledNode.nodeType]!
     if (precompiledNodeImplementation.nodeImplementation.state) {
         const nodeType = node.type
         const stateClassName =
-            variableNamesIndex.nodeImplementations[nodeType]!.stateClass
+            variableNamesAssigner.nodeImplementations[nodeType]!.stateClass
         if (!stateClassName) {
             throw new Error(`No stateClass defined for ${nodeType}`)
         }
         const astClass = precompiledNodeImplementation.nodeImplementation.state(
             {
-                globs,
+                globs: variableNamesAssigner.globs,
                 node,
                 settings,
                 stateClassName,
             }
         )
 
-        const stateInstanceName = attachNodeState(
-            variableNamesIndex,
-            settings,
-            node
-        )
-
         // Add state iniialization to the node.
         precompiledNode.state = {
-            name: stateInstanceName,
+            name: variableNamesAssigner.nodes[node.id]!.state!,
             initialization: astClass.members.reduce(
                 (stateInitialization, astVar) => ({
                     ...stateInitialization,
@@ -83,21 +78,23 @@ export const precompileState = (
  * all portlet variable names defined before we can precompile message receivers.
  */
 export const precompileMessageReceivers = (
-    { input: { settings }, output }: Precompilation,
+    {
+        input: { settings },
+        output,
+        proxies: { variableNamesAssigner },
+    }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const { variableNamesIndex } = output
     const precompiledNode = output.nodes[node.id]!
     const precompiledNodeImplementation =
         output.nodeImplementations[precompiledNode.nodeType]!
-    const { globs } = variableNamesIndex
     const { state, snds } = _getContext(precompiledNode)
     const messageReceivers = createNamespace(
-        nodeNamespaceLabel(node, 'messageReceivers'),
+        'messageReceivers',
         precompiledNodeImplementation.nodeImplementation.messageReceivers
             ? precompiledNodeImplementation.nodeImplementation.messageReceivers(
                   {
-                      globs,
+                      globs: variableNamesAssigner.globs,
                       state,
                       snds,
                       node,
@@ -115,7 +112,7 @@ export const precompileMessageReceivers = (
         // We can't override values in the namespace, so we need to copy
         // the function's properties one by one.
         targetFunc.name =
-            variableNamesIndex.nodes[node.id]!.messageReceivers[inletId]!
+            variableNamesAssigner.nodes[node.id]!.messageReceivers[inletId]!
         targetFunc.args = implementedFunc.args
         targetFunc.body = implementedFunc.body
         targetFunc.returnType = implementedFunc.returnType
@@ -123,12 +120,13 @@ export const precompileMessageReceivers = (
 }
 
 export const precompileInitialization = (
-    { input: { settings }, output }: Precompilation,
+    {
+        input: { settings },
+        output,
+        proxies: { variableNamesAssigner },
+    }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const { variableNamesIndex } = output
-    const { globs } = variableNamesIndex
-
     const precompiledNode = output.nodes[node.id]!
     const precompiledNodeImplementation =
         output.nodeImplementations[precompiledNode.nodeType]!
@@ -136,7 +134,7 @@ export const precompileInitialization = (
     precompiledNode.initialization = precompiledNodeImplementation
         .nodeImplementation.initialization
         ? precompiledNodeImplementation.nodeImplementation.initialization({
-              globs,
+              globs: variableNamesAssigner.globs,
               state,
               snds,
               node,
@@ -146,14 +144,16 @@ export const precompileInitialization = (
 }
 
 export const precompileDsp = (
-    { input: { settings }, output }: Precompilation,
+    {
+        input: { settings },
+        output,
+        proxies: { variableNamesAssigner },
+    }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const { variableNamesIndex } = output
     const precompiledNode = output.nodes[node.id]!
     const precompiledNodeImplementation =
         output.nodeImplementations[precompiledNode.nodeType]!
-    const { globs } = variableNamesIndex
     const { outs, ins, snds, state } = _getContext(precompiledNode)
 
     if (!precompiledNodeImplementation.nodeImplementation.dsp) {
@@ -161,7 +161,7 @@ export const precompileDsp = (
     }
 
     const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp({
-        globs,
+        globs: variableNamesAssigner.globs,
         node,
         state,
         ins,
@@ -182,7 +182,7 @@ export const precompileDsp = (
             )
         }
         const outletId = Object.keys(node.outlets)[0]!
-        precompiledNode.dsp.loop = ast`${variableNamesIndex.nodes[node.id]!
+        precompiledNode.dsp.loop = ast`${variableNamesAssigner.nodes[node.id]!
             .signalOuts[outletId]!} = ${compiledDsp}`
     } else if ('loop' in compiledDsp) {
         precompiledNode.dsp.loop = compiledDsp.loop
@@ -215,11 +215,13 @@ export const precompileDsp = (
  * ```
  */
 export const precompileInlineDsp = (
-    { input: { graph, settings }, output }: Precompilation,
+    {
+        input: { graph, settings },
+        output,
+        proxies: { variableNamesAssigner },
+    }: Precompilation,
     dspGroup: DspGroup
 ): void => {
-    const { variableNamesIndex } = output
-    const { globs } = variableNamesIndex
     const inlinedNodes = dspGroup.traversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
             const precompiledNode = output.nodes[nodeId]!
@@ -265,9 +267,9 @@ export const precompileInlineDsp = (
 
             const compiledDsp =
                 precompiledNodeImplementation.nodeImplementation.dsp({
-                    globs,
+                    globs: variableNamesAssigner.globs,
                     state,
-                    ins: createNamespace(nodeNamespaceLabel(node, 'ins'), {
+                    ins: createNamespace('ins', {
                         ...ins,
                         ...inlinedInputs,
                     }),

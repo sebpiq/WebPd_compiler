@@ -59,6 +59,7 @@ export const makeRenderInput = (
 ): RenderInput => {
     const precompilation = makePrecompilation(...args)
     return {
+        variableNamesIndex: precompilation.variableNamesIndex,
         precompiledCode: precompilation.output,
         settings: precompilation.input.settings,
     }

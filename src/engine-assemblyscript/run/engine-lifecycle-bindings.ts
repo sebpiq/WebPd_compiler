@@ -135,7 +135,7 @@ export const createIoMessageReceiversBindings = (
                     const messagePointer = lowerMessage(rawModule, message)
                     ;(rawModule as any)[
                         engineData.metadata.compilation.variableNamesIndex.io
-                            .messageReceivers[nodeId]![inletId]!.funcName
+                            .messageReceivers[nodeId]![inletId]!
                     ](messagePointer)
                 },
             ]),
@@ -168,7 +168,7 @@ export const ioMsgSendersImports = (
         ([nodeId, spec]) => {
             spec.portletIds.forEach((outletId) => {
                 const listenerName =
-                    variableNamesIndex.io.messageSenders[nodeId]![outletId]!.funcName
+                    variableNamesIndex.io.messageSenders[nodeId]![outletId]!
                 wasmImports[listenerName] = (messagePointer) => {
                     const message = liftMessage(
                         forwardReferences.rawModule!,

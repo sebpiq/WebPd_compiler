@@ -29,8 +29,7 @@ import { RenderInput } from '../../compile/render/types'
 export default (
     renderInput: RenderInput,
 ): JavaScriptEngineCode => {
-    const { precompiledCode, settings } = renderInput
-    const variableNamesIndex = precompiledCode.variableNamesIndex
+    const { precompiledCode, settings, variableNamesIndex } = renderInput
     const globs = variableNamesIndex.globs
     const metadata = buildMetadata(renderInput)
 
@@ -70,10 +69,10 @@ export default (
             },
             io: {
                 messageReceivers: {
-                    ${Object.entries(settings.io.messageReceivers).map(([nodeId, spec]) =>
+                    ${Object.entries(precompiledCode.io.messageReceivers).map(([nodeId, portletIdsMap]) => 
                         ast`${nodeId}: {
-                            ${spec.portletIds.map(inletId => 
-                                `"${inletId}": ${variableNamesIndex.io.messageReceivers[nodeId]![inletId]!.funcName},`)}
+                            ${Object.entries(portletIdsMap).map(([inletId, { functionName }]) => 
+                                `"${inletId}": ${functionName},`)}
                         },`
                     )}
                 },

@@ -26,19 +26,13 @@ import {
 } from '../../ast/types'
 import { Sequence, Func, Var, ast, ConstVar } from '../../ast/declare'
 import { DspGraph } from '../../dsp-graph'
-import {
-    findColdDspGroupFromSink,
-} from '../precompile/dsp-groups'
+import { findColdDspGroupFromSink } from '../precompile/dsp-groups'
 import { RenderInput } from './types'
 
 const dependencies = ({ precompiledCode }: RenderInput) =>
     precompiledCode.dependencies.ast
 
-const globs = ({
-    precompiledCode: {
-        variableNamesIndex: { globs },
-    },
-}: RenderInput): AstSequence =>
+const globs = ({ variableNamesIndex: { globs } }: RenderInput): AstSequence =>
     // prettier-ignore
     Sequence([
         Var('Int', globs.iterFrame, '0'),
@@ -81,7 +75,8 @@ const nodeStateInstances = ({
         graph.fullTraversal.reduce<Array<AstConstVar>>(
             (declarations, nodeId) => {
                 const precompiledNode = nodes[nodeId]!
-                const precompiledNodeImplementation = nodeImplementations[precompiledNode.nodeType]!
+                const precompiledNodeImplementation =
+                    nodeImplementations[precompiledNode.nodeType]!
                 if (!precompiledNode.state) {
                     return declarations
                 } else {
@@ -116,28 +111,25 @@ const nodeInitializations = ({
     ])
 
 const ioMessageReceivers = ({
-    precompiledCode: { variableNamesIndex, nodes },
-    settings: { io },
+    precompiledCode: { io },
 }: RenderInput): AstSequence =>
     Sequence(
-        Object.entries(io.messageReceivers).map(([specNodeId, spec]) => {
-            return spec.portletIds.map((specInletId) => {
-                const { funcName: ioFuncName, nodeId: ioNodeId } =
-                    variableNamesIndex.io.messageReceivers[specNodeId]![
-                        specInletId
-                    ]!
-                // prettier-ignore
-                return Func(ioFuncName, [
+        Object.values(io.messageReceivers).map((inletsMap) => {
+            return Object.values(inletsMap).map(
+                (precompiledIoMessageReceiver) => {
+                    // prettier-ignore
+                    return Func(precompiledIoMessageReceiver.functionName, [
                     Var('Message', 'm')
                 ], 'void')`
-                    ${nodes[ioNodeId]!.messageSenders.$0!.messageSenderName}(m)
+                    ${precompiledIoMessageReceiver.getSinkFunctionName()}(m)
                 `
-            })
+                }
+            )
         })
     )
 
 const ioMessageSenders = (
-    { precompiledCode: { variableNamesIndex }, settings: { io } }: RenderInput,
+    { precompiledCode }: RenderInput,
     generateIoMessageSender: (
         variableName: VariableName,
         nodeId: DspGraph.NodeId,
@@ -145,17 +137,17 @@ const ioMessageSenders = (
     ) => AstSequence
 ) =>
     Sequence(
-        Object.entries(io.messageSenders).map(([nodeId, spec]) =>
-            spec.portletIds.map((outletId) => {
-                const messageSenderName =
-                    variableNamesIndex.io.messageSenders[nodeId]![outletId]!
-                        .funcName
-                return generateIoMessageSender(
-                    messageSenderName,
-                    nodeId,
-                    outletId
+        Object.entries(precompiledCode.io.messageSenders).map(
+            ([nodeId, portletIdsMap]) =>
+                Object.entries(portletIdsMap).map(
+                    ([outletId, messageSender]) => {
+                        return generateIoMessageSender(
+                            messageSender.functionName,
+                            nodeId,
+                            outletId
+                        )
+                    }
                 )
-            })
         )
     )
 
@@ -208,8 +200,8 @@ const portletsDeclarations = ({
     ])
 
 const dspLoop = ({
+    variableNamesIndex: { globs },
     precompiledCode: {
-        variableNamesIndex: { globs },
         nodes,
         graph: { hotDspGroup, coldDspGroups },
     },
@@ -239,36 +231,38 @@ const dspLoop = ({
     `
 
 const coldDspInitialization = ({
-    precompiledCode: { variableNamesIndex, graph },
+    variableNamesIndex: { globs },
+    precompiledCode: { graph },
 }: RenderInput) =>
     Sequence(
-        Object.keys(graph.coldDspGroups).map(
-            (groupId) =>
-                `${variableNamesIndex.coldDspGroups[groupId]}(${variableNamesIndex.globs.emptyMessage})`
+        Object.values(graph.coldDspGroups).map(
+            ({ functionName }) => `${functionName}(${globs.emptyMessage})`
         )
     )
 
 const coldDspFunctions = ({
     precompiledCode: {
-        variableNamesIndex,
         graph: { coldDspGroups },
         nodes,
     },
 }: RenderInput): AstSequence =>
     Sequence(
-        Object.entries(coldDspGroups).map(
-            ([groupId, dspGroup]) =>
+        Object.values(coldDspGroups).map(
+            ({
+                dspGroup,
+                sinkConnections: dspGroupSinkConnections,
+                functionName,
+            }) =>
                 // prettier-ignore
-                Func(variableNamesIndex.coldDspGroups[groupId]!, [
+                Func(functionName, [
                     Var('Message', 'm')
                 ], 'void')`
                     ${dspGroup.traversal.map((nodeId) => 
                         nodes[nodeId]!.dsp.loop
                     )}
-                    ${
-                        // For all sinks of the cold dsp group, we also render 
-                        // the inlets dsp functions that are connected to it. 
-                        dspGroup.sinkConnections
+                    ${dspGroupSinkConnections
+                    // For all sinks of the cold dsp group, we also render 
+                    // the inlets dsp functions that are connected to it. 
                         .filter(([_, sink]) => 
                             sink.portletId in nodes[sink.nodeId]!.dsp.inlets
                         )

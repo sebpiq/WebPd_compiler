@@ -28,7 +28,7 @@ import {
     NodeImplementations,
     CompilationSettings,
 } from './types'
-import { CodeMacros } from "./render/types"
+import { CodeMacros } from './render/types'
 
 /** Helper to get code macros from compile target. */
 export const getMacros = (target: CompilerTarget): CodeMacros =>
@@ -47,6 +47,30 @@ export const getNodeImplementation = (
         dependencies: [],
         ...nodeImplementation,
     }
+}
+
+/**
+ * Build graph traversal for all nodes.
+ * This should be exhaustive so that all nodes that are connected
+ * to an input or output of the graph are declared correctly.
+ * Order of nodes doesn't matter.
+ */
+export const buildFullGraphTraversal = (
+    graph: DspGraph.Graph
+): DspGraph.GraphTraversal => {
+    const nodesPullingSignal = Object.values(graph).filter(
+        (node) => !!node.isPullingSignal
+    )
+    const nodesPushingMessages = Object.values(graph).filter(
+        (node) => !!node.isPushingMessages
+    )
+
+    return Array.from(
+        new Set([
+            ...traversers.messageTraversal(graph, nodesPushingMessages),
+            ...traversers.signalTraversal(graph, nodesPullingSignal),
+        ])
+    )
 }
 
 export const getNodeImplementationsUsedInGraph = (
@@ -70,47 +94,21 @@ export const getNodeImplementationsUsedInGraph = (
     }, {})
 
 /**
- * Build graph traversal for all nodes.
- * This should be exhaustive so that all nodes that are connected
- * to an input or output of the graph are declared correctly.
- * Order of nodes doesn't matter.
- */
-export const buildFullGraphTraversal = (
-    graph: DspGraph.Graph,
-): DspGraph.GraphTraversal => {
-    const nodesPullingSignal = Object.values(graph).filter(
-        (node) => !!node.isPullingSignal
-    )
-    const nodesPushingMessages = Object.values(graph).filter(
-        (node) => !!node.isPushingMessages
-    )
-
-    return Array.from(
-        new Set([
-            ...traversers.messageTraversal(graph, nodesPushingMessages),
-            ...traversers.signalTraversal(graph, nodesPullingSignal),
-        ])
-    )
-}
-
-/**
  * Build graph traversal for all signal nodes.
  */
 export const buildGraphTraversalSignal = (
     graph: DspGraph.Graph
-): DspGraph.GraphTraversal => 
+): DspGraph.GraphTraversal =>
     traversers.signalTraversal(graph, getGraphSignalSinks(graph))
 
-export const getGraphSignalSinks = (
-    graph: DspGraph.Graph
-) => Object.values(graph).filter(
-    (node) => !!node.isPullingSignal
-)
+export const getGraphSignalSinks = (graph: DspGraph.Graph) =>
+    Object.values(graph).filter((node) => !!node.isPullingSignal)
 
 export const isGlobalDefinitionWithSettings = (
     globalCodeDefinition: GlobalCodeDefinition
 ): globalCodeDefinition is GlobalCodeGeneratorWithSettings =>
     !(typeof globalCodeDefinition === 'function')
+
 /**
  * Helper to declare namespace objects enforcing stricter access rules. Specifically, it forbids :
  * - reading an unknown property.
@@ -120,7 +118,8 @@ export const isGlobalDefinitionWithSettings = (
  * This is convenient to access portlets by their id without using indexing syntax, for example :
  * `namespace.$0` instead of `namespace['0']`.
  */
-
+// TODO :
+//      - automatic labelling scheme when attaching child to namespace
 export const createNamespace = <T extends Object>(
     label: string,
     namespace: T
@@ -168,10 +167,6 @@ export const createNamespace = <T extends Object>(
     })
 }
 
-export const nodeNamespaceLabel = (
-    node: DspGraph.Node,
-    namespaceName?: string
-) => `${node.type}:${node.id}${namespaceName ? `:${namespaceName}` : ''}`
 const _trimDollarKey = (key: string) => {
     const match = /\$(.*)/.exec(key)
     if (!match) {

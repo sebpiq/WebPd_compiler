@@ -29,9 +29,8 @@ import { RenderInput } from '../../compile/render/types'
 export default (
     renderInput: RenderInput,
 ): AssemblyScriptWasmEngineCode => {
-    const { precompiledCode, settings } = renderInput
+    const { settings, variableNamesIndex, precompiledCode } = renderInput
     const { channelCount } = settings.audio
-    const variableNamesIndex = precompiledCode.variableNamesIndex
     const globs = variableNamesIndex.globs
     const metadata = buildMetadata(renderInput)
 
@@ -76,9 +75,9 @@ export default (
 
         export {
             metadata,
-            ${Object.entries(settings.io.messageReceivers).map(([nodeId, spec]) => 
-                spec.portletIds.map(inletId => 
-                    variableNamesIndex.io.messageReceivers[nodeId]![inletId]!.funcName + ','
+            ${Object.values(precompiledCode.io.messageReceivers).map((portletIdsMap) => 
+                Object.values(portletIdsMap).map(({ functionName }) => 
+                    functionName + ','
                 )
             )}
         }

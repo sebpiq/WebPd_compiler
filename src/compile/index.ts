@@ -50,19 +50,25 @@ export default (
 ): CompilationResult => {
     const settings = validateSettings(compilationSettings, target)
 
-    const precompiledCode = precompile(
-        {
-            graph,
-            nodeImplementations,
-            settings,
-        }
-    )
+    const { output: precompiledCode, variableNamesIndex } = precompile({
+        graph,
+        nodeImplementations,
+        settings,
+    })
 
     let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
     if (target === 'javascript') {
-        code = renderToJavascript({ precompiledCode, settings })
+        code = renderToJavascript({
+            precompiledCode,
+            settings,
+            variableNamesIndex,
+        })
     } else if (target === 'assemblyscript') {
-        code = renderToAssemblyscript({ precompiledCode, settings })
+        code = renderToAssemblyscript({
+            precompiledCode,
+            settings,
+            variableNamesIndex,
+        })
     } else {
         throw new Error(`Invalid target ${target}`)
     }

@@ -93,18 +93,12 @@ describe('engine-lifecycle-bindings', () => {
                         io: {
                             messageReceivers: {
                                 node1: {
-                                    '0': {
-                                        nodeId: 'n_ioRcv_node1_0',
-                                        funcName: 'ioRcv_node1_0',
-                                    },
+                                    '0': 'ioRcv_node1_0',
                                 },
                             },
                             messageSenders: {
                                 node1: {
-                                    '0': {
-                                        nodeId: 'n_ioSnd_node1_0',
-                                        funcName: 'ioSnd_node1_0',
-                                    },
+                                    '0': 'ioSnd_node1_0',
                                 },
                             },
                         },

@@ -38,6 +38,11 @@ import {
 } from '../test-helpers'
 import templates from './templates'
 import { AstSequence } from '../../ast/types'
+import {
+    attachIoMessageReceiverForNode,
+    attachNode,
+    attachNodeImplementation,
+} from '../precompile'
 
 describe('templates', () => {
     describe('templates.portletsDeclarations', () => {
@@ -54,6 +59,9 @@ describe('templates', () => {
             const renderInput = makeRenderInput({
                 graph,
             })
+
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
             renderInput.precompiledCode.nodes.n1!.signalOuts.$0 = 'n1_OUTS_0'
@@ -85,6 +93,9 @@ describe('templates', () => {
             const renderInput = makeRenderInput({
                 graph,
             })
+
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
             renderInput.precompiledCode.nodes.n1!.messageReceivers.$0 = Func(
@@ -132,6 +143,8 @@ describe('templates', () => {
                 settings,
             })
 
+            attachNode(renderInput.precompiledCode, graph.n1!)
+
             renderInput.precompiledCode.graph.fullTraversal = ['n1']
             renderInput.precompiledCode.nodes.n1!.messageReceivers.$0 = Func(
                 'n1_RCVS_0',
@@ -166,6 +179,10 @@ describe('templates', () => {
             const renderInput = makeRenderInput({
                 graph,
             })
+
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
+            attachNode(renderInput.precompiledCode, graph.n3!)
 
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
             renderInput.precompiledCode.nodes.n1!.messageSenders.$0 = {
@@ -224,11 +241,18 @@ describe('templates', () => {
                 nodeImplementations,
             })
 
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
+            attachNode(renderInput.precompiledCode, graph.n3!)
+
+            attachNodeImplementation(
+                renderInput.precompiledCode,
+                'type1',
+                nodeImplementations.type1!
+            )
+
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2', 'n3']
-            renderInput.precompiledCode.variableNamesIndex.nodes.n1!.state =
-                'n1_STATE'
-            renderInput.precompiledCode.variableNamesIndex.nodes.n2!.state =
-                'n2_STATE'
+
             renderInput.precompiledCode.nodeImplementations.type1!.stateClass =
                 Class('State', [Var('Float', 'a'), Var('Float', 'b')])
             renderInput.precompiledCode.nodes.n1!.state = {
@@ -269,20 +293,25 @@ describe('templates', () => {
         it('should generate initializations for nodes', () => {
             const renderInput = makeRenderInput({})
 
-            renderInput.precompiledCode.nodeImplementations.type1 = {
-                stateClass: Class('State_type1', [Var('Float', 'a')]),
-                core: Sequence([
+            attachNodeImplementation(renderInput.precompiledCode, 'type1', {})
+            attachNodeImplementation(renderInput.precompiledCode, 'type2', {})
+
+            renderInput.precompiledCode.nodeImplementations.type1!.stateClass =
+                Class('State_type1', [Var('Float', 'a')])
+            renderInput.precompiledCode.nodeImplementations.type1!.core =
+                Sequence([
                     ConstVar('Bla', 'bla', '"hello"'),
                     Func('blo', [Var('State_type1', 'state')])`// blo`,
-                ]),
-                nodeImplementation: {},
-            }
+                ])
+            renderInput.precompiledCode.nodeImplementations.type1!.nodeImplementation =
+                {}
 
-            renderInput.precompiledCode.nodeImplementations.type2 = {
-                stateClass: Class('State_type2', [Var('Float', 'b')]),
-                core: Sequence([ConstVar('Int', 'i', '0')]),
-                nodeImplementation: {},
-            }
+            renderInput.precompiledCode.nodeImplementations.type2!.stateClass =
+                Class('State_type2', [Var('Float', 'b')])
+            renderInput.precompiledCode.nodeImplementations.type2!.core =
+                Sequence([ConstVar('Int', 'i', '0')])
+            renderInput.precompiledCode.nodeImplementations.type2!.nodeImplementation =
+                {}
 
             const sequence =
                 templates.nodeImplementationsCoreAndStateClasses(renderInput)
@@ -315,6 +344,9 @@ describe('templates', () => {
                 graph,
             })
 
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
+
             renderInput.precompiledCode.graph.fullTraversal = ['n1', 'n2']
             renderInput.precompiledCode.nodes.n1!.initialization = ast`
                 ${Var('Float', 'n1', '0')}
@@ -333,58 +365,32 @@ describe('templates', () => {
 
     describe('templates.ioMessageReceivers', () => {
         it('should compile declared io.messageReceivers', () => {
-            const settings = makeSettings({
-                io: {
-                    messageReceivers: { n1: { portletIds: ['0'] } },
-                    messageSenders: {},
-                },
-            })
-
             const graph = makeGraph({
-                n1: {
-                    type: 'type1',
-                    isPushingMessages: true,
-                    inlets: {
-                        '0': { id: '0', type: 'message' },
-                    },
-                },
+                n1: {},
             })
-
-            const nodeImplementations: NodeImplementations = {
-                type1: {
-                    messageReceivers: () => ({
-                        '0': AnonFunc(
-                            [Var('Message', 'm')],
-                            'void'
-                        )`// [type1] message receiver`,
-                    }),
-                },
-            }
 
             const renderInput = makeRenderInput({
                 graph,
-                settings,
-                nodeImplementations,
             })
 
-            renderInput.precompiledCode.variableNamesIndex.nodes.n1!.messageReceivers.$0 =
-                'n1_RCVS_0'
-            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.nodeId =
-                'n_ioRcv_n1_0'
-            renderInput.precompiledCode.variableNamesIndex.io.messageReceivers.n1!.$0!.funcName =
-                'ioRcv_n1_0'
-            renderInput.precompiledCode.nodes.n_ioRcv_n1_0!.messageSenders.$0 =
-                {
-                    messageSenderName: 'n1_RCVS_0',
-                    sinkFunctionNames: ['n1_RCVS_0'],
-                }
+            attachIoMessageReceiverForNode(
+                renderInput.precompiledCode,
+                graph.n1!
+            )
+
+            renderInput.precompiledCode.io.messageReceivers.n1!.$0 = {
+                functionName: 'ioRcv_function',
+                getSinkFunctionName: () => 'ioRcvNode_messageSender',
+            }
 
             const sequence = templates.ioMessageReceivers(renderInput)
 
             assertAstSequencesAreEqual(
                 sequence,
                 Sequence([
-                    Func('ioRcv_n1_0', [Var('Message', 'm')])`n1_RCVS_0(m)`,
+                    Func('ioRcv_function', [
+                        Var('Message', 'm'),
+                    ])`ioRcvNode_messageSender(m)`,
                 ])
             )
         })
@@ -407,6 +413,10 @@ describe('templates', () => {
             const renderInput = makeRenderInput({
                 graph,
             })
+
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
+            attachNode(renderInput.precompiledCode, graph.n3!)
 
             renderInput.precompiledCode.graph.hotDspGroup = {
                 traversal: ['n1', 'n2', 'n3'],
@@ -441,6 +451,8 @@ describe('templates', () => {
                 graph,
             })
 
+            attachNode(renderInput.precompiledCode, graph.n1!)
+
             renderInput.precompiledCode.nodes.n1!.dsp.inlets.$0 = ast`// inlet dsp 0`
             renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
             renderInput.precompiledCode.graph.hotDspGroup = {
@@ -473,27 +485,28 @@ describe('templates', () => {
 
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
-                    traversal: [],
-                    outNodesIds: [],
+                    dspGroup: {
+                        traversal: [],
+                        outNodesIds: [],
+                    },
                     sinkConnections: [],
+                    functionName: 'coldDsp_0',
                 },
                 '1': {
-                    traversal: [],
-                    outNodesIds: [],
+                    dspGroup: {
+                        traversal: [],
+                        outNodesIds: [],
+                    },
                     sinkConnections: [],
+                    functionName: 'coldDsp_1',
                 },
             }
-
-            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
-                'DSP_0'
-            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$1 =
-                'DSP_1'
 
             const sequence = templates.coldDspInitialization(renderInput)
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([`DSP_0(EMPTY_MESSAGE)\nDSP_1(EMPTY_MESSAGE)`])
+                Sequence([`coldDsp_0(EMPTY_MESSAGE)\ncoldDsp_1(EMPTY_MESSAGE)`])
             )
         })
     })
@@ -516,35 +529,40 @@ describe('templates', () => {
                 graph,
             })
 
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
+            attachNode(renderInput.precompiledCode, graph.n3!)
+
             renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
             renderInput.precompiledCode.nodes.n2!.dsp.loop = ast`// n2`
             renderInput.precompiledCode.nodes.n3!.dsp.loop = ast`// n3`
 
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
-                    traversal: ['n1', 'n2'],
-                    outNodesIds: ['n2'],
+                    dspGroup: {
+                        traversal: ['n1', 'n2'],
+                        outNodesIds: ['n2'],
+                    },
                     sinkConnections: [],
+                    functionName: 'coldDsp_0',
                 },
                 '1': {
-                    traversal: ['n3'],
-                    outNodesIds: ['n3'],
+                    dspGroup: {
+                        traversal: ['n3'],
+                        outNodesIds: ['n3'],
+                    },
                     sinkConnections: [],
+                    functionName: 'coldDsp_1',
                 },
             }
-
-            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
-                'DSP_0'
-            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$1 =
-                'DSP_1'
 
             const sequence = templates.coldDspFunctions(renderInput)
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    Func('DSP_0', [Var('Message', 'm')])`// n1\n// n2`,
-                    Func('DSP_1', [Var('Message', 'm')])`// n3`,
+                    Func('coldDsp_0', [Var('Message', 'm')])`// n1\n// n2`,
+                    Func('coldDsp_1', [Var('Message', 'm')])`// n3`,
                 ])
             )
         })
@@ -563,29 +581,33 @@ describe('templates', () => {
                 graph,
             })
 
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
+
             renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
             renderInput.precompiledCode.nodes.n2!.dsp.inlets.$0 = ast`// inlet dsp n2`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
-                    traversal: ['n1'],
-                    outNodesIds: ['n1'],
+                    dspGroup: {
+                        traversal: ['n1'],
+                        outNodesIds: ['n1'],
+                    },
                     sinkConnections: [
                         [
                             { nodeId: 'n1', portletId: '0' },
                             { nodeId: 'n2', portletId: '0' },
                         ],
                     ],
+                    functionName: 'coldDsp_0',
                 },
             }
-            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
-                'DSP_0'
 
             const sequence = templates.coldDspFunctions(renderInput)
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    Func('DSP_0', [
+                    Func('coldDsp_0', [
                         Var('Message', 'm'),
                     ])`// n1\n// inlet dsp n2`,
                 ])
@@ -606,27 +628,31 @@ describe('templates', () => {
                 graph,
             })
 
+            attachNode(renderInput.precompiledCode, graph.n1!)
+            attachNode(renderInput.precompiledCode, graph.n2!)
+
             renderInput.precompiledCode.nodes.n1!.dsp.loop = ast`// n1`
             renderInput.precompiledCode.graph.coldDspGroups = {
                 '0': {
-                    traversal: ['n1'],
-                    outNodesIds: ['n1'],
+                    dspGroup: {
+                        traversal: ['n1'],
+                        outNodesIds: ['n1'],
+                    },
                     sinkConnections: [
                         [
                             { nodeId: 'n1', portletId: '0' },
                             { nodeId: 'n2', portletId: '0' },
                         ],
                     ],
+                    functionName: 'coldDsp_0',
                 },
             }
-            renderInput.precompiledCode.variableNamesIndex.coldDspGroups.$0 =
-                'DSP_0'
 
             const sequence = templates.coldDspFunctions(renderInput)
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([Func('DSP_0', [Var('Message', 'm')])`// n1`])
+                Sequence([Func('coldDsp_0', [Var('Message', 'm')])`// n1`])
             )
         })
     })
