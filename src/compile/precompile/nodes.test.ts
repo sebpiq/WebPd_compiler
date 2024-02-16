@@ -29,10 +29,8 @@ import {
     precompileState,
 } from './nodes'
 import { makePrecompilation } from '../test-helpers'
-import { attachNode, attachNodeImplementation } from '.'
 
 describe('precompile.nodes', () => {
-
     describe('precompileMessageReceivers', () => {
         it('should precompile messageReceivers where placeholder was declared', () => {
             const graph = makeGraph({
@@ -75,17 +73,12 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-            attachNodeImplementation(precompilation.output, 'type2', nodeImplementations.type2!)
+            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = AnonFunc()``
+            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageReceivers['1'] = AnonFunc()``
+            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.messageReceivers['0'] = AnonFunc()``
 
-            precompilation.output.nodes.n1!.messageReceivers.$0 = AnonFunc()``
-            precompilation.output.nodes.n1!.messageReceivers.$1 = AnonFunc()``
-            precompilation.output.nodes.n2!.messageReceivers.$0 = AnonFunc()``
-
-            precompileMessageReceivers(precompilation, graph.n1!)
-            precompileMessageReceivers(precompilation, graph.n2!)
+            precompileMessageReceivers(precompilation, precompilation.input.graph.n1!)
+            precompileMessageReceivers(precompilation, precompilation.input.graph.n2!)
 
             assert.deepStrictEqual(
                 precompilation.output.nodes.n1!.messageReceivers,
@@ -108,14 +101,20 @@ describe('precompile.nodes', () => {
                 }
             )
 
-            assert.deepStrictEqual(precompilation.variableNamesIndex.nodes.n1!.messageReceivers, {
-                '0': 'n1_RCVS_0',
-                '1': 'n1_RCVS_1',
-            })
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n1!.messageReceivers,
+                {
+                    '0': 'n1_RCVS_0',
+                    '1': 'n1_RCVS_1',
+                }
+            )
 
-            assert.deepStrictEqual(precompilation.variableNamesIndex.nodes.n2!.messageReceivers, {
-                '0': 'n2_RCVS_0'
-            })
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n2!.messageReceivers,
+                {
+                    '0': 'n2_RCVS_0',
+                }
+            )
         })
 
         it('should throw an error if messageReceiver is missing', () => {
@@ -142,19 +141,14 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-            attachNodeImplementation(precompilation.output, 'type2', nodeImplementations.type2!)
-
-            precompilation.output.nodes.n1!.messageReceivers.$0 = AnonFunc()``
-            precompilation.output.nodes.n2!.messageReceivers.$0 = AnonFunc()``
+            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = AnonFunc()``
+            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.messageReceivers['0'] = AnonFunc()``
 
             assert.throws(() =>
-                precompileMessageReceivers(precompilation, graph.n1!)
+                precompileMessageReceivers(precompilation, precompilation.input.graph.n1!)
             )
             assert.throws(() =>
-                precompileMessageReceivers(precompilation, graph.n2!)
+                precompileMessageReceivers(precompilation, precompilation.input.graph.n2!)
             )
         })
 
@@ -179,13 +173,10 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-
-            precompilation.output.nodes.n1!.messageReceivers.$0 = AnonFunc()``
+            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = AnonFunc()``
 
             assert.throws(() =>
-                precompileMessageReceivers(precompilation, graph.n1!)
+                precompileMessageReceivers(precompilation, precompilation.input.graph.n1!)
             )
         })
     })
@@ -215,10 +206,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-
-            precompileState(precompilation, graph.n1!)
+            precompileState(precompilation, precompilation.input.graph.n1!)
 
             assert.strictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.state,
@@ -254,10 +242,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-
-            precompileInitialization(precompilation, graph.n1!)
+            precompileInitialization(precompilation, precompilation.input.graph.n1!)
 
             assert.deepStrictEqual(
                 precompilation.output.nodes.n1!.initialization,
@@ -282,10 +267,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-
-            precompileInitialization(precompilation, graph.n1!)
+            precompileInitialization(precompilation, precompilation.input.graph.n1!)
 
             assert.deepStrictEqual(
                 precompilation.output.nodes.n1!.initialization,
@@ -314,10 +296,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-
-            precompileDsp(precompilation, graph.n1!)
+            precompileDsp(precompilation, precompilation.input.graph.n1!)
 
             assert.deepStrictEqual(precompilation.output.nodes.n1!.dsp, {
                 loop: ast`// dsp type1`,
@@ -350,16 +329,16 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-
-            precompileDsp(precompilation, graph.n1!)
+            precompileDsp(precompilation, precompilation.input.graph.n1!)
 
             assert.deepStrictEqual(precompilation.output.nodes.n1!.dsp, {
                 loop: ast`n1_OUTS_0 = a + b`,
                 inlets: {},
             })
-            assert.deepStrictEqual(precompilation.variableNamesIndex.nodes.n1!.signalOuts, {'0': 'n1_OUTS_0'})
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodes.n1!.signalOuts,
+                { '0': 'n1_OUTS_0' }
+            )
         })
 
         it('should precompile node inlets dsp', () => {
@@ -387,10 +366,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-
-            precompileDsp(precompilation, graph.n1!)
+            precompileDsp(precompilation, precompilation.input.graph.n1!)
 
             assert.deepStrictEqual(precompilation.output.nodes.n1!.dsp, {
                 loop: ast``,
@@ -418,7 +394,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            assert.throws(() => precompileDsp(precompilation, graph.n1!))
+            assert.throws(() => precompileDsp(precompilation, precompilation.input.graph.n1!))
         })
     })
 
@@ -527,23 +503,13 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNode(precompilation.output, graph.n4!)
-            attachNode(precompilation.output, graph.n5!)
-            attachNodeImplementation(precompilation.output, 'inlinableType0', nodeImplementations.inlinableType0!)
-            attachNodeImplementation(precompilation.output, 'inlinableType1', nodeImplementations.inlinableType1!)
-            attachNodeImplementation(precompilation.output, 'inlinableType2', nodeImplementations.inlinableType2!)
-            attachNodeImplementation(precompilation.output, 'nonInlinableType', nodeImplementations.nonInlinableType!)
-
             precompileInlineDsp(precompilation, {
                 traversal: ['n2', 'n1', 'n3', 'n4'],
                 outNodesIds: ['n4'],
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n5!.signalIns.$0,
+                precompilation.output.nodes.n5!.signalIns['0'],
                 `(N4 * (N2 + 1) - N4 * ((N1 + 1) * N3))`
             )
         })
@@ -639,23 +605,13 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNode(precompilation.output, graph.n4!)
-            attachNodeImplementation(precompilation.output, 'messageType', nodeImplementations.messageType!)
-            attachNodeImplementation(precompilation.output, 'inlinableType0', nodeImplementations.inlinableType0!)
-            attachNodeImplementation(precompilation.output, 'inlinableType1', nodeImplementations.inlinableType1!)
-            attachNodeImplementation(precompilation.output, 'nonInlinableType', nodeImplementations.nonInlinableType!)
-
             precompileInlineDsp(precompilation, {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n4!.signalIns.$0,
+                precompilation.output.nodes.n4!.signalIns['0'],
                 '(((N1 + 1) * N2) * N3)'
             )
         })
@@ -748,17 +704,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNode(precompilation.output, graph.n4!)
-            attachNodeImplementation(precompilation.output, 'inlinableType0', nodeImplementations.inlinableType0!)
-            attachNodeImplementation(precompilation.output, 'inlinableType1', nodeImplementations.inlinableType1!)
-            attachNodeImplementation(precompilation.output, 'inlinableType2', nodeImplementations.inlinableType2!)
-            attachNodeImplementation(precompilation.output, 'nonInlinableType', nodeImplementations.nonInlinableType!)
-
-            precompilation.output.nodes.n2!.signalIns.$1 =
-                'BLA'
+            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.signalIns['1'] = 'BLA'
 
             precompileInlineDsp(precompilation, {
                 traversal: ['n1', 'n2', 'n3'],
@@ -766,7 +712,7 @@ describe('precompile.nodes', () => {
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n4!.signalIns.$0,
+                precompilation.output.nodes.n4!.signalIns['0'],
                 '((N2 * (N1 + 1) - N2 * BLA) * N3)'
             )
         })
@@ -834,15 +780,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNodeImplementation(precompilation.output, 'inlinableType1', nodeImplementations.inlinableType1!)
-            attachNodeImplementation(precompilation.output, 'signalType', nodeImplementations.signalType!)
-            attachNodeImplementation(precompilation.output, 'nonInlinableType', nodeImplementations.nonInlinableType!)
-
-            precompilation.output.nodes.n1!.signalIns.$0 =
-                'nonInline1_OUTS_0'
+            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.signalIns['0'] = 'nonInline1_OUTS_0'
 
             precompileInlineDsp(precompilation, {
                 traversal: ['n1', 'n2'],
@@ -850,7 +788,7 @@ describe('precompile.nodes', () => {
             })
 
             assert.strictEqual(
-                precompilation.output.nodes.n3!.signalIns.$0,
+                precompilation.output.nodes.n3!.signalIns['0'],
                 '((nonInline1_OUTS_0 * N1) * N2)'
             )
         })

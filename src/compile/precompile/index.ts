@@ -18,20 +18,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { DspGraph, getters, traversers } from '../../dsp-graph'
+import { getters, traversers } from '../../dsp-graph'
 import {
+    PrecompiledCodeAssigner,
     VariableNamesAssigner,
+    createPrecompiledCode,
     createVariableNamesIndex,
-} from './variable-names-index'
+} from './proxies'
 import {
     buildFullGraphTraversal,
     buildGraphTraversalSignal,
     getGraphSignalSinks,
     getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
-import { createNamespace } from '../compile-helpers'
-import { PrecompilationInput, Precompilation, PrecompiledCode } from './types'
-import { Sequence, ast } from '../../ast/declare'
+import { PrecompilationInput, Precompilation } from './types'
 import precompileDependencies from './dependencies'
 import {
     precompileInitialization,
@@ -51,20 +51,23 @@ import {
     removeNodesFromTraversal,
     buildHotDspGroup,
     buildInlinableDspGroups,
-    buildGroupSinkConnections,
+    precompileColdDspGroup,
 } from './dsp-groups'
 import { DspGroup } from './types'
 import { precompileCore, precompileStateClass } from './node-implementations'
 import {
-    addMessageReceiverNode,
-    addMessageSenderNode,
+    precompileIoMessageReceiver,
+    precompileIoMessageSender,
     addNodeImplementationsForMessageIo,
 } from './io'
-import { NodeImplementation } from '../types'
 
 export default (precompilationInput: PrecompilationInput) => {
     const precompilation = initializePrecompilation(precompilationInput)
 
+    // -------------------- MESSAGE IOs ------------------ //
+    // In this section we will modify the graph, by adding nodes
+    // for io messages. Therefore this is the very first thing that needs
+    // to be done, so that these nodes are handled by the rest of the precompilation.
     precompilation.input.nodeImplementations =
         addNodeImplementationsForMessageIo(
             precompilation.input.nodeImplementations
@@ -72,10 +75,8 @@ export default (precompilationInput: PrecompilationInput) => {
 
     Object.entries(precompilationInput.settings.io.messageReceivers).forEach(
         ([specNodeId, spec]) => {
-            const node = getters.getNode(precompilation.input.graph, specNodeId)
-            attachIoMessageReceiverForNode(precompilation.output, node)
             spec.portletIds.forEach((specInletId) => {
-                precompilation.input.graph = addMessageReceiverNode(
+                precompileIoMessageReceiver(
                     precompilation,
                     specNodeId,
                     specInletId
@@ -86,10 +87,8 @@ export default (precompilationInput: PrecompilationInput) => {
 
     Object.entries(precompilationInput.settings.io.messageSenders).forEach(
         ([specNodeId, spec]) => {
-            const node = getters.getNode(precompilation.input.graph, specNodeId)
-            attachIoMessageSenderForNode(precompilation.output, node)
             spec.portletIds.forEach((specInletId) => {
-                precompilation.input.graph = addMessageSenderNode(
+                precompileIoMessageSender(
                     precompilation,
                     specNodeId,
                     specInletId
@@ -98,6 +97,7 @@ export default (precompilationInput: PrecompilationInput) => {
         }
     )
 
+    // Remove unused nodes
     precompilation.input.graph = traversers.trimGraph(
         precompilation.input.graph,
         buildFullGraphTraversal(precompilation.input.graph)
@@ -110,7 +110,9 @@ export default (precompilationInput: PrecompilationInput) => {
             precompilation.input.nodeImplementations
         )
 
-    attachGraph(precompilation.output, precompilation.input.graph)
+    precompilation.output.graph.fullTraversal = buildFullGraphTraversal(
+        precompilation.input.graph
+    )
 
     const nodes = traversers.toNodes(
         precompilation.input.graph,
@@ -118,23 +120,23 @@ export default (precompilationInput: PrecompilationInput) => {
     )
 
     // -------------------- NODE IMPLEMENTATIONS & STATES ------------------ //
-    Object.entries(precompilation.input.nodeImplementations).forEach(
-        ([nodeType, nodeImplementation]) => {
-            attachNodeImplementation(
-                precompilation.output,
-                nodeType,
-                nodeImplementation
-            )
+    Object.keys(precompilation.input.nodeImplementations).forEach(
+        (nodeType) => {
             precompileStateClass(precompilation, nodeType)
             precompileCore(precompilation, nodeType)
         }
     )
     nodes.forEach((node) => {
-        attachNode(precompilation.output, node)
         precompileState(precompilation, node)
     })
 
     // ------------------------ DSP GROUPS ------------------------ //
+    // These are groups of nodes that are mostly used for optimizing
+    // the dsp loop :
+    //  - inlining dsp calculation when this can be done, to avoid copying
+    //      between variables if not needed
+    //  - taking out of the loop dsp (aka hot dsp) calculations that don't
+    //      need to be recomputed at every tick (aka cold dsp)
     const rootDspGroup: DspGroup = {
         traversal: buildGraphTraversalSignal(precompilation.input.graph),
         outNodesIds: getGraphSignalSinks(precompilation.input.graph).map(
@@ -147,8 +149,8 @@ export default (precompilationInput: PrecompilationInput) => {
         rootDspGroup,
         coldDspGroups
     )
-    const allDspGroups = [hotDspGroup, ...coldDspGroups]
-    const inlinableDspGroups = allDspGroups.flatMap((parentDspGroup) => {
+    const hotAndColdDspGroups = [hotDspGroup, ...coldDspGroups]
+    const inlinableDspGroups = hotAndColdDspGroups.flatMap((parentDspGroup) => {
         const inlinableDspGroups = buildInlinableDspGroups(
             precompilation,
             parentDspGroup
@@ -165,22 +167,11 @@ export default (precompilationInput: PrecompilationInput) => {
 
     precompilation.output.graph.hotDspGroup = hotDspGroup
     coldDspGroups.forEach((dspGroup, index) => {
-        const groupId = `${index}`
-        precompilation.output.graph.coldDspGroups[groupId] = {
-            functionName:
-                precompilation.proxies.variableNamesAssigner.coldDspGroups[
-                    groupId
-                ]!,
-            dspGroup,
-            sinkConnections: buildGroupSinkConnections(
-                precompilation.input.graph,
-                dspGroup
-            ),
-        }
+        precompileColdDspGroup(precompilation, dspGroup, `${index}`)
     })
 
     // ------------------------ PORTLETS ------------------------ //
-    // Go through the graph and precompile inlets.
+    // Go through the nodes and precompile inlets.
     nodes.forEach((node) => {
         Object.values(node.inlets).forEach((inlet) => {
             if (inlet.type === 'signal') {
@@ -197,7 +188,7 @@ export default (precompilationInput: PrecompilationInput) => {
         })
     })
 
-    // Go through the graph and precompile message outlets.
+    // Go through the nodes and precompile message outlets.
     //
     // For example if a node has only one sink there is no need
     // to copy values between outlet and sink's inlet. Instead we can
@@ -214,8 +205,9 @@ export default (precompilationInput: PrecompilationInput) => {
     })
 
     // Go through all dsp groups and precompile signal outlets for nodes that
-    // are not inlined.
-    allDspGroups.forEach((dspGroup) => {
+    // are not inlined (inlinable nodes should have been previously removed 
+    // from these dsp groups).
+    hotAndColdDspGroups.forEach((dspGroup) => {
         traversers
             .toNodes(precompilation.input.graph, dspGroup.traversal)
             .forEach((node) => {
@@ -230,7 +222,7 @@ export default (precompilationInput: PrecompilationInput) => {
         precompileInlineDsp(precompilation, dspGroup)
     })
 
-    allDspGroups.forEach((dspGroup) => {
+    hotAndColdDspGroups.forEach((dspGroup) => {
         traversers
             .toNodes(precompilation.input.graph, dspGroup.traversal)
             .forEach((node) => {
@@ -253,7 +245,7 @@ export default (precompilationInput: PrecompilationInput) => {
 export const initializePrecompilation = (
     precompilationRawInput: PrecompilationInput
 ): Precompilation => {
-    const precompiledCode = generatePrecompiledCode()
+    const precompiledCode = createPrecompiledCode()
     const variableNamesIndex = createVariableNamesIndex()
     const precompilationInput: PrecompilationInput = {
         graph: { ...precompilationRawInput.graph },
@@ -270,89 +262,10 @@ export const initializePrecompilation = (
                 variableNamesIndex,
                 input: precompilationInput,
             }),
+            precompiledCodeAssigner: PrecompiledCodeAssigner({
+                precompiledCode,
+                input: precompilationInput,
+            }),
         },
     }
-}
-
-export const generatePrecompiledCode = (): PrecompiledCode => {
-    const precompiledCode: PrecompiledCode = {
-        graph: {
-            fullTraversal: [],
-            hotDspGroup: {
-                traversal: [],
-                outNodesIds: [],
-            },
-            coldDspGroups: createNamespace('coldDspGroups', {}),
-        },
-        nodeImplementations: createNamespace('nodeImplementations', {}),
-        nodes: createNamespace('nodes', {}),
-        dependencies: {
-            imports: [],
-            exports: [],
-            ast: Sequence([]),
-        },
-        io: {
-            messageReceivers: createNamespace('io:messageReceivers', {}),
-            messageSenders: createNamespace('io:messageSenders', {}),
-        },
-    }
-    return precompiledCode
-}
-
-export const attachNodeImplementation = (
-    precompiledCode: PrecompiledCode,
-    nodeType: DspGraph.NodeType,
-    nodeImplementation: NodeImplementation
-) => {
-    precompiledCode.nodeImplementations[nodeType] = {
-        nodeImplementation,
-        stateClass: null,
-        core: null,
-    }
-}
-
-export const attachNode = (
-    precompiledCode: PrecompiledCode,
-    node: DspGraph.Node
-) => {
-    precompiledCode.nodes[node.id] = {
-        nodeType: node.type,
-        messageReceivers: createNamespace('messageReceivers', {}),
-        messageSenders: createNamespace('messageSenders', {}),
-        signalOuts: createNamespace('signalOuts', {}),
-        signalIns: createNamespace('signalOuts', {}),
-        initialization: ast``,
-        dsp: {
-            loop: ast``,
-            inlets: createNamespace('dsp:inlets', {}),
-        },
-        state: null,
-    }
-}
-
-const attachGraph = (
-    precompiledCode: PrecompiledCode,
-    graph: DspGraph.Graph
-) => {
-    precompiledCode.graph.fullTraversal = buildFullGraphTraversal(graph)
-}
-
-export const attachIoMessageReceiverForNode = (
-    precompiledCode: PrecompiledCode,
-    node: DspGraph.Node
-) => {
-    precompiledCode.io.messageReceivers[node.id] = createNamespace(
-        `io:messageReceivers:${node.id}`,
-        {}
-    )
-}
-
-export const attachIoMessageSenderForNode = (
-    precompiledCode: PrecompiledCode,
-    node: DspGraph.Node
-) => {
-    precompiledCode.io.messageSenders[node.id] = createNamespace(
-        `io:messageSenders:${node.id}`,
-        {}
-    )
 }

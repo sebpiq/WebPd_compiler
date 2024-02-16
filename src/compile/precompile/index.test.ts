@@ -145,7 +145,7 @@ describe('precompile', () => {
         })
 
         assert.strictEqual(
-            precompiledCode.nodes.nonInline2!.signalIns.$0,
+            precompiledCode.nodes.nonInline2!.signalIns['0'],
             '(N4 * (N2 + 1) - N4 * ((nonInline1_OUTS_0 * N1) * N3))'
         )
 
@@ -254,7 +254,7 @@ describe('precompile', () => {
         )
 
         assert.strictEqual(
-            precompiledCode.nodes.n2!.signalIns.$0,
+            precompiledCode.nodes.n2!.signalIns['0'],
             '(1 + NULL_SIGNAL)'
         )
     })

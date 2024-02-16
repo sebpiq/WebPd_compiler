@@ -36,8 +36,8 @@ describe('test-helpers-node-implementations', () => {
         it.each(TEST_PARAMETERS)(
             'should work with signal inlets %s',
             async ({ target }) => {
-                const nodeImplementation: NodeImplementation<{}> = {
-                    dsp: ({ ins, outs }) =>
+                const nodeImplementation: NodeImplementation = {
+                    dsp: ({ ins, outs }) => 
                         ast`${outs.$0!} = ${ins.$0!} + 0.1`,
                 }
 

@@ -68,16 +68,15 @@ export const addNodeImplementationsForMessageIo = (
     }
 }
 
-export const addMessageReceiverNode = (
+export const precompileIoMessageReceiver = (
     {
-        input: { graph },
         output: precompiledCode,
-        proxies: { variableNamesAssigner },
+        input: { graph },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     }: Precompilation,
     specNodeId: DspGraph.NodeId,
     specInletId: DspGraph.PortletId
 ) => {
-    const graphWithIoNodes = { ...graph }
     const nodeId = _getNodeId(graph, 'messageReceiver', specNodeId, specInletId)
     const messageReceiverNode: DspGraph.Node = {
         ...helpers.nodeDefaults(nodeId, MESSAGE_RECEIVER_NODE_TYPE),
@@ -87,38 +86,35 @@ export const addMessageReceiverNode = (
             '0': { id: '0', type: 'message' },
         },
     }
-    mutators.addNode(graphWithIoNodes, messageReceiverNode)
+    mutators.addNode(graph, messageReceiverNode)
     mutators.connect(
-        graphWithIoNodes,
+        graph,
         { nodeId, portletId: '0' },
         { nodeId: specNodeId, portletId: specInletId }
     )
 
-    precompiledCode.io.messageReceivers[specNodeId]![specInletId] = {
+    precompiledCodeAssigner.io.messageReceivers[specNodeId]![specInletId] = {
         functionName:
             variableNamesAssigner.io.messageReceivers[specNodeId]![
                 specInletId
             ]!,
         // When a message is received from outside of the engine, we proxy it by
         // calling our dummy node's messageSender function on outlet 0, so
-        // the message is injected in the graph as a normal message would. 
+        // the message is injected in the graph as a normal message would.
         getSinkFunctionName: () =>
-            precompiledCode.nodes[nodeId]!.messageSenders.$0!.messageSenderName,
+            precompiledCode.nodes[nodeId]!.messageSenders['0']!
+                .messageSenderName,
     }
-
-    return graphWithIoNodes
 }
 
-export const addMessageSenderNode = (
+export const precompileIoMessageSender = (
     {
         input: { graph },
-        output: precompiledCode,
-        proxies: { variableNamesAssigner },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     }: Precompilation,
     specNodeId: DspGraph.NodeId,
     specOutletId: DspGraph.PortletId
 ) => {
-    const graphWithIoNodes = { ...graph }
     const nodeId = _getNodeId(graph, 'messageSender', specNodeId, specOutletId)
     const messageSenderName =
         variableNamesAssigner.io.messageSenders[specNodeId]![specOutletId]!
@@ -131,18 +127,16 @@ export const addMessageSenderNode = (
             '0': { id: '0', type: 'message' },
         },
     }
-    mutators.addNode(graphWithIoNodes, messageSenderNode)
+    mutators.addNode(graph, messageSenderNode)
     mutators.connect(
-        graphWithIoNodes,
+        graph,
         { nodeId: specNodeId, portletId: specOutletId },
         { nodeId, portletId: '0' }
     )
 
-    precompiledCode.io.messageSenders[specNodeId]![specOutletId] = {
+    precompiledCodeAssigner.io.messageSenders[specNodeId]![specOutletId] = {
         functionName: messageSenderName,
     }
-
-    return graphWithIoNodes
 }
 
 const _getNodeId = (

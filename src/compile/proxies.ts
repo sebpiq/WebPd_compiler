@@ -6,8 +6,8 @@ type _AssignerSpecInterface<T, C> = {
 type _AssignerSpecIndex<T, C> = {
     Index: (k: string, context: C) => AssignerSpec<T[keyof T], C>
 }
-type _AssignerSpecLiteral<T> = { Literal: T }
-type _AssignerSpecLiteralDefaultNull<T> = { LiteralDefaultNull: T }
+type _AssignerSpecLiteral<T> = { Literal: () => T }
+type _AssignerSpecLiteralDefaultNull<T> = { LiteralDefaultNull: () => T }
 
 export type AssignerSpec<T, C> =
     | _AssignerSpecInterface<T, C>
@@ -25,11 +25,11 @@ export const Index = <T, C>(
     Index: f,
 })
 
-export const Literal = <T>(v: T): _AssignerSpecLiteral<T> => ({ Literal: v })
+export const Literal = <T>(f: () => T): _AssignerSpecLiteral<T> => ({ Literal: f })
 
 export const LiteralDefaultNull = <T>(
-    v: T
-): _AssignerSpecLiteralDefaultNull<T | null> => ({ LiteralDefaultNull: v })
+    f: () => T
+): _AssignerSpecLiteralDefaultNull<T | null> => ({ LiteralDefaultNull: f })
 
 export const Assigner = <T extends { [k: string]: any }, C>(
     spec: AssignerSpec<T, C>,
@@ -37,9 +37,9 @@ export const Assigner = <T extends { [k: string]: any }, C>(
     _obj: Partial<T>,
 ): T => {
     if ('Literal' in spec) {
-        return spec.Literal
+        return _obj as T
     } else if ('LiteralDefaultNull' in spec) {
-        return spec.LiteralDefaultNull
+        return _obj as T
     }
 
     const obj = assignerInitializeDefaults(_obj, spec)
@@ -53,7 +53,7 @@ export const Assigner = <T extends { [k: string]: any }, C>(
             } else if ('Interface' in spec) {
                 nextSpec = spec.Interface[key]
                 if ('LiteralDefaultNull' in nextSpec) {
-                    obj[key] = nextSpec.LiteralDefaultNull
+                    obj[key] = nextSpec.LiteralDefaultNull()
                 }
             } else {
                 throw new Error('no builder')
@@ -81,9 +81,9 @@ export const assignerInitializeDefaults = <T extends { [k: string]: any }, C>(
         })
         return obj
     } else if ('Literal' in spec) {
-        return spec.Literal
+        return (_obj || spec.Literal()) as any
     } else if ('LiteralDefaultNull' in spec) {
-        return null as any
+        return (_obj || null) as any
     } else {
         throw new Error('Invalid Assigner')
     }

@@ -34,7 +34,7 @@ import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../compile/render'
 import { makeSettings } from '../../compile/test-helpers'
-import { createVariableNamesIndex } from '../../compile/precompile/variable-names-index'
+import { createVariableNamesIndex } from '../../compile/precompile/proxies'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {

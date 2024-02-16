@@ -29,8 +29,7 @@ export const precompileSignalOutlet = (
     outletId: DspGraph.PortletId
 ) => {
     const {
-        output,
-        proxies: { variableNamesAssigner },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     } = precompilation
     const outletSinks = getters.getSinks(node, outletId)
 
@@ -47,28 +46,33 @@ export const precompileSignalOutlet = (
     //
     const signalOutName =
         variableNamesAssigner.nodes[node.id]!.signalOuts[outletId]!
-    output.nodes[node.id]!.signalOuts[outletId] = signalOutName
+    precompiledCodeAssigner.nodes[node.id]!.signalOuts[outletId] = signalOutName
     outletSinks.forEach(({ portletId: inletId, nodeId: sinkNodeId }) => {
-        output.nodes[sinkNodeId]!.signalIns[inletId] = signalOutName
+        precompiledCodeAssigner.nodes[sinkNodeId]!.signalIns[inletId] =
+            signalOutName
     })
 }
 
 export const precompileSignalInletWithNoSource = (
-    { output, proxies: { variableNamesAssigner } }: Precompilation,
+    {
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+    }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    output.nodes[node.id]!.signalIns[inletId] =
+    precompiledCodeAssigner.nodes[node.id]!.signalIns[inletId] =
         variableNamesAssigner.globs.nullSignal
 }
 
 export const precompileMessageOutlet = (
-    { output, proxies: { variableNamesAssigner } }: Precompilation,
+    {
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+    }: Precompilation,
     sourceNode: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
     const outletSinks = getters.getSinks(sourceNode, outletId)
-    const precompiledNode = output.nodes[sourceNode.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[sourceNode.id]!
     const sinkFunctionNames = [
         ...outletSinks.map(
             ({ nodeId: sinkNodeId, portletId: inletId }) =>
@@ -79,7 +83,7 @@ export const precompileMessageOutlet = (
         ...outletSinks.reduce<Array<VariableName>>(
             (coldDspFunctionNames, sink) => {
                 const groupsContainingSink = Object.entries(
-                    output.graph.coldDspGroups
+                    precompiledCodeAssigner.graph.coldDspGroups
                 )
                     .filter(([_, { dspGroup }]) =>
                         isNodeInsideGroup(dspGroup, sink.nodeId)
@@ -146,11 +150,13 @@ export const precompileMessageOutlet = (
 }
 
 export const precompileMessageInlet = (
-    { output, proxies: { variableNamesAssigner } }: Precompilation,
+    {
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+    }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
-    const precompiledNode = output.nodes[node.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     if (getters.getSources(node, inletId).length >= 1) {
         const messageReceiverName =
             variableNamesAssigner.nodes[node.id]!.messageReceivers[inletId]!

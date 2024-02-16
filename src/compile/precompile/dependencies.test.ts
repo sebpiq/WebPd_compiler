@@ -35,7 +35,6 @@ import { Func, Sequence, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { PrecompiledCode } from './types'
 import { makePrecompilation } from '../test-helpers'
-import { attachNode, attachNodeImplementation } from '.'
 
 describe('precompile.dependencies', () => {
     describe('default', () => {
@@ -76,10 +75,6 @@ describe('precompile.dependencies', () => {
                 graph,
                 nodeImplementations,
             })
-
-            attachNode(precompilation.output, graph.node1!)
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
 
             precompilation.output.graph.fullTraversal = ['node1']
 
@@ -144,10 +139,6 @@ describe('precompile.dependencies', () => {
             })
 
             precompilation.output.graph.fullTraversal = ['node1']
-
-            attachNode(precompilation.output, graph.node1!)
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1)
 
             precompileDependencies(precompilation)
 

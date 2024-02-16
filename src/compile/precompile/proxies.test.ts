@@ -18,17 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import {
-    assertValidNamePart,
-} from './variable-names-index'
-import {
-    IoMessageSpecs,
-    NodeImplementations,
-} from '../types'
-import { VariableNamesIndex } from './types'
-import { makeGraph } from '../../dsp-graph/test-helpers'
-import { DspGraph } from '../../dsp-graph'
-import { makeSettings } from '../test-helpers'
+import { assertValidNamePart } from './proxies'
 
 describe('variable-names-index', () => {
 

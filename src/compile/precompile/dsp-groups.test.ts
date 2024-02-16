@@ -26,13 +26,62 @@ import {
     buildColdDspGroups,
     buildHotDspGroup,
     buildInlinableDspGroups,
+    precompileColdDspGroup,
 } from './dsp-groups'
-import { DspGroup } from './types'
+import { DspGroup, PrecompiledCode } from './types'
 import { ast } from '../../ast/declare'
 import { makePrecompilation } from '../test-helpers'
-import { attachNode, attachNodeImplementation } from '.'
 
 describe('dsp-groups', () => {
+    describe('precompileColdDspGroup', () => {
+        const graph = makeGraph({
+            n1: {},
+            n2: {
+                outlets: { '0': { type: 'signal', id: '0' } },
+                sinks: { '0': [['n3', '0']] },
+            },
+            n3: {
+                inlets: { '0': { type: 'signal', id: '0' } },
+            },
+        })
+
+        const precompilation = makePrecompilation({ graph })
+
+        precompileColdDspGroup(
+            precompilation,
+            {
+                traversal: ['n1', 'n2'],
+                outNodesIds: ['n2'],
+            },
+            '0'
+        )
+
+        assert.deepStrictEqual<PrecompiledCode['graph']['coldDspGroups']>(
+            precompilation.output.graph.coldDspGroups,
+            {
+                '0': {
+                    dspGroup: {
+                        traversal: ['n1', 'n2'],
+                        outNodesIds: ['n2'],
+                    },
+                    sinkConnections: [
+                        [
+                            {
+                                nodeId: 'n2',
+                                portletId: '0',
+                            },
+                            {
+                                nodeId: 'n3',
+                                portletId: '0',
+                            },
+                        ],
+                    ],
+                    functionName: 'coldDsp_0',
+                },
+            }
+        )
+    })
+
     describe('_buildSingleFlowColdDspGroups', () => {
         it('should return a list of single-flow dsp groups', () => {
             //      [  n1  ]
@@ -101,16 +150,10 @@ describe('dsp-groups', () => {
                 type2: {},
             }
 
-            const precompilation = makePrecompilation({ graph, nodeImplementations })
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNode(precompilation.output, graph.n4!)
-            attachNode(precompilation.output, graph.n5!)
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-            attachNodeImplementation(precompilation.output, 'type2', nodeImplementations.type2!)
+            const precompilation = makePrecompilation({
+                graph,
+                nodeImplementations,
+            })
 
             assert.deepStrictEqual<Array<DspGroup>>(
                 _buildSingleFlowColdDspGroups(precompilation, {
@@ -190,15 +233,10 @@ describe('dsp-groups', () => {
                 type2: {},
             }
 
-            const precompilation = makePrecompilation({ graph, nodeImplementations })
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-            attachNodeImplementation(precompilation.output, 'type2', nodeImplementations.type2!)
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNode(precompilation.output, graph.n4!)
+            const precompilation = makePrecompilation({
+                graph,
+                nodeImplementations,
+            })
 
             assert.deepStrictEqual<Array<DspGroup>>(
                 _buildSingleFlowColdDspGroups(precompilation, {
@@ -267,14 +305,10 @@ describe('dsp-groups', () => {
                 type2: {},
             }
 
-            const precompilation = makePrecompilation({ graph, nodeImplementations })
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-            attachNodeImplementation(precompilation.output, 'type2', nodeImplementations.type2!)
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
+            const precompilation = makePrecompilation({
+                graph,
+                nodeImplementations,
+            })
 
             assert.deepStrictEqual<Array<DspGroup>>(
                 _buildSingleFlowColdDspGroups(precompilation, {
@@ -379,18 +413,10 @@ describe('dsp-groups', () => {
                 type2: {},
             }
 
-            const precompilation = makePrecompilation({ graph, nodeImplementations })
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-            attachNodeImplementation(precompilation.output, 'type2', nodeImplementations.type2!)
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNode(precompilation.output, graph.n4!)
-            attachNode(precompilation.output, graph.n5!)
-            attachNode(precompilation.output, graph.n6!)
-            attachNode(precompilation.output, graph.n7!)
+            const precompilation = makePrecompilation({
+                graph,
+                nodeImplementations,
+            })
 
             assert.deepStrictEqual<Array<DspGroup>>(
                 buildColdDspGroups(precompilation, {
@@ -453,14 +479,10 @@ describe('dsp-groups', () => {
                 type2: {},
             }
 
-            const precompilation = makePrecompilation({ graph, nodeImplementations })
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
-            attachNodeImplementation(precompilation.output, 'type2', nodeImplementations.type2!)
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
+            const precompilation = makePrecompilation({
+                graph,
+                nodeImplementations,
+            })
 
             assert.deepStrictEqual<DspGroup>(
                 buildHotDspGroup(
@@ -586,17 +608,6 @@ describe('dsp-groups', () => {
                 nodeImplementations,
             })
 
-            attachNodeImplementation(precompilation.output, 'inlinableType', nodeImplementations.inlinableType!)
-            attachNodeImplementation(precompilation.output, 'nonInlinableType', nodeImplementations.nonInlinableType!)
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-            attachNode(precompilation.output, graph.n4!)
-            attachNode(precompilation.output, graph.n5!)
-            attachNode(precompilation.output, graph.n6!)
-            attachNode(precompilation.output, graph.n7!)
-
             assert.deepStrictEqual(
                 buildInlinableDspGroups(precompilation, {
                     traversal: ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7'],
@@ -669,13 +680,6 @@ describe('dsp-groups', () => {
                 nodeImplementations,
             })
 
-            attachNodeImplementation(precompilation.output, 'inlinableType', nodeImplementations.inlinableType!)
-            attachNodeImplementation(precompilation.output, 'nonInlinableType', nodeImplementations.nonInlinableType!)
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            attachNode(precompilation.output, graph.n3!)
-
             assert.deepStrictEqual(
                 buildInlinableDspGroups(precompilation, {
                     traversal: ['n1', 'n2', 'n3'],
@@ -697,7 +701,10 @@ describe('dsp-groups', () => {
                 n1: {
                     type: 'inlinableType',
                     sinks: {
-                        '0': [['n2', '0'], ['n2', '1']],
+                        '0': [
+                            ['n2', '0'],
+                            ['n2', '1'],
+                        ],
                     },
                     outlets: {
                         '0': { type: 'signal', id: '0' },
@@ -719,16 +726,14 @@ describe('dsp-groups', () => {
                         isDspInline: true,
                     },
                     dsp: () => ast``,
-                }
+                },
             }
 
-            const precompilation = makePrecompilation({ graph, nodeImplementations })
+            const precompilation = makePrecompilation({
+                graph,
+                nodeImplementations,
+            })
 
-            attachNodeImplementation(precompilation.output, 'inlinableType', nodeImplementations.inlinableType!)
-
-            attachNode(precompilation.output, graph.n1!)
-            attachNode(precompilation.output, graph.n2!)
-            
             assert.strictEqual(
                 _isNodeDspInlinable(precompilation, graph.n1!),
                 false

@@ -21,11 +21,10 @@ import assert from 'assert'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { nodeDefaults } from '../../dsp-graph/graph-helpers'
 import { makePrecompilation } from '../test-helpers'
-import { addMessageSenderNode, addMessageReceiverNode } from './io'
-import { attachIoMessageReceiverForNode, attachIoMessageSenderForNode } from '.'
+import { precompileIoMessageSender, precompileIoMessageReceiver } from './io'
 
 describe('precompile.io', () => {
-    describe('addMessageSenderNode', () => {
+    describe('precompileIoMessageSender', () => {
         it('should add io nodes to the graph', () => {
             const graph = makeGraph({
                 n1: {
@@ -36,29 +35,28 @@ describe('precompile.io', () => {
                 },
             })
 
-            const precompilation = makePrecompilation({ graph, settings: {
-                io: {
-                    messageSenders: {
-                        n1: {
-                            portletIds: ['0'],
+            const precompilation = makePrecompilation({
+                graph,
+                settings: {
+                    io: {
+                        messageSenders: {
+                            n1: {
+                                portletIds: ['0'],
+                            },
                         },
+                        messageReceivers: {},
                     },
-                    messageReceivers: {}
                 },
-            } })
+            })
 
-            attachIoMessageSenderForNode(precompilation.output, graph.n1!)
-
-            const graphWithIoNodes = addMessageSenderNode(
-                precompilation, 'n1', '0'
-            )
+            precompileIoMessageSender(precompilation, 'n1', '0')
 
             assert.deepStrictEqual(
-                new Set(Object.keys(graphWithIoNodes)),
+                new Set(Object.keys(precompilation.input.graph)),
                 new Set(['n1', 'n_ioSnd_n1_0'])
             )
 
-            assert.deepStrictEqual(graphWithIoNodes.n_ioSnd_n1_0, {
+            assert.deepStrictEqual(precompilation.input.graph.n_ioSnd_n1_0, {
                 ...nodeDefaults('n_ioSnd_n1_0', '_messageSender'),
                 args: {
                     messageSenderName: 'ioSnd_n1_0',
@@ -70,10 +68,15 @@ describe('precompile.io', () => {
                     '0': [{ nodeId: 'n1', portletId: '0' }],
                 },
             })
+
+            assert.deepStrictEqual(
+                precompilation.output.io.messageSenders.n1!['0']!.functionName,
+                'ioSnd_n1_0'
+            )
         })
     })
 
-    describe('addMessageReceiverNode', () => {
+    describe('precompileIoMessageReceiver', () => {
         it('should add io nodes to the graph', () => {
             const graph = makeGraph({
                 n1: {
@@ -84,30 +87,31 @@ describe('precompile.io', () => {
                 },
             })
 
-            const precompilation = makePrecompilation({ graph, settings: {
-                io: {
-                    messageReceivers: {
-                        n1: {
-                            portletIds: ['0'],
+            const precompilation = makePrecompilation({
+                graph,
+                settings: {
+                    io: {
+                        messageReceivers: {
+                            n1: {
+                                portletIds: ['0'],
+                            },
                         },
+                        messageSenders: {},
                     },
-                    messageSenders: {}
                 },
-            } })
+            })
 
-            attachIoMessageReceiverForNode(precompilation.output, graph.n1!)
+            precompileIoMessageReceiver(precompilation, 'n1', '0')
 
-            const graphWithIoNodes = addMessageReceiverNode(
-                precompilation, 'n1', '0'
-            )
+            const messageReceiverNodeId = 'n_ioRcv_n1_0'
 
             assert.deepStrictEqual(
-                new Set(Object.keys(graphWithIoNodes)),
+                new Set(Object.keys(precompilation.input.graph)),
                 new Set(['n1', 'n_ioRcv_n1_0'])
             )
 
-            assert.deepStrictEqual(graphWithIoNodes.n_ioRcv_n1_0, {
-                ...nodeDefaults('n_ioRcv_n1_0', '_messageReceiver'),
+            assert.deepStrictEqual(precompilation.input.graph.n_ioRcv_n1_0, {
+                ...nodeDefaults(messageReceiverNodeId, '_messageReceiver'),
                 isPushingMessages: true,
                 outlets: {
                     '0': { id: '0', type: 'message' },
@@ -116,6 +120,25 @@ describe('precompile.io', () => {
                     '0': [{ nodeId: 'n1', portletId: '0' }],
                 },
             })
+
+            assert.deepStrictEqual(
+                precompilation.output.io.messageReceivers.n1!['0']!
+                    .functionName,
+                'ioRcv_n1_0'
+            )
+
+            precompilation.proxies.precompiledCodeAssigner.nodes[
+                messageReceiverNodeId
+            ]!.messageSenders['0'] = {
+                messageSenderName: 'ioRcv_n1_0_messageSender',
+                sinkFunctionNames: [],
+            }
+            assert.deepStrictEqual(
+                precompilation.output.io.messageReceivers.n1![
+                    '0'
+                ]!.getSinkFunctionName(),
+                'ioRcv_n1_0_messageSender'
+            )
         })
     })
 })

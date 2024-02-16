@@ -18,13 +18,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { Class, Func, Sequence, Var, ast } from '../../ast/declare'
+import { Class, Func, Sequence, Var } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { NodeImplementations } from '../types'
 import { precompileCore, precompileStateClass } from './node-implementations'
 import { AstClass, AstSequence } from '../../ast/types'
 import { makePrecompilation } from '../test-helpers'
-import { attachNodeImplementation } from '.'
 
 describe('precompile.node-implementations', () => {
     describe('precompileStateClass', () => {
@@ -51,8 +50,6 @@ describe('precompile.node-implementations', () => {
                 graph,
                 nodeImplementations,
             })
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
 
             precompileStateClass(precompilation, 'type1')
 
@@ -90,8 +87,6 @@ describe('precompile.node-implementations', () => {
                 graph,
                 nodeImplementations,
             })
-
-            attachNodeImplementation(precompilation.output, 'type1', nodeImplementations.type1!)
 
             precompileCore(precompilation, 'type1')
 

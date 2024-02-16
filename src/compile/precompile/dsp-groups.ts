@@ -22,6 +22,21 @@ import { endpointsEqual } from '../../dsp-graph/graph-helpers'
 import { buildGraphTraversalSignal } from '../compile-helpers'
 import { ColdDspGroup, DspGroup, Precompilation } from './types'
 
+export const precompileColdDspGroup = (
+    {
+        input: { graph },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+    }: Precompilation,
+    dspGroup: DspGroup,
+    groupId: string
+) => {
+    precompiledCodeAssigner.graph.coldDspGroups[groupId] = {
+        functionName: variableNamesAssigner.coldDspGroups[groupId]!,
+        dspGroup,
+        sinkConnections: buildGroupSinkConnections(graph, dspGroup),
+    }
+}
+
 export const buildHotDspGroup = (
     { input: { graph } }: Precompilation,
     parentDspGroup: DspGroup,
@@ -223,19 +238,20 @@ export const removeNodesFromTraversal = (
 ) => traversal.filter((nodeId) => !toRemove.includes(nodeId))
 
 const _isNodeDspCold = (
-    { output }: Precompilation,
+    { proxies: { precompiledCodeAssigner } }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const precompiledNode = output.nodes[node.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
-        output.nodeImplementations[precompiledNode.nodeType]!
+        precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     return precompiledNodeImplementation.nodeImplementation.flags
-        ? !!precompiledNodeImplementation.nodeImplementation.flags.isPureFunction
+        ? !!precompiledNodeImplementation.nodeImplementation.flags
+              .isPureFunction
         : false
 }
 
 export const _isNodeDspInlinable = (
-    { output }: Precompilation,
+    { proxies: { precompiledCodeAssigner } }: Precompilation,
     node: DspGraph.Node
 ) => {
     const sinks = traversers
@@ -254,9 +270,9 @@ export const _isNodeDspInlinable = (
             }
         }, [])
 
-    const precompiledNode = output.nodes[node.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
-        output.nodeImplementations[precompiledNode.nodeType]!
+        precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
 
     return (
         !!precompiledNodeImplementation.nodeImplementation.flags &&

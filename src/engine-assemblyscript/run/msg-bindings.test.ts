@@ -36,7 +36,7 @@ import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
 import macros from '../compile/macros'
 import { makeSettings } from '../../compile/test-helpers'
-import { createVariableNamesIndex } from '../../compile/precompile/variable-names-index'
+import { createVariableNamesIndex } from '../../compile/precompile/proxies'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {

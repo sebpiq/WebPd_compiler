@@ -28,32 +28,31 @@ import { AstElement, AstFunc, AstSequence } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { commonsWaitFrame, core, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
-import {
-    Precompilation,
-    PrecompiledCode,
-    VariableNamesIndex,
-} from './types'
+import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
 
 export default (precompilation: Precompilation) => {
-    const { output, input: { settings }, proxies: { variableNamesAssigner } } = precompilation
+    const {
+        input: { settings },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+    } = precompilation
     const dependencies = flattenDependencies([
         ...engineMinimalDependencies(),
         ..._collectDependenciesFromTraversal(precompilation),
     ])
 
     // Flatten and de-duplicate all the module's dependencies
-    output.dependencies.ast = instantiateAndDedupeDependencies(
+    precompiledCodeAssigner.dependencies.ast = instantiateAndDedupeDependencies(
         settings,
         dependencies,
         variableNamesAssigner.globs
     )
 
     // Collect and attach imports / exports info
-    output.dependencies.exports = collectAndDedupeExports(
+    precompiledCodeAssigner.dependencies.exports = collectAndDedupeExports(
         settings.target,
         dependencies
     )
-    output.dependencies.imports =
+    precompiledCodeAssigner.dependencies.imports =
         collectAndDedupeImports(dependencies)
 }
 
@@ -98,16 +97,21 @@ export const collectAndDedupeExports = (
     dependencies
         .filter(isGlobalDefinitionWithSettings)
         .reduce<Array<GlobalCodeDefinitionExport>>(
-            (exports, codeDefinition) => codeDefinition.exports ? [
-                ...exports,
-                ...codeDefinition.exports.filter(
-                    (xprt) =>
-                        (!xprt.targets || xprt.targets.includes(target)) &&
-                        exports.every(
-                            (otherExport) => xprt.name !== otherExport.name
-                        )
-                ),
-            ]: exports,
+            (exports, codeDefinition) =>
+                codeDefinition.exports
+                    ? [
+                          ...exports,
+                          ...codeDefinition.exports.filter(
+                              (xprt) =>
+                                  (!xprt.targets ||
+                                      xprt.targets.includes(target)) &&
+                                  exports.every(
+                                      (otherExport) =>
+                                          xprt.name !== otherExport.name
+                                  )
+                          ),
+                      ]
+                    : exports,
             []
         )
 
@@ -117,14 +121,18 @@ export const collectAndDedupeImports = (
     dependencies
         .filter(isGlobalDefinitionWithSettings)
         .reduce<Array<AstFunc>>(
-            (imports, codeDefinition) => codeDefinition.imports ? [
-                ...imports,
-                ...codeDefinition.imports.filter((imprt) =>
-                    imports.every(
-                        (otherImport) => imprt.name !== otherImport.name
-                    )
-                ),
-            ]: imports,
+            (imports, codeDefinition) =>
+                codeDefinition.imports
+                    ? [
+                          ...imports,
+                          ...codeDefinition.imports.filter((imprt) =>
+                              imports.every(
+                                  (otherImport) =>
+                                      imprt.name !== otherImport.name
+                              )
+                          ),
+                      ]
+                    : imports,
             []
         )
 
@@ -147,21 +155,22 @@ export const flattenDependencies = (
 
 const _collectDependenciesFromTraversal = ({
     input: { graph },
-    output,
+    proxies: { precompiledCodeAssigner },
 }: Precompilation): Array<GlobalCodeDefinition> => {
     return traversers
-        .toNodes(graph, output.graph.fullTraversal)
-        .reduce<Array<GlobalCodeDefinition>>(
-            (definitions, node) => {
-                const precompiledNode = output.nodes[node.id]!
-                const precompiledNodeImplementation =
-                    output.nodeImplementations[precompiledNode.nodeType]!
-                return [
+        .toNodes(graph, precompiledCodeAssigner.graph.fullTraversal)
+        .reduce<Array<GlobalCodeDefinition>>((definitions, node) => {
+            const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
+            const precompiledNodeImplementation =
+                precompiledCodeAssigner.nodeImplementations[
+                    precompiledNode.nodeType
+                ]!
+            return [
                 ...definitions,
-                ...(precompiledNodeImplementation.nodeImplementation.dependencies || []),
-            ]},
-            []
-        )
+                ...(precompiledNodeImplementation.nodeImplementation
+                    .dependencies || []),
+            ]
+        }, [])
 }
 
 const _deepEqual = (ast1: AstElement, ast2: AstElement) =>

@@ -35,14 +35,13 @@ const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 export const precompileState = (
     {
         input: { settings },
-        output,
-        proxies: { variableNamesAssigner },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const precompiledNode = output.nodes[node.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
-        output.nodeImplementations[precompiledNode.nodeType]!
+        precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     if (precompiledNodeImplementation.nodeImplementation.state) {
         const nodeType = node.type
         const stateClassName =
@@ -80,14 +79,13 @@ export const precompileState = (
 export const precompileMessageReceivers = (
     {
         input: { settings },
-        output,
-        proxies: { variableNamesAssigner },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const precompiledNode = output.nodes[node.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
-        output.nodeImplementations[precompiledNode.nodeType]!
+        precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     const { state, snds } = _getContext(precompiledNode)
     const messageReceivers = createNamespace(
         'messageReceivers',
@@ -122,14 +120,13 @@ export const precompileMessageReceivers = (
 export const precompileInitialization = (
     {
         input: { settings },
-        output,
-        proxies: { variableNamesAssigner },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const precompiledNode = output.nodes[node.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
-        output.nodeImplementations[precompiledNode.nodeType]!
+        precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     const { state, snds } = _getContext(precompiledNode)
     precompiledNode.initialization = precompiledNodeImplementation
         .nodeImplementation.initialization
@@ -146,14 +143,13 @@ export const precompileInitialization = (
 export const precompileDsp = (
     {
         input: { settings },
-        output,
-        proxies: { variableNamesAssigner },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     }: Precompilation,
     node: DspGraph.Node
 ) => {
-    const precompiledNode = output.nodes[node.id]!
+    const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
-        output.nodeImplementations[precompiledNode.nodeType]!
+        precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     const { outs, ins, snds, state } = _getContext(precompiledNode)
 
     if (!precompiledNodeImplementation.nodeImplementation.dsp) {
@@ -217,16 +213,15 @@ export const precompileDsp = (
 export const precompileInlineDsp = (
     {
         input: { graph, settings },
-        output,
-        proxies: { variableNamesAssigner },
+        proxies: { variableNamesAssigner, precompiledCodeAssigner },
     }: Precompilation,
     dspGroup: DspGroup
 ): void => {
     const inlinedNodes = dspGroup.traversal.reduce<InlinedNodes>(
         (inlinedNodes, nodeId) => {
-            const precompiledNode = output.nodes[nodeId]!
+            const precompiledNode = precompiledCodeAssigner.nodes[nodeId]!
             const precompiledNodeImplementation =
-                output.nodeImplementations[precompiledNode.nodeType]!
+                precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
             const { ins, outs, snds, state } = _getContext(precompiledNode)
             const node = getters.getNode(graph, nodeId)
             const inlinedInputs: InlinedInputs = mapArray(
@@ -293,14 +288,14 @@ export const precompileInlineDsp = (
     )
 
     const groupSinkNode = _getInlinableGroupSinkNode(graph, dspGroup)
-    output.nodes[groupSinkNode.nodeId]!.signalIns[groupSinkNode.portletId] =
+    precompiledCodeAssigner.nodes[groupSinkNode.nodeId]!.signalIns[groupSinkNode.portletId] =
         inlinedNodes[dspGroup.outNodesIds[0]!]!
 }
 
 const _getContext = (precompiledNode: PrecompiledNodeCode) => ({
     state: precompiledNode.state ? precompiledNode.state.name : '',
-    ins: precompiledNode.signalIns,
-    outs: precompiledNode.signalOuts,
+    ins: createNamespace('ins', precompiledNode.signalIns),
+    outs: createNamespace('outs', precompiledNode.signalOuts),
     snds: createNamespace(
         'snds',
         Object.entries(precompiledNode.messageSenders).reduce(

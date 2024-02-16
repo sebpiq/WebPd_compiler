@@ -10,9 +10,7 @@ import {
 } from './proxies'
 
 describe('proxies', () => {
-
     describe('Assigner', () => {
-
         interface SomeType {
             bla: {
                 blo: {
@@ -25,7 +23,7 @@ describe('proxies', () => {
                 }
             }
         }
-    
+
         interface Context {
             someValue: string
         }
@@ -34,10 +32,8 @@ describe('proxies', () => {
             bla: Interface({
                 blo: Index((k1: string) =>
                     Interface({
-                        bli: Index((k2: string) =>
-                            Literal(`${k1}_${k2}`)
-                        ),
-                        ble: Literal(parseInt(k1, 10)),
+                        bli: Index((k2: string) => Literal(() => `${k1}_${k2}`)),
+                        ble: Literal(() => parseInt(k1, 10)),
                     })
                 ),
             }),
@@ -50,16 +46,16 @@ describe('proxies', () => {
                 }
                 ble: number
             }
-    
+
             const someOtherSpec: AssignerSpec<SomeOtherType, Context> = {
                 Interface: {
                     bli: {
                         Index: () => ({
-                            Literal: `123`,
+                            Literal: () => `123`,
                         }),
                     },
                     ble: {
-                        Literal: 456,
+                        Literal: () => 456,
                     },
                 },
             }
@@ -68,26 +64,35 @@ describe('proxies', () => {
                 bli: string | null
             }
 
-            const someSpecWithDefaultNull: AssignerSpec<TypeWithDefault, Context> = {
+            const someSpecWithDefaultNull: AssignerSpec<
+                TypeWithDefault,
+                Context
+            > = {
                 Interface: {
-                    bli: LiteralDefaultNull(`123`),
+                    bli: LiteralDefaultNull(() => `123`),
                 },
             }
-    
+
             it('should initialize the given structure with simple dictionnaries of keys', () => {
-                const obj = assignerInitializeDefaults<SomeType, Context>({}, someSpec)
+                const obj = assignerInitializeDefaults<SomeType, Context>(
+                    {},
+                    someSpec
+                )
                 assert.deepStrictEqual(obj, {
                     bla: {
                         blo: {},
                     },
                 })
             })
-    
+
             it('should initialize the given structure when it declares a function ', () => {
-                const obj = assignerInitializeDefaults<SomeOtherType, Context>({}, someOtherSpec)
+                const obj = assignerInitializeDefaults<SomeOtherType, Context>(
+                    {},
+                    someOtherSpec
+                )
                 assert.deepStrictEqual(obj, { bli: {}, ble: 456 })
             })
-    
+
             it('should merge keep existing data', () => {
                 const obj = assignerInitializeDefaults<SomeOtherType, Context>(
                     { bli: { a: '123' } },
@@ -97,10 +102,10 @@ describe('proxies', () => {
             })
 
             it('should return null for LiteralDefaultNull', () => {
-                const obj = assignerInitializeDefaults<TypeWithDefault, Context>(
-                    {},
-                    someSpecWithDefaultNull
-                )
+                const obj = assignerInitializeDefaults<
+                    TypeWithDefault,
+                    Context
+                >({}, someSpecWithDefaultNull)
                 assert.deepStrictEqual(obj, { bli: null })
             })
         })
@@ -145,26 +150,25 @@ describe('proxies', () => {
                 }
             }
 
-            const spec: AssignerSpec<SomeTypeWithChainedIndexes, Context> = Index((k1: string) =>
-                Index((k2: string) =>
-                    Literal(`${k1}_${k2}`)
+            const spec: AssignerSpec<SomeTypeWithChainedIndexes, Context> =
+                Index((k1: string) =>
+                    Index((k2: string) => Literal(() => `${k1}_${k2}`))
                 )
-            )
-            
+
             const obj = {}
             const assigner = Assigner(spec, { someValue: '123' }, obj)
 
             assert.strictEqual(assigner.hello!.bonjour!, 'hello_bonjour')
             assert.strictEqual(assigner.hello!.ola!, 'hello_ola')
             assert.strictEqual(assigner.bye!.salut!, 'bye_salut')
-            assert.deepStrictEqual(obj, { 
+            assert.deepStrictEqual(obj, {
                 hello: {
                     bonjour: 'hello_bonjour',
-                    ola: 'hello_ola'
+                    ola: 'hello_ola',
                 },
                 bye: {
-                    salut: 'bye_salut'
-                }
+                    salut: 'bye_salut',
+                },
             })
         })
 
@@ -174,15 +178,22 @@ describe('proxies', () => {
                 bli: string | null
             }
 
-            const someSpecWithDefaultNull: AssignerSpec<TypeWithDefault, Context> = {
+            const someSpecWithDefaultNull: AssignerSpec<
+                TypeWithDefault,
+                Context
+            > = {
                 Interface: {
-                    bla: Literal(`123`),
-                    bli: LiteralDefaultNull(`456`),
+                    bla: Literal(() => `123`),
+                    bli: LiteralDefaultNull(() => `456`),
                 },
             }
 
             const obj = {}
-            const assigner = Assigner(someSpecWithDefaultNull, { someValue: '123' }, obj)
+            const assigner = Assigner(
+                someSpecWithDefaultNull,
+                { someValue: '123' },
+                obj
+            )
 
             assert.strictEqual(assigner.bla, '123')
             assert.deepStrictEqual(obj, { bla: '123', bli: null })
@@ -198,9 +209,9 @@ describe('proxies', () => {
                     blo: Index((k1: string, context: Context) =>
                         Interface({
                             bli: Index((k2: string) =>
-                                Literal(`${k1}_${k2}_${context.someValue}`)
+                                Literal(() => `${k1}_${k2}_${context.someValue}`)
                             ),
-                            ble: Literal(parseInt(k1, 10)),
+                            ble: Literal(() => parseInt(k1, 10)),
                         })
                     ),
                 }),
@@ -225,5 +236,61 @@ describe('proxies', () => {
             })
         })
 
+        it('should keep instantiated Literals and not reinstantiate', () => {
+            type TypeWithObjectLiteral = {
+                [k: string]: { [k: string]: number }
+            }
+
+            const someSpecWithObjectLiteral: AssignerSpec<
+                TypeWithObjectLiteral,
+                {}
+            > = Index(() => Literal(() => ({})))
+
+            const obj = {}
+            const assigner = Assigner(someSpecWithObjectLiteral, {}, obj)
+
+            assigner.bla!.hello = 123
+            assigner.bla!.hi = 456
+
+            assert.deepStrictEqual(obj, {
+                bla: {
+                    hello: 123,
+                    hi: 456,
+                },
+            })
+        })
+
+        it('should instantiate new instance for Literal with new object', () => {
+            type TypeWithObjectLiteral = {
+                bla: { blo: number }
+            }
+
+            const someSpecWithObjectLiteral: AssignerSpec<
+                TypeWithObjectLiteral,
+                {}
+            > = Interface({
+                bla: Literal(() => ({
+                    blo: 123
+                })),
+            })
+
+            const obj1 = {}
+            const assigner1 = Assigner(someSpecWithObjectLiteral, {}, obj1)
+            assigner1.bla.blo = 456
+
+            assert.deepStrictEqual(obj1, {
+                bla: {
+                    blo: 456,
+                },
+            })
+
+            const obj2 = {}
+            Assigner(someSpecWithObjectLiteral, {}, obj2)
+            assert.deepStrictEqual(obj2, {
+                bla: {
+                    blo: 123,
+                },
+            })
+        })
     })
 })
