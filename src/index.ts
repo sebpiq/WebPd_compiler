@@ -31,7 +31,7 @@ export { createEngine as createAssemblyScriptWasmEngine } from './engine-assembl
 export { createEngine as createJavaScriptEngine } from './engine-javascript/run'
 export { readMetadata } from './run'
 export { getFloatArrayType } from './run/run-helpers'
-export { createNamespace } from './compile/compile-helpers'
+export { ProtectedIndex } from './compile/proxies'
 export * as functional from './functional-helpers'
 export * as dspGraph from './dsp-graph'
 export { DspGraph } from './dsp-graph'

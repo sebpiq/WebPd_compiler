@@ -18,18 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { createNamespace } from '../compile-helpers'
 import { DspGraph, getters } from '../../dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
-import {
-    Assigner,
-    assignerInitializeDefaults,
-    AssignerSpec,
-    Interface,
-    Index,
-    Literal,
-    LiteralDefaultNull,
-} from '../proxies'
+import { ProtectedIndex, Assigner, AssignerSpec } from '../proxies'
 import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
 import { Sequence, ast } from '../../ast/declare'
 import { NodeImplementations } from '../types'
@@ -43,35 +34,35 @@ export const VariableNamesAssigner = ({
 }) => Assigner(_VariableNamesAssignerSpec, input, variableNamesIndex)
 
 export const createVariableNamesIndex = () =>
-    assignerInitializeDefaults({}, _VariableNamesAssignerSpec)
+    Assigner.ensureValue({}, _VariableNamesAssignerSpec)
 
 const _VariableNamesAssignerSpec: AssignerSpec<
     VariableNamesIndex,
     Precompilation['input']
-> = Interface({
-    nodes: Index((nodeId: DspGraph.NodeId) =>
-        Interface({
-            signalOuts: Index((portletId: DspGraph.PortletId) =>
-                Literal(() => `${_v(nodeId)}_OUTS_${_v(portletId)}`)
+> = Assigner.Interface({
+    nodes: Assigner.Index((nodeId: DspGraph.NodeId) =>
+        Assigner.Interface({
+            signalOuts: Assigner.Index((portletId: DspGraph.PortletId) =>
+                Assigner.Literal(() => `${_v(nodeId)}_OUTS_${_v(portletId)}`)
             ),
-            messageSenders: Index((portletId: DspGraph.PortletId) =>
-                Literal(() => `${_v(nodeId)}_SNDS_${_v(portletId)}`)
+            messageSenders: Assigner.Index((portletId: DspGraph.PortletId) =>
+                Assigner.Literal(() => `${_v(nodeId)}_SNDS_${_v(portletId)}`)
             ),
-            messageReceivers: Index((portletId: DspGraph.PortletId) =>
-                Literal(() => `${_v(nodeId)}_RCVS_${_v(portletId)}`)
+            messageReceivers: Assigner.Index((portletId: DspGraph.PortletId) =>
+                Assigner.Literal(() => `${_v(nodeId)}_RCVS_${_v(portletId)}`)
             ),
-            state: LiteralDefaultNull(() => `${_v(nodeId)}_STATE`),
+            state: Assigner.LiteralDefaultNull(() => `${_v(nodeId)}_STATE`),
         })
     ),
 
-    nodeImplementations: Index(
+    nodeImplementations: Assigner.Index(
         (nodeType: DspGraph.NodeType, { nodeImplementations }) => {
             const nodeImplementation = getNodeImplementation(
                 nodeImplementations,
                 nodeType
             )
-            return Interface({
-                stateClass: LiteralDefaultNull(
+            return Assigner.Interface({
+                stateClass: Assigner.LiteralDefaultNull(
                     () =>
                         `State_${_v(
                             (nodeImplementation.flags
@@ -84,7 +75,7 @@ const _VariableNamesAssignerSpec: AssignerSpec<
     ),
 
     /** Namespace for global variables */
-    globs: Literal(() => ({
+    globs: Assigner.Literal(() => ({
         iterFrame: 'F',
         frame: 'FRAME',
         blockSize: 'BLOCK_SIZE',
@@ -96,21 +87,21 @@ const _VariableNamesAssignerSpec: AssignerSpec<
         emptyMessage: 'EMPTY_MESSAGE',
     })),
 
-    io: Interface({
-        messageReceivers: Index((nodeId: DspGraph.NodeId) =>
-            Index((inletId: DspGraph.PortletId) =>
-                Literal(() => `ioRcv_${nodeId}_${inletId}`)
+    io: Assigner.Interface({
+        messageReceivers: Assigner.Index((nodeId: DspGraph.NodeId) =>
+            Assigner.Index((inletId: DspGraph.PortletId) =>
+                Assigner.Literal(() => `ioRcv_${nodeId}_${inletId}`)
             )
         ),
-        messageSenders: Index((nodeId: DspGraph.NodeId) =>
-            Index((outletId: DspGraph.PortletId) =>
-                Literal(() => `ioSnd_${nodeId}_${outletId}`)
+        messageSenders: Assigner.Index((nodeId: DspGraph.NodeId) =>
+            Assigner.Index((outletId: DspGraph.PortletId) =>
+                Assigner.Literal(() => `ioSnd_${nodeId}_${outletId}`)
             )
         ),
     }),
 
-    coldDspGroups: Index((groupId: string) =>
-        Literal(() => `coldDsp_${groupId}`)
+    coldDspGroups: Assigner.Index((groupId: string) =>
+        Assigner.Literal(() => `coldDsp_${groupId}`)
     ),
 })
 
@@ -123,52 +114,56 @@ export const PrecompiledCodeAssigner = ({
 }) => Assigner(_PrecompiledCodeAssignerSpec, input, precompiledCode)
 
 export const createPrecompiledCode = () =>
-    assignerInitializeDefaults({}, _PrecompiledCodeAssignerSpec)
+    Assigner.ensureValue({}, _PrecompiledCodeAssignerSpec)
 
 const _PrecompiledCodeAssignerSpec: AssignerSpec<
     PrecompiledCode,
     { graph: DspGraph.Graph; nodeImplementations: NodeImplementations }
-> = Interface({
-    graph: Literal(
-        () =>
+> = Assigner.Interface({
+    graph: Assigner.Literal(
+        (path) =>
             ({
                 fullTraversal: [],
                 hotDspGroup: {
                     traversal: [],
                     outNodesIds: [],
                 },
-                coldDspGroups: createNamespace('coldDspGroups', {}),
+                coldDspGroups: ProtectedIndex({}, path),
             } as PrecompiledCode['graph'])
     ),
 
-    nodeImplementations: Index((nodeType, { nodeImplementations }) =>
-        Literal(() => ({
-            nodeImplementation: getNodeImplementation(
-                nodeImplementations,
-                nodeType
-            ),
-            stateClass: null,
-            core: null,
-        }))
+    nodeImplementations: Assigner.Index(
+        (nodeType, { nodeImplementations }) =>
+            Assigner.Literal(() => ({
+                nodeImplementation: getNodeImplementation(
+                    nodeImplementations,
+                    nodeType
+                ),
+                stateClass: null,
+                core: null,
+            })),
+        (path) => ProtectedIndex({}, path)
     ),
 
-    nodes: Index((nodeId, { graph }) =>
-        Literal(() => ({
-            nodeType: getters.getNode(graph, nodeId).type,
-            messageReceivers: {},
-            messageSenders: {},
-            signalOuts: {},
-            signalIns: {},
-            initialization: ast``,
-            dsp: {
-                loop: ast``,
-                inlets: {},
-            },
-            state: null,
-        }))
+    nodes: Assigner.Index(
+        (nodeId, { graph }) =>
+            Assigner.Literal(() => ({
+                nodeType: getters.getNode(graph, nodeId).type,
+                messageReceivers: {},
+                messageSenders: {},
+                signalOuts: {},
+                signalIns: {},
+                initialization: ast``,
+                dsp: {
+                    loop: ast``,
+                    inlets: {},
+                },
+                state: null,
+            })),
+        (path) => ProtectedIndex({}, path)
     ),
 
-    dependencies: Literal(
+    dependencies: Assigner.Literal(
         () =>
             ({
                 imports: [],
@@ -177,9 +172,15 @@ const _PrecompiledCodeAssignerSpec: AssignerSpec<
             } as PrecompiledCode['dependencies'])
     ),
 
-    io: Interface({
-        messageReceivers: Index((_: DspGraph.NodeId) => Literal(() => ({}))),
-        messageSenders: Index((_: DspGraph.NodeId) => Literal(() => ({}))),
+    io: Assigner.Interface({
+        messageReceivers: Assigner.Index(
+            (_: DspGraph.NodeId) => Assigner.Literal(() => ({})),
+            (path) => ProtectedIndex({}, path)
+        ),
+        messageSenders: Assigner.Index(
+            (_: DspGraph.NodeId) => Assigner.Literal(() => ({})),
+            (path) => ProtectedIndex({}, path)
+        ),
     }),
 })
 

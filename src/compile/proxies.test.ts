@@ -1,15 +1,39 @@
 import assert from 'assert'
-import {
-    AssignerSpec,
-    Index,
-    Literal,
-    Interface,
-    assignerInitializeDefaults,
-    Assigner,
-    LiteralDefaultNull,
-} from './proxies'
+import { AssignerSpec, Assigner, ProtectedIndex, PrecompileNodeNamespace } from './proxies'
 
 describe('proxies', () => {
+    it('Assigner and ProtectedIndex should be working together', () => {
+        interface Type {
+            a: {
+                [k: string]: {
+                    b: number
+                    c: number
+                }
+            }
+        }
+
+        const spec: AssignerSpec<Type, {}> = Assigner.Interface({
+            a: Assigner.Index(
+                (k: string) => Assigner.Literal(() => ({ b: 1, c: 2 })),
+                () => ProtectedIndex({})
+            ),
+        })
+
+        const obj = {}
+        const assigner = Assigner<Type, {}>(spec, {}, obj)
+        assert.deepStrictEqual(assigner.a.bla, {
+            b: 1,
+            c: 2,
+        })
+
+        // Try second time because ProtectedIndex throws an error if trying to
+        // overwrite an existing key
+        assert.deepStrictEqual(assigner.a.bla, {
+            b: 1,
+            c: 2,
+        })
+    })
+
     describe('Assigner', () => {
         interface SomeType {
             bla: {
@@ -28,18 +52,20 @@ describe('proxies', () => {
             someValue: string
         }
 
-        const someSpec: AssignerSpec<SomeType, Context> = Interface({
-            bla: Interface({
-                blo: Index((k1: string) =>
-                    Interface({
-                        bli: Index((k2: string) => Literal(() => `${k1}_${k2}`)),
-                        ble: Literal(() => parseInt(k1, 10)),
+        const someSpec: AssignerSpec<SomeType, Context> = Assigner.Interface({
+            bla: Assigner.Interface({
+                blo: Assigner.Index((k1: string) =>
+                    Assigner.Interface({
+                        bli: Assigner.Index((k2: string) =>
+                            Assigner.Literal(() => `${k1}_${k2}`)
+                        ),
+                        ble: Assigner.Literal(() => parseInt(k1, 10)),
                     })
                 ),
             }),
         })
 
-        describe('assignerInitializeDefaults', () => {
+        describe('Assigner.initializeAssignerTarget', () => {
             interface SomeOtherType {
                 bli: {
                     [k: string]: string
@@ -53,6 +79,7 @@ describe('proxies', () => {
                         Index: () => ({
                             Literal: () => `123`,
                         }),
+                        indexConstructor: () => ({}),
                     },
                     ble: {
                         Literal: () => 456,
@@ -69,12 +96,12 @@ describe('proxies', () => {
                 Context
             > = {
                 Interface: {
-                    bli: LiteralDefaultNull(() => `123`),
+                    bli: Assigner.LiteralDefaultNull(() => `123`),
                 },
             }
 
             it('should initialize the given structure with simple dictionnaries of keys', () => {
-                const obj = assignerInitializeDefaults<SomeType, Context>(
+                const obj = Assigner.ensureValue<SomeType, Context>(
                     {},
                     someSpec
                 )
@@ -86,7 +113,7 @@ describe('proxies', () => {
             })
 
             it('should initialize the given structure when it declares a function ', () => {
-                const obj = assignerInitializeDefaults<SomeOtherType, Context>(
+                const obj = Assigner.ensureValue<SomeOtherType, Context>(
                     {},
                     someOtherSpec
                 )
@@ -94,7 +121,7 @@ describe('proxies', () => {
             })
 
             it('should merge keep existing data', () => {
-                const obj = assignerInitializeDefaults<SomeOtherType, Context>(
+                const obj = Assigner.ensureValue<SomeOtherType, Context>(
                     { bli: { a: '123' } },
                     someOtherSpec
                 )
@@ -102,10 +129,10 @@ describe('proxies', () => {
             })
 
             it('should return null for LiteralDefaultNull', () => {
-                const obj = assignerInitializeDefaults<
-                    TypeWithDefault,
-                    Context
-                >({}, someSpecWithDefaultNull)
+                const obj = Assigner.ensureValue<TypeWithDefault, Context>(
+                    {},
+                    someSpecWithDefaultNull
+                )
                 assert.deepStrictEqual(obj, { bli: null })
             })
         })
@@ -151,8 +178,10 @@ describe('proxies', () => {
             }
 
             const spec: AssignerSpec<SomeTypeWithChainedIndexes, Context> =
-                Index((k1: string) =>
-                    Index((k2: string) => Literal(() => `${k1}_${k2}`))
+                Assigner.Index((k1: string) =>
+                    Assigner.Index((k2: string) =>
+                        Assigner.Literal(() => `${k1}_${k2}`)
+                    )
                 )
 
             const obj = {}
@@ -183,8 +212,8 @@ describe('proxies', () => {
                 Context
             > = {
                 Interface: {
-                    bla: Literal(() => `123`),
-                    bli: LiteralDefaultNull(() => `456`),
+                    bla: Assigner.Literal(() => `123`),
+                    bli: Assigner.LiteralDefaultNull(() => `456`),
                 },
             }
 
@@ -201,21 +230,43 @@ describe('proxies', () => {
             assert.deepStrictEqual(obj, { bla: '123', bli: '456' })
         })
 
+        it('should pass path to Literal constructor', () => {
+            interface TypeWithDefault {
+                bla: string
+            }
+
+            const someSpecWithDefaultNull: AssignerSpec<TypeWithDefault, {}> = {
+                Interface: {
+                    bla: Assigner.Literal((path) =>
+                        [path.keys, `123`].join('.')
+                    ),
+                },
+            }
+
+            const obj = {}
+            Assigner(someSpecWithDefaultNull, {}, obj)
+
+            assert.deepStrictEqual(obj, { bla: 'bla.123' })
+        })
+
         it('should support calling with context object', () => {
             const obj = {}
 
-            const someSpec: AssignerSpec<SomeType, Context> = Interface({
-                bla: Interface({
-                    blo: Index((k1: string, context: Context) =>
-                        Interface({
-                            bli: Index((k2: string) =>
-                                Literal(() => `${k1}_${k2}_${context.someValue}`)
-                            ),
-                            ble: Literal(() => parseInt(k1, 10)),
-                        })
-                    ),
-                }),
-            })
+            const someSpec: AssignerSpec<SomeType, Context> =
+                Assigner.Interface({
+                    bla: Assigner.Interface({
+                        blo: Assigner.Index((k1: string, context: Context) =>
+                            Assigner.Interface({
+                                bli: Assigner.Index((k2: string) =>
+                                    Assigner.Literal(
+                                        () => `${k1}_${k2}_${context.someValue}`
+                                    )
+                                ),
+                                ble: Assigner.Literal(() => parseInt(k1, 10)),
+                            })
+                        ),
+                    }),
+                })
 
             const assigner = Assigner(someSpec, { someValue: 'hello' }, obj)
 
@@ -244,7 +295,7 @@ describe('proxies', () => {
             const someSpecWithObjectLiteral: AssignerSpec<
                 TypeWithObjectLiteral,
                 {}
-            > = Index(() => Literal(() => ({})))
+            > = Assigner.Index(() => Assigner.Literal(() => ({})))
 
             const obj = {}
             const assigner = Assigner(someSpecWithObjectLiteral, {}, obj)
@@ -268,9 +319,9 @@ describe('proxies', () => {
             const someSpecWithObjectLiteral: AssignerSpec<
                 TypeWithObjectLiteral,
                 {}
-            > = Interface({
-                bla: Literal(() => ({
-                    blo: 123
+            > = Assigner.Interface({
+                bla: Assigner.Literal(() => ({
+                    blo: 123,
                 })),
             })
 
@@ -290,6 +341,134 @@ describe('proxies', () => {
                 bla: {
                     blo: 123,
                 },
+            })
+        })
+
+        it('should instantiate Index object with indexConstructor parameter', () => {
+            interface SomeTypeWithChainedIndexes {
+                a: {
+                    [k1: string]: string
+                }
+            }
+
+            const spec: AssignerSpec<SomeTypeWithChainedIndexes, {}> =
+                Assigner.Interface({
+                    a: Assigner.Index(
+                        (k1: string) =>
+                            Assigner.Literal(() => k1.toLowerCase()),
+                        (path) => ({ HELLO: [...path.keys, 'hello'].join('.') })
+                    ),
+                })
+
+            const obj = {} as SomeTypeWithChainedIndexes
+            const assigner = Assigner(spec, {}, obj)
+            assigner.a.BYE
+
+            assert.deepStrictEqual(obj.a, {
+                HELLO: 'a.hello',
+                BYE: 'bye',
+            })
+        })
+    })
+
+    describe('ProtectedIndex', () => {
+        describe('get', () => {
+            it('should proxy access to exisinting keys', () => {
+                const namespace = ProtectedIndex({
+                    bla: '1',
+                    hello: '2',
+                })
+                assert.strictEqual(namespace.bla, '1')
+                assert.strictEqual(namespace.hello, '2')
+            })
+
+            it('should throw error when trying to access unknown key', () => {
+                const namespace: { [key: string]: string } = ProtectedIndex({
+                    bla: '1',
+                    hello: '2',
+                })
+                assert.throws(() => namespace.blo)
+            })
+
+            it('should not prevent from using JSON stringify', () => {
+                const namespace: { [key: string]: string } = ProtectedIndex({
+                    bla: '1',
+                    hello: '2',
+                })
+                assert.deepStrictEqual(
+                    JSON.stringify(namespace),
+                    '{"bla":"1","hello":"2"}'
+                )
+            })
+        })
+
+        describe('set', () => {
+            it('should allow setting a key that doesnt aready exist', () => {
+                const namespace: { [key: string]: string } = ProtectedIndex({
+                    bla: '1',
+                })
+                namespace.blo = '2'
+                assert.strictEqual(namespace.bla, '1')
+                assert.strictEqual(namespace.blo, '2')
+            })
+
+            it('should throw error when trying to overwrite existing key', () => {
+                const namespace: { [key: string]: string } = ProtectedIndex({
+                    bla: '1',
+                })
+                assert.throws(() => (namespace.bla = '2'))
+            })
+        })
+    })
+
+    describe('PrecompileNodeNamespace', () => {
+        describe('get', () => {
+            it('should proxy access to exisinting keys', () => {
+                const namespace = PrecompileNodeNamespace({
+                    bla: '1',
+                    hello: '2',
+                }, '', '')
+                assert.strictEqual(namespace.bla, '1')
+                assert.strictEqual(namespace.hello, '2')
+            })
+
+            it('should create automatic $ alias for keys starting with a number', () => {
+                const namespace: { [key: string]: string } =
+                    PrecompileNodeNamespace({
+                        '0': 'blabla',
+                        '0_bla': 'bloblo',
+                    }, '', '')
+                assert.strictEqual(namespace.$0, 'blabla')
+                assert.strictEqual(namespace.$0_bla, 'bloblo')
+            })
+
+            it('should throw error when trying to access unknown key', () => {
+                const namespace: { [key: string]: string } =
+                    PrecompileNodeNamespace({
+                        bla: '1',
+                        hello: '2',
+                    }, 'someId', 'someName')
+                assert.throws(() => namespace.blo, /namespace <someId.someName> doesn't know key "blo"/)
+            })
+
+            it('should not prevent from using JSON stringify', () => {
+                const namespace: { [key: string]: string } =
+                    PrecompileNodeNamespace({
+                        bla: '1',
+                        hello: '2',
+                    }, '', '')
+                assert.deepStrictEqual(
+                    JSON.stringify(namespace),
+                    '{"bla":"1","hello":"2"}'
+                )
+            })
+        })
+
+        describe('set', () => {
+            it('should throw error when trying to write any key', () => {
+                const namespace: { [key: string]: string } =
+                    PrecompileNodeNamespace({}, '', '')
+                assert.throws(() => (namespace.bla = '2'))
             })
         })
     })

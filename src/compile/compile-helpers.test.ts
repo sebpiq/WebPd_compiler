@@ -24,7 +24,6 @@ import assert from 'assert'
 import {
     buildFullGraphTraversal,
     buildGraphTraversalSignal,
-    createNamespace,
     getNodeImplementation,
 } from './compile-helpers'
 import { NodeImplementation, NodeImplementations } from './types'
@@ -181,85 +180,6 @@ describe('compile-helpers', () => {
                 'n3',
                 'n4',
             ])
-        })
-    })
-
-    describe('createNamespace', () => {
-        describe('get', () => {
-            it('should proxy access to exisinting keys', () => {
-                const namespace = createNamespace('dummy', {
-                    bla: '1',
-                    hello: '2',
-                })
-                assert.strictEqual(namespace.bla, '1')
-                assert.strictEqual(namespace.hello, '2')
-            })
-    
-            it('should create automatic $ alias for keys starting with a number', () => {
-                const namespace: { [key: string]: string } = createNamespace(
-                    'dummy',
-                    {
-                        '0': 'blabla',
-                        '0_bla': 'bloblo',
-                    }
-                )
-                assert.strictEqual(namespace.$0, 'blabla')
-                assert.strictEqual(namespace.$0_bla, 'bloblo')
-            })
-    
-            it('should throw error when trying to access unknown key', () => {
-                const namespace: { [key: string]: string } = createNamespace(
-                    'dummy',
-                    {
-                        bla: '1',
-                        hello: '2',
-                    }
-                )
-                assert.throws(() => namespace.blo)
-            })
-    
-            it('should not prevent from using JSON stringify', () => {
-                const namespace: { [key: string]: string } = createNamespace(
-                    'dummy',
-                    {
-                        bla: '1',
-                        hello: '2',
-                    }
-                )
-                assert.deepStrictEqual(
-                    JSON.stringify(namespace),
-                    '{"bla":"1","hello":"2"}'
-                )
-            })
-        })
-        
-        describe('set', () => {
-            it('should allow setting a key that doesnt aready exist', () => {
-                const namespace: { [key: string]: string } = createNamespace(
-                    'dummy',
-                    {
-                        bla: '1',
-                    }
-                )
-                namespace.blo = '2'
-                assert.strictEqual(namespace.bla, '1')
-                assert.strictEqual(namespace.blo, '2')
-            })
-            it('should throw error when trying to overwrite existing key', () => {
-                const namespace: { [key: string]: string } = createNamespace(
-                    'dummy',
-                    {
-                        bla: '1',
-                    }
-                )
-                assert.throws(() => (namespace.bla = '2'))
-            })
-            it('should allow setting a number key using dollar syntax', () => {
-                const namespace: { [key: string]: string } = createNamespace('', {})
-                namespace.$0 = 'bla'
-                assert.strictEqual(namespace['0'], 'bla')
-                assert.strictEqual(namespace.$0, 'bla')
-            })
         })
     })
 })
