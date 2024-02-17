@@ -76,12 +76,12 @@ describe('precompile.dependencies', () => {
                 nodeImplementations,
             })
 
-            precompilation.output.graph.fullTraversal = ['node1']
+            precompilation.precompiledCode.graph.fullTraversal = ['node1']
 
             precompileDependencies(precompilation)
 
             assert.deepStrictEqual<PrecompiledCode['dependencies']>(
-                precompilation.output.dependencies,
+                precompilation.precompiledCode.dependencies,
                 {
                     ast: Sequence([
                         instantiateAndDedupeDependencies(
@@ -138,16 +138,16 @@ describe('precompile.dependencies', () => {
                 nodeImplementations,
             })
 
-            precompilation.output.graph.fullTraversal = ['node1']
+            precompilation.precompiledCode.graph.fullTraversal = ['node1']
 
             precompileDependencies(precompilation)
 
             assert.deepStrictEqual<PrecompiledCode['dependencies']['exports']>(
-                precompilation.output.dependencies.exports,
+                precompilation.precompiledCode.dependencies.exports,
                 [{ name: 'ble' }, { name: 'blo' }]
             )
             assert.deepStrictEqual<PrecompiledCode['dependencies']['imports']>(
-                precompilation.output.dependencies.imports,
+                precompilation.precompiledCode.dependencies.imports,
                 [Func('bla')``, Func('bli')``]
             )
         })

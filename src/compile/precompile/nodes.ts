@@ -35,7 +35,8 @@ const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 export const precompileState = (
     {
         input: { settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     node: DspGraph.Node
 ) => {
@@ -79,7 +80,8 @@ export const precompileState = (
 export const precompileMessageReceivers = (
     {
         input: { settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     node: DspGraph.Node
 ) => {
@@ -121,7 +123,8 @@ export const precompileMessageReceivers = (
 export const precompileInitialization = (
     {
         input: { settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     node: DspGraph.Node
 ) => {
@@ -144,7 +147,8 @@ export const precompileInitialization = (
 export const precompileDsp = (
     {
         input: { settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     node: DspGraph.Node
 ) => {
@@ -214,7 +218,8 @@ export const precompileDsp = (
 export const precompileInlineDsp = (
     {
         input: { graph, settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     dspGroup: DspGroup
 ): void => {

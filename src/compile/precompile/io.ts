@@ -70,9 +70,10 @@ export const addNodeImplementationsForMessageIo = (
 
 export const precompileIoMessageReceiver = (
     {
-        output: precompiledCode,
+        precompiledCode,
         input: { graph },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     specNodeId: DspGraph.NodeId,
     specInletId: DspGraph.PortletId
@@ -110,7 +111,8 @@ export const precompileIoMessageReceiver = (
 export const precompileIoMessageSender = (
     {
         input: { graph },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     specNodeId: DspGraph.NodeId,
     specOutletId: DspGraph.PortletId

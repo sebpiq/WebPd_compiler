@@ -138,7 +138,7 @@ describe('precompile', () => {
             },
         }
 
-        const { output: precompiledCode } = precompile({
+        const { precompiledCode } = precompile({
             graph,
             nodeImplementations,
             settings: SETTINGS,
@@ -222,7 +222,7 @@ describe('precompile', () => {
             },
         }
 
-        const { output: precompiledCode } = precompile({
+        const { precompiledCode } = precompile({
             graph,
             nodeImplementations,
             settings: SETTINGS,
@@ -305,7 +305,7 @@ describe('precompile', () => {
             },
         }
 
-        const { output: precompiledCode } = precompile({
+        const { precompiledCode } = precompile({
             graph,
             nodeImplementations,
             settings: SETTINGS,
@@ -365,7 +365,7 @@ describe('precompile', () => {
         })
 
         assert.deepStrictEqual(
-            precompilation.output.nodeImplementations.type1,
+            precompilation.precompiledCode.nodeImplementations.type1,
             {
                 nodeImplementation: nodeImplementations.type1,
                 stateClass: Class('State_type1', [
@@ -375,6 +375,6 @@ describe('precompile', () => {
             }
         )
 
-        assert.ok(!('type2' in precompilation.output.nodeImplementations))
+        assert.ok(!('type2' in precompilation.precompiledCode.nodeImplementations))
     })
 })

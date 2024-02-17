@@ -23,11 +23,13 @@ import { Precompilation } from './types'
 export const precompileStateClass = (
     {
         input: { graph, settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     nodeType: DspGraph.NodeType
 ) => {
-    const precompiledImplementation = precompiledCodeAssigner.nodeImplementations[nodeType]!
+    const precompiledImplementation =
+        precompiledCodeAssigner.nodeImplementations[nodeType]!
 
     if (precompiledImplementation.nodeImplementation.state) {
         const sampleNode = Object.values(graph).find(
@@ -62,11 +64,13 @@ export const precompileStateClass = (
 export const precompileCore = (
     {
         input: { settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     nodeType: DspGraph.NodeType
 ) => {
-    const precompiledImplementation = precompiledCodeAssigner.nodeImplementations[nodeType]!
+    const precompiledImplementation =
+        precompiledCodeAssigner.nodeImplementations[nodeType]!
     const nodeImplementation = precompiledImplementation.nodeImplementation
     const stateClassName =
         variableNamesAssigner.nodeImplementations[nodeType]!.stateClass ||

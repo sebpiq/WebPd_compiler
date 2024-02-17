@@ -31,23 +31,28 @@ export default (
 ): JavaScriptEngineCode => {
     const { precompiledCode, settings, variableNamesIndex } = renderInput
     const globs = variableNamesIndex.globs
+    const renderTemplateInput = {
+        settings,
+        globs,
+        precompiledCode,
+    }
     const metadata = buildMetadata(renderInput)
 
     // prettier-ignore
     return render(macros, ast`
-        ${templates.dependencies(renderInput)}
-        ${templates.nodeImplementationsCoreAndStateClasses(renderInput)}
+        ${templates.dependencies(renderTemplateInput)}
+        ${templates.nodeImplementationsCoreAndStateClasses(renderTemplateInput)}
 
-        ${templates.globs(renderInput)}
+        ${templates.globs(renderTemplateInput)}
 
-        ${templates.embeddedArrays(renderInput)}
+        ${templates.embeddedArrays(renderTemplateInput)}
 
-        ${templates.nodeStateInstances(renderInput)}
-        ${templates.portletsDeclarations(renderInput)}
+        ${templates.nodeStateInstances(renderTemplateInput)}
+        ${templates.portletsDeclarations(renderTemplateInput)}
 
-        ${templates.coldDspFunctions(renderInput)}
-        ${templates.ioMessageReceivers(renderInput)}
-        ${templates.ioMessageSenders(renderInput, (
+        ${templates.coldDspFunctions(renderTemplateInput)}
+        ${templates.ioMessageReceivers(renderTemplateInput)}
+        ${templates.ioMessageSenders(renderTemplateInput, (
             variableName, 
             nodeId, 
             outletId
@@ -61,11 +66,11 @@ export default (
                 ${globs.sampleRate} = sampleRate
                 ${globs.blockSize} = blockSize
 
-                ${templates.nodeInitializations(renderInput)}
-                ${templates.coldDspInitialization(renderInput)}
+                ${templates.nodeInitializations(renderTemplateInput)}
+                ${templates.coldDspInitialization(renderTemplateInput)}
             },
             dspLoop: (${globs.input}, ${globs.output}) => {
-                ${templates.dspLoop(renderInput)}
+                ${templates.dspLoop(renderTemplateInput)}
             },
             io: {
                 messageReceivers: {
@@ -88,7 +93,7 @@ export default (
         }
 
         ${templates.importsExports(
-            renderInput,
+            renderTemplateInput,
             ({ name }) => ast`
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)

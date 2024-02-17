@@ -55,13 +55,13 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.fullTraversal =
+            precompilation.precompiledCodeAssigner.graph.fullTraversal =
                 ['n1', 'n2']
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.signalOuts['0'] =
+            precompilation.precompiledCodeAssigner.nodes.n1!.signalOuts['0'] =
                 'n1_OUTS_0'
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.signalOuts['1'] =
+            precompilation.precompiledCodeAssigner.nodes.n1!.signalOuts['1'] =
                 'n1_OUTS_1'
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.signalOuts['0'] =
+            precompilation.precompiledCodeAssigner.nodes.n2!.signalOuts['0'] =
                 'n2_OUTS_0'
 
             const sequence = templates.portletsDeclarations(
@@ -92,17 +92,17 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.fullTraversal =
+            precompilation.precompiledCodeAssigner.graph.fullTraversal =
                 ['n1', 'n2']
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = Func(
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = Func(
                 'n1_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 0`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageReceivers['1'] = Func(
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers['1'] = Func(
                 'n1_RCVS_1',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 1`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.messageReceivers['0'] = Func(
+            precompilation.precompiledCodeAssigner.nodes.n2!.messageReceivers['0'] = Func(
                 'n2_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n2] message receiver 0`
@@ -141,9 +141,9 @@ describe('templates', () => {
                 settings,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.fullTraversal =
+            precompilation.precompiledCodeAssigner.graph.fullTraversal =
                 ['n1']
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = Func(
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = Func(
                 'n1_RCVS_0',
                 [Var('Message', 'm')]
             )`// [n1] message receiver 0`
@@ -176,20 +176,20 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.fullTraversal =
+            precompilation.precompiledCodeAssigner.graph.fullTraversal =
                 ['n1', 'n2']
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageSenders['0'] =
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders['0'] =
                 {
                     messageSenderName: 'n1_SNDS_0',
                     sinkFunctionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
                 }
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.messageSenders['1'] =
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders['1'] =
                 {
                     messageSenderName: 'n1_SNDS_1',
                     sinkFunctionNames: ['outlerListener_n1_0', 'n2_RCVS_0'],
                 }
             // Will not be rendered because no sinks
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.messageSenders['0'] =
+            precompilation.precompiledCodeAssigner.nodes.n2!.messageSenders['0'] =
                 {
                     messageSenderName: 'n3_RCVS_0',
                     sinkFunctionNames: [],
@@ -239,26 +239,26 @@ describe('templates', () => {
                 nodeImplementations,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.fullTraversal =
+            precompilation.precompiledCodeAssigner.graph.fullTraversal =
                 ['n1', 'n2', 'n3']
 
-            precompilation.proxies.precompiledCodeAssigner.nodeImplementations.type1!.stateClass =
+            precompilation.precompiledCodeAssigner.nodeImplementations.type1!.stateClass =
                 Class('State', [Var('Float', 'a'), Var('Float', 'b')])
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.state = {
+            precompilation.precompiledCodeAssigner.nodes.n1!.state = {
                 name: 'n1_STATE',
                 initialization: {
                     a: Sequence(['111']),
                     b: Sequence([AnonFunc([Var('Float', 'x')])`return x * 2`]),
                 },
             }
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.state = {
+            precompilation.precompiledCodeAssigner.nodes.n2!.state = {
                 name: 'n2_STATE',
                 initialization: {
                     a: Sequence(['333']),
                     b: Sequence(['444']),
                 },
             }
-            precompilation.proxies.precompiledCodeAssigner.nodes.n3!.state =
+            precompilation.precompiledCodeAssigner.nodes.n3!.state =
                 null
 
             const sequence = templates.nodeStateInstances(
@@ -289,21 +289,21 @@ describe('templates', () => {
             }
             const precompilation = makePrecompilation({ nodeImplementations })
 
-            precompilation.proxies.precompiledCodeAssigner.nodeImplementations.type1!.stateClass =
+            precompilation.precompiledCodeAssigner.nodeImplementations.type1!.stateClass =
                 Class('State_type1', [Var('Float', 'a')])
-            precompilation.proxies.precompiledCodeAssigner.nodeImplementations.type1!.core =
+            precompilation.precompiledCodeAssigner.nodeImplementations.type1!.core =
                 Sequence([
                     ConstVar('Bla', 'bla', '"hello"'),
                     Func('blo', [Var('State_type1', 'state')])`// blo`,
                 ])
-            precompilation.proxies.precompiledCodeAssigner.nodeImplementations.type1!.nodeImplementation =
+            precompilation.precompiledCodeAssigner.nodeImplementations.type1!.nodeImplementation =
                 {}
 
-            precompilation.proxies.precompiledCodeAssigner.nodeImplementations.type2!.stateClass =
+            precompilation.precompiledCodeAssigner.nodeImplementations.type2!.stateClass =
                 Class('State_type2', [Var('Float', 'b')])
-            precompilation.proxies.precompiledCodeAssigner.nodeImplementations.type2!.core =
+            precompilation.precompiledCodeAssigner.nodeImplementations.type2!.core =
                 Sequence([ConstVar('Int', 'i', '0')])
-            precompilation.proxies.precompiledCodeAssigner.nodeImplementations.type2!.nodeImplementation =
+            precompilation.precompiledCodeAssigner.nodeImplementations.type2!.nodeImplementation =
                 {}
 
             const sequence = templates.nodeImplementationsCoreAndStateClasses(
@@ -338,13 +338,13 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.fullTraversal =
+            precompilation.precompiledCodeAssigner.graph.fullTraversal =
                 ['n1', 'n2']
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.initialization = ast`
+            precompilation.precompiledCodeAssigner.nodes.n1!.initialization = ast`
                 ${Var('Float', 'n1', '0')}
                 console.log(n1)
             `
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.initialization = ast``
+            precompilation.precompiledCodeAssigner.nodes.n2!.initialization = ast``
 
             const sequence = templates.nodeInitializations(
                 precompilationToRenderInput(precompilation)
@@ -367,7 +367,7 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.io.messageReceivers.n1!['0'] =
+            precompilation.precompiledCodeAssigner.io.messageReceivers.n1!['0'] =
                 {
                     functionName: 'ioRcv_function',
                     getSinkFunctionName: () => 'ioRcvNode_messageSender',
@@ -406,13 +406,13 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.hotDspGroup = {
+            precompilation.precompiledCodeAssigner.graph.hotDspGroup = {
                 traversal: ['n1', 'n2', 'n3'],
                 outNodesIds: ['n3'],
             }
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.dsp.loop = ast`// n2`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n3!.dsp.loop = ast`// n3`
+            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
+            precompilation.precompiledCodeAssigner.nodes.n2!.dsp.loop = ast`// n2`
+            precompilation.precompiledCodeAssigner.nodes.n3!.dsp.loop = ast`// n3`
 
             const sequence = templates.dspLoop(
                 precompilationToRenderInput(precompilation)
@@ -441,13 +441,13 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.dsp.inlets['0'] = ast`// inlet dsp 0`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
-            precompilation.proxies.precompiledCodeAssigner.graph.hotDspGroup = {
+            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.inlets['0'] = ast`// inlet dsp 0`
+            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
+            precompilation.precompiledCodeAssigner.graph.hotDspGroup = {
                 traversal: ['n1'],
                 outNodesIds: ['n1'],
             }
-            precompilation.proxies.precompiledCodeAssigner.graph.coldDspGroups =
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
                 {}
 
             const sequence = templates.dspLoop(
@@ -474,7 +474,7 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.graph.coldDspGroups =
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
                 {
                     '0': {
                         dspGroup: {
@@ -523,11 +523,11 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.dsp.loop = ast`// n2`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n3!.dsp.loop = ast`// n3`
+            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
+            precompilation.precompiledCodeAssigner.nodes.n2!.dsp.loop = ast`// n2`
+            precompilation.precompiledCodeAssigner.nodes.n3!.dsp.loop = ast`// n3`
 
-            precompilation.proxies.precompiledCodeAssigner.graph.coldDspGroups =
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
                 {
                     '0': {
                         dspGroup: {
@@ -574,9 +574,9 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!.dsp.inlets['0'] = ast`// inlet dsp n2`
-            precompilation.proxies.precompiledCodeAssigner.graph.coldDspGroups =
+            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
+            precompilation.precompiledCodeAssigner.nodes.n2!.dsp.inlets['0'] = ast`// inlet dsp n2`
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
                 {
                     '0': {
                         dspGroup: {
@@ -621,10 +621,10 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.proxies.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
+            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
             // This call is just to setup n2 base structure
-            precompilation.proxies.precompiledCodeAssigner.nodes.n2!
-            precompilation.proxies.precompiledCodeAssigner.graph.coldDspGroups =
+            precompilation.precompiledCodeAssigner.nodes.n2!
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
                 {
                     '0': {
                         dspGroup: {

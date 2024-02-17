@@ -57,7 +57,7 @@ describe('dsp-groups', () => {
         )
 
         assert.deepStrictEqual<PrecompiledCode['graph']['coldDspGroups']>(
-            precompilation.output.graph.coldDspGroups,
+            precompilation.precompiledCode.graph.coldDspGroups,
             {
                 '0': {
                     dspGroup: {

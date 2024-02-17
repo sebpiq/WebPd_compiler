@@ -110,13 +110,13 @@ export default (precompilationInput: PrecompilationInput) => {
             precompilation.input.nodeImplementations
         )
 
-    precompilation.output.graph.fullTraversal = buildFullGraphTraversal(
+    precompilation.precompiledCode.graph.fullTraversal = buildFullGraphTraversal(
         precompilation.input.graph
     )
 
     const nodes = traversers.toNodes(
         precompilation.input.graph,
-        precompilation.output.graph.fullTraversal
+        precompilation.precompiledCode.graph.fullTraversal
     )
 
     // -------------------- NODE IMPLEMENTATIONS & STATES ------------------ //
@@ -165,7 +165,7 @@ export default (precompilationInput: PrecompilationInput) => {
         return inlinableDspGroups
     })
 
-    precompilation.output.graph.hotDspGroup = hotDspGroup
+    precompilation.precompiledCode.graph.hotDspGroup = hotDspGroup
     coldDspGroups.forEach((dspGroup, index) => {
         precompileColdDspGroup(precompilation, dspGroup, `${index}`)
     })
@@ -205,7 +205,7 @@ export default (precompilationInput: PrecompilationInput) => {
     })
 
     // Go through all dsp groups and precompile signal outlets for nodes that
-    // are not inlined (inlinable nodes should have been previously removed 
+    // are not inlined (inlinable nodes should have been previously removed
     // from these dsp groups).
     hotAndColdDspGroups.forEach((dspGroup) => {
         traversers
@@ -255,17 +255,15 @@ export const initializePrecompilation = (
 
     return {
         input: precompilationInput,
-        output: precompiledCode,
+        precompiledCode,
         variableNamesIndex,
-        proxies: {
-            variableNamesAssigner: VariableNamesAssigner({
-                variableNamesIndex,
-                input: precompilationInput,
-            }),
-            precompiledCodeAssigner: PrecompiledCodeAssigner({
-                precompiledCode,
-                input: precompilationInput,
-            }),
-        },
+        variableNamesAssigner: VariableNamesAssigner({
+            variableNamesIndex,
+            input: precompilationInput,
+        }),
+        precompiledCodeAssigner: PrecompiledCodeAssigner({
+            precompiledCode,
+            input: precompilationInput,
+        }),
     }
 }

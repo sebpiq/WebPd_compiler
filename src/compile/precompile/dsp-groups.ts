@@ -25,7 +25,8 @@ import { ColdDspGroup, DspGroup, Precompilation } from './types'
 export const precompileColdDspGroup = (
     {
         input: { graph },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     }: Precompilation,
     dspGroup: DspGroup,
     groupId: string
@@ -238,7 +239,7 @@ export const removeNodesFromTraversal = (
 ) => traversal.filter((nodeId) => !toRemove.includes(nodeId))
 
 const _isNodeDspCold = (
-    { proxies: { precompiledCodeAssigner } }: Precompilation,
+    { precompiledCodeAssigner }: Precompilation,
     node: DspGraph.Node
 ) => {
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
@@ -251,7 +252,7 @@ const _isNodeDspCold = (
 }
 
 export const _isNodeDspInlinable = (
-    { proxies: { precompiledCodeAssigner } }: Precompilation,
+    { precompiledCodeAssigner }: Precompilation,
     node: DspGraph.Node
 ) => {
     const sinks = traversers

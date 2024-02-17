@@ -55,7 +55,7 @@ describe('precompile.node-implementations', () => {
 
             assert.strictEqual(precompilation.variableNamesIndex.nodeImplementations.type1!.stateClass, 'State_type1')
             assert.deepStrictEqual<AstClass>(
-                precompilation.output.nodeImplementations.type1!.stateClass,
+                precompilation.precompiledCode.nodeImplementations.type1!.stateClass,
                 Class(
                     'State_type1',
                     [
@@ -91,7 +91,7 @@ describe('precompile.node-implementations', () => {
             precompileCore(precompilation, 'type1')
 
             assert.deepStrictEqual<AstSequence>(
-                precompilation.output.nodeImplementations.type1!.core,
+                precompilation.precompiledCode.nodeImplementations.type1!.core,
                 Sequence([
                     Func('bla')``
                 ])

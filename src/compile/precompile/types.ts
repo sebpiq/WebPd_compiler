@@ -32,12 +32,10 @@ import { NodeImplementations, CompilationSettings } from '../types'
 
 export interface Precompilation {
     readonly input: PrecompilationInput
-    readonly output: PrecompiledCode
+    readonly precompiledCode: PrecompiledCode
+    readonly precompiledCodeAssigner: PrecompiledCode
     readonly variableNamesIndex: VariableNamesIndex
-    readonly proxies: {
-        variableNamesAssigner: VariableNamesIndex
-        precompiledCodeAssigner: PrecompiledCode
-    }
+    readonly variableNamesAssigner: VariableNamesIndex
 }
 
 export interface PrecompilationInput {

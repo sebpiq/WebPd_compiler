@@ -20,7 +20,7 @@
 import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../stdlib/fs'
 import { DspGraph } from '../dsp-graph'
 import { CompilationSettings } from '../compile/types'
-import { PrecompiledCode, VariableNamesIndex } from '../compile/precompile/types'
+import { VariableNamesIndex } from '../compile/precompile/types'
 
 /** Type for a module without bindings */
 export interface RawModule {}

@@ -49,12 +49,13 @@ export default (
     compilationSettings: UserCompilationSettings
 ): CompilationResult => {
     const settings = validateSettings(compilationSettings, target)
-
-    const { output: precompiledCode, variableNamesIndex } = precompile({
-        graph,
-        nodeImplementations,
-        settings,
-    })
+    const { precompiledCode, variableNamesIndex } = precompile(
+        {
+            graph,
+            nodeImplementations,
+            settings,
+        }
+    )
 
     let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
     if (target === 'javascript') {

@@ -27,12 +27,12 @@ import {
 import { Sequence, Func, Var, ast, ConstVar } from '../../ast/declare'
 import { DspGraph } from '../../dsp-graph'
 import { findColdDspGroupFromSink } from '../precompile/dsp-groups'
-import { RenderInput } from './types'
+import { RenderTemplateInput } from './types'
 
-const dependencies = ({ precompiledCode }: RenderInput) =>
+const dependencies = ({ precompiledCode }: RenderTemplateInput) =>
     precompiledCode.dependencies.ast
 
-const globs = ({ variableNamesIndex: { globs } }: RenderInput): AstSequence =>
+const globs = ({ globs }: RenderTemplateInput): AstSequence =>
     // prettier-ignore
     Sequence([
         Var('Int', globs.iterFrame, '0'),
@@ -46,7 +46,7 @@ const globs = ({ variableNamesIndex: { globs } }: RenderInput): AstSequence =>
         Var('Message', globs.emptyMessage, 'msg_create([])'),
     ])
 
-const embeddedArrays = ({ settings: { arrays } }: RenderInput) =>
+const embeddedArrays = ({ settings: { arrays } }: RenderTemplateInput) =>
     Sequence(
         Object.entries(arrays).map(([arrayName, array]) =>
             Sequence([
@@ -60,7 +60,7 @@ const embeddedArrays = ({ settings: { arrays } }: RenderInput) =>
 
 const nodeImplementationsCoreAndStateClasses = ({
     precompiledCode: { nodeImplementations },
-}: RenderInput): AstSequence =>
+}: RenderTemplateInput): AstSequence =>
     Sequence(
         Object.values(nodeImplementations).map((precompiledImplementation) => [
             precompiledImplementation.stateClass,
@@ -70,7 +70,7 @@ const nodeImplementationsCoreAndStateClasses = ({
 
 const nodeStateInstances = ({
     precompiledCode: { graph, nodes, nodeImplementations },
-}: RenderInput): AstSequence =>
+}: RenderTemplateInput): AstSequence =>
     Sequence([
         graph.fullTraversal.reduce<Array<AstConstVar>>(
             (declarations, nodeId) => {
@@ -105,14 +105,14 @@ const nodeStateInstances = ({
 
 const nodeInitializations = ({
     precompiledCode: { graph, nodes },
-}: RenderInput): AstSequence =>
+}: RenderTemplateInput): AstSequence =>
     Sequence([
         graph.fullTraversal.map((nodeId) => nodes[nodeId]!.initialization),
     ])
 
 const ioMessageReceivers = ({
     precompiledCode: { io },
-}: RenderInput): AstSequence =>
+}: RenderTemplateInput): AstSequence =>
     Sequence(
         Object.values(io.messageReceivers).map((inletsMap) => {
             return Object.values(inletsMap).map(
@@ -129,7 +129,7 @@ const ioMessageReceivers = ({
     )
 
 const ioMessageSenders = (
-    { precompiledCode }: RenderInput,
+    { precompiledCode }: RenderTemplateInput,
     generateIoMessageSender: (
         variableName: VariableName,
         nodeId: DspGraph.NodeId,
@@ -154,7 +154,7 @@ const ioMessageSenders = (
 const portletsDeclarations = ({
     precompiledCode: { graph, nodes },
     settings: { debug },
-}: RenderInput): AstSequence =>
+}: RenderTemplateInput): AstSequence =>
     Sequence([
         graph.fullTraversal
             .map((nodeId) => [nodes[nodeId]!, nodeId] as const)
@@ -200,12 +200,12 @@ const portletsDeclarations = ({
     ])
 
 const dspLoop = ({
-    variableNamesIndex: { globs },
+    globs,
     precompiledCode: {
         nodes,
         graph: { hotDspGroup, coldDspGroups },
     },
-}: RenderInput) =>
+}: RenderTemplateInput) =>
     // prettier-ignore
     ast`
         for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
@@ -231,9 +231,9 @@ const dspLoop = ({
     `
 
 const coldDspInitialization = ({
-    variableNamesIndex: { globs },
+    globs,
     precompiledCode: { graph },
-}: RenderInput) =>
+}: RenderTemplateInput) =>
     Sequence(
         Object.values(graph.coldDspGroups).map(
             ({ functionName }) => `${functionName}(${globs.emptyMessage})`
@@ -245,7 +245,7 @@ const coldDspFunctions = ({
         graph: { coldDspGroups },
         nodes,
     },
-}: RenderInput): AstSequence =>
+}: RenderTemplateInput): AstSequence =>
     Sequence(
         Object.values(coldDspGroups).map(
             ({
@@ -275,7 +275,7 @@ const coldDspFunctions = ({
     )
 
 const importsExports = (
-    { precompiledCode: { dependencies } }: RenderInput,
+    { precompiledCode: { dependencies } }: RenderTemplateInput,
     generateImport: (imprt: AstFunc) => AstSequence,
     generateExport: (xprt: GlobalCodeDefinitionExport) => AstSequence
 ): AstSequence =>

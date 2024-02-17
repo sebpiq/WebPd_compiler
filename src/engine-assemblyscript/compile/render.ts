@@ -26,10 +26,13 @@ import macros from './macros'
 import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
 
-export default (
-    renderInput: RenderInput,
-): AssemblyScriptWasmEngineCode => {
-    const { settings, variableNamesIndex, precompiledCode } = renderInput
+export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
+    const { precompiledCode, settings, variableNamesIndex } = renderInput
+    const renderTemplateInput = {
+        settings,
+        globs: variableNamesIndex.globs,
+        precompiledCode,
+    }
     const { channelCount } = settings.audio
     const globs = variableNamesIndex.globs
     const metadata = buildMetadata(renderInput)
@@ -38,21 +41,21 @@ export default (
     return render(macros, ast`
         const metadata: string = '${JSON.stringify(metadata)}'
 
-        ${templates.dependencies(renderInput)}
-        ${templates.nodeImplementationsCoreAndStateClasses(renderInput)}
+        ${templates.dependencies(renderTemplateInput)}
+        ${templates.nodeImplementationsCoreAndStateClasses(renderTemplateInput)}
 
-        ${templates.globs(renderInput)}
+        ${templates.globs(renderTemplateInput)}
         let ${globs.input}: FloatArray = createFloatArray(0)
         let ${globs.output}: FloatArray = createFloatArray(0)
 
-        ${templates.embeddedArrays(renderInput)}
+        ${templates.embeddedArrays(renderTemplateInput)}
 
-        ${templates.nodeStateInstances(renderInput)}
-        ${templates.portletsDeclarations(renderInput)}
+        ${templates.nodeStateInstances(renderTemplateInput)}
+        ${templates.portletsDeclarations(renderTemplateInput)}
 
-        ${templates.coldDspFunctions(renderInput)}
-        ${templates.ioMessageReceivers(renderInput)}
-        ${templates.ioMessageSenders(renderInput, (variableName) => 
+        ${templates.coldDspFunctions(renderTemplateInput)}
+        ${templates.ioMessageReceivers(renderTemplateInput)}
+        ${templates.ioMessageSenders(renderTemplateInput, (variableName) => 
             ast`export declare function ${variableName}(m: Message): void`)}
 
         export function initialize(sampleRate: Float, blockSize: Int): void {
@@ -61,8 +64,8 @@ export default (
             ${globs.sampleRate} = sampleRate
             ${globs.blockSize} = blockSize
 
-            ${templates.nodeInitializations(renderInput)}
-            ${templates.coldDspInitialization(renderInput)}
+            ${templates.nodeInitializations(renderTemplateInput)}
+            ${templates.coldDspInitialization(renderTemplateInput)}
         }
 
         export function getInput(): FloatArray { return ${globs.input} }
@@ -70,7 +73,7 @@ export default (
         export function getOutput(): FloatArray { return ${globs.output} }
 
         export function dspLoop(): void {
-            ${templates.dspLoop(renderInput)}
+            ${templates.dspLoop(renderTemplateInput)}
         }
 
         export {
@@ -83,7 +86,7 @@ export default (
         }
 
         ${templates.importsExports(
-            renderInput,
+            renderTemplateInput,
             ({ name, args, returnType }) => ast`export declare function ${name} (${
                 args.map((a) => `${a.name}: ${a.type}`).join(',')
             }): ${returnType}`, 

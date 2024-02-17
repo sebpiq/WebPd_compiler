@@ -70,7 +70,7 @@ describe('precompile.io', () => {
             })
 
             assert.deepStrictEqual(
-                precompilation.output.io.messageSenders.n1!['0']!.functionName,
+                precompilation.precompiledCode.io.messageSenders.n1!['0']!.functionName,
                 'ioSnd_n1_0'
             )
         })
@@ -122,19 +122,19 @@ describe('precompile.io', () => {
             })
 
             assert.deepStrictEqual(
-                precompilation.output.io.messageReceivers.n1!['0']!
+                precompilation.precompiledCode.io.messageReceivers.n1!['0']!
                     .functionName,
                 'ioRcv_n1_0'
             )
 
-            precompilation.proxies.precompiledCodeAssigner.nodes[
+            precompilation.precompiledCodeAssigner.nodes[
                 messageReceiverNodeId
             ]!.messageSenders['0'] = {
                 messageSenderName: 'ioRcv_n1_0_messageSender',
                 sinkFunctionNames: [],
             }
             assert.deepStrictEqual(
-                precompilation.output.io.messageReceivers.n1![
+                precompilation.precompiledCode.io.messageReceivers.n1![
                     '0'
                 ]!.getSinkFunctionName(),
                 'ioRcv_n1_0_messageSender'

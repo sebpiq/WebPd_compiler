@@ -28,9 +28,7 @@ export const precompileSignalOutlet = (
     node: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
-    const {
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
-    } = precompilation
+    const { variableNamesAssigner, precompiledCodeAssigner } = precompilation
     const outletSinks = getters.getSinks(node, outletId)
 
     // Signal inlets can receive input from ONLY ONE signal.
@@ -54,9 +52,7 @@ export const precompileSignalOutlet = (
 }
 
 export const precompileSignalInletWithNoSource = (
-    {
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
-    }: Precompilation,
+    { variableNamesAssigner, precompiledCodeAssigner }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {
@@ -65,9 +61,7 @@ export const precompileSignalInletWithNoSource = (
 }
 
 export const precompileMessageOutlet = (
-    {
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
-    }: Precompilation,
+    { variableNamesAssigner, precompiledCodeAssigner }: Precompilation,
     sourceNode: DspGraph.Node,
     outletId: DspGraph.PortletId
 ) => {
@@ -150,9 +144,7 @@ export const precompileMessageOutlet = (
 }
 
 export const precompileMessageInlet = (
-    {
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
-    }: Precompilation,
+    { variableNamesAssigner, precompiledCodeAssigner }: Precompilation,
     node: DspGraph.Node,
     inletId: DspGraph.PortletId
 ) => {

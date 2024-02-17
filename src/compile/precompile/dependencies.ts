@@ -33,7 +33,8 @@ import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
 export default (precompilation: Precompilation) => {
     const {
         input: { settings },
-        proxies: { variableNamesAssigner, precompiledCodeAssigner },
+        variableNamesAssigner,
+        precompiledCodeAssigner,
     } = precompilation
     const dependencies = flattenDependencies([
         ...engineMinimalDependencies(),
@@ -155,7 +156,7 @@ export const flattenDependencies = (
 
 const _collectDependenciesFromTraversal = ({
     input: { graph },
-    proxies: { precompiledCodeAssigner },
+    precompiledCodeAssigner,
 }: Precompilation): Array<GlobalCodeDefinition> => {
     return traversers
         .toNodes(graph, precompiledCodeAssigner.graph.fullTraversal)
