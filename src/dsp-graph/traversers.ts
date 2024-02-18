@@ -163,7 +163,7 @@ const _signalTraversalBreadthFirstRecursive = (
 export const messageTraversal = (
     graph: DspGraph.Graph,
     nodesPushingMessages: Array<DspGraph.Node>
-) => {
+): DspGraph.GraphTraversal => {
     const traversal: DspGraph.GraphTraversal = []
     nodesPushingMessages.forEach((node) => {
         _messageTraversalDepthFirstRecursive(traversal, graph, node)
@@ -193,7 +193,7 @@ const _messageTraversalDepthFirstRecursive = (
 export const trimGraph = (
     graph: DspGraph.Graph,
     graphTraversal: DspGraph.GraphTraversal
-): DspGraph.Graph =>
+): DspGraph.Graph => 
     mapArray(
         Object.values(graph).filter((node) => graphTraversal.includes(node.id)),
         (node) => [

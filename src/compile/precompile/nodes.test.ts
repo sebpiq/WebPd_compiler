@@ -85,11 +85,11 @@ describe('precompile.nodes', () => {
 
             precompileMessageReceivers(
                 precompilation,
-                precompilation.input.graph.n1!
+                precompilation.graph.n1!
             )
             precompileMessageReceivers(
                 precompilation,
-                precompilation.input.graph.n2!
+                precompilation.graph.n2!
             )
 
             assert.deepStrictEqual(
@@ -163,13 +163,13 @@ describe('precompile.nodes', () => {
             assert.throws(() =>
                 precompileMessageReceivers(
                     precompilation,
-                    precompilation.input.graph.n1!
+                    precompilation.graph.n1!
                 )
             )
             assert.throws(() =>
                 precompileMessageReceivers(
                     precompilation,
-                    precompilation.input.graph.n2!
+                    precompilation.graph.n2!
                 )
             )
         })
@@ -202,7 +202,7 @@ describe('precompile.nodes', () => {
             assert.throws(() =>
                 precompileMessageReceivers(
                     precompilation,
-                    precompilation.input.graph.n1!
+                    precompilation.graph.n1!
                 )
             )
         })
@@ -233,7 +233,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileState(precompilation, precompilation.input.graph.n1!)
+            precompileState(precompilation, precompilation.graph.n1!)
 
             assert.strictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.state,
@@ -271,7 +271,7 @@ describe('precompile.nodes', () => {
 
             precompileInitialization(
                 precompilation,
-                precompilation.input.graph.n1!
+                precompilation.graph.n1!
             )
 
             assert.deepStrictEqual(
@@ -299,7 +299,7 @@ describe('precompile.nodes', () => {
 
             precompileInitialization(
                 precompilation,
-                precompilation.input.graph.n1!
+                precompilation.graph.n1!
             )
 
             assert.deepStrictEqual(
@@ -329,7 +329,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileDsp(precompilation, precompilation.input.graph.n1!)
+            precompileDsp(precompilation, precompilation.graph.n1!)
 
             assert.deepStrictEqual(precompilation.precompiledCode.nodes.n1!.dsp, {
                 loop: ast`// dsp type1`,
@@ -362,7 +362,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileDsp(precompilation, precompilation.input.graph.n1!)
+            precompileDsp(precompilation, precompilation.graph.n1!)
 
             assert.deepStrictEqual(precompilation.precompiledCode.nodes.n1!.dsp, {
                 loop: ast`n1_OUTS_0 = a + b`,
@@ -399,7 +399,7 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
-            precompileDsp(precompilation, precompilation.input.graph.n1!)
+            precompileDsp(precompilation, precompilation.graph.n1!)
 
             assert.deepStrictEqual(precompilation.precompiledCode.nodes.n1!.dsp, {
                 loop: ast``,
@@ -428,7 +428,7 @@ describe('precompile.nodes', () => {
             })
 
             assert.throws(() =>
-                precompileDsp(precompilation, precompilation.input.graph.n1!)
+                precompileDsp(precompilation, precompilation.graph.n1!)
             )
         })
     })

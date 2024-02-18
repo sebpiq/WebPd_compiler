@@ -22,7 +22,8 @@ import { Precompilation } from './types'
 
 export const precompileStateClass = (
     {
-        input: { graph, settings },
+        graph,
+        settings,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -63,7 +64,7 @@ export const precompileStateClass = (
 
 export const precompileCore = (
     {
-        input: { settings },
+        settings,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,

@@ -31,7 +31,9 @@ import { DspGraph } from '../../dsp-graph'
 import { NodeImplementations, CompilationSettings } from '../types'
 
 export interface Precompilation {
-    readonly input: PrecompilationInput
+    graph: Readonly<DspGraph.Graph>
+    nodeImplementations: Readonly<NodeImplementations>
+    readonly settings: Readonly<CompilationSettings>
     readonly precompiledCode: PrecompiledCode
     readonly precompiledCodeAssigner: PrecompiledCode
     readonly variableNamesIndex: VariableNamesIndex
@@ -39,8 +41,8 @@ export interface Precompilation {
 }
 
 export interface PrecompilationInput {
-    graph: Readonly<DspGraph.Graph>
-    nodeImplementations: Readonly<NodeImplementations>
+    readonly graph: Readonly<DspGraph.Graph>
+    readonly nodeImplementations: Readonly<NodeImplementations>
     readonly settings: Readonly<CompilationSettings>
 }
 

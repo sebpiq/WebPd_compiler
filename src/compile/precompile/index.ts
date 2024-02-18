@@ -68,10 +68,7 @@ export default (precompilationInput: PrecompilationInput) => {
     // In this section we will modify the graph, by adding nodes
     // for io messages. Therefore this is the very first thing that needs
     // to be done, so that these nodes are handled by the rest of the precompilation.
-    precompilation.input.nodeImplementations =
-        addNodeImplementationsForMessageIo(
-            precompilation.input.nodeImplementations
-        )
+    addNodeImplementationsForMessageIo(precompilation.nodeImplementations)
 
     Object.entries(precompilationInput.settings.io.messageReceivers).forEach(
         ([specNodeId, spec]) => {
@@ -98,34 +95,30 @@ export default (precompilationInput: PrecompilationInput) => {
     )
 
     // Remove unused nodes
-    precompilation.input.graph = traversers.trimGraph(
-        precompilation.input.graph,
-        buildFullGraphTraversal(precompilation.input.graph)
+    precompilation.graph = traversers.trimGraph(
+        precompilation.graph,
+        buildFullGraphTraversal(precompilation.graph)
     )
 
     // Remove unused node implementations
-    precompilation.input.nodeImplementations =
-        getNodeImplementationsUsedInGraph(
-            precompilation.input.graph,
-            precompilation.input.nodeImplementations
-        )
-
-    precompilation.precompiledCode.graph.fullTraversal = buildFullGraphTraversal(
-        precompilation.input.graph
+    precompilation.nodeImplementations = getNodeImplementationsUsedInGraph(
+        precompilation.graph,
+        precompilation.nodeImplementations
     )
 
+    precompilation.precompiledCode.graph.fullTraversal =
+        buildFullGraphTraversal(precompilation.graph)
+
     const nodes = traversers.toNodes(
-        precompilation.input.graph,
+        precompilation.graph,
         precompilation.precompiledCode.graph.fullTraversal
     )
 
     // -------------------- NODE IMPLEMENTATIONS & STATES ------------------ //
-    Object.keys(precompilation.input.nodeImplementations).forEach(
-        (nodeType) => {
-            precompileStateClass(precompilation, nodeType)
-            precompileCore(precompilation, nodeType)
-        }
-    )
+    Object.keys(precompilation.nodeImplementations).forEach((nodeType) => {
+        precompileStateClass(precompilation, nodeType)
+        precompileCore(precompilation, nodeType)
+    })
     nodes.forEach((node) => {
         precompileState(precompilation, node)
     })
@@ -138,8 +131,8 @@ export default (precompilationInput: PrecompilationInput) => {
     //  - taking out of the loop dsp (aka hot dsp) calculations that don't
     //      need to be recomputed at every tick (aka cold dsp)
     const rootDspGroup: DspGroup = {
-        traversal: buildGraphTraversalSignal(precompilation.input.graph),
-        outNodesIds: getGraphSignalSinks(precompilation.input.graph).map(
+        traversal: buildGraphTraversalSignal(precompilation.graph),
+        outNodesIds: getGraphSignalSinks(precompilation.graph).map(
             (node) => node.id
         ),
     }
@@ -209,7 +202,7 @@ export default (precompilationInput: PrecompilationInput) => {
     // from these dsp groups).
     hotAndColdDspGroups.forEach((dspGroup) => {
         traversers
-            .toNodes(precompilation.input.graph, dspGroup.traversal)
+            .toNodes(precompilation.graph, dspGroup.traversal)
             .forEach((node) => {
                 Object.values(node.outlets).forEach((outlet) => {
                     precompileSignalOutlet(precompilation, node, outlet.id)
@@ -224,7 +217,7 @@ export default (precompilationInput: PrecompilationInput) => {
 
     hotAndColdDspGroups.forEach((dspGroup) => {
         traversers
-            .toNodes(precompilation.input.graph, dspGroup.traversal)
+            .toNodes(precompilation.graph, dspGroup.traversal)
             .forEach((node) => {
                 precompileDsp(precompilation, node)
             })
@@ -254,7 +247,7 @@ export const initializePrecompilation = (
     }
 
     return {
-        input: precompilationInput,
+        ...precompilationInput,
         precompiledCode,
         variableNamesIndex,
         variableNamesAssigner: VariableNamesAssigner({

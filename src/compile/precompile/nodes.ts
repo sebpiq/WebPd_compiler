@@ -34,7 +34,7 @@ const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 
 export const precompileState = (
     {
-        input: { settings },
+        settings,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -79,7 +79,7 @@ export const precompileState = (
  */
 export const precompileMessageReceivers = (
     {
-        input: { settings },
+        settings,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -122,7 +122,7 @@ export const precompileMessageReceivers = (
 
 export const precompileInitialization = (
     {
-        input: { settings },
+        settings,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -146,7 +146,7 @@ export const precompileInitialization = (
 
 export const precompileDsp = (
     {
-        input: { settings },
+        settings,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -217,7 +217,8 @@ export const precompileDsp = (
  */
 export const precompileInlineDsp = (
     {
-        input: { graph, settings },
+        graph,
+        settings,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,

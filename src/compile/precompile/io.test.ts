@@ -52,11 +52,11 @@ describe('precompile.io', () => {
             precompileIoMessageSender(precompilation, 'n1', '0')
 
             assert.deepStrictEqual(
-                new Set(Object.keys(precompilation.input.graph)),
+                new Set(Object.keys(precompilation.graph)),
                 new Set(['n1', 'n_ioSnd_n1_0'])
             )
 
-            assert.deepStrictEqual(precompilation.input.graph.n_ioSnd_n1_0, {
+            assert.deepStrictEqual(precompilation.graph.n_ioSnd_n1_0, {
                 ...nodeDefaults('n_ioSnd_n1_0', '_messageSender'),
                 args: {
                     messageSenderName: 'ioSnd_n1_0',
@@ -106,11 +106,11 @@ describe('precompile.io', () => {
             const messageReceiverNodeId = 'n_ioRcv_n1_0'
 
             assert.deepStrictEqual(
-                new Set(Object.keys(precompilation.input.graph)),
+                new Set(Object.keys(precompilation.graph)),
                 new Set(['n1', 'n_ioRcv_n1_0'])
             )
 
-            assert.deepStrictEqual(precompilation.input.graph.n_ioRcv_n1_0, {
+            assert.deepStrictEqual(precompilation.graph.n_ioRcv_n1_0, {
                 ...nodeDefaults(messageReceiverNodeId, '_messageReceiver'),
                 isPushingMessages: true,
                 outlets: {

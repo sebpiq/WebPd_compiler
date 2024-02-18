@@ -24,7 +24,7 @@ import {
     PrecompilationInput,
     Precompilation,
 } from './precompile/types'
-import { RenderInput } from './render/types'
+import { RenderTemplateInput } from './render/types'
 import { AstSequence, AstElement, Code } from '../ast/types'
 import { CompilationSettings } from './types'
 
@@ -54,13 +54,13 @@ export const makePrecompilation = (
     return initializePrecompilation(input)
 }
 
-export const precompilationToRenderInput = (
+export const precompilationToRenderTemplateInput = (
     precompilation: Precompilation
-): RenderInput => {
+): RenderTemplateInput => {
     return {
-        variableNamesIndex: precompilation.variableNamesIndex,
+        globs: precompilation.variableNamesIndex.globs,
         precompiledCode: precompilation.precompiledCode,
-        settings: precompilation.input.settings,
+        settings: precompilation.settings,
     }
 }
 

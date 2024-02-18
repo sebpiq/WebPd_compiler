@@ -28,7 +28,7 @@ import {
     AudioSettings,
 } from './compile/types'
 import { Signal, Message, FloatArray, Engine } from './run/types'
-import { mapArray, mapObject } from './functional-helpers'
+import { mapArray } from './functional-helpers'
 import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/graph-helpers'
@@ -49,9 +49,7 @@ type EngineFsKeys = keyof Engine['fs']
 
 type FrameNode = {
     fs?: {
-        [FsFuncName in EngineFsKeys]?: Parameters<
-            Engine['fs'][FsFuncName]
-        >
+        [FsFuncName in EngineFsKeys]?: Parameters<Engine['fs'][FsFuncName]>
     }
 }
 export type FrameNodeIn = FrameNode & {
@@ -147,36 +145,44 @@ export const generateFramesForNode = async <NodeArguments>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            state: ({ stateClassName }) => Class(
-                stateClassName,
-                Object.keys(fakeSourceNode.outlets)
-                    .filter(
-                        (outletId) =>
-                            fakeSourceNode.outlets[outletId]!.type ===
-                            'signal'
-                    )
-                    .map((outletId) =>
-                        Var('Float', `VALUE_${outletId}`, 0)
-                    )
-            ),
-            
-            messageReceivers: ({ snds, state }) =>
-                mapObject(fakeSourceNode.outlets, (_, outletId) => {
-                    // Messages received for message outlets are directly proxied
-                    if (fakeSourceNode.outlets[outletId]!.type === 'message') {
-                        return AnonFunc([Var('Message', 'm')])`
-                            ${snds[outletId]!}(m)
-                            return
-                        `
+            state: ({ stateClassName }) =>
+                Class(
+                    stateClassName,
+                    Object.keys(fakeSourceNode.outlets)
+                        .filter(
+                            (outletId) =>
+                                fakeSourceNode.outlets[outletId]!.type ===
+                                'signal'
+                        )
+                        .map((outletId) => Var('Float', `VALUE_${outletId}`, 0))
+                ),
 
-                        // Messages received for signal outlets are written to the dspLoop
-                    } else {
-                        return AnonFunc([Var('Message', 'm')])`
-                            ${state}.VALUE_${outletId} = msg_readFloatToken(m, 0)
-                            return
-                        `
-                    }
-                }),
+            messageReceivers: ({ snds, state }) =>
+                Object.entries(fakeSourceNode.outlets).reduce(
+                    (messageReceivers, [outletId, outlet]) => {
+                        // Messages received for message outlets are directly proxied
+                        if (outlet.type === 'message') {
+                            return {
+                                ...messageReceivers,
+                                [outletId]: AnonFunc([Var('Message', 'm')])`
+                                ${snds[outletId]!}(m)
+                                return
+                            `,
+                            }
+
+                            // Messages received for signal outlets are written to the dspLoop
+                        } else {
+                            return {
+                                ...messageReceivers,
+                                [outletId]: AnonFunc([Var('Message', 'm')])`
+                                ${state}.VALUE_${outletId} = msg_readFloatToken(m, 0)
+                                return
+                            `,
+                            }
+                        }
+                    },
+                    {}
+                ),
 
             dsp: ({ outs, state }) =>
                 Sequence(
@@ -231,7 +237,9 @@ export const generateFramesForNode = async <NodeArguments>(
     const compileResult = compile(graph, nodeImplementations, target, {
         io: {
             messageReceivers: {
-                fakeSourceNode: { portletIds: Object.keys(fakeSourceNode.inlets) },
+                fakeSourceNode: {
+                    portletIds: Object.keys(fakeSourceNode.inlets),
+                },
             },
             messageSenders: {
                 fakeSinkNode: { portletIds: Object.keys(fakeSinkNode.outlets) },
@@ -300,15 +308,12 @@ export const generateFramesForNode = async <NodeArguments>(
         })
 
         // Set up listeners for fs
-        const _fsCallback = (
-            funcName: EngineFsKeys,
-            args: any
-        ) => {
+        const _fsCallback = (funcName: EngineFsKeys, args: any) => {
             outputFrame.fs = outputFrame.fs || {}
             outputFrame.sequence!.push(funcName)
             // When receiving FloatArrays we need to make copies immediately
             // because they might be garbage collected or reused afterwards by the engine.
-            if ((['onWriteSoundFile', 'onSoundStreamData']).includes(funcName)) {
+            if (['onWriteSoundFile', 'onSoundStreamData'].includes(funcName)) {
                 outputFrame.fs[funcName] = [
                     args[0],
                     args[1].map((array: FloatArray) => array.slice(0)),
@@ -362,7 +367,7 @@ export const generateFramesForNode = async <NodeArguments>(
         // Send in fs commands
         if (inputFrame.fs) {
             Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
-                (engine.fs[funcName as EngineFsKeys] as any).apply(null, args)
+                ;(engine.fs[funcName as EngineFsKeys] as any).apply(null, args)
             })
         }
 
@@ -399,7 +404,9 @@ export const generateFramesForNode = async <NodeArguments>(
                     )
                 }
                 value.forEach((message) =>
-                    engine.io.messageReceivers['fakeSourceNode']![inletId]!(message)
+                    engine.io.messageReceivers['fakeSourceNode']![inletId]!(
+                        message
+                    )
                 )
             } else {
                 if (typeof value !== 'number') {

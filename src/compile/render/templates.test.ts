@@ -32,7 +32,7 @@ import {
 import {
     assertAstSequencesAreEqual,
     normalizeAstSequence,
-    precompilationToRenderInput,
+    precompilationToRenderTemplateInput,
     makeSettings,
     makePrecompilation,
 } from '../test-helpers'
@@ -55,8 +55,10 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.precompiledCodeAssigner.graph.fullTraversal =
-                ['n1', 'n2']
+            precompilation.precompiledCodeAssigner.graph.fullTraversal = [
+                'n1',
+                'n2',
+            ]
             precompilation.precompiledCodeAssigner.nodes.n1!.signalOuts['0'] =
                 'n1_OUTS_0'
             precompilation.precompiledCodeAssigner.nodes.n1!.signalOuts['1'] =
@@ -65,7 +67,7 @@ describe('templates', () => {
                 'n2_OUTS_0'
 
             const sequence = templates.portletsDeclarations(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -92,23 +94,28 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.precompiledCodeAssigner.graph.fullTraversal =
-                ['n1', 'n2']
-            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = Func(
-                'n1_RCVS_0',
-                [Var('Message', 'm')]
-            )`// [n1] message receiver 0`
-            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers['1'] = Func(
-                'n1_RCVS_1',
-                [Var('Message', 'm')]
-            )`// [n1] message receiver 1`
-            precompilation.precompiledCodeAssigner.nodes.n2!.messageReceivers['0'] = Func(
-                'n2_RCVS_0',
-                [Var('Message', 'm')]
-            )`// [n2] message receiver 0`
+            precompilation.precompiledCodeAssigner.graph.fullTraversal = [
+                'n1',
+                'n2',
+            ]
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
+                '0'
+            ] = Func('n1_RCVS_0', [
+                Var('Message', 'm'),
+            ])`// [n1] message receiver 0`
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
+                '1'
+            ] = Func('n1_RCVS_1', [
+                Var('Message', 'm'),
+            ])`// [n1] message receiver 1`
+            precompilation.precompiledCodeAssigner.nodes.n2!.messageReceivers[
+                '0'
+            ] = Func('n2_RCVS_0', [
+                Var('Message', 'm'),
+            ])`// [n2] message receiver 0`
 
             const sequence = templates.portletsDeclarations(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -141,15 +148,15 @@ describe('templates', () => {
                 settings,
             })
 
-            precompilation.precompiledCodeAssigner.graph.fullTraversal =
-                ['n1']
-            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers['0'] = Func(
-                'n1_RCVS_0',
-                [Var('Message', 'm')]
-            )`// [n1] message receiver 0`
+            precompilation.precompiledCodeAssigner.graph.fullTraversal = ['n1']
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
+                '0'
+            ] = Func('n1_RCVS_0', [
+                Var('Message', 'm'),
+            ])`// [n1] message receiver 0`
 
             const sequence = templates.portletsDeclarations(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -176,27 +183,32 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.precompiledCodeAssigner.graph.fullTraversal =
-                ['n1', 'n2']
-            precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders['0'] =
-                {
-                    messageSenderName: 'n1_SNDS_0',
-                    sinkFunctionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
-                }
-            precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders['1'] =
-                {
-                    messageSenderName: 'n1_SNDS_1',
-                    sinkFunctionNames: ['outlerListener_n1_0', 'n2_RCVS_0'],
-                }
+            precompilation.precompiledCodeAssigner.graph.fullTraversal = [
+                'n1',
+                'n2',
+            ]
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders[
+                '0'
+            ] = {
+                messageSenderName: 'n1_SNDS_0',
+                sinkFunctionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
+            }
+            precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders[
+                '1'
+            ] = {
+                messageSenderName: 'n1_SNDS_1',
+                sinkFunctionNames: ['outlerListener_n1_0', 'n2_RCVS_0'],
+            }
             // Will not be rendered because no sinks
-            precompilation.precompiledCodeAssigner.nodes.n2!.messageSenders['0'] =
-                {
-                    messageSenderName: 'n3_RCVS_0',
-                    sinkFunctionNames: [],
-                }
+            precompilation.precompiledCodeAssigner.nodes.n2!.messageSenders[
+                '0'
+            ] = {
+                messageSenderName: 'n3_RCVS_0',
+                sinkFunctionNames: [],
+            }
 
             const sequence = templates.portletsDeclarations(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -239,8 +251,11 @@ describe('templates', () => {
                 nodeImplementations,
             })
 
-            precompilation.precompiledCodeAssigner.graph.fullTraversal =
-                ['n1', 'n2', 'n3']
+            precompilation.precompiledCodeAssigner.graph.fullTraversal = [
+                'n1',
+                'n2',
+                'n3',
+            ]
 
             precompilation.precompiledCodeAssigner.nodeImplementations.type1!.stateClass =
                 Class('State', [Var('Float', 'a'), Var('Float', 'b')])
@@ -258,11 +273,10 @@ describe('templates', () => {
                     b: Sequence(['444']),
                 },
             }
-            precompilation.precompiledCodeAssigner.nodes.n3!.state =
-                null
+            precompilation.precompiledCodeAssigner.nodes.n3!.state = null
 
             const sequence = templates.nodeStateInstances(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -307,7 +321,7 @@ describe('templates', () => {
                 {}
 
             const sequence = templates.nodeImplementationsCoreAndStateClasses(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -338,8 +352,10 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.precompiledCodeAssigner.graph.fullTraversal =
-                ['n1', 'n2']
+            precompilation.precompiledCodeAssigner.graph.fullTraversal = [
+                'n1',
+                'n2',
+            ]
             precompilation.precompiledCodeAssigner.nodes.n1!.initialization = ast`
                 ${Var('Float', 'n1', '0')}
                 console.log(n1)
@@ -347,7 +363,7 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n2!.initialization = ast``
 
             const sequence = templates.nodeInitializations(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -367,14 +383,15 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.precompiledCodeAssigner.io.messageReceivers.n1!['0'] =
-                {
-                    functionName: 'ioRcv_function',
-                    getSinkFunctionName: () => 'ioRcvNode_messageSender',
-                }
+            precompilation.precompiledCodeAssigner.io.messageReceivers.n1![
+                '0'
+            ] = {
+                functionName: 'ioRcv_function',
+                getSinkFunctionName: () => 'ioRcvNode_messageSender',
+            }
 
             const sequence = templates.ioMessageReceivers(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -415,7 +432,7 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n3!.dsp.loop = ast`// n3`
 
             const sequence = templates.dspLoop(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assert.deepStrictEqual<AstSequence>(
@@ -441,17 +458,18 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.inlets['0'] = ast`// inlet dsp 0`
+            precompilation.precompiledCodeAssigner.nodes.n1!.dsp.inlets[
+                '0'
+            ] = ast`// inlet dsp 0`
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
             precompilation.precompiledCodeAssigner.graph.hotDspGroup = {
                 traversal: ['n1'],
                 outNodesIds: ['n1'],
             }
-            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
-                {}
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups = {}
 
             const sequence = templates.dspLoop(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assert.deepStrictEqual<AstSequence>(
@@ -474,28 +492,27 @@ describe('templates', () => {
                 graph,
             })
 
-            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
-                {
-                    '0': {
-                        dspGroup: {
-                            traversal: [],
-                            outNodesIds: [],
-                        },
-                        sinkConnections: [],
-                        functionName: 'coldDsp_0',
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups = {
+                '0': {
+                    dspGroup: {
+                        traversal: [],
+                        outNodesIds: [],
                     },
-                    '1': {
-                        dspGroup: {
-                            traversal: [],
-                            outNodesIds: [],
-                        },
-                        sinkConnections: [],
-                        functionName: 'coldDsp_1',
+                    sinkConnections: [],
+                    functionName: 'coldDsp_0',
+                },
+                '1': {
+                    dspGroup: {
+                        traversal: [],
+                        outNodesIds: [],
                     },
-                }
+                    sinkConnections: [],
+                    functionName: 'coldDsp_1',
+                },
+            }
 
             const sequence = templates.coldDspInitialization(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -527,28 +544,27 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n2!.dsp.loop = ast`// n2`
             precompilation.precompiledCodeAssigner.nodes.n3!.dsp.loop = ast`// n3`
 
-            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
-                {
-                    '0': {
-                        dspGroup: {
-                            traversal: ['n1', 'n2'],
-                            outNodesIds: ['n2'],
-                        },
-                        sinkConnections: [],
-                        functionName: 'coldDsp_0',
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups = {
+                '0': {
+                    dspGroup: {
+                        traversal: ['n1', 'n2'],
+                        outNodesIds: ['n2'],
                     },
-                    '1': {
-                        dspGroup: {
-                            traversal: ['n3'],
-                            outNodesIds: ['n3'],
-                        },
-                        sinkConnections: [],
-                        functionName: 'coldDsp_1',
+                    sinkConnections: [],
+                    functionName: 'coldDsp_0',
+                },
+                '1': {
+                    dspGroup: {
+                        traversal: ['n3'],
+                        outNodesIds: ['n3'],
                     },
-                }
+                    sinkConnections: [],
+                    functionName: 'coldDsp_1',
+                },
+            }
 
             const sequence = templates.coldDspFunctions(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -575,26 +591,27 @@ describe('templates', () => {
             })
 
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
-            precompilation.precompiledCodeAssigner.nodes.n2!.dsp.inlets['0'] = ast`// inlet dsp n2`
-            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
-                {
-                    '0': {
-                        dspGroup: {
-                            traversal: ['n1'],
-                            outNodesIds: ['n1'],
-                        },
-                        sinkConnections: [
-                            [
-                                { nodeId: 'n1', portletId: '0' },
-                                { nodeId: 'n2', portletId: '0' },
-                            ],
-                        ],
-                        functionName: 'coldDsp_0',
+            precompilation.precompiledCodeAssigner.nodes.n2!.dsp.inlets[
+                '0'
+            ] = ast`// inlet dsp n2`
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups = {
+                '0': {
+                    dspGroup: {
+                        traversal: ['n1'],
+                        outNodesIds: ['n1'],
                     },
-                }
+                    sinkConnections: [
+                        [
+                            { nodeId: 'n1', portletId: '0' },
+                            { nodeId: 'n2', portletId: '0' },
+                        ],
+                    ],
+                    functionName: 'coldDsp_0',
+                },
+            }
 
             const sequence = templates.coldDspFunctions(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(
@@ -624,25 +641,24 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
             // This call is just to setup n2 base structure
             precompilation.precompiledCodeAssigner.nodes.n2!
-            precompilation.precompiledCodeAssigner.graph.coldDspGroups =
-                {
-                    '0': {
-                        dspGroup: {
-                            traversal: ['n1'],
-                            outNodesIds: ['n1'],
-                        },
-                        sinkConnections: [
-                            [
-                                { nodeId: 'n1', portletId: '0' },
-                                { nodeId: 'n2', portletId: '0' },
-                            ],
-                        ],
-                        functionName: 'coldDsp_0',
+            precompilation.precompiledCodeAssigner.graph.coldDspGroups = {
+                '0': {
+                    dspGroup: {
+                        traversal: ['n1'],
+                        outNodesIds: ['n1'],
                     },
-                }
+                    sinkConnections: [
+                        [
+                            { nodeId: 'n1', portletId: '0' },
+                            { nodeId: 'n2', portletId: '0' },
+                        ],
+                    ],
+                    functionName: 'coldDsp_0',
+                },
+            }
 
             const sequence = templates.coldDspFunctions(
-                precompilationToRenderInput(precompilation)
+                precompilationToRenderTemplateInput(precompilation)
             )
 
             assertAstSequencesAreEqual(

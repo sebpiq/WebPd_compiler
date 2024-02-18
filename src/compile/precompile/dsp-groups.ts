@@ -24,7 +24,7 @@ import { ColdDspGroup, DspGroup, Precompilation } from './types'
 
 export const precompileColdDspGroup = (
     {
-        input: { graph },
+        graph,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -39,7 +39,7 @@ export const precompileColdDspGroup = (
 }
 
 export const buildHotDspGroup = (
-    { input: { graph } }: Precompilation,
+    { graph }: Precompilation,
     parentDspGroup: DspGroup,
     coldDspGroups: Array<DspGroup>
 ): DspGroup => ({
@@ -116,9 +116,9 @@ export const buildColdDspGroups = (
         // nodes are visited and removing potential duplicates.
         .map<DspGroup>((dspGroup) => ({
             traversal: traversers.signalTraversal(
-                precompilation.input.graph,
+                precompilation.graph,
                 traversers.toNodes(
-                    precompilation.input.graph,
+                    precompilation.graph,
                     dspGroup.outNodesIds
                 )
             ),
@@ -130,14 +130,14 @@ export const _buildSingleFlowColdDspGroups = (
     parentDspGroup: DspGroup
 ): Array<DspGroup> =>
     traversers
-        .toNodes(precompilation.input.graph, parentDspGroup.traversal)
+        .toNodes(precompilation.graph, parentDspGroup.traversal)
         .reduce<Array<DspGroup>>((dspGroups, node) => {
             // If one of `node`'s sinks is a also cold, then `node` is not the
             // out node of a dsp group.
             if (
                 !_isNodeDspCold(precompilation, node) ||
                 traversers
-                    .listSinkNodes(precompilation.input.graph, node, 'signal')
+                    .listSinkNodes(precompilation.graph, node, 'signal')
                     .every((sinkNode) =>
                         _isNodeDspCold(precompilation, sinkNode)
                     )
@@ -150,7 +150,7 @@ export const _buildSingleFlowColdDspGroups = (
             const dspGroup: DspGroup = {
                 outNodesIds: [node.id],
                 traversal: traversers.signalTraversal(
-                    precompilation.input.graph,
+                    precompilation.graph,
                     [node],
                     (sourceNode) => {
                         areAllSourcesCold =
@@ -173,10 +173,10 @@ export const buildInlinableDspGroups = (
     parentDspGroup: DspGroup
 ): Array<DspGroup> =>
     traversers
-        .toNodes(precompilation.input.graph, parentDspGroup.traversal)
+        .toNodes(precompilation.graph, parentDspGroup.traversal)
         .reduce<Array<DspGroup>>((dspGroups, node) => {
             const sinkNodes = traversers.listSinkNodes(
-                precompilation.input.graph,
+                precompilation.graph,
                 node,
                 'signal'
             )
@@ -196,7 +196,7 @@ export const buildInlinableDspGroups = (
                     ...dspGroups,
                     {
                         traversal: traversers.signalTraversal(
-                            precompilation.input.graph,
+                            precompilation.graph,
                             [node],
                             (sourceNode) =>
                                 _isNodeDspInlinable(precompilation, sourceNode)

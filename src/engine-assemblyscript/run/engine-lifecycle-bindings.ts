@@ -19,7 +19,7 @@
  */
 
 import { Bindings } from '../../run/types'
-import { mapArray, mapObject } from '../../functional-helpers'
+import { mapArray } from '../../functional-helpers'
 import { VariableName } from '../../ast/types'
 import {
     Engine,
@@ -125,36 +125,45 @@ export const createIoMessageReceiversBindings = (
     rawModule: EngineLifecycleWithDependenciesRawModule,
     engineData: EngineData
 ): Bindings<Engine['io']['messageReceivers']> =>
-    mapObject(
-        engineData.metadata.compilation.io.messageReceivers,
-        (spec, nodeId) => ({
-            type: 'proxy',
-            value: mapArray(spec.portletIds, (inletId) => [
-                inletId,
-                (message: Message) => {
-                    const messagePointer = lowerMessage(rawModule, message)
-                    ;(rawModule as any)[
-                        engineData.metadata.compilation.variableNamesIndex.io
-                            .messageReceivers[nodeId]![inletId]!
-                    ](messagePointer)
-                },
-            ]),
-        })
+    Object.entries(engineData.metadata.compilation.io.messageReceivers).reduce(
+        (bindings, [nodeId, spec]) => ({
+            ...bindings,
+            [nodeId]: {
+                type: 'proxy',
+                value: mapArray(spec.portletIds, (inletId) => [
+                    inletId,
+                    (message: Message) => {
+                        const messagePointer = lowerMessage(rawModule, message)
+                        ;(rawModule as any)[
+                            engineData.metadata.compilation.variableNamesIndex
+                                .io.messageReceivers[nodeId]![inletId]!
+                        ](messagePointer)
+                    },
+                ]),
+            },
+        }),
+        {}
     )
 
 export const createIoMessageSendersBindings = (
     _: EngineLifecycleWithDependenciesRawModule,
     engineData: EngineData
 ): Bindings<Engine['io']['messageSenders']> =>
-    mapObject(engineData.metadata.compilation.io.messageSenders, (spec) => ({
-        type: 'proxy',
-        value: mapArray(spec.portletIds, (outletId) => [
-            outletId,
-            {
-                onMessage: () => undefined,
+    Object.entries(engineData.metadata.compilation.io.messageSenders).reduce(
+        (bindings, [nodeId, spec]) => ({
+            ...bindings,
+            [nodeId]: {
+                type: 'proxy',
+                value: mapArray(spec.portletIds, (outletId) => [
+                    outletId,
+                    {
+                        onMessage: () => undefined,
+                    },
+                ]),
             },
-        ]),
-    }))
+        }),
+        {}
+    )
 
 export const ioMsgSendersImports = (
     forwardReferences: ForwardReferences<EngineLifecycleWithDependenciesRawModule>,

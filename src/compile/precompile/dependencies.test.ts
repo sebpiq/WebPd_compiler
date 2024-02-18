@@ -85,7 +85,7 @@ describe('precompile.dependencies', () => {
                 {
                     ast: Sequence([
                         instantiateAndDedupeDependencies(
-                            precompilation.input.settings,
+                            precompilation.settings,
                             flattenDependencies(engineMinimalDependencies()),
                             precompilation.variableNamesIndex.globs
                         ),
@@ -166,7 +166,7 @@ describe('precompile.dependencies', () => {
             const blaGenerator1: GlobalCodeGenerator = () => bla1
             const blaGenerator2: GlobalCodeGenerator = () => bla2
             const astSequence = instantiateAndDedupeDependencies(
-                precompilation.input.settings,
+                precompilation.settings,
                 [
                     bloGenerator,
                     blaGenerator1,
@@ -242,7 +242,7 @@ describe('precompile.dependencies', () => {
 
             assert.deepStrictEqual(
                 collectAndDedupeExports(
-                    precompilation.input.settings.target,
+                    precompilation.settings.target,
                     dependencies
                 ),
                 [{ name: 'ex1' }, { name: 'ex3' }, { name: 'ex4' }]
@@ -279,7 +279,7 @@ describe('precompile.dependencies', () => {
 
             assert.deepStrictEqual(
                 collectAndDedupeExports(
-                    precompilation.input.settings.target,
+                    precompilation.settings.target,
                     dependencies
                 ),
                 [

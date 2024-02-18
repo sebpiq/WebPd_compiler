@@ -50,7 +50,7 @@ const messageSenderNodeImplementation: NodeImplementation<MessageSenderNodeArgs>
 
 export const addNodeImplementationsForMessageIo = (
     nodeImplementations: NodeImplementations
-): NodeImplementations => {
+) => {
     if (nodeImplementations[MESSAGE_RECEIVER_NODE_TYPE]) {
         throw new Error(
             `Reserved node type '${MESSAGE_RECEIVER_NODE_TYPE}' already exists. Please use a different name.`
@@ -61,17 +61,16 @@ export const addNodeImplementationsForMessageIo = (
             `Reserved node type '${MESSAGE_SENDER_NODE_TYPE}' already exists. Please use a different name.`
         )
     }
-    return {
-        ...nodeImplementations,
-        _messageReceiver: messageReceiverNodeImplementation,
-        _messageSender: messageSenderNodeImplementation,
-    }
+    nodeImplementations[MESSAGE_RECEIVER_NODE_TYPE] =
+        messageReceiverNodeImplementation
+    nodeImplementations[MESSAGE_SENDER_NODE_TYPE] =
+        messageSenderNodeImplementation
 }
 
 export const precompileIoMessageReceiver = (
     {
         precompiledCode,
-        input: { graph },
+        graph,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -109,11 +108,7 @@ export const precompileIoMessageReceiver = (
 }
 
 export const precompileIoMessageSender = (
-    {
-        input: { graph },
-        variableNamesAssigner,
-        precompiledCodeAssigner,
-    }: Precompilation,
+    { graph, variableNamesAssigner, precompiledCodeAssigner }: Precompilation,
     specNodeId: DspGraph.NodeId,
     specOutletId: DspGraph.PortletId
 ) => {

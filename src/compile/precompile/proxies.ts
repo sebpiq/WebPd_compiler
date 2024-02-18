@@ -21,7 +21,7 @@
 import { DspGraph, getters } from '../../dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
 import { ProtectedIndex, Assigner, AssignerSpec } from '../proxies'
-import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
+import { PrecompilationInput, PrecompiledCode, VariableNamesIndex } from './types'
 import { Sequence, ast } from '../../ast/declare'
 import { NodeImplementations } from '../types'
 
@@ -29,7 +29,7 @@ export const VariableNamesAssigner = ({
     input,
     variableNamesIndex,
 }: {
-    input: Precompilation['input']
+    input: PrecompilationInput
     variableNamesIndex: Partial<VariableNamesIndex>
 }) => Assigner(_VariableNamesAssignerSpec, input, variableNamesIndex)
 
@@ -38,7 +38,7 @@ export const createVariableNamesIndex = () =>
 
 const _VariableNamesAssignerSpec: AssignerSpec<
     VariableNamesIndex,
-    Precompilation['input']
+    PrecompilationInput
 > = Assigner.Interface({
     nodes: Assigner.Index((nodeId: DspGraph.NodeId) =>
         Assigner.Interface({
