@@ -51,7 +51,7 @@ import {
     flattenDependencies,
     instantiateAndDedupeDependencies,
 } from './compile/precompile/dependencies'
-import { createVariableNamesIndex } from './compile/precompile/proxies'
+import { createGlobsVariableNames } from './compile/precompile/proxies'
 import { makeSettings } from './compile/test-helpers'
 
 interface TestParameters {
@@ -273,7 +273,7 @@ export const runTestSuite = (
                         ...dependencies,
                         ...testsCodeDefinitions,
                     ]),
-                    createVariableNamesIndex().globs
+                    createGlobsVariableNames()
                 ),
 
                 target === 'javascript' ? 'const exports = {}' : null,

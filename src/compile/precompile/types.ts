@@ -58,7 +58,7 @@ export interface PrecompiledCode {
     readonly nodes: {
         [nodeId: DspGraph.NodeId]: PrecompiledNodeCode
     }
-    
+
     readonly dependencies: {
         imports: NonNullable<GlobalCodeGeneratorWithSettings['imports']>
         exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
@@ -78,7 +78,7 @@ export interface PrecompiledCode {
             [nodeId: DspGraph.NodeId]: {
                 [inletId: DspGraph.PortletId]: {
                     functionName: VariableName
-                    // Function because relies on other 
+                    // Function because relies on other
                     // precompiled code values.
                     getSinkFunctionName: () => VariableName
                 }
@@ -144,9 +144,7 @@ export interface VariableNamesIndex {
     readonly nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
     readonly nodeImplementations: {
-        [nodeType: DspGraph.NodeType]: {
-            stateClass: VariableName | null
-        }
+        [nodeType: DspGraph.NodeType]: { [name: string]: VariableName }
     }
 
     /** Namespace for global variables */

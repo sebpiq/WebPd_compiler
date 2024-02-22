@@ -24,8 +24,17 @@ import { Code } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
-import { PrecompileNodeNamespace } from '../proxies'
-import { DspGroup, Precompilation, PrecompiledNodeCode } from './types'
+import { ReadOnlyIndexWithDollarKeys, ReadOnlyIndex } from '../proxies'
+import {
+    DspGroup,
+    Precompilation,
+    PrecompiledNodeCode,
+    VariableNamesIndex,
+} from './types'
+import {
+    NamespaceAssigner,
+    STATE_CLASS_NAME,
+} from './node-implementations'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
 type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
@@ -35,6 +44,7 @@ const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 export const precompileState = (
     {
         settings,
+        nodeImplementations,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -45,17 +55,26 @@ export const precompileState = (
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     if (precompiledNodeImplementation.nodeImplementation.state) {
         const nodeType = node.type
-        const stateClassName =
-            variableNamesAssigner.nodeImplementations[nodeType]!.stateClass
-        if (!stateClassName) {
-            throw new Error(`No stateClass defined for ${nodeType}`)
+        if (
+            !(
+                STATE_CLASS_NAME in
+                variableNamesAssigner.nodeImplementations[nodeType]!
+            )
+        ) {
+            throw new Error(`No ${STATE_CLASS_NAME} defined for ${nodeType}`)
         }
+
+        const namespaceAssigner = NamespaceAssigner({
+            variableNamesAssigner,
+            nodeImplementations,
+            nodeType,
+        })
         const astClass = precompiledNodeImplementation.nodeImplementation.state(
             {
                 globs: variableNamesAssigner.globs,
+                ns: namespaceAssigner,
                 node,
                 settings,
-                stateClassName,
             }
         )
 
@@ -88,12 +107,17 @@ export const precompileMessageReceivers = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { state, snds } = _getContext(node.id, precompiledNode)
-    const messageReceivers = PrecompileNodeNamespace(
+    const { state, snds, ns } = _getContext(
+        node.id,
+        precompiledNode,
+        variableNamesAssigner
+    )
+    const messageReceivers = ReadOnlyIndexWithDollarKeys(
         precompiledNodeImplementation.nodeImplementation.messageReceivers
             ? precompiledNodeImplementation.nodeImplementation.messageReceivers(
                   {
                       globs: variableNamesAssigner.globs,
+                      ns,
                       state,
                       snds,
                       node,
@@ -131,11 +155,16 @@ export const precompileInitialization = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { state, snds } = _getContext(node.id, precompiledNode)
+    const { state, snds, ns } = _getContext(
+        node.id,
+        precompiledNode,
+        variableNamesAssigner
+    )
     precompiledNode.initialization = precompiledNodeImplementation
         .nodeImplementation.initialization
         ? precompiledNodeImplementation.nodeImplementation.initialization({
               globs: variableNamesAssigner.globs,
+              ns,
               state,
               snds,
               node,
@@ -155,7 +184,11 @@ export const precompileDsp = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { outs, ins, snds, state } = _getContext(node.id, precompiledNode)
+    const { outs, ins, snds, state, ns } = _getContext(
+        node.id,
+        precompiledNode,
+        variableNamesAssigner
+    )
 
     if (!precompiledNodeImplementation.nodeImplementation.dsp) {
         throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
@@ -163,6 +196,7 @@ export const precompileDsp = (
 
     const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp({
         globs: variableNamesAssigner.globs,
+        ns,
         node,
         state,
         ins,
@@ -231,9 +265,10 @@ export const precompileInlineDsp = (
                 precompiledCodeAssigner.nodeImplementations[
                     precompiledNode.nodeType
                 ]!
-            const { ins, outs, snds, state } = _getContext(
+            const { ins, outs, snds, state, ns } = _getContext(
                 nodeId,
-                precompiledNode
+                precompiledNode,
+                variableNamesAssigner
             )
             const node = getters.getNode(graph, nodeId)
             const inlinedInputs: InlinedInputs = mapArray(
@@ -275,8 +310,9 @@ export const precompileInlineDsp = (
             const compiledDsp =
                 precompiledNodeImplementation.nodeImplementation.dsp({
                     globs: variableNamesAssigner.globs,
+                    ns,
                     state,
-                    ins: PrecompileNodeNamespace(
+                    ins: ReadOnlyIndexWithDollarKeys(
                         {
                             ...ins,
                             ...inlinedInputs,
@@ -311,12 +347,20 @@ export const precompileInlineDsp = (
 
 const _getContext = (
     nodeId: DspGraph.NodeId,
-    precompiledNode: PrecompiledNodeCode
+    precompiledNode: PrecompiledNodeCode,
+    variableNamesIndex: VariableNamesIndex
 ) => ({
+    ns: ReadOnlyIndex(
+        variableNamesIndex.nodeImplementations[precompiledNode.nodeType]!
+    ),
     state: precompiledNode.state ? precompiledNode.state.name : '',
-    ins: PrecompileNodeNamespace(precompiledNode.signalIns, nodeId, 'ins'),
-    outs: PrecompileNodeNamespace(precompiledNode.signalOuts, nodeId, 'outs'),
-    snds: PrecompileNodeNamespace(
+    ins: ReadOnlyIndexWithDollarKeys(precompiledNode.signalIns, nodeId, 'ins'),
+    outs: ReadOnlyIndexWithDollarKeys(
+        precompiledNode.signalOuts,
+        nodeId,
+        'outs'
+    ),
+    snds: ReadOnlyIndexWithDollarKeys(
         Object.entries(precompiledNode.messageSenders).reduce(
             (snds, [outletId, { messageSenderName }]) => ({
                 ...snds,
@@ -327,7 +371,7 @@ const _getContext = (
         nodeId,
         'snds'
     ),
-    rcvs: PrecompileNodeNamespace(
+    rcvs: ReadOnlyIndexWithDollarKeys(
         Object.entries(precompiledNode.messageReceivers).reduce(
             (rcvs, [inletId, astFunc]) => ({
                 ...rcvs,

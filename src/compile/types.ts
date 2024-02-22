@@ -116,18 +116,19 @@ export interface NodeImplementation<NodeArgsType = {}> {
     state?: (context: {
         globs: VariableNamesIndex['globs']
         node: DspGraph.Node<NodeArgsType>
-        stateClassName: VariableName
+        ns: NodeImplementationPrecompilationContext['ns']
         settings: CompilationSettings
     }) => AstClass
 
     core?: (context: {
         globs: VariableNamesIndex['globs']
-        stateClassName?: VariableName
+        ns: NodeImplementationPrecompilationContext['ns']
         settings: CompilationSettings
     }) => AstElement
 
     initialization?: (context: {
         globs: VariableNamesIndex['globs']
+        ns: NodeImplementationPrecompilationContext['ns']
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
         node: DspGraph.Node<NodeArgsType>
@@ -143,6 +144,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
      */
     dsp?: (context: {
         globs: VariableNamesIndex['globs']
+        ns: NodeImplementationPrecompilationContext['ns']
         state: NodePrecompilationContext['state']
         ins: NodePrecompilationContext['ins']
         outs: NodePrecompilationContext['outs']
@@ -161,6 +163,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
      */
     messageReceivers?: (context: {
         globs: VariableNamesIndex['globs']
+        ns: NodeImplementationPrecompilationContext['ns']
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
         node: DspGraph.Node<NodeArgsType>
@@ -178,6 +181,10 @@ interface NodePrecompilationContext {
     ins: {[portletId: DspGraph.PortletId]: VariableName}
     outs: {[portletId: DspGraph.PortletId]: VariableName}
     snds: {[portletId: DspGraph.PortletId]: VariableName}
+}
+
+interface NodeImplementationPrecompilationContext {
+    ns: {[name: string]: VariableName}
 }
 
 export type NodeImplementations = {

@@ -36,7 +36,7 @@ import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
 import macros from '../compile/macros'
 import { makeSettings } from '../../compile/test-helpers'
-import { createVariableNamesIndex } from '../../compile/precompile/proxies'
+import { createGlobsVariableNames, createVariableNamesIndex } from '../../compile/precompile/proxies'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {
@@ -71,7 +71,7 @@ describe('msg-bindings', () => {
                     channelCount: { in: 2, out: 2 },
                 },
             }),
-            globs: createVariableNamesIndex().globs,
+            globs: createGlobsVariableNames(),
         } as const
         return render(
             macros,

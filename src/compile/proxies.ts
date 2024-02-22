@@ -25,14 +25,14 @@ interface ProxyPath {
 }
 
 const _addPath = (parent: any, key: string, _path?: ProxyPath) => {
-    const path = _defaultPath(_path)
+    const path = _ensurePath(_path)
     return {
         keys: [...path.keys, key],
         parents: [...path.parents, parent],
     }
 }
 
-const _defaultPath = (path?: ProxyPath) =>
+const _ensurePath = (path?: ProxyPath) =>
     path || {
         keys: [],
         parents: [],
@@ -75,31 +75,31 @@ const _proxyGetHandlerThrowIfKeyUnknown = <T extends Object, K extends string>(
 
 // ---------------------------- Assigner ---------------------------- //
 type _AssignerSpecIndex<T, C> = {
-    Index: (k: string, context: C) => AssignerSpec<T[keyof T], C>
-    indexConstructor: (path: ProxyPath) => T
+    Index: (k: string, context: C, path: ProxyPath) => AssignerSpec<T[keyof T], C>
+    indexConstructor: (context: C, path: ProxyPath) => T
 }
 // TODO : seems to validate pretty much any type. Make more restrictive
 // e.g. : add Interface({a:  before any assigner and it seems sill valid.
 type _AssignerSpecInterface<T, C> = {
     Interface: { [K in keyof T]: AssignerSpec<T[K], C> }
 }
-type _AssignerSpecLiteral<T> = { Literal: (path: ProxyPath) => T }
-type _AssignerSpecLiteralDefaultNull<T> = { LiteralDefaultNull: () => T }
+type _AssignerSpecLiteral<T, C> = { Literal: (context: C, path: ProxyPath) => T }
+type _AssignerSpecLiteralDefaultNull<T, C> = { LiteralDefaultNull: (context: C, path: ProxyPath) => T }
 
-export type AssignerSpec<T, C> =
+export type AssignerSpec<T, C=typeof undefined> =
     | _AssignerSpecInterface<T, C>
     | _AssignerSpecIndex<T, C>
-    | _AssignerSpecLiteral<T>
-    | _AssignerSpecLiteralDefaultNull<T>
+    | _AssignerSpecLiteral<T, C>
+    | _AssignerSpecLiteralDefaultNull<T, C>
 
-export const Assigner = <T extends { [k: string]: any }, C>(
+export const Assigner = <T extends { [k: string]: any }, C=typeof undefined>(
     spec: AssignerSpec<T, C>,
-    context: C,
     _obj: Partial<T> | undefined,
+    context: C,
     _path?: ProxyPath
 ): T => {
     const path = _path || { keys: [], parents: [] }
-    const obj: T = Assigner.ensureValue(_obj, spec, undefined, path)
+    const obj: T = Assigner.ensureValue(_obj, spec, context, path)
 
     // If `_path` is provided, assign the new value to the parent object.
     if (_path) {
@@ -123,8 +123,11 @@ export const Assigner = <T extends { [k: string]: any }, C>(
             const key = String(k) as keyof T
             let nextSpec: AssignerSpec<T[keyof T], C>
             if ('Index' in spec) {
-                nextSpec = spec.Index(key as string, context)
+                nextSpec = spec.Index(key as string, context, path)
             } else if ('Interface' in spec) {
+                if (!(key in spec.Interface)) {
+                    throw new Error(`Interface has no entry "${String(key)}"`)
+                }
                 nextSpec = spec.Interface[key]
             } else {
                 throw new Error('no builder')
@@ -132,12 +135,12 @@ export const Assigner = <T extends { [k: string]: any }, C>(
 
             return Assigner(
                 nextSpec,
-                context,
                 // We use this form here instead of `obj[key]` specifically
                 // to allow Assign to play well with `ProtectedIndex`, which
                 // would raise an error if trying to access an undefined key.
                 key in obj ? obj[key] : undefined,
-                _addPath(obj, String(key), path)
+                context,
+                _addPath(obj, key as string, path)
             )
         },
 
@@ -145,30 +148,32 @@ export const Assigner = <T extends { [k: string]: any }, C>(
     })
 }
 
-Assigner.ensureValue = <T extends { [k: string]: any }, C>(
+Assigner.ensureValue = <T, C=typeof undefined>(
     _obj: Partial<T> | undefined,
     spec: AssignerSpec<T, C>,
+    context: C,
+    _path?: ProxyPath,
     _recursionPath?: ProxyPath,
-    _path?: ProxyPath
 ): T => {
     if ('Index' in spec) {
-        return (_obj || spec.indexConstructor(_defaultPath(_path))) as T
+        return (_obj || spec.indexConstructor(context, _ensurePath(_path))) as T
     } else if ('Interface' in spec) {
         const obj = (_obj || {}) as T
         Object.entries(spec.Interface).forEach(([key, nextSpec]) => {
-            obj[key as keyof T] = Assigner.ensureValue(
-                obj[key],
-                nextSpec,
+            obj[key as keyof T] = Assigner.ensureValue<T[keyof T], C>(
+                (obj as any)[key],
+                nextSpec as any,
+                context,
+                _addPath(obj, key, _path),
                 _addPath(obj, key, _recursionPath),
-                _addPath(obj, key, _path)
             )
         })
         return obj
     } else if ('Literal' in spec) {
-        return (_obj || spec.Literal(_defaultPath(_path))) as T
+        return (_obj || spec.Literal(context, _ensurePath(_path))) as T
     } else if ('LiteralDefaultNull' in spec) {
         if (!_recursionPath) {
-            return (_obj || spec.LiteralDefaultNull()) as T
+            return (_obj || spec.LiteralDefaultNull(context, _ensurePath(_path))) as T
         } else {
             return (_obj || null) as T
         }
@@ -183,19 +188,19 @@ Assigner.Interface = <T, C>(a: {
 
 Assigner.Index = <T, C>(
     f: (k: string, context: C) => AssignerSpec<T[keyof T], C>,
-    indexConstructor?: (path: ProxyPath) => any
+    indexConstructor?: (context: C, path: ProxyPath) => any
 ): _AssignerSpecIndex<T, C> => ({
     Index: f,
     indexConstructor: indexConstructor || (() => ({} as T)),
 })
 
-Assigner.Literal = <T>(f: (path: ProxyPath) => T): _AssignerSpecLiteral<T> => ({
+Assigner.Literal = <T, C>(f: (context: C, path: ProxyPath) => T): _AssignerSpecLiteral<T, C> => ({
     Literal: f,
 })
 
-Assigner.LiteralDefaultNull = <T>(
-    f: () => T
-): _AssignerSpecLiteralDefaultNull<T | null> => ({ LiteralDefaultNull: f })
+Assigner.LiteralDefaultNull = <T, C>(
+    f: (context: C, path: ProxyPath) => T
+): _AssignerSpecLiteralDefaultNull<T | null, C> => ({ LiteralDefaultNull: f })
 
 // ---------------------------- ProtectedIndex ---------------------------- //
 /**
@@ -233,7 +238,31 @@ export const ProtectedIndex = <T extends Object>(
     })
 }
 
-// ---------------------------- PrecompileNodeNamespace ---------------------------- //
+// ---------------------------- ReadOnlyIndex ---------------------------- //
+/**
+ * Helper to declare namespace objects enforcing stricter access rules. 
+ * Specifically, it forbids :
+ * - reading an unknown property.
+ * - writing to a property.
+ */
+export const ReadOnlyIndex = <T extends Object>(
+    namespace: T,
+    path?: ProxyPath
+) => {
+    return new Proxy<T>(namespace, {
+        get: (target, k) => {
+            const key = String(k)
+            if (_proxyGetHandlerThrowIfKeyUnknown(target, key, path)) {
+                return undefined
+            }
+            return (target as any)[key]
+        },
+
+        set: _proxySetHandlerReadOnly,
+    })
+}
+
+// ---------------------------- ReadOnlyIndexWithDollarKeys ---------------------------- //
 /**
  * Helper to declare namespace objects enforcing stricter access rules. 
  * Specifically :
@@ -243,7 +272,7 @@ export const ProtectedIndex = <T extends Object>(
  *      This is convenient to access portlets by their id without using 
  *      indexing syntax, for example : `namespace.$0` instead of `namespace['0']`.
  */
-export const PrecompileNodeNamespace = <T extends Object>(
+export const ReadOnlyIndexWithDollarKeys = <T extends Object>(
     namespace: T,
     nodeId: DspGraph.NodeId,
     name: string

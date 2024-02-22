@@ -145,9 +145,9 @@ export const generateFramesForNode = async <NodeArguments>(
         [testNode.type]: nodeTestSettings.nodeImplementation,
 
         fake_source_node: {
-            state: ({ stateClassName }) =>
+            state: ({ ns }) =>
                 Class(
-                    stateClassName,
+                    ns.State!,
                     Object.keys(fakeSourceNode.outlets)
                         .filter(
                             (outletId) =>

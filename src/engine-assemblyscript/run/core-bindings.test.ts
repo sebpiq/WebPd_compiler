@@ -34,7 +34,7 @@ import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../compile/render'
 import { makeSettings } from '../../compile/test-helpers'
-import { createVariableNamesIndex } from '../../compile/precompile/proxies'
+import { createGlobsVariableNames } from '../../compile/precompile/proxies'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {
@@ -62,7 +62,7 @@ describe('core-bindings', () => {
                 target: 'assemblyscript',
                 audio: { bitDepth, channelCount: { in: 2, out: 2 } },
             }),
-            globs: createVariableNamesIndex().globs,
+            globs: createGlobsVariableNames(),
         }),
         core.exports!.map(({ name }) => `export { ${name} }`)
     ]))

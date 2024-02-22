@@ -21,14 +21,15 @@ import assert from 'assert'
 import { Class, Func, Sequence, Var } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { NodeImplementations } from '../types'
-import { precompileCore, precompileStateClass } from './node-implementations'
+import { STATE_CLASS_NAME, precompileCore, precompileStateClass } from './node-implementations'
 import { AstClass, AstSequence } from '../../ast/types'
 import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.node-implementations', () => {
     describe('precompileStateClass', () => {
-        it('should precompile stateClass', () => {
+        it('should precompile stateClass and add all names to the namespace in variableNamesIndex', () => {
             const graph = makeGraph({
+                // Needed as a sample node insance to compile `NodeImplementation.state`
                 n1: {
                     isPullingSignal: true,
                     type: 'type1',
@@ -38,9 +39,9 @@ describe('precompile.node-implementations', () => {
 
             const nodeImplementations: NodeImplementations = {
                 type1: {
-                    state: ({ node: { args } }) =>
-                        Class('State_type1', [
-                            Var('Int', 'a', args.a),
+                    state: ({ ns, node: { args } }) =>
+                        Class(ns[STATE_CLASS_NAME]!, [
+                            Var(ns.SomeClass!, 'a', args.a),
                             Var('Int', 'b', args.b),
                         ]),
                 },
@@ -53,38 +54,31 @@ describe('precompile.node-implementations', () => {
 
             precompileStateClass(precompilation, 'type1')
 
-            assert.strictEqual(precompilation.variableNamesIndex.nodeImplementations.type1!.stateClass, 'State_type1')
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodeImplementations.type1!,
+                {
+                    State: 'type1_State',
+                    SomeClass: 'type1_SomeClass',
+                }
+            )
             assert.deepStrictEqual<AstClass>(
-                precompilation.precompiledCode.nodeImplementations.type1!.stateClass,
-                Class(
-                    'State_type1',
-                    [
-                        Var('Int', 'a'),
-                        Var('Int', 'b'),
-                    ],
-                )
+                precompilation.precompiledCode.nodeImplementations.type1!
+                    .stateClass,
+                Class('type1_State', [Var('type1_SomeClass', 'a'), Var('Int', 'b')])
             )
         })
     })
 
     describe('precompileCore', () => {
-        it('should precompile core', () => {
-            const graph = makeGraph({
-                n1: {
-                    isPullingSignal: true,
-                    type: 'type1',
-                    args: { a: 22, b: 33 },
-                },
-            })
-
+        it('should precompile core and add all names to the namespace in variableNamesIndex', () => {
             const nodeImplementations: NodeImplementations = {
                 type1: {
-                    core: () => Sequence([Func('bla')``])
+                    core: ({ ns }) =>
+                        Sequence([Func(ns.bla!)``, Func(ns.blo!)``]),
                 },
             }
 
             const precompilation = makePrecompilation({
-                graph,
                 nodeImplementations,
             })
 
@@ -92,9 +86,15 @@ describe('precompile.node-implementations', () => {
 
             assert.deepStrictEqual<AstSequence>(
                 precompilation.precompiledCode.nodeImplementations.type1!.core,
-                Sequence([
-                    Func('bla')``
-                ])
+                Sequence([Func('type1_bla')``, Func('type1_blo')``])
+            )
+
+            assert.deepStrictEqual(
+                precompilation.variableNamesIndex.nodeImplementations.type1!,
+                {
+                    bla: 'type1_bla',
+                    blo: 'type1_blo',
+                }
             )
         })
     })

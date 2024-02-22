@@ -238,13 +238,13 @@ export default (precompilationInput: PrecompilationInput) => {
 export const initializePrecompilation = (
     precompilationRawInput: PrecompilationInput
 ): Precompilation => {
-    const precompiledCode = createPrecompiledCode()
-    const variableNamesIndex = createVariableNamesIndex()
     const precompilationInput: PrecompilationInput = {
         graph: { ...precompilationRawInput.graph },
         nodeImplementations: { ...precompilationRawInput.nodeImplementations },
         settings: precompilationRawInput.settings,
     }
+    const precompiledCode = createPrecompiledCode(precompilationInput)
+    const variableNamesIndex = createVariableNamesIndex(precompilationInput)
 
     return {
         ...precompilationInput,
