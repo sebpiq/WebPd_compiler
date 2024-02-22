@@ -32,7 +32,6 @@ import {
     VariableNamesIndex,
 } from './types'
 import {
-    NamespaceAssigner,
     STATE_CLASS_NAME,
 } from './node-implementations'
 
@@ -44,7 +43,6 @@ const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 export const precompileState = (
     {
         settings,
-        nodeImplementations,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -64,11 +62,7 @@ export const precompileState = (
             throw new Error(`No ${STATE_CLASS_NAME} defined for ${nodeType}`)
         }
 
-        const namespaceAssigner = NamespaceAssigner({
-            variableNamesAssigner,
-            nodeImplementations,
-            nodeType,
-        })
+        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
         const astClass = precompiledNodeImplementation.nodeImplementation.state(
             {
                 globs: variableNamesAssigner.globs,

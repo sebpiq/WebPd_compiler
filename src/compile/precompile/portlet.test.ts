@@ -58,19 +58,19 @@ describe('precompile.portlets', () => {
             // Creates a variable name for the signal out
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.signalOuts,
-                { '0': 'n1_OUTS_0' }
+                { '0': 'N_n1_outs_0' }
             )
 
             // Adds this variable name to precompilation `signalOuts`
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n1!.signalOuts['0'],
-                'n1_OUTS_0'
+                'N_n1_outs_0'
             )
 
             // Assigns n1's out to n2's signalIn
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n2!.signalIns['0'],
-                'n1_OUTS_0'
+                'N_n1_outs_0'
             )
         })
     })
@@ -136,14 +136,14 @@ describe('precompile.portlets', () => {
             // Creates a variable name for the message sender
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.messageSenders,
-                { '0': 'n1_SNDS_0' }
+                { '0': 'N_n1_snds_0' }
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n1!.messageSenders['0'],
                 {
-                    messageSenderName: 'n1_SNDS_0',
-                    sinkFunctionNames: ['n2_RCVS_0', 'n3_RCVS_0'],
+                    messageSenderName: 'N_n1_snds_0',
+                    sinkFunctionNames: ['N_n2_rcvs_0', 'N_n3_rcvs_0'],
                 }
             )
         })
@@ -175,7 +175,7 @@ describe('precompile.portlets', () => {
                         outNodesIds: ['n2'],
                     },
                     sinkConnections: [],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
             }
 
@@ -184,14 +184,14 @@ describe('precompile.portlets', () => {
             // Creates a variable name for the message sender
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.messageSenders,
-                { '0': 'n1_SNDS_0' }
+                { '0': 'N_n1_snds_0' }
             )
             // Add precompilation info for the message sender
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n1!.messageSenders['0'],
                 {
-                    messageSenderName: 'n1_SNDS_0',
-                    sinkFunctionNames: ['n2_RCVS_0', 'coldDsp_0'],
+                    messageSenderName: 'N_n1_snds_0',
+                    sinkFunctionNames: ['N_n2_rcvs_0', 'COLD_0'],
                 }
             )
         })
@@ -253,7 +253,7 @@ describe('precompile.portlets', () => {
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n1!.messageSenders['0'],
                 {
-                    messageSenderName: 'n2_RCVS_0',
+                    messageSenderName: 'N_n2_rcvs_0',
                     sinkFunctionNames: [],
                 }
             )
@@ -297,18 +297,18 @@ describe('precompile.portlets', () => {
             // Creates a variable names for message receivers
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n2!.messageReceivers,
-                { '0': 'n2_RCVS_0' }
+                { '0': 'N_n2_rcvs_0' }
             )
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n3!.messageReceivers,
-                { '0': 'n3_RCVS_0' }
+                { '0': 'N_n3_rcvs_0' }
             )
 
             // Add placeholder messageReceivers
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n2!.messageReceivers['0'],
                 Func(
-                    'n2_RCVS_0',
+                    'N_n2_rcvs_0',
                     [Var('Message', 'm')],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
@@ -316,7 +316,7 @@ describe('precompile.portlets', () => {
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n3!.messageReceivers['0'],
                 Func(
-                    'n3_RCVS_0',
+                    'N_n3_rcvs_0',
                     [Var('Message', 'm')],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`

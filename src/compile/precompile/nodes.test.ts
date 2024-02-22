@@ -90,10 +90,10 @@ describe('precompile.nodes', () => {
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n1!.messageReceivers,
                 {
-                    '0': Func('n1_RCVS_0', [
+                    '0': Func('N_n1_rcvs_0', [
                         Var('Message', 'm'),
                     ])`// message receiver type1 inlet 0`,
-                    '1': Func('n1_RCVS_1', [
+                    '1': Func('N_n1_rcvs_1', [
                         Var('Message', 'm'),
                     ])`// message receiver type1 inlet 1`,
                 }
@@ -102,7 +102,7 @@ describe('precompile.nodes', () => {
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n2!.messageReceivers,
                 {
-                    '0': Func('n2_RCVS_0', [
+                    '0': Func('N_n2_rcvs_0', [
                         Var('Message', 'm'),
                     ])`// message receiver type2 inlet 0`,
                 }
@@ -111,15 +111,15 @@ describe('precompile.nodes', () => {
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.messageReceivers,
                 {
-                    '0': 'n1_RCVS_0',
-                    '1': 'n1_RCVS_1',
+                    '0': 'N_n1_rcvs_0',
+                    '1': 'N_n1_rcvs_1',
                 }
             )
 
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n2!.messageReceivers,
                 {
-                    '0': 'n2_RCVS_0',
+                    '0': 'N_n2_rcvs_0',
                 }
             )
         })
@@ -228,20 +228,21 @@ describe('precompile.nodes', () => {
                 nodeImplementations,
             })
 
+            // Make sure the state class name is defined
             precompilation.variableNamesAssigner.nodeImplementations.type1![
                 STATE_CLASS_NAME
-            ]! = 'type1_State'
+            ]!
 
             precompileState(precompilation, precompilation.graph.n1!)
 
             assert.strictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.state,
-                'n1_STATE'
+                'N_n1_state'
             )
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n1!.state,
                 {
-                    name: 'n1_STATE',
+                    name: 'N_n1_state',
                     initialization: {
                         a: Sequence([ast`22`]),
                         b: Sequence([ast`33`]),
@@ -366,13 +367,13 @@ describe('precompile.nodes', () => {
             assert.deepStrictEqual(
                 precompilation.precompiledCode.nodes.n1!.dsp,
                 {
-                    loop: ast`n1_OUTS_0 = a + b`,
+                    loop: ast`N_n1_outs_0 = a + b`,
                     inlets: {},
                 }
             )
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodes.n1!.signalOuts,
-                { '0': 'n1_OUTS_0' }
+                { '0': 'N_n1_outs_0' }
             )
         })
 
@@ -822,7 +823,7 @@ describe('precompile.nodes', () => {
             })
 
             precompilation.precompiledCodeAssigner.nodes.n1!.signalIns['0'] =
-                'nonInline1_OUTS_0'
+                'N_nonInline1_outs_0'
 
             precompileInlineDsp(precompilation, {
                 traversal: ['n1', 'n2'],
@@ -831,7 +832,7 @@ describe('precompile.nodes', () => {
 
             assert.strictEqual(
                 precompilation.precompiledCode.nodes.n3!.signalIns['0'],
-                '((nonInline1_OUTS_0 * N1) * N2)'
+                '((N_nonInline1_outs_0 * N1) * N2)'
             )
         })
     })

@@ -57,14 +57,14 @@ describe('precompile.node-implementations', () => {
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodeImplementations.type1!,
                 {
-                    State: 'type1_State',
-                    SomeClass: 'type1_SomeClass',
+                    State: 'NT_type1_State',
+                    SomeClass: 'NT_type1_SomeClass',
                 }
             )
             assert.deepStrictEqual<AstClass>(
                 precompilation.precompiledCode.nodeImplementations.type1!
                     .stateClass,
-                Class('type1_State', [Var('type1_SomeClass', 'a'), Var('Int', 'b')])
+                Class('NT_type1_State', [Var('NT_type1_SomeClass', 'a'), Var('Int', 'b')])
             )
         })
     })
@@ -86,14 +86,14 @@ describe('precompile.node-implementations', () => {
 
             assert.deepStrictEqual<AstSequence>(
                 precompilation.precompiledCode.nodeImplementations.type1!.core,
-                Sequence([Func('type1_bla')``, Func('type1_blo')``])
+                Sequence([Func('NT_type1_bla')``, Func('NT_type1_blo')``])
             )
 
             assert.deepStrictEqual(
                 precompilation.variableNamesIndex.nodeImplementations.type1!,
                 {
-                    bla: 'type1_bla',
-                    blo: 'type1_blo',
+                    bla: 'NT_type1_bla',
+                    blo: 'NT_type1_blo',
                 }
             )
         })

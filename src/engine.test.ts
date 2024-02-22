@@ -1144,9 +1144,9 @@ describe('Engine', () => {
                             msg_writeStringToken(m2, 0, 'bla')
                             `,
                             Func('testCallMessageSend')`
-                                ioSnd_someNode1_someOutlet1(m1)
-                                ioSnd_someNode1_someOutlet2(m2)
-                                ioSnd_someNode2_someOutlet1(m1)
+                                IOSND_someNode1_someOutlet1(m1)
+                                IOSND_someNode1_someOutlet2(m2)
+                                IOSND_someNode2_someOutlet1(m1)
                             `,
                         ]),
                     exports: [{ name: 'testCallMessageSend' }],

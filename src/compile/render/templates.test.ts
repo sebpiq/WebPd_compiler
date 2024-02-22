@@ -60,11 +60,11 @@ describe('templates', () => {
                 'n2',
             ]
             precompilation.precompiledCodeAssigner.nodes.n1!.signalOuts['0'] =
-                'n1_OUTS_0'
+                'N_n1_outs_0'
             precompilation.precompiledCodeAssigner.nodes.n1!.signalOuts['1'] =
-                'n1_OUTS_1'
+                'N_n1_outs_1'
             precompilation.precompiledCodeAssigner.nodes.n2!.signalOuts['0'] =
-                'n2_OUTS_0'
+                'N_n2_outs_0'
 
             const sequence = templates.portletsDeclarations(
                 precompilationToRenderTemplateInput(precompilation)
@@ -73,9 +73,9 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 sequence,
                 Sequence([
-                    Var('Float', 'n1_OUTS_0', '0'),
-                    Var('Float', 'n1_OUTS_1', '0'),
-                    Var('Float', 'n2_OUTS_0', '0'),
+                    Var('Float', 'N_n1_outs_0', '0'),
+                    Var('Float', 'N_n1_outs_1', '0'),
+                    Var('Float', 'N_n2_outs_0', '0'),
                 ])
             )
         })
@@ -100,17 +100,17 @@ describe('templates', () => {
             ]
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '0'
-            ] = Func('n1_RCVS_0', [
+            ] = Func('N_n1_rcvs_0', [
                 Var('Message', 'm'),
             ])`// [n1] message receiver 0`
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '1'
-            ] = Func('n1_RCVS_1', [
+            ] = Func('N_n1_rcvs_1', [
                 Var('Message', 'm'),
             ])`// [n1] message receiver 1`
             precompilation.precompiledCodeAssigner.nodes.n2!.messageReceivers[
                 '0'
-            ] = Func('n2_RCVS_0', [
+            ] = Func('N_n2_rcvs_0', [
                 Var('Message', 'm'),
             ])`// [n2] message receiver 0`
 
@@ -121,13 +121,13 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 sequence,
                 Sequence([
-                    Func('n1_RCVS_0', [
+                    Func('N_n1_rcvs_0', [
                         Var('Message', 'm'),
                     ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m))`,
-                    Func('n1_RCVS_1', [
+                    Func('N_n1_rcvs_1', [
                         Var('Message', 'm'),
                     ])`// [n1] message receiver 1\nthrow new Error('Node "n1", inlet "1", unsupported message : ' + msg_display(m))`,
-                    Func('n2_RCVS_0', [
+                    Func('N_n2_rcvs_0', [
                         Var('Message', 'm'),
                     ])`// [n2] message receiver 0\nthrow new Error('Node "n2", inlet "0", unsupported message : ' + msg_display(m))`,
                 ])
@@ -151,7 +151,7 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.graph.fullTraversal = ['n1']
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '0'
-            ] = Func('n1_RCVS_0', [
+            ] = Func('N_n1_rcvs_0', [
                 Var('Message', 'm'),
             ])`// [n1] message receiver 0`
 
@@ -162,7 +162,7 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 sequence,
                 Sequence([
-                    Func('n1_RCVS_0', [
+                    Func('N_n1_rcvs_0', [
                         Var('Message', 'm'),
                     ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
                 ])
@@ -190,20 +190,20 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders[
                 '0'
             ] = {
-                messageSenderName: 'n1_SNDS_0',
-                sinkFunctionNames: ['n2_RCVS_0', 'n2_RCVS_1', 'DSP_1'],
+                messageSenderName: 'N_n1_snds_0',
+                sinkFunctionNames: ['N_n2_rcvs_0', 'N_n2_rcvs_1', 'DSP_1'],
             }
             precompilation.precompiledCodeAssigner.nodes.n1!.messageSenders[
                 '1'
             ] = {
-                messageSenderName: 'n1_SNDS_1',
-                sinkFunctionNames: ['outlerListener_n1_0', 'n2_RCVS_0'],
+                messageSenderName: 'N_n1_snds_1',
+                sinkFunctionNames: ['outlerListener_n1_0', 'N_n2_rcvs_0'],
             }
             // Will not be rendered because no sinks
             precompilation.precompiledCodeAssigner.nodes.n2!.messageSenders[
                 '0'
             ] = {
-                messageSenderName: 'n3_RCVS_0',
+                messageSenderName: 'N_n3_rcvs_0',
                 sinkFunctionNames: [],
             }
 
@@ -214,12 +214,12 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 sequence,
                 Sequence([
-                    Func('n1_SNDS_0', [
+                    Func('N_n1_snds_0', [
                         Var('Message', 'm'),
-                    ])`n2_RCVS_0(m)\nn2_RCVS_1(m)\nDSP_1(m)`,
-                    Func('n1_SNDS_1', [
+                    ])`N_n2_rcvs_0(m)\nN_n2_rcvs_1(m)\nDSP_1(m)`,
+                    Func('N_n1_snds_1', [
                         Var('Message', 'm'),
-                    ])`outlerListener_n1_0(m)\nn2_RCVS_0(m)`,
+                    ])`outlerListener_n1_0(m)\nN_n2_rcvs_0(m)`,
                 ])
             )
         })
@@ -499,7 +499,7 @@ describe('templates', () => {
                         outNodesIds: [],
                     },
                     sinkConnections: [],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
                 '1': {
                     dspGroup: {
@@ -507,7 +507,7 @@ describe('templates', () => {
                         outNodesIds: [],
                     },
                     sinkConnections: [],
-                    functionName: 'coldDsp_1',
+                    functionName: 'COLD_1',
                 },
             }
 
@@ -517,7 +517,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([`coldDsp_0(EMPTY_MESSAGE)\ncoldDsp_1(EMPTY_MESSAGE)`])
+                Sequence([`COLD_0(EMPTY_MESSAGE)\nCOLD_1(EMPTY_MESSAGE)`])
             )
         })
     })
@@ -551,7 +551,7 @@ describe('templates', () => {
                         outNodesIds: ['n2'],
                     },
                     sinkConnections: [],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
                 '1': {
                     dspGroup: {
@@ -559,7 +559,7 @@ describe('templates', () => {
                         outNodesIds: ['n3'],
                     },
                     sinkConnections: [],
-                    functionName: 'coldDsp_1',
+                    functionName: 'COLD_1',
                 },
             }
 
@@ -570,8 +570,8 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    Func('coldDsp_0', [Var('Message', 'm')])`// n1\n// n2`,
-                    Func('coldDsp_1', [Var('Message', 'm')])`// n3`,
+                    Func('COLD_0', [Var('Message', 'm')])`// n1\n// n2`,
+                    Func('COLD_1', [Var('Message', 'm')])`// n3`,
                 ])
             )
         })
@@ -606,7 +606,7 @@ describe('templates', () => {
                             { nodeId: 'n2', portletId: '0' },
                         ],
                     ],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
             }
 
@@ -617,7 +617,7 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    Func('coldDsp_0', [
+                    Func('COLD_0', [
                         Var('Message', 'm'),
                     ])`// n1\n// inlet dsp n2`,
                 ])
@@ -653,7 +653,7 @@ describe('templates', () => {
                             { nodeId: 'n2', portletId: '0' },
                         ],
                     ],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
             }
 
@@ -663,7 +663,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([Func('coldDsp_0', [Var('Message', 'm')])`// n1`])
+                Sequence([Func('COLD_0', [Var('Message', 'm')])`// n1`])
             )
         })
     })

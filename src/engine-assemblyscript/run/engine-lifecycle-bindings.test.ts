@@ -93,12 +93,12 @@ describe('engine-lifecycle-bindings', () => {
                         io: {
                             messageReceivers: {
                                 node1: {
-                                    '0': 'ioRcv_node1_0',
+                                    '0': 'IORCV_node1_0',
                                 },
                             },
                             messageSenders: {
                                 node1: {
-                                    '0': 'ioSnd_node1_0',
+                                    '0': 'IOSND_node1_0',
                                 },
                             },
                         },

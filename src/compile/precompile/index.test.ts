@@ -146,7 +146,7 @@ describe('precompile', () => {
 
         assert.strictEqual(
             precompiledCode.nodes.nonInline2!.signalIns['0'],
-            '(N4 * (N2 + 1) - N4 * ((nonInline1_OUTS_0 * N1) * N3))'
+            '(N4 * (N2 + 1) - N4 * ((N_nonInline1_outs_0 * N1) * N3))'
         )
 
         assert.deepStrictEqual<DspGroup>(precompiledCode.graph.hotDspGroup, {
@@ -248,7 +248,7 @@ describe('precompile', () => {
                             { nodeId: 'n4', portletId: '0' },
                         ],
                     ],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
             }
         )
@@ -325,7 +325,7 @@ describe('precompile', () => {
                             { nodeId: 'n2', portletId: '0' },
                         ],
                     ],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
             }
         )
@@ -368,7 +368,7 @@ describe('precompile', () => {
             precompilation.precompiledCode.nodeImplementations.type1,
             {
                 nodeImplementation: nodeImplementations.type1,
-                stateClass: Class('type1_State', [
+                stateClass: Class('NT_type1_State', [
                     Var('Int', 'bla', undefined),
                 ]),
                 core: null,

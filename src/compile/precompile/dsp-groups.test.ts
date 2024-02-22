@@ -76,7 +76,7 @@ describe('dsp-groups', () => {
                             },
                         ],
                     ],
-                    functionName: 'coldDsp_0',
+                    functionName: 'COLD_0',
                 },
             }
         )

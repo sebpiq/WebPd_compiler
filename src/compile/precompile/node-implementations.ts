@@ -18,11 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph } from '../../dsp-graph'
-import { getNodeImplementation } from '../compile-helpers'
-import { Assigner, AssignerSpec } from '../proxies'
-import { NodeImplementations } from '../types'
-import { assertValidNamePart } from './proxies'
-import { Precompilation, VariableNamesIndex } from './types'
+import { Precompilation } from './types'
 
 export const STATE_CLASS_NAME = 'State'
 
@@ -30,7 +26,6 @@ export const precompileStateClass = (
     {
         graph,
         settings,
-        nodeImplementations,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -48,12 +43,7 @@ export const precompileStateClass = (
                 `No node of type "${nodeType}" exists in the graph.`
             )
         }
-        const namespaceAssigner = NamespaceAssigner({
-            nodeType,
-            nodeImplementations,
-            variableNamesAssigner,
-        })
-
+        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
         const astClass = precompiledImplementation.nodeImplementation.state({
             globs: variableNamesAssigner.globs,
             node: sampleNode,
@@ -74,7 +64,6 @@ export const precompileStateClass = (
 export const precompileCore = (
     {
         settings,
-        nodeImplementations,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -84,11 +73,7 @@ export const precompileCore = (
         precompiledCodeAssigner.nodeImplementations[nodeType]!
     const nodeImplementation = precompiledImplementation.nodeImplementation
     if (nodeImplementation.core) {
-        const namespaceAssigner = NamespaceAssigner({
-            nodeType,
-            nodeImplementations,
-            variableNamesAssigner,
-        })
+        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
         precompiledImplementation.core = nodeImplementation.core({
             settings,
             globs: variableNamesAssigner.globs,
@@ -97,45 +82,4 @@ export const precompileCore = (
     }
 }
 
-export const NamespaceAssigner = ({
-    variableNamesAssigner,
-    nodeType,
-    nodeImplementations,
-}: {
-    variableNamesAssigner: VariableNamesIndex
-    nodeType: DspGraph.NodeType
-    nodeImplementations: NodeImplementations
-}) => {
-    const namespace = variableNamesAssigner.nodeImplementations[nodeType]!
-    const prefix = _namespacePrefix(nodeImplementations, nodeType)
-    return Assigner(
-        _VariableNamesNodeImplementationAssignerSpec,
-        namespace,
-        prefix
-    )
-}
 
-const _VariableNamesNodeImplementationAssignerSpec: AssignerSpec<
-    VariableNamesIndex['nodeImplementations'][keyof VariableNamesIndex['nodeImplementations']],
-    string
-> = Assigner.Index((name, prefix) =>
-    Assigner.Literal(() => _variableName(prefix, name))
-)
-
-const _namespacePrefix = (
-    nodeImplementations: NodeImplementations,
-    nodeType: DspGraph.NodeType
-) => {
-    const nodeImplementation = getNodeImplementation(
-        nodeImplementations,
-        nodeType
-    )
-    return assertValidNamePart(
-        (nodeImplementation.flags
-            ? nodeImplementation.flags.alphaName
-            : null) || nodeType
-    )
-}
-
-const _variableName = (prefix: string, name: string) =>
-    `${prefix}_${assertValidNamePart(name)}`

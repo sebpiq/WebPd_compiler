@@ -162,6 +162,10 @@ export interface VariableNamesIndex {
         emptyMessage: string
     }
 
+    readonly globalCode: {
+        [ns: DspGraph.NodeType]: { [name: string]: VariableName }
+    }
+
     readonly io: {
         readonly messageReceivers: {
             [nodeId: DspGraph.NodeId]: {
