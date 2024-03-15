@@ -78,6 +78,7 @@ export const commonsArrays: GlobalCodeGeneratorWithSettings = {
     ]),
 
     exports: [{ name: 'commons_getArray' }, { name: 'commons_setArray' }],
+    dependencies: [sked],
 }
 
 export const commonsWaitFrame: GlobalCodeGeneratorWithSettings = {
