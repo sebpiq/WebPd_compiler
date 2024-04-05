@@ -170,7 +170,7 @@ const portletsDeclarations = ({
                         // prettier-ignore
                         return Func(astFunc.name!, astFunc.args, astFunc.returnType)`
                             ${astFunc.body}
-                            throw new Error('Node "${nodeId}", inlet "${inletId}", unsupported message : ' + msg_display(${astFunc.args[0]!.name})${
+                            throw new Error('Node type "${precompiledNode.nodeType}", id "${nodeId}", inlet "${inletId}", unsupported message : ' + msg_display(${astFunc.args[0]!.name})${
                                 debug
                                     ? " + '\\nDEBUG : remember, you must return from message receiver'"
                                     : ''})
