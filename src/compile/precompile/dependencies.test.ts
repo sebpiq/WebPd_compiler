@@ -96,7 +96,14 @@ describe('precompile.dependencies', () => {
                         ast`"bli"`,
                         ast`"blu"`,
                     ]),
-                    exports: [],
+                    exports: [
+                        {
+                            name: 'commons_getArray',
+                        },
+                        {
+                            name: 'commons_setArray',
+                        },
+                    ],
                     imports: [],
                 }
             )
@@ -144,7 +151,16 @@ describe('precompile.dependencies', () => {
 
             assert.deepStrictEqual<PrecompiledCode['dependencies']['exports']>(
                 precompilation.precompiledCode.dependencies.exports,
-                [{ name: 'ble' }, { name: 'blo' }]
+                [
+                    {
+                        name: 'commons_getArray',
+                    },
+                    {
+                        name: 'commons_setArray',
+                    },
+                    { name: 'ble' },
+                    { name: 'blo' },
+                ]
             )
             assert.deepStrictEqual<PrecompiledCode['dependencies']['imports']>(
                 precompilation.precompiledCode.dependencies.imports,

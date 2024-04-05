@@ -123,13 +123,13 @@ describe('templates', () => {
                 Sequence([
                     Func('N_n1_rcvs_0', [
                         Var('Message', 'm'),
-                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m))`,
+                    ])`// [n1] message receiver 0\nthrow new Error('Node type "DUMMY", id "n1", inlet "0", unsupported message : ' + msg_display(m))`,
                     Func('N_n1_rcvs_1', [
                         Var('Message', 'm'),
-                    ])`// [n1] message receiver 1\nthrow new Error('Node "n1", inlet "1", unsupported message : ' + msg_display(m))`,
+                    ])`// [n1] message receiver 1\nthrow new Error('Node type "DUMMY", id "n1", inlet "1", unsupported message : ' + msg_display(m))`,
                     Func('N_n2_rcvs_0', [
                         Var('Message', 'm'),
-                    ])`// [n2] message receiver 0\nthrow new Error('Node "n2", inlet "0", unsupported message : ' + msg_display(m))`,
+                    ])`// [n2] message receiver 0\nthrow new Error('Node type "DUMMY", id "n2", inlet "0", unsupported message : ' + msg_display(m))`,
                 ])
             )
         })
@@ -164,7 +164,7 @@ describe('templates', () => {
                 Sequence([
                     Func('N_n1_rcvs_0', [
                         Var('Message', 'm'),
-                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
+                    ])`// [n1] message receiver 0\nthrow new Error('Node type "DUMMY", id "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
                 ])
             )
         })
