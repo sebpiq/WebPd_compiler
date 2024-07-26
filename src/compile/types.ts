@@ -18,12 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    AstClass,
-    AstElement,
-    AstFunc,
-    AstSequence,
-} from '../ast/types'
+import { AstClass, AstElement, AstFunc, AstSequence } from '../ast/types'
 import { VariableName } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
 import { VariableNamesIndex } from './precompile/types'
@@ -74,21 +69,15 @@ export interface CompilationSettings {
 }
 
 /** Simplest form of generator for global code */
-export type GlobalCodeGenerator = (context: {
-    globs: VariableNamesIndex['globs']
-    settings: CompilationSettings
-}) => AstElement
-
-export interface GlobalCodeDefinitionExport {
-    name: VariableName
-    targets?: Array<CompilerTarget>
-}
+export type GlobalCodeGenerator = (
+    context: GlobalCodePrecompilationContext
+) => AstElement
 
 /** Generator for global code that specifies also extra settings */
 export interface GlobalCodeGeneratorWithSettings {
     codeGenerator: GlobalCodeGenerator
-    exports?: Array<GlobalCodeDefinitionExport>
-    imports?: Array<AstFunc>
+    exports?: (context: GlobalCodePrecompilationContext) => Array<VariableName>
+    imports?: (context: GlobalCodePrecompilationContext) => Array<AstFunc>
     dependencies?: Array<GlobalCodeDefinition>
 }
 
@@ -115,19 +104,22 @@ export interface NodeImplementation<NodeArgsType = {}> {
 
     state?: (context: {
         globs: VariableNamesIndex['globs']
-        node: DspGraph.Node<NodeArgsType>
+        globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: NodeImplementationPrecompilationContext['ns']
+        node: DspGraph.Node<NodeArgsType>
         settings: CompilationSettings
     }) => AstClass
 
     core?: (context: {
         globs: VariableNamesIndex['globs']
+        globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: NodeImplementationPrecompilationContext['ns']
         settings: CompilationSettings
     }) => AstElement
 
     initialization?: (context: {
         globs: VariableNamesIndex['globs']
+        globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: NodeImplementationPrecompilationContext['ns']
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
@@ -138,12 +130,13 @@ export interface NodeImplementation<NodeArgsType = {}> {
     /**
      * Generates the code that will be ran each iteration of the dsp loop for that node instance.
      * Typically reads from ins, runs some calculations, and write results to outs.
-     * 
+     *
      * Can also define dsp per inlet, in which case that dsp will be ran only when the inlet value changes.
      * This allows to optimize the dsp loop by only running the code that is necessary.
      */
     dsp?: (context: {
         globs: VariableNamesIndex['globs']
+        globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: NodeImplementationPrecompilationContext['ns']
         state: NodePrecompilationContext['state']
         ins: NodePrecompilationContext['ins']
@@ -163,6 +156,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
      */
     messageReceivers?: (context: {
         globs: VariableNamesIndex['globs']
+        globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: NodeImplementationPrecompilationContext['ns']
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
@@ -178,13 +172,19 @@ export interface NodeImplementation<NodeArgsType = {}> {
 
 interface NodePrecompilationContext {
     state: VariableName
-    ins: {[portletId: DspGraph.PortletId]: VariableName}
-    outs: {[portletId: DspGraph.PortletId]: VariableName}
-    snds: {[portletId: DspGraph.PortletId]: VariableName}
+    ins: { [portletId: DspGraph.PortletId]: VariableName }
+    outs: { [portletId: DspGraph.PortletId]: VariableName }
+    snds: { [portletId: DspGraph.PortletId]: VariableName }
 }
 
 interface NodeImplementationPrecompilationContext {
-    ns: {[name: string]: VariableName}
+    ns: { [name: string]: VariableName }
+}
+
+export interface GlobalCodePrecompilationContext {
+    globalCode: { [nsName: string]: { [name: string]: VariableName } }
+    globs: VariableNamesIndex['globs']
+    settings: CompilationSettings
 }
 
 export type NodeImplementations = {

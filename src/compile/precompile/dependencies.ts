@@ -18,54 +18,51 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { isGlobalDefinitionWithSettings } from '../compile-helpers'
-import {
-    CompilationSettings,
-    CompilerTarget,
-    GlobalCodeDefinition,
-    GlobalCodeDefinitionExport,
-} from '../types'
-import { AstElement, AstFunc, AstSequence } from '../../ast/types'
+import { GlobalCodeDefinition, GlobalCodePrecompilationContext } from '../types'
+import { AstElement, AstFunc, AstSequence, VariableName } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { commonsArrays, commonsWaitFrame, core, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
-import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
+import { Precompilation, PrecompiledCode } from './types'
 
-export default (precompilation: Precompilation) => {
-    const {
-        settings,
-        variableNamesAssigner,
-        precompiledCodeAssigner,
-    } = precompilation
+export default (
+    precompilation: Precompilation,
+    minimalDependencies: Array<GlobalCodeDefinition>
+) => {
+    const { settings, variableNamesAssigner, precompiledCodeAssigner } =
+        precompilation
     const dependencies = flattenDependencies([
-        ...engineMinimalDependencies(),
+        ...minimalDependencies,
         ..._collectDependenciesFromTraversal(precompilation),
     ])
 
+    const context: GlobalCodePrecompilationContext = {
+        globs: variableNamesAssigner.globs,
+        globalCode: variableNamesAssigner.globalCode,
+        settings,
+    }
+
     // Flatten and de-duplicate all the module's dependencies
     precompiledCodeAssigner.dependencies.ast = instantiateAndDedupeDependencies(
-        settings,
         dependencies,
-        variableNamesAssigner.globs
+        context
     )
 
     // Collect and attach imports / exports info
     precompiledCodeAssigner.dependencies.exports = collectAndDedupeExports(
-        settings.target,
-        dependencies
+        dependencies,
+        context
     )
-    precompiledCodeAssigner.dependencies.imports =
-        collectAndDedupeImports(dependencies)
+    precompiledCodeAssigner.dependencies.imports = collectAndDedupeImports(
+        dependencies,
+        context
+    )
 }
 
 export const instantiateAndDedupeDependencies = (
-    settings: CompilationSettings,
     dependencies: Array<GlobalCodeDefinition>,
-    globs: VariableNamesIndex['globs']
+    context: GlobalCodePrecompilationContext
 ): AstSequence => {
-    const context = {
-        settings,
-        globs,
-    }
     return Sequence(
         dependencies
             .map((codeDefinition) =>
@@ -93,32 +90,31 @@ export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
 ]
 
 export const collectAndDedupeExports = (
-    target: CompilerTarget,
-    dependencies: Array<GlobalCodeDefinition>
+    dependencies: Array<GlobalCodeDefinition>,
+    context: GlobalCodePrecompilationContext
 ): PrecompiledCode['dependencies']['exports'] =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
-        .reduce<Array<GlobalCodeDefinitionExport>>(
+        .reduce<Array<VariableName>>(
             (exports, codeDefinition) =>
                 codeDefinition.exports
                     ? [
                           ...exports,
-                          ...codeDefinition.exports.filter(
-                              (xprt) =>
-                                  (!xprt.targets ||
-                                      xprt.targets.includes(target)) &&
+                          ...codeDefinition
+                              .exports(context)
+                              .filter((xprt) =>
                                   exports.every(
-                                      (otherExport) =>
-                                          xprt.name !== otherExport.name
+                                      (otherExport) => xprt !== otherExport
                                   )
-                          ),
+                              ),
                       ]
                     : exports,
             []
         )
 
 export const collectAndDedupeImports = (
-    dependencies: Array<GlobalCodeDefinition>
+    dependencies: Array<GlobalCodeDefinition>,
+    context: GlobalCodePrecompilationContext
 ): PrecompiledCode['dependencies']['imports'] =>
     dependencies
         .filter(isGlobalDefinitionWithSettings)
@@ -127,12 +123,14 @@ export const collectAndDedupeImports = (
                 codeDefinition.imports
                     ? [
                           ...imports,
-                          ...codeDefinition.imports.filter((imprt) =>
-                              imports.every(
-                                  (otherImport) =>
-                                      imprt.name !== otherImport.name
-                              )
-                          ),
+                          ...codeDefinition
+                              .imports(context)
+                              .filter((imprt) =>
+                                  imports.every(
+                                      (otherImport) =>
+                                          imprt.name !== otherImport.name
+                                  )
+                              ),
                       ]
                     : imports,
             []

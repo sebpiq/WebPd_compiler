@@ -32,6 +32,7 @@ import { makeSettings } from '../../compile/test-helpers'
 describe('engine-lifecycle-bindings', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
+            // ARRANGE
             const compilationSettings = makeSettings({
                 audio: {
                     bitDepth: 32,
@@ -57,12 +58,13 @@ describe('engine-lifecycle-bindings', () => {
 
             const nodeImplementations: NodeImplementations = {
                 DUMMY: {
-                    messageReceivers: () => ({
-                        '0': AnonFunc([Var('Message', 'm')])``,
+                    messageReceivers: ({ globalCode }) => ({
+                        '0': AnonFunc([Var(globalCode.msg!.Message!, 'm')])``,
                     }),
                 },
             }
 
+            // ACT
             const result = await compile(
                 graph,
                 nodeImplementations,
@@ -81,6 +83,7 @@ describe('engine-lifecycle-bindings', () => {
 
             const metadata = await readMetadata(wasmBuffer)
 
+            // ASSERT
             assert.deepStrictEqual<EngineMetadata>(metadata, {
                 libVersion: packageInfo.version,
                 audioSettings: {
@@ -93,15 +96,18 @@ describe('engine-lifecycle-bindings', () => {
                         io: {
                             messageReceivers: {
                                 node1: {
-                                    '0': 'IORCV_node1_0',
+                                    '0': 'IO_rcv_node1_0',
                                 },
                             },
                             messageSenders: {
                                 node1: {
-                                    '0': 'IOSND_node1_0',
+                                    '0': 'IO_snd_node1_0',
                                 },
                             },
                         },
+                        // We don't test the details of the variable names generated
+                        // for global code, as they are generated dynamically.
+                        globalCode: metadata.compilation.variableNamesIndex.globalCode,
                     },
                     io: {
                         messageReceivers:

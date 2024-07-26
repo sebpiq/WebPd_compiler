@@ -290,6 +290,7 @@ describe('precompile.portlets', () => {
             })
 
             const precompilation = makePrecompilation({ graph })
+            const globalCode = precompilation.variableNamesAssigner.globalCode
 
             precompileMessageInlet(precompilation, graph.n2!, '0')
             precompileMessageInlet(precompilation, graph.n3!, '0')
@@ -309,7 +310,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n2!.messageReceivers['0'],
                 Func(
                     'N_n2_rcvs_0',
-                    [Var('Message', 'm')],
+                    [Var(globalCode.msg!.Message!, 'm')],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
@@ -317,7 +318,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n3!.messageReceivers['0'],
                 Func(
                     'N_n3_rcvs_0',
-                    [Var('Message', 'm')],
+                    [Var(globalCode.msg!.Message!, 'm')],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
             )

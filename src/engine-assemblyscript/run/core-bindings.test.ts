@@ -27,14 +27,15 @@ import {
 } from './core-bindings'
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { getFloatArrayType } from '../../run/run-helpers'
+import { RawModuleWithNameMapping, getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
-import { FloatArrayPointer, InternalPointer } from './types'
+import { EngineRawModule, FloatArrayPointer, InternalPointer } from './types'
 import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../compile/render'
-import { makeSettings } from '../../compile/test-helpers'
-import { createGlobsVariableNames } from '../../compile/precompile/proxies'
+import { makeGlobalCodePrecompilationContext, makePrecompilation, makeSettings } from '../../compile/test-helpers'
+import { Code } from '../../ast/types'
+import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule extends CoreRawModule {
@@ -56,23 +57,44 @@ describe('core-bindings', () => {
         testReadSomeValueFromFloatArrays: () => number
     }
 
-    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => render(macros, Sequence([
-        core.codeGenerator({
-            settings: makeSettings({
+    const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => {
+        const precompilation = makePrecompilation({
+            settings: {
                 target: 'assemblyscript',
                 audio: { bitDepth, channelCount: { in: 2, out: 2 } },
-            }),
-            globs: createGlobsVariableNames(),
-        }),
-        core.exports!.map(({ name }) => `export { ${name} }`)
-    ]))
+            }
+        })
+        const context = makeGlobalCodePrecompilationContext(precompilation)
+        return render(macros, Sequence([
+            core.codeGenerator(context),
+            core.exports!(context).map((name) => `export { ${name} }`)
+        ]))
+    }
+
+    const compileRawModule = async (code: Code, bitDepth: AudioSettings['bitDepth']) => {
+        const rawModule = await ascCodeToRawModule<CoreTestRawModule>(code, bitDepth)
+        const precompilation = makePrecompilation({
+            settings: {
+                target: 'assemblyscript'
+            }
+        })
+        // We instantiate the code to make sure all names are assigned
+        instantiateAndDedupeDependencies(
+            [core],
+            makeGlobalCodePrecompilationContext(precompilation)
+        )
+        return RawModuleWithNameMapping<EngineRawModule & CoreTestRawModule>(
+            rawModule,
+            precompilation.variableNamesIndex.globalCode,
+        )
+    }
 
     describe('readTypedArray', () => {
         it.each(TEST_PARAMETERS)(
             'should read existing typed array from wasm module %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(
+                const rawModule = await compileRawModule(
                     getBaseTestCode(bitDepth) + `
                         const myArray: Float64Array = new Float64Array(3)
                         myArray[0] = 123
@@ -89,9 +111,9 @@ describe('core-bindings', () => {
                         }
                     `, bitDepth)
 
-                const arrayPointer = wasmExports.testGetMyArray()
+                const arrayPointer = rawModule.testGetMyArray()
                 const myArray = readTypedArray(
-                    wasmExports,
+                    rawModule,
                     Float64Array,
                     arrayPointer
                 )
@@ -103,11 +125,11 @@ describe('core-bindings', () => {
                 // Arrays share memory space, so modifications should happen in wasm memory too
                 myArray[0] = 111
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 0),
+                    rawModule.testReadArrayElem(arrayPointer, 0),
                     111
                 )
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 1),
+                    rawModule.testReadArrayElem(arrayPointer, 1),
                     456
                 )
             }
@@ -116,7 +138,7 @@ describe('core-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should read dynamically created typed array from wasm module %s',
             async ({ bitDepth }) => {
-                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(
+                const rawModule = await compileRawModule(
                     getBaseTestCode(bitDepth) +
                         `
                         export function testCreateNewArray(size: Int): Float64Array {
@@ -136,9 +158,9 @@ describe('core-bindings', () => {
                     bitDepth
                 )
 
-                const arrayPointer = wasmExports.testCreateNewArray(3)
+                const arrayPointer = rawModule.testCreateNewArray(3)
                 const myArray = readTypedArray(
-                    wasmExports,
+                    rawModule,
                     Float64Array,
                     arrayPointer
                 )
@@ -147,11 +169,11 @@ describe('core-bindings', () => {
                 // Arrays share memory space, so modifications should happen in wasm memory too
                 myArray[0] = 111
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 0),
+                    rawModule.testReadArrayElem(arrayPointer, 0),
                     111
                 )
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 1),
+                    rawModule.testReadArrayElem(arrayPointer, 1),
                     45
                 )
             }
@@ -163,7 +185,7 @@ describe('core-bindings', () => {
             'should lower typed array to wasm module %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(getBaseTestCode(bitDepth) + `
+                const rawModule = await compileRawModule(getBaseTestCode(bitDepth) + `
                     export function testReadArrayElem (array: FloatArray, index: Int): Float {
                         return array[index]
                     }
@@ -173,31 +195,31 @@ describe('core-bindings', () => {
                 `, bitDepth)
 
                 const { arrayPointer, array } = lowerFloatArray(
-                    wasmExports,
+                    rawModule,
                     bitDepth,
                     new Float64Array([111, 222, 333])
                 )
                 assert.strictEqual(
-                    wasmExports.testReadArrayLength(arrayPointer),
+                    rawModule.testReadArrayLength(arrayPointer),
                     3
                 )
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 0),
+                    rawModule.testReadArrayElem(arrayPointer, 0),
                     111
                 )
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 1),
+                    rawModule.testReadArrayElem(arrayPointer, 1),
                     222
                 )
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 2),
+                    rawModule.testReadArrayElem(arrayPointer, 2),
                     333
                 )
 
                 // Test that shares the same memory space
                 array[1] = 666
                 assert.strictEqual(
-                    wasmExports.testReadArrayElem(arrayPointer, 1),
+                    rawModule.testReadArrayElem(arrayPointer, 1),
                     666
                 )
             }
@@ -209,7 +231,7 @@ describe('core-bindings', () => {
             'should lower a list of typed arrays %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(getBaseTestCode(bitDepth) + `
+                const rawModule = await compileRawModule(getBaseTestCode(bitDepth) + `
                     export function testReadFloatArraysLength (arrays: FloatArray[]): f64 {
                         return arrays.length
                     }
@@ -222,7 +244,7 @@ describe('core-bindings', () => {
                 `, bitDepth)
 
                 const arraysPointer = lowerListOfFloatArrays(
-                    wasmExports,
+                    rawModule,
                     bitDepth,
                     [
                         new Float64Array([111, 222, 333]),
@@ -232,33 +254,33 @@ describe('core-bindings', () => {
                     ]
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysLength(arraysPointer),
+                    rawModule.testReadFloatArraysLength(arraysPointer),
                     4
                 )
 
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(
+                    rawModule.testReadFloatArraysArrayLength(
                         arraysPointer,
                         0
                     ),
                     3
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(
+                    rawModule.testReadFloatArraysArrayLength(
                         arraysPointer,
                         1
                     ),
                     3
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(
+                    rawModule.testReadFloatArraysArrayLength(
                         arraysPointer,
                         2
                     ),
                     2
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayLength(
+                    rawModule.testReadFloatArraysArrayLength(
                         arraysPointer,
                         3
                     ),
@@ -266,7 +288,7 @@ describe('core-bindings', () => {
                 )
 
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(
+                    rawModule.testReadFloatArraysArrayElem(
                         arraysPointer,
                         0,
                         0
@@ -274,7 +296,7 @@ describe('core-bindings', () => {
                     111
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(
+                    rawModule.testReadFloatArraysArrayElem(
                         arraysPointer,
                         0,
                         1
@@ -282,7 +304,7 @@ describe('core-bindings', () => {
                     222
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(
+                    rawModule.testReadFloatArraysArrayElem(
                         arraysPointer,
                         0,
                         2
@@ -291,7 +313,7 @@ describe('core-bindings', () => {
                 )
 
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(
+                    rawModule.testReadFloatArraysArrayElem(
                         arraysPointer,
                         2,
                         0
@@ -299,7 +321,7 @@ describe('core-bindings', () => {
                     777
                 )
                 assert.strictEqual(
-                    wasmExports.testReadFloatArraysArrayElem(
+                    rawModule.testReadFloatArraysArrayElem(
                         arraysPointer,
                         2,
                         1
@@ -316,7 +338,7 @@ describe('core-bindings', () => {
             async ({ bitDepth }) => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 // prettier-ignore
-                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(getBaseTestCode(bitDepth) + `
+                const rawModule = await compileRawModule(getBaseTestCode(bitDepth) + `
                     const arrays: FloatArray[] = [
                         createFloatArray(3),
                         createFloatArray(3),
@@ -332,9 +354,9 @@ describe('core-bindings', () => {
                     }
                 `, bitDepth)
 
-                const arraysPointer = wasmExports.testGetListOfArrays()
+                const arraysPointer = rawModule.testGetListOfArrays()
                 const arrays = readListOfFloatArrays(
-                    wasmExports,
+                    rawModule,
                     bitDepth,
                     arraysPointer
                 )
@@ -349,7 +371,7 @@ describe('core-bindings', () => {
             'should share the same memory space %s',
             async ({ bitDepth }) => {
                 // prettier-ignore
-                const wasmExports = await ascCodeToRawModule<CoreTestRawModule>(getBaseTestCode(bitDepth) + `
+                const rawModule = await compileRawModule(getBaseTestCode(bitDepth) + `
                     const arrays: FloatArray[] = [
                         createFloatArray(3),
                         createFloatArray(3),
@@ -369,15 +391,15 @@ describe('core-bindings', () => {
                     }
                 `, bitDepth)
 
-                const arraysPointer = wasmExports.testGetListOfArrays()
+                const arraysPointer = rawModule.testGetListOfArrays()
                 const arrays = readListOfFloatArrays(
-                    wasmExports,
+                    rawModule,
                     bitDepth,
                     arraysPointer
                 )
                 arrays[1]![1] = 88
                 assert.deepStrictEqual(
-                    wasmExports.testReadSomeValueFromFloatArrays(),
+                    rawModule.testReadSomeValueFromFloatArrays(),
                     88
                 )
             }

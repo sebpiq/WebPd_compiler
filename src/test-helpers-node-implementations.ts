@@ -33,7 +33,7 @@ import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/graph-helpers'
 import { commonsArrays } from './stdlib'
-import { AnonFunc, Class, ConstVar, Sequence, Var, ast } from './ast/declare'
+import { AnonFunc, Class, Sequence, Var } from './ast/declare'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
 interface NodeTestSettings<NodeArguments> {
@@ -45,11 +45,12 @@ interface NodeTestSettings<NodeArguments> {
     arrays?: { [arrayName: string]: Array<number> }
 }
 
-type EngineFsKeys = keyof Engine['fs']
+type EngineFs = NonNullable<Engine['fs']>
+type EngineFsKeys = keyof EngineFs
 
 type FrameNode = {
     fs?: {
-        [FsFuncName in EngineFsKeys]?: Parameters<Engine['fs'][FsFuncName]>
+        [FsFuncName in keyof EngineFs]?: Parameters<NonNullable<EngineFs[FsFuncName]>>
     }
 }
 export type FrameNodeIn = FrameNode & {
@@ -157,14 +158,14 @@ export const generateFramesForNode = async <NodeArguments>(
                         .map((outletId) => Var('Float', `VALUE_${outletId}`, 0))
                 ),
 
-            messageReceivers: ({ snds, state }) =>
+            messageReceivers: ({ globalCode, snds, state }) =>
                 Object.entries(fakeSourceNode.outlets).reduce(
                     (messageReceivers, [outletId, outlet]) => {
                         // Messages received for message outlets are directly proxied
                         if (outlet.type === 'message') {
                             return {
                                 ...messageReceivers,
-                                [outletId]: AnonFunc([Var('Message', 'm')])`
+                                [outletId]: AnonFunc([Var(globalCode.msg!.Message!, 'm')])`
                                 ${snds[outletId]!}(m)
                                 return
                             `,
@@ -174,8 +175,8 @@ export const generateFramesForNode = async <NodeArguments>(
                         } else {
                             return {
                                 ...messageReceivers,
-                                [outletId]: AnonFunc([Var('Message', 'm')])`
-                                ${state}.VALUE_${outletId} = msg_readFloatToken(m, 0)
+                                [outletId]: AnonFunc([Var(globalCode.msg!.Message!, 'm')])`
+                                ${state}.VALUE_${outletId} = ${globalCode.msg!.readFloatToken!}(m, 0)
                                 return
                             `,
                             }
@@ -201,7 +202,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            dsp: ({ ins, snds }) =>
+            dsp: ({ globalCode, ins, snds }) =>
                 Sequence(
                     Object.keys(testNode.sinks)
                         .filter(
@@ -211,12 +212,12 @@ export const generateFramesForNode = async <NodeArguments>(
                         .map(
                             (outletId) =>
                                 // prettier-ignore
-                                `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
+                                `${snds[outletId]}(${globalCode.msg!.floats!}([${ins[outletId]}]))`
                         )
                 ),
 
             // Take incoming messages and directly proxy them
-            messageReceivers: ({ snds }) =>
+            messageReceivers: ({ globalCode, snds }) =>
                 mapArray(
                     Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>
@@ -224,7 +225,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     ),
                     (inletId) => [
                         inletId,
-                        AnonFunc([Var('Message', 'm')])`
+                        AnonFunc([Var(globalCode.msg!.Message!, 'm')])`
                             ${snds[inletId]!}(m)
                             return
                         `,
@@ -323,18 +324,21 @@ export const generateFramesForNode = async <NodeArguments>(
                 outputFrame.fs[funcName] = args
             }
         }
-        engine.fs.onCloseSoundStream = (...args) =>
-            _fsCallback('onCloseSoundStream', args)
-        engine.fs.onOpenSoundReadStream = (...args) =>
-            _fsCallback('onOpenSoundReadStream', args)
-        engine.fs.onOpenSoundWriteStream = (...args) =>
-            _fsCallback('onOpenSoundWriteStream', args)
-        engine.fs.onReadSoundFile = (...args) =>
-            _fsCallback('onReadSoundFile', args)
-        engine.fs.onSoundStreamData = (...args) =>
-            _fsCallback('onSoundStreamData', args)
-        engine.fs.onWriteSoundFile = (...args) =>
-            _fsCallback('onWriteSoundFile', args)
+
+        if (engine.fs) {
+            engine.fs.onCloseSoundStream = (...args) =>
+                _fsCallback('onCloseSoundStream', args)
+            engine.fs.onOpenSoundReadStream = (...args) =>
+                _fsCallback('onOpenSoundReadStream', args)
+            engine.fs.onOpenSoundWriteStream = (...args) =>
+                _fsCallback('onOpenSoundWriteStream', args)
+            engine.fs.onReadSoundFile = (...args) =>
+                _fsCallback('onReadSoundFile', args)
+            engine.fs.onSoundStreamData = (...args) =>
+                _fsCallback('onSoundStreamData', args)
+            engine.fs.onWriteSoundFile = (...args) =>
+                _fsCallback('onWriteSoundFile', args)
+        }
 
         // Set up engine outs to receive sent messages
         Object.keys(engine.io.messageSenders['fakeSinkNode']!).forEach(
@@ -365,9 +369,9 @@ export const generateFramesForNode = async <NodeArguments>(
         }
 
         // Send in fs commands
-        if (inputFrame.fs) {
+        if (engine.fs && inputFrame.fs) {
             Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
-                ;(engine.fs[funcName as EngineFsKeys] as any).apply(null, args)
+                ;(engine.fs![funcName as EngineFsKeys] as any).apply(null, args)
             })
         }
 

@@ -149,6 +149,7 @@ export const precompileMessageInlet = (
     inletId: DspGraph.PortletId
 ) => {
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
+    const globalCode = variableNamesAssigner.globalCode
     if (getters.getSources(node, inletId).length >= 1) {
         const messageReceiverName =
             variableNamesAssigner.nodes[node.id]!.messageReceivers[inletId]!
@@ -157,7 +158,7 @@ export const precompileMessageInlet = (
         // precompiling message receivers.
         precompiledNode.messageReceivers[inletId] = Func(
             messageReceiverName,
-            [Var('Message', 'm')],
+            [Var(globalCode.msg!.Message!, 'm')],
             'void'
         )`throw new Error("This placeholder should have been replaced during precompilation")`
     } else {

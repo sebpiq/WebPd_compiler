@@ -42,12 +42,12 @@ const _proxySetHandlerReadOnly = () => {
     throw new Error('This Proxy is read-only.')
 }
 
-const _proxyGetHandlerThrowIfKeyUnknown = <T extends Object, K extends string>(
+export const _proxyGetHandlerThrowIfKeyUnknown = <T extends Object, K extends string>(
     target: T,
     key: K,
     path?: ProxyPath
 ): boolean => {
-    if (!target.hasOwnProperty(key as PropertyKey)) {
+    if (!(key in target)) {
         // Whitelist some fields that are undefined but accessed at
         // some point or another by our code.
         // TODO : find a better way to do this.
@@ -60,6 +60,7 @@ const _proxyGetHandlerThrowIfKeyUnknown = <T extends Object, K extends string>(
                 '$$typeof',
                 '@@__IMMUTABLE_ITERABLE__@@',
                 '@@__IMMUTABLE_RECORD__@@',
+                'then',
             ].includes(key)
         ) {
             return true
@@ -245,17 +246,22 @@ export const ProtectedIndex = <T extends Object>(
  * - reading an unknown property.
  * - writing to a property.
  */
-export const ReadOnlyIndex = <T extends Object>(
+export const ReadOnlyIndex = <T extends {[k: string]: any}>(
     namespace: T,
     path?: ProxyPath
-) => {
+): T => {
     return new Proxy<T>(namespace, {
         get: (target, k) => {
             const key = String(k)
             if (_proxyGetHandlerThrowIfKeyUnknown(target, key, path)) {
                 return undefined
             }
-            return (target as any)[key]
+            const value = target[key as keyof T]
+            if (typeof value === 'object' && value !== null) {
+                return ReadOnlyIndex<T[keyof T]>(value, _addPath(target, key, path))
+            } else {
+                return value 
+            }
         },
 
         set: _proxySetHandlerReadOnly,

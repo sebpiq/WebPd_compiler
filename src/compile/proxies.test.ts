@@ -23,6 +23,7 @@ import {
     Assigner,
     ProtectedIndex,
     ReadOnlyIndexWithDollarKeys,
+    ReadOnlyIndex,
 } from './proxies'
 
 describe('proxies', () => {
@@ -597,6 +598,22 @@ describe('proxies', () => {
                 const namespace: { [key: string]: string } =
                     ReadOnlyIndexWithDollarKeys({}, '', '')
                 assert.throws(() => (namespace.bla = '2'))
+            })
+        })
+    })
+
+    describe('ReadOnlyIndex', () => {
+        describe('get', () => {
+            it('should work with nested index', () => {
+                const namespace = ReadOnlyIndex(
+                    {
+                        bla: {
+                            hello: '1'
+                        },
+                    },
+                )
+                assert.throws(() => (namespace as any).blo, /namespace doesn't know key "blo"/)
+                assert.throws(() => (namespace.bla as any).bye!, /namespace <bla> doesn't know key "bye"/)
             })
         })
     })

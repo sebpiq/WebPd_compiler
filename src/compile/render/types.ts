@@ -44,4 +44,5 @@ export interface RenderInput {
 
 export type RenderTemplateInput = Omit<RenderInput, 'variableNamesIndex'> & {
     readonly globs: VariableNamesIndex['globs']
+    readonly globalCode: VariableNamesIndex['globalCode']
 }

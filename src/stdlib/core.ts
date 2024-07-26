@@ -23,22 +23,22 @@ import { Sequence, Func, Var } from '../ast/declare'
 
 export const core: GlobalCodeGeneratorWithSettings = {
     // prettier-ignore
-    codeGenerator: ({settings: { target, audio: { bitDepth } }}) => {
+    codeGenerator: ({ settings: { target, audio: { bitDepth } }, globalCode }) => {
         const Int = 'i32'
         const Float = bitDepth === 32 ? 'f32' : 'f64'
         const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
         const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
         const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
         const declareFuncs = {
-            toInt: Func('toInt', [Var('Float', 'v')], 'Int'),
-            toFloat: Func('toFloat', [Var('Int', 'v')], 'Float'),
-            createFloatArray: Func('createFloatArray', [Var('Int', 'length')], 'FloatArray'),
-            setFloatDataView: Func('setFloatDataView', [
+            toInt: Func(globalCode.core!.toInt!, [Var('Float', 'v')], 'Int'),
+            toFloat: Func(globalCode.core!.toFloat!, [Var('Int', 'v')], 'Float'),
+            createFloatArray: Func(globalCode.core!.createFloatArray!, [Var('Int', 'length')], 'FloatArray'),
+            setFloatDataView: Func(globalCode.core!.setFloatDataView!, [
                 Var('DataView', 'dataView'), 
                 Var('Int', 'position'), 
                 Var('Float', 'value'), 
             ], 'void'),
-            getFloatDataView: Func('getFloatDataView', [
+            getFloatDataView: Func(globalCode.core!.getFloatDataView!, [
                 Var('DataView', 'dataView'), 
                 Var('Int', 'position'), 
             ], 'Float')
@@ -68,25 +68,25 @@ export const core: GlobalCodeGeneratorWithSettings = {
                 `,
 
                 // =========================== EXPORTED API
-                Func('x_core_createListOfArrays', [], 'FloatArray[]')`
+                Func(globalCode.core!.x_createListOfArrays!, [], 'FloatArray[]')`
                     const arrays: FloatArray[] = []
                     return arrays
                 `,
 
-                Func('x_core_pushToListOfArrays', [
+                Func(globalCode.core!.x_pushToListOfArrays!, [
                     Var('FloatArray[]', 'arrays'), 
                     Var('FloatArray', 'array')
                 ], 'void')`
                     arrays.push(array)
                 `,
 
-                Func('x_core_getListOfArraysLength', [
+                Func(globalCode.core!.x_getListOfArraysLength!, [
                     Var('FloatArray[]', 'arrays')
                 ], 'Int')`
                     return arrays.length
                 `,
 
-                Func('x_core_getListOfArraysElem', [
+                Func(globalCode.core!.x_getListOfArraysElem!, [
                     Var('FloatArray[]', 'arrays'), 
                     Var('Int', 'index')
                 ], 'FloatArray')`
@@ -121,11 +121,11 @@ export const core: GlobalCodeGeneratorWithSettings = {
         }
     },
 
-    exports: [
-        { name: 'x_core_createListOfArrays', targets: ['assemblyscript'] },
-        { name: 'x_core_pushToListOfArrays', targets: ['assemblyscript'] },
-        { name: 'x_core_getListOfArraysLength', targets: ['assemblyscript'] },
-        { name: 'x_core_getListOfArraysElem', targets: ['assemblyscript'] },
-        { name: 'createFloatArray', targets: ['assemblyscript'] },
-    ],
+    exports: ({ settings: { target }, globalCode }) => target === 'assemblyscript' ? [
+        globalCode.core!.x_createListOfArrays!,
+        globalCode.core!.x_pushToListOfArrays!,
+        globalCode.core!.x_getListOfArraysLength!,
+        globalCode.core!.x_getListOfArraysElem!,
+        globalCode.core!.createFloatArray!,
+    ]: [],
 }

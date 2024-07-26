@@ -28,37 +28,60 @@ export const FS_OPERATION_SUCCESS = 0
 export const FS_OPERATION_FAILURE = 1
 
 export const fsCore: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ settings: { target } }) => {
+    codeGenerator: ({ globalCode, settings: { target } }) => {
         const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`
-                type fs_OperationId = Int
-                type fs_OperationStatus = Int
-                type fs_OperationCallback = (id: fs_OperationId, status: fs_OperationStatus) => void
-                type fs_OperationSoundCallback = (id: fs_OperationId, status: fs_OperationStatus, sound: FloatArray[]) => void
-                type fs_Url = string
+                type ${globalCode.fs!.OperationId!} = Int
+                type ${globalCode.fs!.OperationStatus!} = Int
+                type ${globalCode.fs!.OperationCallback!} = (
+                    id: ${globalCode.fs!.OperationId!}, 
+                    status: ${globalCode.fs!.OperationStatus!}
+                ) => void
+                type ${globalCode.fs!.OperationSoundCallback!} = (
+                    id: ${globalCode.fs!.OperationId!}, 
+                    status: ${globalCode.fs!.OperationStatus!}, 
+                    sound: FloatArray[]
+                ) => void
+                type ${globalCode.fs!.Url!} = string
             `)
         }
         // prettier-ignore
         return Sequence([
             ...content,
-            ConstVar('Int', 'FS_OPERATION_SUCCESS', FS_OPERATION_SUCCESS.toString()),
-            ConstVar('Int', 'FS_OPERATION_FAILURE', FS_OPERATION_FAILURE.toString()),
-            
-            ConstVar('Set<fs_OperationId>', '_FS_OPERATIONS_IDS', 'new Set()'),
-            ConstVar('Map<fs_OperationId, fs_OperationCallback>', '_FS_OPERATIONS_CALLBACKS', 'new Map()'),
+            ConstVar(
+                'Int', 
+                globalCode.fs!.OPERATION_SUCCESS!, 
+                FS_OPERATION_SUCCESS.toString()
+            ),
+            ConstVar(
+                'Int', 
+                globalCode.fs!.OPERATION_FAILURE!, 
+                FS_OPERATION_FAILURE.toString()
+            ),
             
             ConstVar(
-                'Map<fs_OperationId, fs_OperationSoundCallback>',
-                '_FS_OPERATIONS_SOUND_CALLBACKS',
+                `Set<${globalCode.fs!.OperationId!}>`, 
+                globalCode.fs!._OPERATIONS_IDS!, 
+                'new Set()'
+            ),
+            ConstVar(
+                `Map<${globalCode.fs!.OperationId!}, ${globalCode.fs!.OperationCallback!}>`, 
+                globalCode.fs!._OPERATIONS_CALLBACKS!, 
+                'new Map()'
+            ),
+            
+            ConstVar(
+                `Map<${globalCode.fs!.OperationId!}, ${globalCode.fs!.OperationSoundCallback!}>`,
+                globalCode.fs!._OPERATIONS_SOUND_CALLBACKS!,
                 'new Map()',
             ),
     
             // We start at 1, because 0 is what ASC uses when host forgets to pass an arg to 
             // a function. Therefore we can get false negatives when a test happens to expect a 0.
-            Var('Int', '_FS_OPERATION_COUNTER', '1'),
+            Var('Int', globalCode.fs!._OPERATIONS_COUNTER!, '1'),
 
-            Class('fs_SoundInfo', [
+            Class(globalCode.fs!.SoundInfo!, [
                 Var('Int', 'channelCount'),
                 Var('Int', 'sampleRate'),
                 Var('Int', 'bitDepth'),
@@ -67,41 +90,45 @@ export const fsCore: GlobalCodeGeneratorWithSettings = {
                 Var('string', 'extraOptions'),
             ]),
 
-            Func('fs_soundInfoToMessage', [
-                Var('fs_SoundInfo', 'soundInfo')
-            ], 'Message')`
-                ${ConstVar('Message', 'info', `msg_create([
-                    MSG_FLOAT_TOKEN,
-                    MSG_FLOAT_TOKEN,
-                    MSG_FLOAT_TOKEN,
-                    MSG_STRING_TOKEN,
+            Func(globalCode.fs!.soundInfoToMessage!, [
+                Var(globalCode.fs!.SoundInfo!, 'soundInfo')
+            ], globalCode.msg!.Message!)`
+                ${ConstVar(globalCode.msg!.Message!, 'info', `${globalCode.msg!.create!}([
+                    ${globalCode.msg!.FLOAT_TOKEN!},
+                    ${globalCode.msg!.FLOAT_TOKEN!},
+                    ${globalCode.msg!.FLOAT_TOKEN!},
+                    ${globalCode.msg!.STRING_TOKEN!},
                     soundInfo.encodingFormat.length,
-                    MSG_STRING_TOKEN,
+                    ${globalCode.msg!.STRING_TOKEN!},
                     soundInfo.endianness.length,
-                    MSG_STRING_TOKEN,
+                    ${globalCode.msg!.STRING_TOKEN!},
                     soundInfo.extraOptions.length
                 ])`)}
-                msg_writeFloatToken(info, 0, toFloat(soundInfo.channelCount))
-                msg_writeFloatToken(info, 1, toFloat(soundInfo.sampleRate))
-                msg_writeFloatToken(info, 2, toFloat(soundInfo.bitDepth))
-                msg_writeStringToken(info, 3, soundInfo.encodingFormat)
-                msg_writeStringToken(info, 4, soundInfo.endianness)
-                msg_writeStringToken(info, 5, soundInfo.extraOptions)
+                ${globalCode.msg!.writeFloatToken!}(info, 0, toFloat(soundInfo.channelCount))
+                ${globalCode.msg!.writeFloatToken!}(info, 1, toFloat(soundInfo.sampleRate))
+                ${globalCode.msg!.writeFloatToken!}(info, 2, toFloat(soundInfo.bitDepth))
+                ${globalCode.msg!.writeStringToken!}(info, 3, soundInfo.encodingFormat)
+                ${globalCode.msg!.writeStringToken!}(info, 4, soundInfo.endianness)
+                ${globalCode.msg!.writeStringToken!}(info, 5, soundInfo.extraOptions)
                 return info
             `,
     
-            Func('_fs_assertOperationExists', [
-                Var('fs_OperationId', 'id'), 
+            Func(globalCode.fs!._assertOperationExists!, [
+                Var(globalCode.fs!.OperationId!, 'id'), 
                 Var('string', 'operationName'),
             ], 'void')`
-                if (!_FS_OPERATIONS_IDS.has(id)) {
+                if (!${globalCode.fs!._OPERATIONS_IDS!}.has(id)) {
                     throw new Error(operationName + ' operation unknown : ' + id.toString())
                 }
             `,
     
-            Func('_fs_createOperationId', [], 'fs_OperationId')`
-                ${ConstVar('fs_OperationId', 'id', '_FS_OPERATION_COUNTER++')}
-                _FS_OPERATIONS_IDS.add(id)
+            Func(globalCode.fs!._createOperationId!, [], globalCode.fs!.OperationId!)`
+                ${ConstVar(
+                    globalCode.fs!.OperationId!, 
+                    'id', 
+                    `${globalCode.fs!._OPERATIONS_COUNTER!}++`
+                )}
+                ${globalCode.fs!._OPERATIONS_IDS!}.add(id)
                 return id
             `
         ])
@@ -112,45 +139,46 @@ export const fsCore: GlobalCodeGeneratorWithSettings = {
 
 export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
     // prettier-ignore
-    codeGenerator: () => Sequence([
-        Func('fs_readSoundFile', [
-            Var('fs_Url', 'url'),
-            Var('fs_SoundInfo', 'soundInfo'),
-            Var('fs_OperationSoundCallback', 'callback'),
-        ], 'fs_OperationId')`
-            ${ConstVar('fs_OperationId', 'id', '_fs_createOperationId()')}
-            _FS_OPERATIONS_SOUND_CALLBACKS.set(id, callback)
-            i_fs_readSoundFile(id, url, fs_soundInfoToMessage(soundInfo))
+    codeGenerator: ({ globalCode }) => Sequence([
+        Func(globalCode.fs!.readSoundFile!, [
+            Var(globalCode.fs!.Url!, 'url'),
+            Var(globalCode.fs!.SoundInfo!, 'soundInfo'),
+            Var(globalCode.fs!.OperationSoundCallback!, 'callback'),
+        ], globalCode.fs!.OperationId!)`
+            ${ConstVar(
+                globalCode.fs!.OperationId!, 
+                'id', 
+                `${globalCode.fs!._createOperationId!}()`
+            )}
+            ${globalCode.fs!._OPERATIONS_SOUND_CALLBACKS!}.set(id, callback)
+            ${globalCode.fs!.i_readSoundFile!}(id, url, ${globalCode.fs!.soundInfoToMessage!}(soundInfo))
             return id
         `,
 
-        Func('x_fs_onReadSoundFileResponse', [
-            Var('fs_OperationId', 'id'),
-            Var('fs_OperationStatus', 'status'),
+        // =========================== EXPORTED API
+        Func(globalCode.fs!.x_onReadSoundFileResponse!, [
+            Var(globalCode.fs!.OperationId!, 'id'),
+            Var(globalCode.fs!.OperationStatus!, 'status'),
             Var('FloatArray[]', 'sound'),
         ], 'void')`
-            _fs_assertOperationExists(id, 'x_fs_onReadSoundFileResponse')
-            _FS_OPERATIONS_IDS.delete(id)
+            ${globalCode.fs!._assertOperationExists!}(id, "${globalCode.fs!.x_onReadSoundFileResponse!}")
+            ${globalCode.fs!._OPERATIONS_IDS!}.delete(id)
             // Finish cleaning before calling the callback in case it would throw an error.
-            const callback = _FS_OPERATIONS_SOUND_CALLBACKS.get(id)
+            const callback = ${globalCode.fs!._OPERATIONS_SOUND_CALLBACKS!}.get(id)
             callback(id, status, sound)
-            _FS_OPERATIONS_SOUND_CALLBACKS.delete(id)
+            ${globalCode.fs!._OPERATIONS_SOUND_CALLBACKS!}.delete(id)
         `
     ]),
 
-    exports: [
-        {
-            name: 'x_fs_onReadSoundFileResponse',
-        },
-    ],
+    exports: ({ globalCode }) => [globalCode.fs!.x_onReadSoundFileResponse!],
 
-    imports: [
+    imports: ({ globalCode }) => [
         Func(
-            'i_fs_readSoundFile',
+            globalCode.fs!.i_readSoundFile!,
             [
-                Var('fs_OperationId', 'id'),
-                Var('fs_Url', 'url'),
-                Var('Message', 'info'),
+                Var(globalCode.fs!.OperationId!, 'id'),
+                Var(globalCode.fs!.Url!, 'url'),
+                Var(globalCode.msg!.Message!, 'info'),
             ],
             'void'
         )``,
@@ -161,46 +189,47 @@ export const fsReadSoundFile: GlobalCodeGeneratorWithSettings = {
 
 export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
     // prettier-ignore
-    codeGenerator: () => Sequence([
-        Func('fs_writeSoundFile', [
+    codeGenerator: ({ globalCode }) => Sequence([
+        Func(globalCode.fs!.writeSoundFile!, [
             Var('FloatArray[]', 'sound'),
-            Var('fs_Url', 'url'),
-            Var('fs_SoundInfo', 'soundInfo'),
-            Var('fs_OperationCallback', 'callback'),
-        ], 'fs_OperationId')`
-            ${ConstVar('fs_OperationId', 'id', '_fs_createOperationId()')}
-            _FS_OPERATIONS_CALLBACKS.set(id, callback)
-            i_fs_writeSoundFile(id, sound, url, fs_soundInfoToMessage(soundInfo))
+            Var(globalCode.fs!.Url!, 'url'),
+            Var(globalCode.fs!.SoundInfo!, 'soundInfo'),
+            Var(globalCode.fs!.OperationCallback!, 'callback'),
+        ], globalCode.fs!.OperationId!)`
+            ${ConstVar(
+                globalCode.fs!.OperationId!, 
+                'id', 
+                `${globalCode.fs!._createOperationId!}()`
+            )}
+            ${globalCode.fs!._OPERATIONS_CALLBACKS!}.set(id, callback)
+            ${globalCode.fs!.i_writeSoundFile!}(id, sound, url, ${globalCode.fs!.soundInfoToMessage!}(soundInfo))
             return id
         `,
 
-        Func('x_fs_onWriteSoundFileResponse', [
-            Var('fs_OperationId', 'id'), 
-            Var('fs_OperationStatus', 'status'),
+        // =========================== EXPORTED API
+        Func(globalCode.fs!.x_onWriteSoundFileResponse!, [
+            Var(globalCode.fs!.OperationId!, 'id'), 
+            Var(globalCode.fs!.OperationStatus!, 'status'),
         ], 'void')`
-            _fs_assertOperationExists(id, 'x_fs_onWriteSoundFileResponse')
-            _FS_OPERATIONS_IDS.delete(id)
+            ${globalCode.fs!._assertOperationExists!}(id, "${globalCode.fs!.x_onWriteSoundFileResponse!}")
+            ${globalCode.fs!._OPERATIONS_IDS!}.delete(id)
             // Finish cleaning before calling the callback in case it would throw an error.
-            ${ConstVar('fs_OperationCallback', 'callback', '_FS_OPERATIONS_CALLBACKS.get(id)')}
+            ${ConstVar(globalCode.fs!.OperationCallback!, 'callback', `${globalCode.fs!._OPERATIONS_CALLBACKS!}.get(id)`)}
             callback(id, status)
-            _FS_OPERATIONS_CALLBACKS.delete(id)
+            ${globalCode.fs!._OPERATIONS_CALLBACKS!}.delete(id)
         `
     ]),
 
-    exports: [
-        {
-            name: 'x_fs_onWriteSoundFileResponse',
-        },
-    ],
+    exports: ({ globalCode }) => [globalCode.fs!.x_onWriteSoundFileResponse!],
 
-    imports: [
+    imports: ({ globalCode }) => [
         Func(
-            'i_fs_writeSoundFile',
+            globalCode.fs!.i_writeSoundFile!,
             [
-                Var('fs_OperationId', 'id'),
+                Var(globalCode.fs!.OperationId!, 'id'),
                 Var('FloatArray[]', 'sound'),
-                Var('fs_Url', 'url'),
-                Var('Message', 'info'),
+                Var(globalCode.fs!.Url!, 'url'),
+                Var(globalCode.msg!.Message!, 'info'),
             ],
             'void'
         )``,
@@ -211,58 +240,55 @@ export const fsWriteSoundFile: GlobalCodeGeneratorWithSettings = {
 
 export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
     // prettier-ignore
-    codeGenerator: () => Sequence([
+    codeGenerator: ({ globalCode }) => Sequence([
         ConstVar(
-            'Map<fs_OperationId, Array<buf_SoundBuffer>>',
-            '_FS_SOUND_STREAM_BUFFERS',
+            `Map<${globalCode.fs!.OperationId!}, Array<${globalCode.buf!.SoundBuffer!}>>`,
+            globalCode.fs!._SOUND_STREAM_BUFFERS!,
             'new Map()'
         ),
 
         ConstVar(
             'Int',
-            '_FS_SOUND_BUFFER_LENGTH', 
+            globalCode.fs!._SOUND_BUFFER_LENGTH!, 
             '20 * 44100',
         ),
 
-        Func('fs_closeSoundStream', [
-            Var('fs_OperationId', 'id'), 
-            Var('fs_OperationStatus', 'status'),
+        Func(globalCode.fs!.closeSoundStream!, [
+            Var(globalCode.fs!.OperationId!, 'id'), 
+            Var(globalCode.fs!.OperationStatus!, 'status'),
         ], 'void')`
-            if (!_FS_OPERATIONS_IDS.has(id)) {
+            if (!${globalCode.fs!._OPERATIONS_IDS!}.has(id)) {
                 return
             }
-            _FS_OPERATIONS_IDS.delete(id)
-            _FS_OPERATIONS_CALLBACKS.get(id)(id, status)
-            _FS_OPERATIONS_CALLBACKS.delete(id)
+            ${globalCode.fs!._OPERATIONS_IDS!}.delete(id)
+            ${globalCode.fs!._OPERATIONS_CALLBACKS!}.get(id)(id, status)
+            ${globalCode.fs!._OPERATIONS_CALLBACKS!}.delete(id)
             // Delete this last, to give the callback 
             // a chance to save a reference to the buffer
             // If write stream, there won't be a buffer
-            if (_FS_SOUND_STREAM_BUFFERS.has(id)) {
-                _FS_SOUND_STREAM_BUFFERS.delete(id)
+            if (${globalCode.fs!._SOUND_STREAM_BUFFERS!}.has(id)) {
+                ${globalCode.fs!._SOUND_STREAM_BUFFERS!}.delete(id)
             }
-            i_fs_closeSoundStream(id, status)
+            ${globalCode.fs!.i_closeSoundStream!}(id, status)
         `,
 
-        Func('x_fs_onCloseSoundStream', [
-            Var('fs_OperationId', 'id'), 
-            Var('fs_OperationStatus', 'status'),
+        // =========================== EXPORTED API
+        Func(globalCode.fs!.x_onCloseSoundStream!, [
+            Var(globalCode.fs!.OperationId!, 'id'), 
+            Var(globalCode.fs!.OperationStatus!, 'status'),
         ], 'void')`
-            fs_closeSoundStream(id, status)
+            ${globalCode.fs!.closeSoundStream!}(id, status)
         `
     ]),
 
-    exports: [
-        {
-            name: 'x_fs_onCloseSoundStream',
-        },
-    ],
+    exports: ({ globalCode }) => [globalCode.fs!.x_onCloseSoundStream!],
 
-    imports: [
-        Func(
-            'i_fs_closeSoundStream',
-            [Var('fs_OperationId', 'id'), Var('fs_OperationStatus', 'status')],
-            'void'
-        )``,
+    // prettier-ignore
+    imports: ({ globalCode }) => [
+        Func(globalCode.fs!.i_closeSoundStream!, [
+            Var(globalCode.fs!.OperationId!, 'id'), 
+            Var(globalCode.fs!.OperationStatus!, 'status')
+        ], 'void')``,
     ],
 
     dependencies: [bufCore, fsCore],
@@ -270,52 +296,54 @@ export const fsSoundStreamCore: GlobalCodeGeneratorWithSettings = {
 
 export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
     // prettier-ignore
-    codeGenerator: () => Sequence([
-        Func('fs_openSoundReadStream', [
-            Var('fs_Url', 'url'),
-            Var('fs_SoundInfo', 'soundInfo'),
-            Var('fs_OperationCallback', 'callback'),
-        ], 'fs_OperationId')`
-            ${ConstVar('fs_OperationId', 'id', '_fs_createOperationId()')}
-            ${ConstVar('Array<buf_SoundBuffer>', 'buffers', '[]')}
+    codeGenerator: ({ globalCode }) => Sequence([
+        Func(globalCode.fs!.openSoundReadStream!, [
+            Var(globalCode.fs!.Url!, 'url'),
+            Var(globalCode.fs!.SoundInfo!, 'soundInfo'),
+            Var(globalCode.fs!.OperationCallback!, 'callback'),
+        ], globalCode.fs!.OperationId!)`
+            ${ConstVar(
+                globalCode.fs!.OperationId!, 
+                'id', 
+                `${globalCode.fs!._createOperationId!}()`
+            )}
+            ${ConstVar(
+                `Array<${globalCode.buf!.SoundBuffer!}>`, 
+                'buffers', 
+                '[]'
+            )}
             for (${Var('Int', 'channel', '0')}; channel < soundInfo.channelCount; channel++) {
-                buffers.push(buf_create(_FS_SOUND_BUFFER_LENGTH))
+                buffers.push(${globalCode.buf!.create!}(${globalCode.fs!._SOUND_BUFFER_LENGTH!}))
             }
-            _FS_SOUND_STREAM_BUFFERS.set(id, buffers)
-            _FS_OPERATIONS_CALLBACKS.set(id, callback)
-            i_fs_openSoundReadStream(id, url, fs_soundInfoToMessage(soundInfo))
+            ${globalCode.fs!._SOUND_STREAM_BUFFERS!}.set(id, buffers)
+            ${globalCode.fs!._OPERATIONS_CALLBACKS!}.set(id, callback)
+            ${globalCode.fs!.i_openSoundReadStream!}(id, url, ${globalCode.fs!.soundInfoToMessage!}(soundInfo))
             return id
         `,
 
-        Func('x_fs_onSoundStreamData',[
-            Var('fs_OperationId', 'id'),
+        // =========================== EXPORTED API
+        Func(globalCode.fs!.x_onSoundStreamData!, [
+            Var(globalCode.fs!.OperationId!, 'id'),
             Var('FloatArray[]', 'block'),
         ], 'Int')`
-            _fs_assertOperationExists(id, 'x_fs_onSoundStreamData')
-            const buffers = _FS_SOUND_STREAM_BUFFERS.get(id)
+            ${globalCode.fs!._assertOperationExists!}(id, "${globalCode.fs!.x_onSoundStreamData!}")
+            const buffers = ${globalCode.fs!._SOUND_STREAM_BUFFERS!}.get(id)
             for (${Var('Int', 'i', '0')}; i < buffers.length; i++) {
-                buf_pushBlock(buffers[i], block[i])
+                ${globalCode.buf!.pushBlock!}(buffers[i], block[i])
             }
             return buffers[0].pullAvailableLength
         `
     ]),
 
-    exports: [
-        {
-            name: 'x_fs_onSoundStreamData',
-        },
-    ],
+    exports: ({ globalCode }) => [globalCode.fs!.x_onSoundStreamData!],
 
-    imports: [
-        Func(
-            'i_fs_openSoundReadStream',
-            [
-                Var('fs_OperationId', 'id'),
-                Var('fs_Url', 'url'),
-                Var('Message', 'info'),
-            ],
-            'void'
-        )``,
+    // prettier-ignore
+    imports: ({ globalCode }) => [
+        Func(globalCode.fs!.i_openSoundReadStream!, [
+            Var(globalCode.fs!.OperationId!, 'id'),
+            Var(globalCode.fs!.Url!, 'url'),
+            Var(globalCode.msg!.Message!, 'info'),
+        ], 'void')``,
     ],
 
     dependencies: [fsSoundStreamCore, bufPushPull],
@@ -323,45 +351,41 @@ export const fsReadSoundStream: GlobalCodeGeneratorWithSettings = {
 
 export const fsWriteSoundStream: GlobalCodeGeneratorWithSettings = {
     // prettier-ignore
-    codeGenerator: () => Sequence([
-        Func('fs_openSoundWriteStream', [
-                Var('fs_Url', 'url'),
-                Var('fs_SoundInfo', 'soundInfo'),
-                Var('fs_OperationCallback', 'callback'),
+    codeGenerator: ({ globalCode }) => Sequence([
+        Func(globalCode.fs!.openSoundWriteStream!, [
+                Var(globalCode.fs!.Url!, 'url'),
+                Var(globalCode.fs!.SoundInfo!, 'soundInfo'),
+                Var(globalCode.fs!.OperationCallback!, 'callback'),
             ],
-            'fs_OperationId'
+            globalCode.fs!.OperationId!
         )`
-            const id = _fs_createOperationId()
-            _FS_SOUND_STREAM_BUFFERS.set(id, [])
-            _FS_OPERATIONS_CALLBACKS.set(id, callback)
-            i_fs_openSoundWriteStream(id, url, fs_soundInfoToMessage(soundInfo))
+            const id = ${globalCode.fs!._createOperationId!}()
+            ${globalCode.fs!._SOUND_STREAM_BUFFERS!}.set(id, [])
+            ${globalCode.fs!._OPERATIONS_CALLBACKS!}.set(id, callback)
+            ${globalCode.fs!.i_openSoundWriteStream!}(id, url, ${globalCode.fs!.soundInfoToMessage!}(soundInfo))
             return id
         `,
 
-        Func('fs_sendSoundStreamData', [
-            Var('fs_OperationId', 'id'), 
+        Func(globalCode.fs!.sendSoundStreamData!, [
+            Var(globalCode.fs!.OperationId!, 'id'), 
             Var('FloatArray[]', 'block')
         ], 'void')`
-            _fs_assertOperationExists(id, 'fs_sendSoundStreamData')
-            i_fs_sendSoundStreamData(id, block)
+            ${globalCode.fs!._assertOperationExists!}(id, "${globalCode.fs!.sendSoundStreamData!}")
+            ${globalCode.fs!.i_sendSoundStreamData!}(id, block)
         `
     ]),
 
-    imports: [
-        Func(
-            'i_fs_openSoundWriteStream',
-            [
-                Var('fs_OperationId', 'id'),
-                Var('fs_Url', 'url'),
-                Var('Message', 'info'),
-            ],
-            'void'
-        )``,
-        Func(
-            'i_fs_sendSoundStreamData',
-            [Var('fs_OperationId', 'id'), Var('FloatArray[]', 'block')],
-            'void'
-        )``,
+    // prettier-ignore
+    imports: ({ globalCode }) => [
+        Func(globalCode.fs!.i_openSoundWriteStream!, [
+            Var(globalCode.fs!.OperationId!, 'id'),
+            Var(globalCode.fs!.Url!, 'url'),
+            Var(globalCode.msg!.Message!, 'info'),
+        ], 'void')``,
+        Func(globalCode.fs!.i_sendSoundStreamData!, [
+            Var(globalCode.fs!.OperationId!, 'id'), 
+            Var('FloatArray[]', 'block')
+        ], 'void')``,
     ],
 
     dependencies: [fsSoundStreamCore],

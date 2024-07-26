@@ -26,6 +26,7 @@ import { readMetadata } from './index'
 import { AnonFunc, Var } from '../ast/declare'
 import { EngineMetadata } from './types'
 import { UserCompilationSettings, NodeImplementations } from '../compile/types'
+import { VariableNamesIndex } from '../compile/precompile/types'
 
 describe('readMetadata', () => {
     const GRAPH = makeGraph({
@@ -38,8 +39,8 @@ describe('readMetadata', () => {
     })
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         DUMMY: {
-            messageReceivers: () => ({
-                '0': AnonFunc([Var('Message', 'message')])``,
+            messageReceivers: ({ globalCode }) => ({
+                '0': AnonFunc([Var(globalCode.msg!.Message!, 'message')])``,
             }),
         },
     }
@@ -54,7 +55,8 @@ describe('readMetadata', () => {
         },
     }
 
-    const EXPECTED_METADATA: EngineMetadata = {
+    const assertMetadataIsCorrect = (actual: EngineMetadata) => {
+        assert.deepStrictEqual(actual, {
         libVersion: packageInfo.version,
         audioSettings: {
             blockSize: 0,
@@ -78,14 +80,15 @@ describe('readMetadata', () => {
                 io: {
                     messageReceivers: {
                         node1: {
-                            '0': 'IORCV_node1_0',
+                            '0': 'IO_rcv_node1_0',
                         },
                     },
                     messageSenders: {},
                 },
+                globalCode: actual.compilation.variableNamesIndex.globalCode,
             },
         },
-    }
+    })}
 
     it('should read metadata from wasm', async () => {
         const result = compile(
@@ -99,7 +102,7 @@ describe('readMetadata', () => {
         }
         const wasmBuffer = await compileAssemblyscript(result.code, 64)
         const metadata = await readMetadata('assemblyscript', wasmBuffer)
-        assert.deepStrictEqual(metadata, EXPECTED_METADATA)
+        assertMetadataIsCorrect(metadata)
     })
 
     it('should read metadata from javascript', async () => {
@@ -113,6 +116,6 @@ describe('readMetadata', () => {
             throw new Error(`Compilation failed: ${result.status}`)
         }
         const metadata = await readMetadata('javascript', result.code)
-        assert.deepStrictEqual(metadata, EXPECTED_METADATA)
+        assertMetadataIsCorrect(metadata)
     })
 })

@@ -59,7 +59,7 @@ describe('precompile.io', () => {
             assert.deepStrictEqual(precompilation.graph.n_ioSnd_n1_0, {
                 ...nodeDefaults('n_ioSnd_n1_0', '_messageSender'),
                 args: {
-                    messageSenderName: 'IOSND_n1_0',
+                    messageSenderName: 'IO_snd_n1_0',
                 },
                 inlets: {
                     '0': { id: '0', type: 'message' },
@@ -71,7 +71,7 @@ describe('precompile.io', () => {
 
             assert.deepStrictEqual(
                 precompilation.precompiledCode.io.messageSenders.n1!['0']!.functionName,
-                'IOSND_n1_0'
+                'IO_snd_n1_0'
             )
         })
     })
@@ -124,7 +124,7 @@ describe('precompile.io', () => {
             assert.deepStrictEqual(
                 precompilation.precompiledCode.io.messageReceivers.n1!['0']!
                     .functionName,
-                'IORCV_n1_0'
+                'IO_rcv_n1_0'
             )
 
             precompilation.precompiledCodeAssigner.nodes[

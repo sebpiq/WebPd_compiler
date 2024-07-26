@@ -28,9 +28,11 @@ import { RenderInput } from '../../compile/render/types'
 
 export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
     const { precompiledCode, settings, variableNamesIndex } = renderInput
+    const globalCode = variableNamesIndex.globalCode
     const renderTemplateInput = {
         settings,
         globs: variableNamesIndex.globs,
+        globalCode,
         precompiledCode,
     }
     const { channelCount } = settings.audio
@@ -56,7 +58,7 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
         ${templates.coldDspFunctions(renderTemplateInput)}
         ${templates.ioMessageReceivers(renderTemplateInput)}
         ${templates.ioMessageSenders(renderTemplateInput, (variableName) => 
-            ast`export declare function ${variableName}(m: Message): void`)}
+            ast`export declare function ${variableName}(m: ${globalCode.msg!.Message!}): void`)}
 
         export function initialize(sampleRate: Float, blockSize: Int): void {
             ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
@@ -90,7 +92,7 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
             ({ name, args, returnType }) => ast`export declare function ${name} (${
                 args.map((a) => `${a.name}: ${a.type}`).join(',')
             }): ${returnType}`, 
-            ({ name }) => ast`export { ${name} }`
+            (name) => ast`export { ${name} }`
         )}
     `)
 }

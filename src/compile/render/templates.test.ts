@@ -94,6 +94,11 @@ describe('templates', () => {
                 graph,
             })
 
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.display!
+            globalCode.msg!.Message!
+
             precompilation.precompiledCodeAssigner.graph.fullTraversal = [
                 'n1',
                 'n2',
@@ -101,17 +106,17 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '0'
             ] = Func('N_n1_rcvs_0', [
-                Var('Message', 'm'),
+                Var(globalCode.msg!.Message!, 'm'),
             ])`// [n1] message receiver 0`
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '1'
             ] = Func('N_n1_rcvs_1', [
-                Var('Message', 'm'),
+                Var(globalCode.msg!.Message!, 'm'),
             ])`// [n1] message receiver 1`
             precompilation.precompiledCodeAssigner.nodes.n2!.messageReceivers[
                 '0'
             ] = Func('N_n2_rcvs_0', [
-                Var('Message', 'm'),
+                Var(globalCode.msg!.Message!, 'm'),
             ])`// [n2] message receiver 0`
 
             const sequence = templates.portletsDeclarations(
@@ -122,14 +127,14 @@ describe('templates', () => {
                 sequence,
                 Sequence([
                     Func('N_n1_rcvs_0', [
-                        Var('Message', 'm'),
-                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m))`,
+                        Var(globalCode.msg!.Message!, 'm'),
+                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + ${globalCode.msg!.display!}(m))`,
                     Func('N_n1_rcvs_1', [
-                        Var('Message', 'm'),
-                    ])`// [n1] message receiver 1\nthrow new Error('Node "n1", inlet "1", unsupported message : ' + msg_display(m))`,
+                        Var(globalCode.msg!.Message!, 'm'),
+                    ])`// [n1] message receiver 1\nthrow new Error('Node "n1", inlet "1", unsupported message : ' + ${globalCode.msg!.display!}(m))`,
                     Func('N_n2_rcvs_0', [
-                        Var('Message', 'm'),
-                    ])`// [n2] message receiver 0\nthrow new Error('Node "n2", inlet "0", unsupported message : ' + msg_display(m))`,
+                        Var(globalCode.msg!.Message!, 'm'),
+                    ])`// [n2] message receiver 0\nthrow new Error('Node "n2", inlet "0", unsupported message : ' + ${globalCode.msg!.display!}(m))`,
                 ])
             )
         })
@@ -147,12 +152,16 @@ describe('templates', () => {
                 graph,
                 settings,
             })
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.display!
+            globalCode.msg!.Message!
 
             precompilation.precompiledCodeAssigner.graph.fullTraversal = ['n1']
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '0'
             ] = Func('N_n1_rcvs_0', [
-                Var('Message', 'm'),
+                Var(globalCode.msg!.Message!, 'm'),
             ])`// [n1] message receiver 0`
 
             const sequence = templates.portletsDeclarations(
@@ -163,8 +172,8 @@ describe('templates', () => {
                 sequence,
                 Sequence([
                     Func('N_n1_rcvs_0', [
-                        Var('Message', 'm'),
-                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + msg_display(m) + '\\nDEBUG : remember, you must return from message receiver')`,
+                        Var(globalCode.msg!.Message!, 'm'),
+                    ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + ${globalCode.msg!.display!}(m) + '\\nDEBUG : remember, you must return from message receiver')`,
                 ])
             )
         })
@@ -182,6 +191,10 @@ describe('templates', () => {
             const precompilation = makePrecompilation({
                 graph,
             })
+
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.Message!
 
             precompilation.precompiledCodeAssigner.graph.fullTraversal = [
                 'n1',
@@ -215,10 +228,10 @@ describe('templates', () => {
                 sequence,
                 Sequence([
                     Func('N_n1_snds_0', [
-                        Var('Message', 'm'),
+                        Var(globalCode.msg!.Message!, 'm'),
                     ])`N_n2_rcvs_0(m)\nN_n2_rcvs_1(m)\nDSP_1(m)`,
                     Func('N_n1_snds_1', [
-                        Var('Message', 'm'),
+                        Var(globalCode.msg!.Message!, 'm'),
                     ])`outlerListener_n1_0(m)\nN_n2_rcvs_0(m)`,
                 ])
             )
@@ -383,6 +396,10 @@ describe('templates', () => {
                 graph,
             })
 
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.Message!
+
             precompilation.precompiledCodeAssigner.io.messageReceivers.n1![
                 '0'
             ] = {
@@ -398,7 +415,7 @@ describe('templates', () => {
                 sequence,
                 Sequence([
                     Func('ioRcv_function', [
-                        Var('Message', 'm'),
+                        Var(globalCode.msg!.Message!, 'm'),
                     ])`ioRcvNode_messageSender(m)`,
                 ])
             )
@@ -422,6 +439,9 @@ describe('templates', () => {
             const precompilation = makePrecompilation({
                 graph,
             })
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.commons!._emitFrame!
 
             precompilation.precompiledCodeAssigner.graph.hotDspGroup = {
                 traversal: ['n1', 'n2', 'n3'],
@@ -438,11 +458,11 @@ describe('templates', () => {
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    `for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n` +
+                    `for (G_F = 0; G_F < G_BLOCK_SIZE; G_F++) {\n${globalCode.commons!._emitFrame!}(G_FRAME)\n` +
                         '// n1\n' +
                         '// n2\n' +
                         '// n3\n' +
-                        `FRAME++\n}`,
+                        `G_FRAME++\n}`,
                 ])
             )
         })
@@ -457,6 +477,9 @@ describe('templates', () => {
             const precompilation = makePrecompilation({
                 graph,
             })
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.commons!._emitFrame!
 
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.inlets[
                 '0'
@@ -475,10 +498,10 @@ describe('templates', () => {
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    'for (F = 0; F < BLOCK_SIZE; F++) {\n_commons_emitFrame(FRAME)\n' +
+                    `for (G_F = 0; G_F < G_BLOCK_SIZE; G_F++) {\n${globalCode.commons!._emitFrame!}(G_FRAME)\n` +
                         '// inlet dsp 0\n' +
                         '// n1\n' +
-                        'FRAME++\n}',
+                        'G_FRAME++\n}',
                 ])
             )
         })
@@ -517,7 +540,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([`COLD_0(EMPTY_MESSAGE)\nCOLD_1(EMPTY_MESSAGE)`])
+                Sequence([`COLD_0(G_EMPTY_MESSAGE)\nCOLD_1(G_EMPTY_MESSAGE)`])
             )
         })
     })
@@ -539,6 +562,10 @@ describe('templates', () => {
             const precompilation = makePrecompilation({
                 graph,
             })
+
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.Message!
 
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
             precompilation.precompiledCodeAssigner.nodes.n2!.dsp.loop = ast`// n2`
@@ -570,8 +597,8 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    Func('COLD_0', [Var('Message', 'm')])`// n1\n// n2`,
-                    Func('COLD_1', [Var('Message', 'm')])`// n3`,
+                    Func('COLD_0', [Var(globalCode.msg!.Message!, 'm')])`// n1\n// n2`,
+                    Func('COLD_1', [Var(globalCode.msg!.Message!, 'm')])`// n3`,
                 ])
             )
         })
@@ -589,6 +616,10 @@ describe('templates', () => {
             const precompilation = makePrecompilation({
                 graph,
             })
+
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.Message!
 
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
             precompilation.precompiledCodeAssigner.nodes.n2!.dsp.inlets[
@@ -618,7 +649,7 @@ describe('templates', () => {
                 normalizeAstSequence(sequence),
                 Sequence([
                     Func('COLD_0', [
-                        Var('Message', 'm'),
+                        Var(globalCode.msg!.Message!, 'm'),
                     ])`// n1\n// inlet dsp n2`,
                 ])
             )
@@ -637,6 +668,10 @@ describe('templates', () => {
             const precompilation = makePrecompilation({
                 graph,
             })
+
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.Message!
 
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.loop = ast`// n1`
             // This call is just to setup n2 base structure
@@ -663,7 +698,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([Func('COLD_0', [Var('Message', 'm')])`// n1`])
+                Sequence([Func('COLD_0', [Var(globalCode.msg!.Message!, 'm')])`// n1`])
             )
         })
     })

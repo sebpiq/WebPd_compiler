@@ -60,8 +60,8 @@ export interface PrecompiledCode {
     }
 
     readonly dependencies: {
-        imports: NonNullable<GlobalCodeGeneratorWithSettings['imports']>
-        exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
+        imports: ReturnType<NonNullable<GlobalCodeGeneratorWithSettings['imports']>>
+        exports: ReturnType<NonNullable<GlobalCodeGeneratorWithSettings['exports']>>
         ast: AstSequence
     }
 

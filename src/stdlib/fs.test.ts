@@ -36,10 +36,10 @@ describe('fs', () => {
         [
             {
                 description:
-                    'sound info > should be able to convert fs_SoundInfo to Message %s',
-                testFunction: () => AnonFunc()`
+                    'sound info > should be able to convert SoundInfo to Message %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
-                    ${ConstVar('fs_SoundInfo', 'soundInfo', `{
+                    ${ConstVar(globalCode.fs!.SoundInfo!, 'soundInfo', `{
                         channelCount: 2,
                         sampleRate: 48000,
                         bitDepth: 24,
@@ -48,27 +48,27 @@ describe('fs', () => {
                         extraOptions: '--blo --bli',
                     }`)}
                     ${ConstVar(
-                        'Message',
+                        globalCode.msg!.Message!,
                         'soundInfoMessage',
-                        'fs_soundInfoToMessage(soundInfo)',
+                        `${globalCode.fs!.soundInfoToMessage!}(soundInfo)`,
                     )}
-                    assert_floatsEqual(msg_readFloatToken(soundInfoMessage, 0), 2)
-                    assert_floatsEqual(msg_readFloatToken(soundInfoMessage, 1), 48000)
-                    assert_floatsEqual(msg_readFloatToken(soundInfoMessage, 2), 24)
-                    assert_stringsEqual(msg_readStringToken(soundInfoMessage, 3), 'wave')
-                    assert_stringsEqual(msg_readStringToken(soundInfoMessage, 4), 'l')
-                    assert_stringsEqual(msg_readStringToken(soundInfoMessage, 5), '--blo --bli')
+                    assert_floatsEqual(${globalCode.msg!.readFloatToken!}(soundInfoMessage, 0), 2)
+                    assert_floatsEqual(${globalCode.msg!.readFloatToken!}(soundInfoMessage, 1), 48000)
+                    assert_floatsEqual(${globalCode.msg!.readFloatToken!}(soundInfoMessage, 2), 24)
+                    assert_stringsEqual(${globalCode.msg!.readStringToken!}(soundInfoMessage, 3), 'wave')
+                    assert_stringsEqual(${globalCode.msg!.readStringToken!}(soundInfoMessage, 4), 'l')
+                    assert_stringsEqual(${globalCode.msg!.readStringToken!}(soundInfoMessage, 5), '--blo --bli')
                 `,
             },
             {
                 description:
-                    'fs_readSoundFile > should create the operation %s',
-                testFunction: () => AnonFunc()`
+                    'readSoundFile > should create the operation %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_readSoundFile(
+                        `${globalCode.fs!.readSoundFile!}(
                             '/some/url', 
                             {
                                 channelCount: 4, 
@@ -82,10 +82,10 @@ describe('fs', () => {
                         )`,
                     )}
             
-                    assert_stringsEqual(calls[0], 'i_fs_readSoundFile')
+                    assert_stringsEqual(calls[0], 'readSoundFile')
                     assert_integersEqual(id_received[0], operationId)
                     assert_stringsEqual(url_received[0], '/some/url')
-                    assert_soundInfoMessagesEqual(info_received[0], fs_soundInfoToMessage({
+                    assert_soundInfoMessagesEqual(info_received[0], ${globalCode.fs!.soundInfoToMessage!}({
                         channelCount: 4, 
                         sampleRate: 44100, 
                         bitDepth: 32, 
@@ -93,20 +93,20 @@ describe('fs', () => {
                         endianness: 'b', 
                         extraOptions: ''
                     }))
-                    assert_booleansEqual(_FS_OPERATIONS_IDS.has(operationId), true)
+                    assert_booleansEqual(${globalCode.fs!._OPERATIONS_IDS!}.has(operationId), true)
                 `,
             },
 
             {
                 description:
                     'fs_sendReadSoundFileResponse > should register the operation success and call the callback %s',
-                testFunction: () => AnonFunc()`
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     // 1. Create the operation
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_readSoundFile(
+                        `${globalCode.fs!.readSoundFile!}(
                             '/some/url', 
                             {
                                 channelCount: 3,
@@ -130,14 +130,14 @@ describe('fs', () => {
                     sound[0].set([-0.1, -0.2, -0.3])
                     sound[1].set([0.4, 0.5, 0.6])
                     sound[2].set([-0.7, -0.8, -0.9])
-                    x_fs_onReadSoundFileResponse(
+                    ${globalCode.fs!.x_onReadSoundFileResponse!}(
                         operationId,
-                        FS_OPERATION_SUCCESS,
+                        ${globalCode.fs!.OPERATION_SUCCESS!},
                         sound
                     )
 
                     // 3. Check-out callback was called with right args, and verify that all is cleaned
-                    assert_integersEqual(callbackOperationStatus, FS_OPERATION_SUCCESS)
+                    assert_integersEqual(callbackOperationStatus, ${globalCode.fs!.OPERATION_SUCCESS!})
                     assert_integersEqual(callbackOperationId, operationId)
                     assert_operationCleaned(operationId)
                     assert_integersEqual(callbackOperationSound.length, 3)
@@ -150,12 +150,12 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendReadSoundFileResponse > should register the operation failure %s',
-                testFunction: () => AnonFunc()`
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_readSoundFile(
+                        `${globalCode.fs!.readSoundFile!}(
                             '/some/url', 
                             {
                                 channelCount: 1,
@@ -169,29 +169,29 @@ describe('fs', () => {
                         )`,
                     )}
 
-                    x_fs_onReadSoundFileResponse(
+                    ${globalCode.fs!.x_onReadSoundFileResponse!}(
                         operationId,
-                        FS_OPERATION_FAILURE,
+                        ${globalCode.fs!.OPERATION_FAILURE!},
                         []
                     )
                     assert_integersEqual(
                         callbackOperationId,
                         operationId
                     )
-                    assert_integersEqual(callbackOperationStatus, FS_OPERATION_FAILURE)
+                    assert_integersEqual(callbackOperationStatus, ${globalCode.fs!.OPERATION_FAILURE!})
                 `,
             },
 
             {
                 description:
-                    'fs_openSoundReadStream > should create the operation %s',
-                testFunction: () => AnonFunc()`
+                    'openSoundReadStream > should create the operation %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${ConstVar('Int', 'channelCount', '22')}
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_openSoundReadStream(
+                        `${globalCode.fs!.openSoundReadStream!}(
                             '/some/url', 
                             {
                                 channelCount: channelCount,
@@ -205,10 +205,10 @@ describe('fs', () => {
                         )`,
                     )}
 
-                    assert_stringsEqual(calls[0], 'i_fs_openSoundReadStream')
+                    assert_stringsEqual(calls[0], 'openSoundReadStream')
                     assert_integersEqual(id_received[0], operationId)
                     assert_stringsEqual(url_received[0], '/some/url')
-                    assert_soundInfoMessagesEqual(info_received[0], fs_soundInfoToMessage({
+                    assert_soundInfoMessagesEqual(info_received[0], ${globalCode.fs!.soundInfoToMessage!}({
                         channelCount: 22, 
                         sampleRate: 44100, 
                         bitDepth: 32, 
@@ -217,25 +217,25 @@ describe('fs', () => {
                         extraOptions: ''
                     }))
 
-                    assert_booleansEqual(_FS_OPERATIONS_IDS.has(operationId), true)
-                    assert_booleansEqual(_FS_SOUND_STREAM_BUFFERS.has(operationId), true)
-                    assert_integersEqual(_FS_SOUND_STREAM_BUFFERS.get(operationId).length, channelCount)
+                    assert_booleansEqual(${globalCode.fs!._OPERATIONS_IDS!}.has(operationId), true)
+                    assert_booleansEqual(${globalCode.fs!._SOUND_STREAM_BUFFERS!}.has(operationId), true)
+                    assert_integersEqual(${globalCode.fs!._SOUND_STREAM_BUFFERS!}.get(operationId).length, channelCount)
                 `,
             },
 
             {
                 description:
                     'fs_onSoundStreamData > should push data to the buffer %s',
-                testFunction: () => AnonFunc()`
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${Var('Int', 'availableFrameCount', '0')}
                     ${Var('FloatArray[]', 'data', '[]')}
 
                     // 1. Create the operation
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_openSoundReadStream(
+                        `${globalCode.fs!.openSoundReadStream!}(
                             '/some/url', 
                             {
                                 channelCount: 2,
@@ -256,7 +256,7 @@ describe('fs', () => {
                     ]
                     data[0].set([-11, -22, -33])
                     data[1].set([11, 22, 33])
-                    availableFrameCount = x_fs_onSoundStreamData(operationId, data)
+                    availableFrameCount = ${globalCode.fs!.x_onSoundStreamData!}(operationId, data)
                     assert_integersEqual(availableFrameCount, 3)
 
                     // 3. Send in more sound
@@ -266,7 +266,7 @@ describe('fs', () => {
                     ]
                     data[0].set([44, 55, 66])
                     data[1].set([-44, -55, -66])
-                    availableFrameCount = x_fs_onSoundStreamData(operationId, data)
+                    availableFrameCount = ${globalCode.fs!.x_onSoundStreamData!}(operationId, data)
                     assert_integersEqual(availableFrameCount, 6)
 
                     // 4. Send in more sound than the buffer can hold
@@ -276,14 +276,14 @@ describe('fs', () => {
                     ]
                     data[0].set([77, 88, 99])
                     data[1].set([-77, -88, -99])
-                    availableFrameCount = x_fs_onSoundStreamData(operationId, data)
+                    availableFrameCount = ${globalCode.fs!.x_onSoundStreamData!}(operationId, data)
                     assert_integersEqual(availableFrameCount, 9)
 
                     // 5. Testing buffer contents
                     ${Func('pullSample', [
-                        Var('fs_OperationId', 'operationId')
+                        Var(globalCode.fs!.OperationId!, 'operationId')
                     ], 'Float')`
-                        return buf_pullSample(_FS_SOUND_STREAM_BUFFERS.get(operationId)[0])
+                        return ${globalCode.buf!.pullSample!}(${globalCode.fs!._SOUND_STREAM_BUFFERS!}.get(operationId)[0])
                     `}
                     assert_floatsEqual(pullSample(operationId), -11)
                     assert_floatsEqual(pullSample(operationId), -22)
@@ -297,16 +297,16 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_closeSoundStream > should close the read stream and call the callback %s',
-                testFunction: () => AnonFunc()`
+                    'closeSoundStream > should close the read stream and call the callback %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${Var('FloatArray[]', 'data', '[]')}
 
                     // 1. Create the operation
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_openSoundReadStream(
+                        `${globalCode.fs!.openSoundReadStream!}(
                             '/some/url', 
                             {
                                 channelCount: 2,
@@ -327,21 +327,21 @@ describe('fs', () => {
                     ]
                     data[0].set([-0.1, -0.2, -0.3])
                     data[1].set([0.1, 0.2, 0.3])
-                    x_fs_onSoundStreamData(operationId, data)
+                    ${globalCode.fs!.x_onSoundStreamData!}(operationId, data)
 
                     // 3. close stream
                     assert_integersEqual(calls.length, 1)
-                    assert_stringsEqual(calls[0], 'i_fs_openSoundReadStream')
+                    assert_stringsEqual(calls[0], 'openSoundReadStream')
                     assert_integersEqual(callbackOperationId, 0)
-                    x_fs_onCloseSoundStream(operationId, FS_OPERATION_SUCCESS)
+                    ${globalCode.fs!.x_onCloseSoundStream!}(operationId, ${globalCode.fs!.OPERATION_SUCCESS!})
                     // Test callback in host space was called
                     assert_integersEqual(calls.length, 2)
-                    assert_stringsEqual(calls[1], 'i_fs_closeSoundStream')
+                    assert_stringsEqual(calls[1], 'closeSoundStream')
                     assert_integersEqual(id_received[0], operationId)
-                    assert_integersEqual(status_received, FS_OPERATION_SUCCESS)
+                    assert_integersEqual(status_received, ${globalCode.fs!.OPERATION_SUCCESS!})
                     // Test callback in module was called
                     assert_integersEqual(callbackOperationId, operationId)
-                    assert_integersEqual(callbackOperationStatus, FS_OPERATION_SUCCESS)
+                    assert_integersEqual(callbackOperationStatus, ${globalCode.fs!.OPERATION_SUCCESS!})
                     // Test operation was cleaned
                     assert_operationCleaned(operationId)
                 `,
@@ -349,13 +349,13 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_openSoundWriteStream > should create the operation %s',
-                testFunction: () => AnonFunc()`
+                    'openSoundWriteStream > should create the operation %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_openSoundWriteStream(
+                        `${globalCode.fs!.openSoundWriteStream!}(
                             '/some/url', 
                             {
                                 channelCount: 4,
@@ -370,10 +370,10 @@ describe('fs', () => {
                     )}
         
                     assert_integersEqual(calls.length, 1)
-                    assert_stringsEqual(calls[0], 'i_fs_openSoundWriteStream')
+                    assert_stringsEqual(calls[0], 'openSoundWriteStream')
                     assert_integersEqual(id_received[0], operationId)
                     assert_stringsEqual(url_received[0], '/some/url')
-                    assert_soundInfoMessagesEqual(info_received[0], fs_soundInfoToMessage({
+                    assert_soundInfoMessagesEqual(info_received[0], ${globalCode.fs!.soundInfoToMessage!}({
                         channelCount: 4, 
                         sampleRate: 44100, 
                         bitDepth: 24, 
@@ -381,21 +381,21 @@ describe('fs', () => {
                         endianness: 'b', 
                         extraOptions: ''
                     }))
-                    assert_booleansEqual(_FS_OPERATIONS_IDS.has(operationId), true)
+                    assert_booleansEqual(${globalCode.fs!._OPERATIONS_IDS!}.has(operationId), true)
                 `,
             },
 
             {
                 description:
-                    'fs_sendSoundStreamData > should push data to the buffer %s',
-                testFunction: () => AnonFunc()`
+                    'sendSoundStreamData > should push data to the buffer %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${Var('Float', 'counter', '0')}
                     ${Var('FloatArray[]', 'data', '[]')}
 
                     ${Func('testSendSoundStreamData', [
                         Var('Float', 'counter'), 
-                        Var('fs_OperationId', 'id')
+                        Var(globalCode.fs!.OperationId!, 'id')
                     ], 'void')`
                         ${ConstVar('FloatArray[]', 'block', `[
                             createFloatArray(4),
@@ -409,14 +409,14 @@ describe('fs', () => {
                         block[1][1] = 21 + 4 * counter
                         block[1][2] = 22 + 4 * counter
                         block[1][3] = 23 + 4 * counter
-                        fs_sendSoundStreamData(id, block)
+                        ${globalCode.fs!.sendSoundStreamData!}(id, block)
                     `}
 
                     // 1. Create the operation
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_openSoundWriteStream(
+                        `${globalCode.fs!.openSoundWriteStream!}(
                             '/some/url', 
                             {
                                 channelCount: 2,
@@ -434,9 +434,9 @@ describe('fs', () => {
                     testSendSoundStreamData(counter++, operationId)
                     testSendSoundStreamData(counter++, operationId)
                     assert_integersEqual(calls.length, 3)
-                    assert_stringsEqual(calls[0], 'i_fs_openSoundWriteStream')
-                    assert_stringsEqual(calls[1], 'i_fs_sendSoundStreamData')
-                    assert_stringsEqual(calls[2], 'i_fs_sendSoundStreamData')
+                    assert_stringsEqual(calls[0], 'openSoundWriteStream')
+                    assert_stringsEqual(calls[1], 'sendSoundStreamData')
+                    assert_stringsEqual(calls[2], 'sendSoundStreamData')
 
                     assert_integersEqual(id_received[1], operationId)
                     data = [
@@ -462,25 +462,25 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_closeSoundStream > should close the write stream and call the callback %s',
-                testFunction: () => AnonFunc()`
+                    'closeSoundStream > should close the write stream and call the callback %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
                     ${Func('testSendSoundStreamData', [
-                        Var('fs_OperationId', 'id')
+                        Var(globalCode.fs!.OperationId!, 'id')
                     ], 'void')`
                         ${ConstVar(
                             'FloatArray[]',
                             'block',
                             '[createFloatArray(2)]',
                         )}
-                        fs_sendSoundStreamData(id, block)
+                        ${globalCode.fs!.sendSoundStreamData!}(id, block)
                     `}
     
                     // 1. Create the operation
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_openSoundWriteStream(
+                        `${globalCode.fs!.openSoundWriteStream!}(
                             '/some/url', 
                             {
                                 channelCount: 1,
@@ -499,15 +499,15 @@ describe('fs', () => {
 
                     // 3. close stream
                     assert_integersEqual(calls.length, 2)
-                    x_fs_onCloseSoundStream(operationId, FS_OPERATION_SUCCESS)
+                    ${globalCode.fs!.x_onCloseSoundStream!}(operationId, ${globalCode.fs!.OPERATION_SUCCESS!})
                     // Test callback in host space was called
                     assert_integersEqual(calls.length, 3)
-                    assert_stringsEqual(calls[2], 'i_fs_closeSoundStream')
+                    assert_stringsEqual(calls[2], 'closeSoundStream')
                     assert_integersEqual(id_received[2], operationId)
-                    assert_integersEqual(status_received, FS_OPERATION_SUCCESS)
+                    assert_integersEqual(status_received, ${globalCode.fs!.OPERATION_SUCCESS!})
                     // Test callback in wasm was called
                     assert_integersEqual(callbackOperationId, operationId)
-                    assert_integersEqual(callbackOperationStatus, FS_OPERATION_SUCCESS)
+                    assert_integersEqual(callbackOperationStatus, ${globalCode.fs!.OPERATION_SUCCESS!})
                     // Test operation was cleaned
                     assert_operationCleaned(operationId)
                 `,
@@ -515,8 +515,8 @@ describe('fs', () => {
 
             {
                 description:
-                    'fs_writeSoundFile > should create the operation %s',
-                testFunction: () => AnonFunc()`
+                    'writeSoundFile > should create the operation %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
 
                     ${ConstVar('FloatArray[]', 'sound', `[
@@ -529,9 +529,9 @@ describe('fs', () => {
                     sound[2].set([31, 32, 33, 34])
                 
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_writeSoundFile(
+                        `${globalCode.fs!.writeSoundFile!}(
                             sound, 
                             '/some/url', 
                             {
@@ -547,19 +547,19 @@ describe('fs', () => {
                     )}
         
                     assert_integersEqual(calls.length, 1)
-                    assert_stringsEqual(calls[0], 'i_fs_writeSoundFile')
+                    assert_stringsEqual(calls[0], 'writeSoundFile')
                     assert_integersEqual(id_received[0], operationId)
                     assert_floatArraysEqual(sound_received[0][0], sound[0])
                     assert_floatArraysEqual(sound_received[0][1], sound[1])
                     assert_floatArraysEqual(sound_received[0][2], sound[2])
-                    assert_booleansEqual(_FS_OPERATIONS_IDS.has(operationId), true)
+                    assert_booleansEqual(${globalCode.fs!._OPERATIONS_IDS!}.has(operationId), true)
                 `,
             },
 
             {
                 description:
                     'fs_sendWriteSoundFileResponse > should register the operation success and call the callback %s',
-                testFunction: () => AnonFunc()`
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
 
                     ${ConstVar('FloatArray[]', 'sound', `[
@@ -569,9 +569,9 @@ describe('fs', () => {
 
                     // 1. Create the operation
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_writeSoundFile(
+                        `${globalCode.fs!.writeSoundFile!}(
                             sound, 
                             '/some/url', 
                             {
@@ -588,13 +588,13 @@ describe('fs', () => {
                     assert_integersEqual(callbackOperationId, 0)
         
                     // 2. Operation is done, call fs_sendWriteSoundFileResponse
-                    x_fs_onWriteSoundFileResponse(
+                    ${globalCode.fs!.x_onWriteSoundFileResponse!}(
                         operationId,
-                        FS_OPERATION_SUCCESS
+                        ${globalCode.fs!.OPERATION_SUCCESS!}
                     )
         
                     // 3. Check-out callback was called with right args, and verify that all is cleaned
-                    assert_integersEqual(callbackOperationStatus, FS_OPERATION_SUCCESS)
+                    assert_integersEqual(callbackOperationStatus, ${globalCode.fs!.OPERATION_SUCCESS!})
                     assert_integersEqual(callbackOperationId, operationId)
                     assert_operationCleaned(operationId)
                 `,
@@ -603,7 +603,7 @@ describe('fs', () => {
             {
                 description:
                     'fs_sendWriteSoundFileResponse > should register the operation failure %s',
-                testFunction: () => AnonFunc()`
+                testFunction: ({ globalCode }) => AnonFunc()`
                     initializeTest()
 
                     ${ConstVar('FloatArray[]', 'sound', `[
@@ -612,9 +612,9 @@ describe('fs', () => {
                     ]`)}
 
                     ${ConstVar(
-                        'fs_OperationId',
+                        globalCode.fs!.OperationId!,
                         'operationId',
-                        `fs_writeSoundFile(
+                        `${globalCode.fs!.writeSoundFile!}(
                             sound, 
                             '/some/url', 
                             {
@@ -629,9 +629,9 @@ describe('fs', () => {
                         )`
                     )}
 
-                    x_fs_onWriteSoundFileResponse(operationId, FS_OPERATION_FAILURE)
+                    ${globalCode.fs!.x_onWriteSoundFileResponse!}(operationId, ${globalCode.fs!.OPERATION_FAILURE!})
                     assert_integersEqual(callbackOperationId, operationId)
-                    assert_integersEqual(callbackOperationStatus, FS_OPERATION_FAILURE)
+                    assert_integersEqual(callbackOperationStatus, ${globalCode.fs!.OPERATION_FAILURE!})
                 `,
             },
         ],
@@ -646,16 +646,16 @@ describe('fs', () => {
             fsSoundStreamCore.codeGenerator,
             fsReadSoundStream.codeGenerator,
             fsWriteSoundStream.codeGenerator,
-            () => Sequence([
+            ({ globalCode }) => Sequence([
                 // Global test variables
                 Var('Array<string>', 'calls', '[]'),
-                Var('Array<fs_OperationId>', 'id_received', '[]'),
+                Var(`Array<${globalCode.fs!.OperationId!}>`, 'id_received', '[]'),
                 Var('FloatArray[][]', 'sound_received', '[]'),
-                Var('Array<fs_Url>', 'url_received', '[]'),
-                Var('Array<Message>', 'info_received', '[]'),
-                Var('fs_OperationStatus', 'status_received', '-1'),
+                Var(`Array<${globalCode.fs!.Url!}>`, 'url_received', '[]'),
+                Var(`Array<${globalCode.msg!.Message!}>`, 'info_received', '[]'),
+                Var(globalCode.fs!.OperationStatus!, 'status_received', '-1'),
                 Var('Int', 'callbackOperationId', '0'),
-                Var('fs_OperationStatus', 'callbackOperationStatus', '-1'),
+                Var(globalCode.fs!.OperationStatus!, 'callbackOperationStatus', '-1'),
                 Var('FloatArray[]', 'callbackOperationSound', '[]'),
                 
                 Func('initializeTest')`
@@ -672,73 +672,73 @@ describe('fs', () => {
                 `,
 
                 // Dummy import
-                Func('i_fs_readSoundFile', [
-                    Var('fs_OperationId', 'id'),
-                    Var('fs_Url', 'url'),
-                    Var('Message', 'info'),
+                Func(globalCode.fs!.i_readSoundFile!, [
+                    Var(globalCode.fs!.OperationId!, 'id'),
+                    Var(globalCode.fs!.Url!, 'url'),
+                    Var(globalCode.msg!.Message!, 'info'),
                 ], 'void')`
-                    calls.push('i_fs_readSoundFile')
+                    calls.push('readSoundFile')
                     id_received.push(id)
                     url_received.push(url)
                     info_received.push(info)
                 `,
 
-                Func('i_fs_openSoundReadStream', [
-                    Var('fs_OperationId', 'id'),
-                    Var('fs_Url', 'url'),
-                    Var('Message', 'info'),
+                Func(globalCode.fs!.i_openSoundReadStream!, [
+                    Var(globalCode.fs!.OperationId!, 'id'),
+                    Var(globalCode.fs!.Url!, 'url'),
+                    Var(globalCode.msg!.Message!, 'info'),
                 ], 'void')`
-                    calls.push('i_fs_openSoundReadStream')
+                    calls.push('openSoundReadStream')
                     id_received.push(id)
                     url_received.push(url)
                     info_received.push(info)
                 `,
 
-                Func('i_fs_openSoundWriteStream', [
-                    Var('fs_OperationId', 'id'),
-                    Var('fs_Url', 'url'),
-                    Var('Message', 'info'),
+                Func(globalCode.fs!.i_openSoundWriteStream!, [
+                    Var(globalCode.fs!.OperationId!, 'id'),
+                    Var(globalCode.fs!.Url!, 'url'),
+                    Var(globalCode.msg!.Message!, 'info'),
                 ], 'void')`
-                    calls.push('i_fs_openSoundWriteStream')
+                    calls.push('openSoundWriteStream')
                     id_received.push(id)
                     url_received.push(url)
                     info_received.push(info)
                 `,
 
-                Func('i_fs_writeSoundFile', [
-                    Var('fs_OperationId', 'id'),
+                Func(globalCode.fs!.i_writeSoundFile!, [
+                    Var(globalCode.fs!.OperationId!, 'id'),
                     Var('FloatArray[]', 'sound'),
-                    Var('fs_Url', 'url'),
-                    Var('Message', 'info'),
+                    Var(globalCode.fs!.Url!, 'url'),
+                    Var(globalCode.msg!.Message!, 'info'),
                 ], 'void')`
-                    calls.push('i_fs_writeSoundFile')
+                    calls.push('writeSoundFile')
                     id_received.push(id)
                     sound_received.push(sound)
                     url_received.push(url)
                     info_received.push(info)
                 `,
 
-                Func('i_fs_sendSoundStreamData', [
-                    Var('fs_OperationId', 'id'), 
+                Func(globalCode.fs!.i_sendSoundStreamData!, [
+                    Var(globalCode.fs!.OperationId!, 'id'), 
                     Var('FloatArray[]', 'sound')
                 ], 'void')`
-                    calls.push('i_fs_sendSoundStreamData')
+                    calls.push('sendSoundStreamData')
                     id_received.push(id)
                     sound_received.push(sound)
                 `,
 
-                Func('i_fs_closeSoundStream', [
-                    Var('fs_OperationId', 'id'),
-                    Var('fs_OperationStatus', 'status'),
+                Func(globalCode.fs!.i_closeSoundStream!, [
+                    Var(globalCode.fs!.OperationId!, 'id'),
+                    Var(globalCode.fs!.OperationStatus!, 'status'),
                 ], 'void')`
-                    calls.push('i_fs_closeSoundStream')
+                    calls.push('closeSoundStream')
                     id_received.push(id)
                     status_received = status
                 `,
 
                 Func('someSoundCallback', [
-                    Var('fs_OperationId', 'id'),
-                    Var('fs_OperationStatus', 'status'),
+                    Var(globalCode.fs!.OperationId!, 'id'),
+                    Var(globalCode.fs!.OperationStatus!, 'status'),
                     Var('FloatArray[]', 'sound'),
                 ], 'void')`
                     callbackOperationId = id
@@ -747,94 +747,94 @@ describe('fs', () => {
                 `,
 
                 Func('someCallback', [
-                    Var('fs_OperationId', 'id'),
-                    Var('fs_OperationStatus', 'status'),
+                    Var(globalCode.fs!.OperationId!, 'id'),
+                    Var(globalCode.fs!.OperationStatus!, 'status'),
                 ], 'void')`
                     callbackOperationId = id
                     callbackOperationStatus = status
                 `,
 
                 Func('assert_operationCleaned', [
-                    Var('fs_OperationId', 'id')
+                    Var(globalCode.fs!.OperationId!, 'id')
                 ], 'void')`
                     if(
-                        _FS_OPERATIONS_IDS.has(id)
-                        || _FS_OPERATIONS_CALLBACKS.has(id)
-                        || _FS_OPERATIONS_SOUND_CALLBACKS.has(id)
-                        || _FS_SOUND_STREAM_BUFFERS.has(id)
+                        ${globalCode.fs!._OPERATIONS_IDS!}.has(id)
+                        || ${globalCode.fs!._OPERATIONS_CALLBACKS!}.has(id)
+                        || ${globalCode.fs!._OPERATIONS_SOUND_CALLBACKS!}.has(id)
+                        || ${globalCode.fs!._SOUND_STREAM_BUFFERS!}.has(id)
                     ) {
                         reportTestFailure('operation ' + id.toString() + ' was not cleaned properly')
                     }
                 `,
 
                 Func('assert_soundInfoMessagesEqual', [
-                    Var('Message', 'actual'), 
-                    Var('Message', 'expected')
+                    Var(globalCode.msg!.Message!, 'actual'), 
+                    Var(globalCode.msg!.Message!, 'expected')
                 ], 'void')`
-                    if (!msg_isMatching(actual, [
-                        MSG_FLOAT_TOKEN, 
-                        MSG_FLOAT_TOKEN, 
-                        MSG_FLOAT_TOKEN, 
-                        MSG_STRING_TOKEN, 
-                        MSG_STRING_TOKEN, 
-                        MSG_STRING_TOKEN
+                    if (!${globalCode.msg!.isMatching!}(actual, [
+                        ${globalCode.msg!.FLOAT_TOKEN!}, 
+                        ${globalCode.msg!.FLOAT_TOKEN!}, 
+                        ${globalCode.msg!.FLOAT_TOKEN!}, 
+                        ${globalCode.msg!.STRING_TOKEN!}, 
+                        ${globalCode.msg!.STRING_TOKEN!}, 
+                        ${globalCode.msg!.STRING_TOKEN!}
                     ])) {
                         reportTestFailure('Unexpected sound info message shape for <actual> arg')
                     }
                     
-                    if (!msg_isMatching(expected, [
-                        MSG_FLOAT_TOKEN, 
-                        MSG_FLOAT_TOKEN, 
-                        MSG_FLOAT_TOKEN, 
-                        MSG_STRING_TOKEN, 
-                        MSG_STRING_TOKEN, 
-                        MSG_STRING_TOKEN
+                    if (!${globalCode.msg!.isMatching!}(expected, [
+                        ${globalCode.msg!.FLOAT_TOKEN!}, 
+                        ${globalCode.msg!.FLOAT_TOKEN!}, 
+                        ${globalCode.msg!.FLOAT_TOKEN!}, 
+                        ${globalCode.msg!.STRING_TOKEN!}, 
+                        ${globalCode.msg!.STRING_TOKEN!}, 
+                        ${globalCode.msg!.STRING_TOKEN!}
                     ])) {
                         reportTestFailure('Unexpected sound info message shape for <expected> arg')
                     }
 
-                    const actualChannelCount = msg_readFloatToken(actual, 0)
-                    const expectedChannelCount = msg_readFloatToken(expected, 0)
+                    const actualChannelCount = ${globalCode.msg!.readFloatToken!}(actual, 0)
+                    const expectedChannelCount = ${globalCode.msg!.readFloatToken!}(expected, 0)
                     if (actualChannelCount !== expectedChannelCount) {
                         reportTestFailure(
                             'Got SoundInfo.channelCount ' + actualChannelCount.toString() 
                             + ' expected ' + expectedChannelCount.toString())
                     }
 
-                    const actualSampleRate = msg_readFloatToken(actual, 1)
-                    const expectedSampleRate = msg_readFloatToken(expected, 1)
+                    const actualSampleRate = ${globalCode.msg!.readFloatToken!}(actual, 1)
+                    const expectedSampleRate = ${globalCode.msg!.readFloatToken!}(expected, 1)
                     if (actualSampleRate !== expectedSampleRate) {
                         reportTestFailure(
                             'Got SoundInfo.sampleRate ' + actualSampleRate.toString() 
                             + ' expected ' + expectedSampleRate.toString())
                     }
 
-                    const actualBitDepth = msg_readFloatToken(actual, 2)
-                    const expectedBitDepth = msg_readFloatToken(expected, 2)
+                    const actualBitDepth = ${globalCode.msg!.readFloatToken!}(actual, 2)
+                    const expectedBitDepth = ${globalCode.msg!.readFloatToken!}(expected, 2)
                     if (actualBitDepth !== expectedBitDepth) {
                         reportTestFailure(
                             'Got SoundInfo.bitDepth ' + actualBitDepth.toString() 
                             + ' expected ' + expectedBitDepth.toString())
                     }
 
-                    const actualEncodingFormat = msg_readStringToken(actual, 3)
-                    const expectedEncodingFormat = msg_readStringToken(expected, 3)
+                    const actualEncodingFormat = ${globalCode.msg!.readStringToken!}(actual, 3)
+                    const expectedEncodingFormat = ${globalCode.msg!.readStringToken!}(expected, 3)
                     if (actualEncodingFormat !== expectedEncodingFormat) {
                         reportTestFailure(
                             'Got SoundInfo.encodingFormat ' + actualEncodingFormat.toString() 
                             + ' expected ' + expectedEncodingFormat.toString())
                     }
 
-                    const actualEndianness = msg_readStringToken(actual, 4)
-                    const expectedEndianness = msg_readStringToken(expected, 4)
+                    const actualEndianness = ${globalCode.msg!.readStringToken!}(actual, 4)
+                    const expectedEndianness = ${globalCode.msg!.readStringToken!}(expected, 4)
                     if (actualEndianness !== expectedEndianness) {
                         reportTestFailure(
                             'Got SoundInfo.endianness ' + actualEndianness.toString() 
                             + ' expected ' + expectedEndianness.toString())
                     }
 
-                    const actualExtraOptions = msg_readStringToken(actual, 5)
-                    const expectedExtraOptions = msg_readStringToken(expected, 5)
+                    const actualExtraOptions = ${globalCode.msg!.readStringToken!}(actual, 5)
+                    const expectedExtraOptions = ${globalCode.msg!.readStringToken!}(expected, 5)
                     if (actualExtraOptions !== expectedExtraOptions) {
                         reportTestFailure(
                             'Got SoundInfo.extraOptions ' + actualExtraOptions.toString() 

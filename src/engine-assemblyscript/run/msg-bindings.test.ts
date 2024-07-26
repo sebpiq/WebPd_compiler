@@ -27,16 +27,17 @@ import {
 } from './msg-bindings'
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { getFloatArrayType } from '../../run/run-helpers'
+import { RawModuleWithNameMapping, getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
 import { sked } from '../../stdlib/sked'
 import { msg } from '../../stdlib/msg'
-import { MessagePointer } from './types'
+import { EngineRawModule, MessagePointer } from './types'
 import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
 import macros from '../compile/macros'
-import { makeSettings } from '../../compile/test-helpers'
-import { createGlobsVariableNames, createVariableNamesIndex } from '../../compile/precompile/proxies'
+import { makeGlobalCodePrecompilationContext, makePrecompilation, makeSettings } from '../../compile/test-helpers'
+import { Code } from '../../ast/types'
+import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {
@@ -63,6 +64,8 @@ describe('msg-bindings', () => {
     }
 
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => {
+        const precompilation = makePrecompilation({})
+        const globalCode = precompilation.variableNamesAssigner.globalCode
         const context = {
             settings: makeSettings({
                 target: 'assemblyscript',
@@ -71,7 +74,8 @@ describe('msg-bindings', () => {
                     channelCount: { in: 2, out: 2 },
                 },
             }),
-            globs: createGlobsVariableNames(),
+            globs: precompilation.variableNamesAssigner.globs,
+            globalCode: precompilation.variableNamesAssigner.globalCode,
         } as const
         return render(
             macros,
@@ -79,12 +83,30 @@ describe('msg-bindings', () => {
                 core.codeGenerator(context),
                 sked(context),
                 msg.codeGenerator(context),
-                `export function testReadMessageData(message: Message, index: Int): Int {
-                return message.dataView.getInt32(index * sizeof<Int>())
-            }`,
-                core.exports!.map(({ name }) => `export { ${name} }`),
-                msg.exports!.map(({ name }) => `export { ${name} }`),
+                `export function testReadMessageData(message: ${globalCode.msg!.Message!}, index: Int): Int {
+                    return message.dataView.getInt32(index * sizeof<Int>())
+                }`,
+                core.exports!(context).map((name) => `export { ${name} }`),
+                msg.exports!(context).map((name) => `export { ${name} }`),
             ])
+        )
+    }
+
+    const compileRawModule = async (code: Code, bitDepth: AudioSettings['bitDepth']) => {
+        const rawModule = await ascCodeToRawModule<MsgTestRawModule>(code, bitDepth)
+        const precompilation = makePrecompilation({
+            settings: {
+                target: 'assemblyscript'
+            }
+        })
+        // We instantiate the code to make sure all names are assigned
+        instantiateAndDedupeDependencies(
+            [msg],
+            makeGlobalCodePrecompilationContext(precompilation)
+        )
+        return RawModuleWithNameMapping<EngineRawModule & MsgTestRawModule>(
+            rawModule,
+            precompilation.variableNamesIndex.globalCode,
         )
     }
 
@@ -94,25 +116,25 @@ describe('msg-bindings', () => {
             async ({ bitDepth }) => {
                 const code = getBaseTestCode(bitDepth)
                 const floatArrayType = getFloatArrayType(bitDepth)
-                const wasmExports = await ascCodeToRawModule<MsgTestRawModule>(
+                const rawModule = await compileRawModule(
                     code,
                     bitDepth
                 )
-                const messagePointer = lowerMessage(wasmExports, ['bla', 2.3])
+                const messagePointer = lowerMessage(rawModule, ['bla', 2.3])
 
                 // Testing token count
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 0),
+                    rawModule.testReadMessageData(messagePointer, 0),
                     2
                 )
 
                 // Testing token types
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 1),
+                    rawModule.testReadMessageData(messagePointer, 1),
                     1
                 )
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 2),
+                    rawModule.testReadMessageData(messagePointer, 2),
                     0
                 )
 
@@ -121,15 +143,15 @@ describe('msg-bindings', () => {
                 //      + <Size of f32>
                 //      + <Size of 3 chars strings> + <Size of f32>
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 3),
+                    rawModule.testReadMessageData(messagePointer, 3),
                     6 * INT_ARRAY_BYTES_PER_ELEMENT
                 )
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 4),
+                    rawModule.testReadMessageData(messagePointer, 4),
                     6 * INT_ARRAY_BYTES_PER_ELEMENT + 3 * BYTES_IN_CHAR
                 )
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 5),
+                    rawModule.testReadMessageData(messagePointer, 5),
                     6 * INT_ARRAY_BYTES_PER_ELEMENT +
                         3 * BYTES_IN_CHAR +
                         floatArrayType.BYTES_PER_ELEMENT
@@ -137,31 +159,31 @@ describe('msg-bindings', () => {
 
                 // TOKEN "bla"
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 6),
+                    rawModule.testReadMessageData(messagePointer, 6),
                     'bla'.charCodeAt(0)
                 )
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 7),
+                    rawModule.testReadMessageData(messagePointer, 7),
                     'bla'.charCodeAt(1)
                 )
                 assert.strictEqual(
-                    wasmExports.testReadMessageData(messagePointer, 8),
+                    rawModule.testReadMessageData(messagePointer, 8),
                     'bla'.charCodeAt(2)
                 )
 
                 // TOKEN "2.3"
                 if (bitDepth === 64) {
                     assert.strictEqual(
-                        wasmExports.testReadMessageData(messagePointer, 9),
+                        rawModule.testReadMessageData(messagePointer, 9),
                         float64ToInt32Array(2.3)[0]
                     )
                     assert.strictEqual(
-                        wasmExports.testReadMessageData(messagePointer, 10),
+                        rawModule.testReadMessageData(messagePointer, 10),
                         float64ToInt32Array(2.3)[1]
                     )
                 } else {
                     assert.strictEqual(
-                        wasmExports.testReadMessageData(messagePointer, 9),
+                        rawModule.testReadMessageData(messagePointer, 9),
                         float32ToInt32Array(2.3)[0]
                     )
                 }
@@ -173,27 +195,30 @@ describe('msg-bindings', () => {
         it.each(TEST_PARAMETERS)(
             'should read message to a JavaScript array %s',
             async ({ bitDepth }) => {
+                const precompilation = makePrecompilation({})
+                const globalCode = precompilation.variableNamesAssigner.globalCode
+
                 // prettier-ignore
                 const code = getBaseTestCode(bitDepth) + `
-                    export function testCreateMessage(): Message {
-                        const message: Message = msg_create([
-                            MSG_STRING_TOKEN, 5,
-                            MSG_FLOAT_TOKEN,
+                    export function testCreateMessage(): ${globalCode.msg!.Message!} {
+                        const message: ${globalCode.msg!.Message!} = ${globalCode.msg!.create!}([
+                            ${globalCode.msg!.STRING_TOKEN!}, 5,
+                            ${globalCode.msg!.FLOAT_TOKEN!},
                         ])
-                        msg_writeStringToken(message, 0, "hello")
-                        msg_writeFloatToken(message, 1, 666)
+                        ${globalCode.msg!.writeStringToken!}(message, 0, "hello")
+                        ${globalCode.msg!.writeFloatToken!}(message, 1, 666)
                         return message
                     }
                 `
 
-                const wasmExports = await ascCodeToRawModule<MsgTestRawModule>(
+                const rawModule = await compileRawModule(
                     code,
                     bitDepth
                 )
 
-                const messagePointer = wasmExports.testCreateMessage()
+                const messagePointer = rawModule.testCreateMessage()
                 assert.deepStrictEqual(
-                    liftMessage(wasmExports, messagePointer),
+                    liftMessage(rawModule, messagePointer),
                     ['hello', 666]
                 )
             }

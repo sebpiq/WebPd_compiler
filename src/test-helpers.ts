@@ -22,15 +22,15 @@ import {
     AudioSettings,
     CompilerTarget,
     GlobalCodeDefinition,
-    GlobalCodeDefinitionExport,
     GlobalCodeGeneratorWithSettings,
+    GlobalCodePrecompilationContext,
 } from './compile/types'
-import { AstSequence, Code, AstFunc } from './ast/types'
+import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
-import { Engine, Module, RawModule } from './run/types'
+import { Engine, Module } from './run/types'
 import { writeFile } from 'fs/promises'
 import { getMacros } from './compile/compile-helpers'
-import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
+import { compileJavascript } from './engine-javascript/run/test-helpers'
 import {
     compileAssemblyscript,
     wasmBufferToRawModule,
@@ -41,8 +41,9 @@ import {
     createBindings as createAssemblyScriptWasmEngineBindings,
 } from './engine-assemblyscript/run'
 import {
-    RawJavaScriptEngine,
     createBindings as createJavaScriptEngineBindings,
+    applyNameMappingToRawModule,
+    EngineLifecycleRawModule,
 } from './engine-javascript/run'
 import { createModule } from './run/run-helpers'
 import render from './compile/render'
@@ -51,8 +52,10 @@ import {
     flattenDependencies,
     instantiateAndDedupeDependencies,
 } from './compile/precompile/dependencies'
-import { createGlobsVariableNames } from './compile/precompile/proxies'
-import { makeSettings } from './compile/test-helpers'
+import {
+    makeGlobalCodePrecompilationContext,
+    makePrecompilation,
+} from './compile/test-helpers'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
@@ -82,7 +85,7 @@ export const round = (v: number, decimals: number = 4) => {
 
 interface CreateTestModuleApplyBindings {
     assemblyscript?: (buffer: ArrayBuffer) => Promise<Module>
-    javascript?: (rawModule: RawModule) => Promise<Module>
+    javascript?: (rawModule: EngineLifecycleRawModule) => Promise<Module>
 }
 
 /** Helper function to create a `Module` for running tests. */
@@ -105,7 +108,7 @@ export const createTestModule = async <ModuleType extends Module>(
     )
     switch (target) {
         case 'javascript':
-            const rawModule = await jsCodeToRawModule(code)
+            const rawModule = await compileJavascript(code)
             const jsModule = await applyBindingsNonNull.javascript(rawModule)
             return jsModule as ModuleType
         case 'assemblyscript':
@@ -127,35 +130,33 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     code: Code,
     dependencies: Array<GlobalCodeDefinition> = []
 ) => {
+    const context = makeGlobalCodePrecompilationContext(makePrecompilation({}))
     const exports = collectAndDedupeExports(
-        target,
-        flattenDependencies(dependencies)
+        flattenDependencies(dependencies),
+        context
     )
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
     return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
-        javascript: async (rawModule) => {
+        javascript: async (rawModule: EngineLifecycleRawModule) => {
+            const rawModuleWithMapping = applyNameMappingToRawModule(rawModule)
             return createModule(rawModule, {
-                ...mapArray(exports, ({ name }) => [
-                    String(name),
-                    { type: 'raw' },
-                ]),
-                ...createJavaScriptEngineBindings(rawModule as RawJavaScriptEngine),
+                ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
+                ...createJavaScriptEngineBindings(
+                    rawModuleWithMapping
+                ),
             })
         },
         assemblyscript: async (buffer) => {
-            const { rawModule, engineData, forwardReferences } =
+            const { rawModuleWithNameMapping, engineData, forwardReferences } =
                 await createAssemblyScriptWasmRawModule(buffer)
             const engineBindings = await createAssemblyScriptWasmEngineBindings(
-                rawModule,
+                rawModuleWithNameMapping,
                 engineData,
                 forwardReferences
             )
-            return createModule(rawModule, {
-                ...mapArray(exports, ({ name }) => [
-                    String(name),
-                    { type: 'raw' },
-                ]),
+            return createModule(rawModuleWithNameMapping, {
+                ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
                 ...engineBindings,
             })
         },
@@ -165,7 +166,13 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
 export const runTestSuite = (
     tests: Array<{
         description: string
-        testFunction: (target: CompilerTarget) => AstFunc
+        testFunction: ({
+            target,
+            globalCode,
+        }: {
+            target: CompilerTarget
+            globalCode: GlobalCodePrecompilationContext['globalCode']
+        }) => AstFunc
     }>,
     dependencies: Array<GlobalCodeDefinition> = []
 ) => {
@@ -176,27 +183,36 @@ export const runTestSuite = (
     beforeAll(async () => {
         for (let testParameters of TEST_PARAMETERS) {
             const { target, bitDepth } = testParameters
-            const settings = makeSettings({
-                audio: {
-                    bitDepth,
-                    channelCount: { in: 2, out: 2 },
+            const precompilation = makePrecompilation({
+                settings: {
+                    audio: {
+                        bitDepth,
+                        channelCount: { in: 2, out: 2 },
+                    },
+                    target,
                 },
-                target,
             })
             const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
-                tests.map<GlobalCodeGeneratorWithSettings>(({ testFunction }, i) => {
-                    const astTestFunc = testFunction(target)
-                    const codeGeneratorWithSettings: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: () => ({
-                            ...astTestFunc,
-                            name: testFunctionNames[i]!,
-                        }),
-                        exports: [{ name: testFunctionNames[i]! }],
+                tests.map<GlobalCodeGeneratorWithSettings>(
+                    ({ testFunction }, i) => {
+                        const astTestFunc = testFunction({
+                            target,
+                            globalCode:
+                                precompilation.variableNamesAssigner.globalCode,
+                        })
+                        const codeGeneratorWithSettings: GlobalCodeGeneratorWithSettings =
+                            {
+                                codeGenerator: () => ({
+                                    ...astTestFunc,
+                                    name: testFunctionNames[i]!,
+                                }),
+                                exports: () => [testFunctionNames[i]!],
+                            }
+                        return codeGeneratorWithSettings
                     }
-                    return codeGeneratorWithSettings
-                })
+                )
 
-            let sequence = Sequence([
+            const testsAndDependencies = Sequence([
                 Func('reportTestFailure', [Var('string', 'msg')], 'void')`
                     console.log(msg)
                     throw new Error('test failed')
@@ -268,22 +284,21 @@ export const runTestSuite = (
                 `,
 
                 instantiateAndDedupeDependencies(
-                    settings,
                     flattenDependencies([
                         ...dependencies,
                         ...testsCodeDefinitions,
                     ]),
-                    createGlobsVariableNames()
+                    makeGlobalCodePrecompilationContext(precompilation)
                 ),
 
                 target === 'javascript' ? 'const exports = {}' : null,
 
                 generateTestExports(
                     target,
-                    collectAndDedupeExports(target, [
-                        ...dependencies,
-                        ...testsCodeDefinitions,
-                    ])
+                    collectAndDedupeExports(
+                        [...dependencies, ...testsCodeDefinitions],
+                        makeGlobalCodePrecompilationContext(precompilation)
+                    )
                 ),
             ])
 
@@ -292,7 +307,7 @@ export const runTestSuite = (
                 await createTestModule(
                     target,
                     bitDepth,
-                    render(getMacros(target), sequence)
+                    render(getMacros(target), testsAndDependencies)
                 ),
             ])
         }
@@ -320,15 +335,15 @@ export const runTestSuite = (
 
 const generateTestExports = (
     target: CompilerTarget,
-    exports: Array<GlobalCodeDefinitionExport>
+    exports: Array<VariableName>
 ): AstSequence =>
     ast`${renderSwitch(
         [
             target === 'assemblyscript',
-            exports.map(({ name }) => `export { ${name} }`),
+            exports.map((name) => `export { ${name} }`),
         ],
         [
             target === 'javascript',
-            exports.map(({ name }) => `exports.${name} = ${name}`),
+            exports.map((name) => `exports.${name} = ${name}`),
         ]
     )}`

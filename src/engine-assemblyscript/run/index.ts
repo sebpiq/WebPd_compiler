@@ -28,7 +28,7 @@
  * @module
  */
 
-import { Engine } from '../../run/types'
+import { Engine, RawModule } from '../../run/types'
 import {
     createFsBindings,
     createFsImports,
@@ -41,7 +41,10 @@ import {
     ForwardReferences,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
-import { getFloatArrayType } from '../../run/run-helpers'
+import {
+    RawModuleWithNameMapping,
+    getFloatArrayType,
+} from '../../run/run-helpers'
 import { createCommonsBindings } from './commons-bindings'
 import { createModule } from '../../run/run-helpers'
 import {
@@ -57,15 +60,14 @@ import { Bindings } from '../../run/types'
 export const createEngine = async (
     wasmBuffer: ArrayBuffer
 ): Promise<Engine> => {
-    const { rawModule, engineData, forwardReferences } = await createRawModule(
-        wasmBuffer
-    )
+    const { rawModuleWithNameMapping, engineData, forwardReferences } =
+        await createRawModule(wasmBuffer)
     const engineBindings = await createBindings(
-        rawModule,
+        rawModuleWithNameMapping,
         engineData,
         forwardReferences
     )
-    return createModule(rawModule, engineBindings)
+    return createModule(rawModuleWithNameMapping, engineBindings)
 }
 
 export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
@@ -77,7 +79,7 @@ export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
     > = { modules: {} }
 
     const wasmImports: AssemblyScriptWasmImports = {
-        ...createFsImports(forwardReferences),
+        ...createFsImports(forwardReferences, metadata),
         ...ioMsgSendersImports(forwardReferences, metadata),
     }
 
@@ -95,8 +97,12 @@ export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
     const wasmInstance = await instantiateWasmModule(wasmBuffer, {
         input: wasmImports,
     })
-    const rawModule = wasmInstance.exports as unknown as EngineRawModule
-    return { rawModule, engineData, forwardReferences }
+    const rawModule = wasmInstance.exports as unknown as RawModule
+    const rawModuleWithNameMapping = RawModuleWithNameMapping<EngineRawModule>(
+        rawModule,
+        metadata.compilation.variableNamesIndex.globalCode
+    )
+    return { rawModuleWithNameMapping, engineData, forwardReferences }
 }
 
 export const createBindings = async (
@@ -106,12 +112,14 @@ export const createBindings = async (
         FsWithDependenciesRawModule & EngineLifecycleWithDependenciesRawModule
     >
 ): Promise<Bindings<Engine>> => {
+    const optionalBindings: Partial<Bindings<Engine>> = {}
+    const exportedNames = engineData.metadata.compilation.variableNamesIndex.globalCode
+
     // Create bindings for core modules
     const commons = createModule(
         rawModule,
         createCommonsBindings(rawModule, engineData)
     )
-    const fs = createModule(rawModule, createFsBindings(rawModule, engineData))
     const io = {
         messageReceivers: createModule(
             rawModule,
@@ -124,17 +132,22 @@ export const createBindings = async (
     }
 
     // Update forward refs for use in Wasm imports
-    forwardReferences.modules.fs = fs
     forwardReferences.modules.io = io
     forwardReferences.engineData = engineData
     forwardReferences.rawModule = rawModule
+    
+    if ('fs' in exportedNames) {
+        const fs = createModule(rawModule, createFsBindings(rawModule, engineData))
+        forwardReferences.modules.fs = fs
+        optionalBindings.fs = { type: 'proxy', value: fs }
+    }
 
     // Build the full module
     return {
+        ...optionalBindings,
         ...createEngineLifecycleBindings(rawModule, engineData),
         metadata: { type: 'proxy', value: engineData.metadata },
         commons: { type: 'proxy', value: commons },
-        fs: { type: 'proxy', value: fs },
         io: { type: 'proxy', value: io },
     }
 }

@@ -32,7 +32,7 @@ import {
     getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
 import { PrecompilationInput, Precompilation } from './types'
-import precompileDependencies from './dependencies'
+import precompileDependencies, { engineMinimalDependencies } from './dependencies'
 import {
     precompileInitialization,
     precompileMessageReceivers,
@@ -210,6 +210,9 @@ export default (precompilationInput: PrecompilationInput) => {
             })
     })
 
+    // ------------------------ DEPENDENCIES ------------------------ //
+    precompileDependencies(precompilation, engineMinimalDependencies())
+
     // ------------------------ NODE ------------------------ //
     inlinableDspGroups.forEach((dspGroup) => {
         precompileInlineDsp(precompilation, dspGroup)
@@ -228,9 +231,6 @@ export default (precompilationInput: PrecompilationInput) => {
         precompileInitialization(precompilation, node)
         precompileMessageReceivers(precompilation, node)
     })
-
-    // ------------------------ MISC ------------------------ //
-    precompileDependencies(precompilation)
 
     return precompilation
 }

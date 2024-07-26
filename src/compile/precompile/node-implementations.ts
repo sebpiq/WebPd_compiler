@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph } from '../../dsp-graph'
-import { Precompilation } from './types'
+import { ReadOnlyIndex } from '../proxies'
+import { Precompilation, VariableNamesIndex } from './types'
 
 export const STATE_CLASS_NAME = 'State'
 
@@ -43,12 +44,13 @@ export const precompileStateClass = (
                 `No node of type "${nodeType}" exists in the graph.`
             )
         }
-        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
+        const { ns, globs, globalCode } = _getContext(nodeType, variableNamesAssigner)
         const astClass = precompiledImplementation.nodeImplementation.state({
-            globs: variableNamesAssigner.globs,
+            globs,
+            globalCode,
+            ns,
             node: sampleNode,
             settings,
-            ns: namespaceAssigner,
         })
         precompiledImplementation.stateClass = {
             ...astClass,
@@ -73,13 +75,21 @@ export const precompileCore = (
         precompiledCodeAssigner.nodeImplementations[nodeType]!
     const nodeImplementation = precompiledImplementation.nodeImplementation
     if (nodeImplementation.core) {
-        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
+        const { ns, globs, globalCode } = _getContext(nodeType, variableNamesAssigner)
         precompiledImplementation.core = nodeImplementation.core({
             settings,
-            globs: variableNamesAssigner.globs,
-            ns: namespaceAssigner,
+            globs,
+            globalCode,
+            ns,
         })
     }
 }
 
-
+const _getContext = (
+    nodeType: DspGraph.NodeType,
+    variableNamesAssigner: VariableNamesIndex
+) => ({
+    globs: ReadOnlyIndex(variableNamesAssigner.globs),
+    globalCode: ReadOnlyIndex(variableNamesAssigner.globalCode),
+    ns: variableNamesAssigner.nodeImplementations[nodeType]!,
+})

@@ -65,11 +65,11 @@ describe('test-helpers-node-implementations', () => {
             'should work with message inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ snds }) => ({
+                    messageReceivers: ({ globalCode, snds }) => ({
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(globalCode.msg!.Message!, 'm')
                         ], 'void')`
-                            ${snds.$0!}(msg_floats([ msg_readFloatToken(m, 0) + 0.1 ]))
+                            ${snds.$0!}(${globalCode.msg!.floats!}([ ${globalCode.msg!.readFloatToken!}(m, 0) + 0.1 ]))
                             return
                         `,
                     }),
@@ -99,11 +99,11 @@ describe('test-helpers-node-implementations', () => {
             'should send message at the right frame %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ globs, snds }) => ({
+                    messageReceivers: ({ globalCode, globs, snds }) => ({
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(globalCode.msg!.Message!, 'm')
                         ], 'void')`
-                        ${snds.$0!}(msg_floats([toFloat(${globs.frame})]))
+                        ${snds.$0!}(${globalCode.msg!.floats!}([toFloat(${globs.frame})]))
                         return
                     `,
                     }),
@@ -133,11 +133,11 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests with fs %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({}) => ({
+                    messageReceivers: ({ globalCode }) => ({
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(globalCode.msg!.Message!, 'm')
                         ], 'void')`
-                            fs_readSoundFile('/bla', {
+                            ${globalCode.fs!.readSoundFile!}('/bla', {
                                 channelCount: 11,
                                 sampleRate: 666,
                                 bitDepth: 12,
@@ -184,11 +184,11 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests on arrays %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: () => ({
+                    messageReceivers: ({ globalCode }) => ({
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(globalCode.msg!.Message!, 'm')
                         ], 'void')`
-                            commons_getArray('array1')[0] = 666
+                            ${globalCode.commons!.getArray!}('array1')[0] = 666
                             return
                         `,
                     }),

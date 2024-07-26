@@ -22,14 +22,14 @@ import { GlobalCodeGenerator } from '../compile/types'
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 import { AstSequenceContent } from '../ast/types'
 
-export const sked: GlobalCodeGenerator = ({ settings: { target } }) => {
+export const sked: GlobalCodeGenerator = ({ globalCode, settings: { target } }) => {
     const content: Array<AstSequenceContent> = []
     if (target === 'assemblyscript') {
         content.push(`
-            type SkedCallback = (event: SkedEvent) => void
-            type SkedId = Int
-            type SkedMode = Int
-            type SkedEvent = string
+            type ${globalCode.sked!.Callback!} = (event: ${globalCode.sked!.Event!}) => void
+            type ${globalCode.sked!.Id!} = Int
+            type ${globalCode.sked!.Mode!} = Int
+            type ${globalCode.sked!.Event!} = string
         `)
     }
 
@@ -41,39 +41,37 @@ export const sked: GlobalCodeGenerator = ({ settings: { target } }) => {
          * Skeduler id that will never be used. 
          * Can be used as a "no id", or "null" value. 
          */
-        ConstVar('SkedId', 'SKED_ID_NULL', '-1'),
-        ConstVar('SkedId', 'SKED_ID_COUNTER_INIT', '1'),
+        ConstVar(globalCode.sked!.Id!, globalCode.sked!.ID_NULL!, '-1'),
 
-        ConstVar('Int', '_SKED_WAIT_IN_PROGRESS', '0'),
-        ConstVar('Int', '_SKED_WAIT_OVER', '1'),
+        ConstVar(globalCode.sked!.Id!, globalCode.sked!._ID_COUNTER_INIT!, '1'),
 
-        ConstVar('Int', '_SKED_MODE_WAIT', '0'),
-        ConstVar('Int', '_SKED_MODE_SUBSCRIBE', '1'),
+        ConstVar('Int', globalCode.sked!._MODE_WAIT!, '0'),
+        ConstVar('Int', globalCode.sked!._MODE_SUBSCRIBE!, '1'),
 
         // =========================== SKED API
-        Class('SkedRequest', [
-            Var('SkedId', 'id'),
-            Var('SkedMode', 'mode'),
-            Var('SkedCallback', 'callback'),
+        Class(globalCode.sked!._Request!, [
+            Var(globalCode.sked!.Id!, 'id'),
+            Var(globalCode.sked!.Mode!, 'mode'),
+            Var(globalCode.sked!.Callback!, 'callback'),
         ]),
 
-        Class('Skeduler', [
-            Var('Map<SkedEvent, Array<SkedId>>', 'events'),
-            Var('Map<SkedId, SkedRequest>', 'requests'),
+        Class(globalCode.sked!.Skeduler!, [
+            Var(`Map<${globalCode.sked!.Event!}, Array<${globalCode.sked!.Id!}>>`, 'events'),
+            Var(`Map<${globalCode.sked!.Id!}, ${globalCode.sked!._Request!}>`, 'requests'),
             Var('boolean', 'isLoggingEvents'),
-            Var('Set<SkedEvent>', 'eventLog'),
-            Var('SkedId', 'idCounter'),
+            Var(`Set<${globalCode.sked!.Event!}>`, 'eventLog'),
+            Var(globalCode.sked!.Id!, 'idCounter'),
         ]),
 
         /** Creates a new Skeduler. */
-        Func('sked_create', [
+        Func(globalCode.sked!.create!, [
             Var('boolean', 'isLoggingEvents')
-        ], 'Skeduler')`
+        ], globalCode.sked!.Skeduler!)`
             return {
                 eventLog: new Set(),
                 events: new Map(),
                 requests: new Map(),
-                idCounter: SKED_ID_COUNTER_INIT,
+                idCounter: ${globalCode.sked!._ID_COUNTER_INIT!},
                 isLoggingEvents,
             }
         `,
@@ -83,22 +81,22 @@ export const sked: GlobalCodeGenerator = ({ settings: { target } }) => {
          * If the event has already occurred, the callback is triggered instantly 
          * when calling the function.
          * Once triggered, the callback is forgotten.
-         * @returns an id allowing to cancel the callback with {@link sked_cancel}
+         * @returns an id allowing to cancel the callback with {@link ${globalCode.sked!.cancel!}}
          */
-        Func('sked_wait', [
-            Var('Skeduler', 'skeduler'),
-            Var('SkedEvent', 'event'),
-            Var('SkedCallback', 'callback'),
-        ], 'SkedId')`
+        Func(globalCode.sked!.wait!, [
+            Var(globalCode.sked!.Skeduler!, 'skeduler'),
+            Var(globalCode.sked!.Event!, 'event'),
+            Var(globalCode.sked!.Callback!, 'callback'),
+        ], globalCode.sked!.Id!)`
             if (skeduler.isLoggingEvents === false) {
                 throw new Error("Please activate skeduler's isLoggingEvents")
             }
 
             if (skeduler.eventLog.has(event)) {
                 callback(event)
-                return SKED_ID_NULL
+                return ${globalCode.sked!.ID_NULL!}
             } else {
-                return _sked_createRequest(skeduler, event, callback, _SKED_MODE_WAIT)
+                return ${globalCode.sked!._createRequest!}(skeduler, event, callback, ${globalCode.sked!._MODE_WAIT!})
             }
         `,
 
@@ -106,44 +104,44 @@ export const sked: GlobalCodeGenerator = ({ settings: { target } }) => {
          * Asks the skeduler to wait for an event to occur and trigger a callback. 
          * If the event has already occurred, the callback is NOT triggered immediatelly.
          * Once triggered, the callback is forgotten.
-         * @returns an id allowing to cancel the callback with {@link sked_cancel}
+         * @returns an id allowing to cancel the callback with {@link sked.cancel}
          */
-        Func('sked_wait_future', [
-            Var('Skeduler', 'skeduler'),
-            Var('SkedEvent', 'event'),
-            Var('SkedCallback', 'callback'),
-        ], 'SkedId')`
-            return _sked_createRequest(skeduler, event, callback, _SKED_MODE_WAIT)
+        Func(globalCode.sked!.waitFuture!, [
+            Var(globalCode.sked!.Skeduler!, 'skeduler'),
+            Var(globalCode.sked!.Event!, 'event'),
+            Var(globalCode.sked!.Callback!, 'callback'),
+        ], globalCode.sked!.Id!)`
+            return ${globalCode.sked!._createRequest!}(skeduler, event, callback, ${globalCode.sked!._MODE_WAIT!})
         `,
 
         /** 
          * Asks the skeduler to trigger a callback everytime an event occurs 
-         * @returns an id allowing to cancel the callback with {@link sked_cancel}
+         * @returns an id allowing to cancel the callback with {@link sked.cancel}
          */
-        Func('sked_subscribe', [
-            Var('Skeduler', 'skeduler'),
-            Var('SkedEvent', 'event'),
-            Var('SkedCallback', 'callback'),
-        ], 'SkedId')`
-            return _sked_createRequest(skeduler, event, callback, _SKED_MODE_SUBSCRIBE)
+        Func(globalCode.sked!.subscribe!, [
+            Var(globalCode.sked!.Skeduler!, 'skeduler'),
+            Var(globalCode.sked!.Event!, 'event'),
+            Var(globalCode.sked!.Callback!, 'callback'),
+        ], globalCode.sked!.Id!)`
+            return ${globalCode.sked!._createRequest!}(skeduler, event, callback, ${globalCode.sked!._MODE_SUBSCRIBE!})
         `,
 
         /** Notifies the skeduler that an event has just occurred. */
-        Func('sked_emit', [
-            Var('Skeduler', 'skeduler'), 
-            Var('SkedEvent', 'event')
+        Func(globalCode.sked!.emit!, [
+            Var(globalCode.sked!.Skeduler!, 'skeduler'), 
+            Var(globalCode.sked!.Event!, 'event')
         ], 'void')`
             if (skeduler.isLoggingEvents === true) {
                 skeduler.eventLog.add(event)
             }
             if (skeduler.events.has(event)) {
-                ${ConstVar('Array<SkedId>', 'skedIds', 'skeduler.events.get(event)')}
-                ${ConstVar('Array<SkedId>', 'skedIdsStaying', '[]')}
+                ${ConstVar(`Array<${globalCode.sked!.Id!}>`, 'skedIds', 'skeduler.events.get(event)')}
+                ${ConstVar(`Array<${globalCode.sked!.Id!}>`, 'skedIdsStaying', '[]')}
                 for (${Var('Int', 'i', '0')}; i < skedIds.length; i++) {
                     if (skeduler.requests.has(skedIds[i])) {
-                        ${ConstVar('SkedRequest', 'request', 'skeduler.requests.get(skedIds[i])')}
+                        ${ConstVar(globalCode.sked!._Request!, 'request', 'skeduler.requests.get(skedIds[i])')}
                         request.callback(event)
-                        if (request.mode === _SKED_MODE_WAIT) {
+                        if (request.mode === ${globalCode.sked!._MODE_WAIT!}) {
                             skeduler.requests.delete(request.id)
                         } else {
                             skedIdsStaying.push(request.id)
@@ -155,22 +153,22 @@ export const sked: GlobalCodeGenerator = ({ settings: { target } }) => {
         `,
 
         /** Cancels a callback */
-        Func('sked_cancel', [
-            Var('Skeduler', 'skeduler'), 
-            Var('SkedId', 'id'),
+        Func(globalCode.sked!.cancel!, [
+            Var(globalCode.sked!.Skeduler!, 'skeduler'), 
+            Var(globalCode.sked!.Id!, 'id'),
         ], 'void')`
             skeduler.requests.delete(id)
         `,
 
         // =========================== PRIVATE
-        Func('_sked_createRequest', [
-            Var('Skeduler', 'skeduler'),
-            Var('SkedEvent', 'event'),
-            Var('SkedCallback', 'callback'),
-            Var('SkedMode', 'mode'),
-        ], 'SkedId')`
-            ${ConstVar('SkedId', 'id', '_sked_nextId(skeduler)')}
-            ${ConstVar('SkedRequest', 'request', `{
+        Func(globalCode.sked!._createRequest!, [
+            Var(globalCode.sked!.Skeduler!, 'skeduler'),
+            Var(globalCode.sked!.Event!, 'event'),
+            Var(globalCode.sked!.Callback!, 'callback'),
+            Var(globalCode.sked!.Mode!, 'mode'),
+        ], globalCode.sked!.Id!)`
+            ${ConstVar(globalCode.sked!.Id!, 'id', `${globalCode.sked!._nextId!}(skeduler)`)}
+            ${ConstVar(globalCode.sked!._Request!, 'request', `{
                 id, 
                 mode, 
                 callback,
@@ -184,9 +182,9 @@ export const sked: GlobalCodeGenerator = ({ settings: { target } }) => {
             return id
         `,
 
-        Func('_sked_nextId', [
-            Var('Skeduler', 'skeduler')
-        ], 'SkedId')`
+        Func(globalCode.sked!._nextId!, [
+            Var(globalCode.sked!.Skeduler!, 'skeduler')
+        ], globalCode.sked!.Id!)`
             return skeduler.idCounter++
         `,
     ])

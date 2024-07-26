@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AnonFunc, ConstVar, Var } from '../ast/declare'
+import { AnonFunc, ConstVar } from '../ast/declare'
 import { runTestSuite } from '../test-helpers'
 import { core } from './core'
 import { msg } from './msg'
@@ -27,90 +27,107 @@ describe('msg', () => {
     runTestSuite(
         [
             {
-                description: 'msg_floats > should create floats message %s',
-                testFunction: () => AnonFunc()`
-                    ${ConstVar('Message', 'message', 'msg_floats([111, 222])')}
-                    assert_integersEqual(msg_getLength(message), 2)
-                    assert_floatsEqual(msg_readFloatToken(message, 0), 111)
-                    assert_floatsEqual(msg_readFloatToken(message, 1), 222)
-                `,
-            },
-
-            {
-                description:
-                    'msg_floats > should create empty floats message %s',
-                testFunction: () => AnonFunc()`
-                    ${ConstVar('Message', 'message', 'msg_floats([])')}
-                    assert_integersEqual(msg_getLength(message), 0)
-                `,
-            },
-
-            {
-                description: 'msg_strings > should create strings message %s',
-                testFunction: () => AnonFunc()`
+                description: 'floats > should create floats message %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     ${ConstVar(
-                        'Message',
-                        'message',
-                        `msg_strings(['', 'blabla', 'blo'])`,
+                        globalCode.msg!.Message!, 
+                        'message', 
+                        `${globalCode.msg!.floats!}([111, 222])`
                     )}
-                    assert_integersEqual(msg_getLength(message), 3)
-                    assert_stringsEqual(msg_readStringToken(message, 0), '')
-                    assert_stringsEqual(msg_readStringToken(message, 1), 'blabla')
-                    assert_stringsEqual(msg_readStringToken(message, 2), 'blo')
+                    assert_integersEqual(${globalCode.msg!.getLength!}(message), 2)
+                    assert_floatsEqual(${globalCode.msg!.readFloatToken!}(message, 0), 111)
+                    assert_floatsEqual(${globalCode.msg!.readFloatToken!}(message, 1), 222)
                 `,
             },
 
             {
                 description:
-                    'msg_strings > should create empty strings message %s',
-                testFunction: () => AnonFunc()`
-                    ${ConstVar('Message', 'message', 'msg_strings([])')}
-                    assert_integersEqual(msg_getLength(message), 0)
+                    'floats > should create empty floats message %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    ${ConstVar(
+                        globalCode.msg!.Message!, 
+                        'message', 
+                        `${globalCode.msg!.floats!}([])`
+                    )}
+                    assert_integersEqual(${globalCode.msg!.getLength!}(message), 0)
                 `,
             },
 
             {
-                description: 'msg_isMatching > should match given message %s',
-                testFunction: () => AnonFunc()`
+                description: 'strings > should create strings message %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    ${ConstVar(
+                        globalCode.msg!.Message!,
+                        'message',
+                        `${globalCode.msg!.strings!}(['', 'blabla', 'blo'])`,
+                    )}
+                    assert_integersEqual(${globalCode.msg!.getLength!}(message), 3)
+                    assert_stringsEqual(${globalCode.msg!.readStringToken!}(message, 0), '')
+                    assert_stringsEqual(${globalCode.msg!.readStringToken!}(message, 1), 'blabla')
+                    assert_stringsEqual(${globalCode.msg!.readStringToken!}(message, 2), 'blo')
+                `,
+            },
+
+            {
+                description:
+                    'strings > should create empty strings message %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    ${ConstVar(
+                        globalCode.msg!.Message!, 
+                        'message', 
+                        `${globalCode.msg!.strings!}([])`
+                    )}
+                    assert_integersEqual(${globalCode.msg!.getLength!}(message), 0)
+                `,
+            },
+
+            {
+                description: 'isMatching > should match given message %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
                     assert_booleansEqual(
-                        msg_isMatching(
-                            msg_create([MSG_FLOAT_TOKEN]), 
-                            [MSG_FLOAT_TOKEN]
+                        ${globalCode.msg!.isMatching!}(
+                            ${globalCode.msg!.create!}([${globalCode.msg!.FLOAT_TOKEN!}]), 
+                            [${globalCode.msg!.FLOAT_TOKEN!}]
                         ), 
                         true
                     )
                     assert_booleansEqual(
-                        msg_isMatching(
-                            msg_create([MSG_STRING_TOKEN, 1]), 
-                            [MSG_STRING_TOKEN]
+                        ${globalCode.msg!.isMatching!}(
+                            ${globalCode.msg!.create!}([${globalCode.msg!.STRING_TOKEN!}, 1]), 
+                            [${globalCode.msg!.STRING_TOKEN!}]
                         ), 
                         true
                     )
                     assert_booleansEqual(
-                        msg_isMatching(
-                            msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 1, MSG_FLOAT_TOKEN]), 
-                            [MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, MSG_FLOAT_TOKEN]
+                        ${globalCode.msg!.isMatching!}(
+                            ${globalCode.msg!.create!}([
+                                ${globalCode.msg!.FLOAT_TOKEN!}, 
+                                ${globalCode.msg!.STRING_TOKEN!}, 
+                                1, 
+                                ${globalCode.msg!.FLOAT_TOKEN!}
+                            ]), 
+                            [${globalCode.msg!.FLOAT_TOKEN!}, ${globalCode.msg!.STRING_TOKEN!}, ${globalCode.msg!.FLOAT_TOKEN!}]
                         ), 
                         true
                     )
                     assert_booleansEqual(
-                        msg_isMatching(
-                            msg_create([]), 
+                        ${globalCode.msg!.isMatching!}(
+                            ${globalCode.msg!.create!}([]), 
                             []
                         ), 
                         true
                     )
                     assert_booleansEqual(
-                        msg_isMatching(
-                            msg_create([MSG_FLOAT_TOKEN, MSG_FLOAT_TOKEN]), 
-                            [MSG_FLOAT_TOKEN]
+                        ${globalCode.msg!.isMatching!}(
+                            ${globalCode.msg!.create!}([${globalCode.msg!.FLOAT_TOKEN!}, ${globalCode.msg!.FLOAT_TOKEN!}]), 
+                            [${globalCode.msg!.FLOAT_TOKEN!}]
                         ), 
                         false
                     )
                     assert_booleansEqual(
-                        msg_isMatching(
-                            msg_create([MSG_STRING_TOKEN, 1]), 
-                            [MSG_FLOAT_TOKEN]
+                        ${globalCode.msg!.isMatching!}(
+                            ${globalCode.msg!.create!}([${globalCode.msg!.STRING_TOKEN!}, 1]), 
+                            [${globalCode.msg!.FLOAT_TOKEN!}]
                         ), 
                         false
                     )
@@ -119,17 +136,21 @@ describe('msg', () => {
 
             {
                 description:
-                    'msg_display > should return a display version of a message %s',
-                testFunction: (target) => AnonFunc()`
+                    'display > should return a display version of a message %s',
+                testFunction: ({ globalCode, target }) => AnonFunc()`
                     ${ConstVar(
-                        'Message',
+                        globalCode.msg!.Message!,
                         'message',
-                        'msg_create([MSG_FLOAT_TOKEN, MSG_STRING_TOKEN, 3])',
+                        `${globalCode.msg!.create!}([
+                            ${globalCode.msg!.FLOAT_TOKEN!}, 
+                            ${globalCode.msg!.STRING_TOKEN!}, 
+                            3
+                        ])`,
                     )}
-                    msg_writeFloatToken(message, 0, -123)
-                    msg_writeStringToken(message, 1, 'bla')
+                    ${globalCode.msg!.writeFloatToken!}(message, 0, -123)
+                    ${globalCode.msg!.writeStringToken!}(message, 1, 'bla')
                     assert_stringsEqual(
-                        msg_display(message),
+                        ${globalCode.msg!.display!}(message),
                         ${
                             target === 'assemblyscript'
                                 ? '\'[-123.0, "bla"]\''

@@ -30,10 +30,11 @@ export default (
     renderInput: RenderInput,
 ): JavaScriptEngineCode => {
     const { precompiledCode, settings, variableNamesIndex } = renderInput
-    const globs = variableNamesIndex.globs
+    const { globs, globalCode } = variableNamesIndex
     const renderTemplateInput = {
         settings,
         globs,
+        globalCode,
         precompiledCode,
     }
     const metadata = buildMetadata(renderInput)
@@ -98,7 +99,7 @@ export default (
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)
             `, 
-            ({ name }) => ast`exports.${name} = ${name}`
+            (name) => ast`exports.${name} = ${name}`
         )}
     `)
 }

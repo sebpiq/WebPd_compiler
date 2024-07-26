@@ -255,7 +255,7 @@ describe('precompile', () => {
 
         assert.strictEqual(
             precompiledCode.nodes.n2!.signalIns['0'],
-            '(1 + NULL_SIGNAL)'
+            '(1 + G_NULL_SIGNAL)'
         )
     })
 

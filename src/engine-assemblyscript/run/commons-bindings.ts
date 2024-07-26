@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { StringPointer, FloatArrayPointer, EngineData } from './types'
+import { EngineData, FloatArrayPointer, StringPointer } from './types'
 import {
     CoreRawModule,
     lowerFloatArray,
@@ -34,45 +34,58 @@ import {
 import { MsgRawModule } from './msg-bindings'
 
 export interface CommonsRawModule extends RawModule {
-    commons_getArray: (arrayName: StringPointer) => FloatArrayPointer
-    commons_setArray: (
-        arrayName: StringPointer,
-        array: FloatArrayPointer
-    ) => void
+    commons: {
+        getArray: (arrayName: StringPointer) => FloatArrayPointer
+        setArray: (arrayName: StringPointer, array: FloatArrayPointer) => void
+    }
 }
 
-type CommonsWithDependenciesRawModule = CoreRawModule &
+type CommonsDependencies = CoreRawModule &
     MsgRawModule &
-    EngineLifecycleRawModule &
+    EngineLifecycleRawModule
+
+type CommonsWithDependencies = CommonsDependencies &
     CommonsRawModule
 
 export const createCommonsBindings = (
-    rawModule: CommonsWithDependenciesRawModule,
+    rawModule: CommonsWithDependencies,
     engineData: EngineData
-): Bindings<Engine['commons']> => ({
-    getArray: {
-        type: 'proxy',
-        value: (arrayName) => {
-            const arrayNamePointer = lowerString(rawModule, arrayName)
-            const arrayPointer = rawModule.commons_getArray(arrayNamePointer)
-            return readTypedArray(
-                rawModule,
-                engineData.arrayType,
-                arrayPointer
-            ) as FloatArray
+): Bindings<Engine['commons']> => {
+    return {
+        getArray: {
+            type: 'proxy',
+            value: (arrayName) => {
+                const arrayNamePointer = lowerString(
+                    rawModule,
+                    arrayName
+                )
+                const arrayPointer =
+                    rawModule.commons.getArray(arrayNamePointer)
+                return readTypedArray(
+                    rawModule,
+                    engineData.arrayType,
+                    arrayPointer
+                ) as FloatArray
+            },
         },
-    },
-    setArray: {
-        type: 'proxy',
-        value: (arrayName, array) => {
-            const stringPointer = lowerString(rawModule, arrayName)
-            const { arrayPointer } = lowerFloatArray(
-                rawModule,
-                engineData.bitDepth,
-                array
-            )
-            rawModule.commons_setArray(stringPointer, arrayPointer)
-            updateWasmInOuts(rawModule, engineData)
+        setArray: {
+            type: 'proxy',
+            value: (arrayName, array) => {
+                const stringPointer = lowerString(
+                    rawModule,
+                    arrayName
+                )
+                const { arrayPointer } = lowerFloatArray(
+                    rawModule,
+                    engineData.bitDepth,
+                    array
+                )
+                rawModule.commons.setArray(
+                    stringPointer,
+                    arrayPointer
+                )
+                updateWasmInOuts(rawModule, engineData)
+            },
         },
-    },
-})
+    }
+}

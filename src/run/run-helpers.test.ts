@@ -19,7 +19,7 @@
  */
 
 import assert from 'assert'
-import { createModule } from './run-helpers'
+import { RawModuleWithNameMapping, createModule } from './run-helpers'
 
 describe('modules-helpers', () => {
     describe('createModule', () => {
@@ -125,6 +125,117 @@ describe('modules-helpers', () => {
                 }
             )
             assert.throws(() => ((module as any).bla = 'poi'))
+        })
+    })
+
+    describe('RawModuleWithNameMapping', () => {
+        it('should use the name mapping to return the value', () => {
+            const rawModule = {
+                blo: 'BLO',
+                bla: 'BLA',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+                i: {
+                    o: 'bla',
+                },
+            }
+            const rawModuleWithMapping = RawModuleWithNameMapping<
+                typeof variableNamesIndex
+            >(rawModule, variableNamesIndex)
+
+            assert.strictEqual(rawModuleWithMapping.a.e, 'BLO')
+            assert.strictEqual(rawModuleWithMapping.i.o, 'BLA')
+        })
+
+        it('should directly return the value if it exists in the raw module', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = RawModuleWithNameMapping<
+                typeof variableNamesIndex & typeof rawModule
+            >(rawModule, variableNamesIndex)
+
+            assert.strictEqual(rawModuleWithMapping.blo, 'BLO')
+        })
+
+        it('should raise an error if key is not found', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = RawModuleWithNameMapping(rawModule, variableNamesIndex)
+            assert.throws(() => (rawModuleWithMapping as any).UNKNOWN)
+        })
+
+        it('should raise an error if nested key is not found', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = RawModuleWithNameMapping(rawModule, variableNamesIndex)
+            assert.throws(() => (rawModuleWithMapping as any).a.UNKNOWN)
+        })
+
+        it('should support in operator in the name mapping', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = RawModuleWithNameMapping<
+                typeof variableNamesIndex
+            >(rawModule, variableNamesIndex)
+
+            assert.ok('a' in rawModuleWithMapping)
+            assert.ok('e' in rawModuleWithMapping.a)
+        })
+
+        it('should support in operator in the raw module', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {}
+            const rawModuleWithMapping = RawModuleWithNameMapping<
+                typeof variableNamesIndex
+            >(rawModule, variableNamesIndex)
+
+            assert.ok('blo' in rawModuleWithMapping)
+        })
+
+        it('should support setting the value with the name mapping', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = RawModuleWithNameMapping<
+                typeof variableNamesIndex
+            >(rawModule, variableNamesIndex)
+
+            rawModuleWithMapping.a.e = 'new_blo'
+            assert.strictEqual(rawModuleWithMapping.a.e, 'new_blo')
         })
     })
 })

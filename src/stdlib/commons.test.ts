@@ -32,13 +32,13 @@ describe('commons', () => {
             {
                 description:
                     'setArray > should set the array and notifiy the subscribers hooks %s',
-                testFunction: () => AnonFunc()`
+                testFunction: ({ globalCode }) => AnonFunc()`
                     callbackCallCounter = 0
 
                     ${ConstVar(
-                        'SkedId',
+                        globalCode.sked!.Id!,
                         'subscription',
-                        ast`commons_subscribeArrayChanges(
+                        ast`${globalCode.commons!.subscribeArrayChanges!}(
                             'array1', 
                             ${Func('callback')`
                                 callbackCallCounter++
@@ -47,25 +47,25 @@ describe('commons', () => {
                     )}
 
                     // First time array is set, subscriber is notified
-                    commons_setArray('array1', createFloatArray(5))
+                    ${globalCode.commons!.setArray!}('array1', createFloatArray(5))
                     assert_integersEqual(callbackCallCounter, 1)
 
                     // Second time too
-                    commons_setArray('array1', createFloatArray(4))
+                    ${globalCode.commons!.setArray!}('array1', createFloatArray(4))
                     assert_integersEqual(callbackCallCounter, 2)
                     
                     // But after unsubscribe, it isn't
-                    commons_cancelArrayChangesSubscription(subscription)
+                    ${globalCode.commons!.cancelArrayChangesSubscription!}(subscription)
                     const someArray = createFloatArray(3)
                     someArray[0] = 1.1
                     someArray[1] = 1.2
                     someArray[2] = 1.3
-                    commons_setArray('array1', someArray)
+                    ${globalCode.commons!.setArray!}('array1', someArray)
                     assert_integersEqual(callbackCallCounter, 2)
 
                     // But array is still what was set last
                     assert_floatArraysEqual(
-                        commons_getArray('array1'),
+                        ${globalCode.commons!.getArray!}('array1'),
                         someArray
                     )
                 `,

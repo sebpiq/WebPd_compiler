@@ -28,41 +28,41 @@ describe('buf', () => {
         [
             {
                 description:
-                    'common > should clear content when calling buf_clear %s',
-                testFunction: () => AnonFunc()`
-                    ${ConstVar('buf_SoundBuffer', 'soundBuffer', 'buf_create(5)')}
+                    'common > should clear content when calling buf.clear %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    ${ConstVar(globalCode.buf!.SoundBuffer!, 'soundBuffer', `${globalCode.buf!.create!}(5)`)}
                     ${ConstVar('FloatArray', 'data', 'createFloatArray(4)')}
                     data.set([11, 22, 33, 44])
 
-                    buf_pushBlock(
+                    ${globalCode.buf!.pushBlock!}(
                         soundBuffer,
                         data,
                     )
-                    buf_clear(soundBuffer)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 0)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 0)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 0)
+                    ${globalCode.buf!.clear!}(soundBuffer)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 0)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 0)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 0)
                 `,
             },
 
             {
                 description:
                     'push / pull mode > should be able to push and pull from SoundBuffer %s',
-                testFunction: () => AnonFunc()`
-                    const soundBuffer = buf_create(5)
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    const soundBuffer = ${globalCode.buf!.create!}(5)
                     ${Var('Int', 'availableLength', '-1')}
                     let data3 = createFloatArray(3)
                     let data4 = createFloatArray(4)
                     data3.set([55, 66, 77])
                     data4.set([11, 22, 33, 44])
 
-                    availableLength = buf_pushBlock(
+                    availableLength = ${globalCode.buf!.pushBlock!}(
                         soundBuffer,
                         data4
                     )
                     assert_integersEqual(availableLength, 4)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 11)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 22)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 11)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 22)
                     assert_integersEqual(
                         soundBuffer.pullAvailableLength,
                         2
@@ -70,16 +70,16 @@ describe('buf', () => {
 
                     // Push another block that will span over the end, and wrap
                     // back to the beginning of the buffer
-                    availableLength = buf_pushBlock(
+                    availableLength = ${globalCode.buf!.pushBlock!}(
                         soundBuffer,
                         data3,
                     )
                     assert_integersEqual(availableLength, 5)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 33)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 44)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 55)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 66)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 77)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 33)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 44)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 55)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 66)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 77)
                     assert_integersEqual(
                         soundBuffer.pullAvailableLength,
                         0
@@ -90,50 +90,50 @@ describe('buf', () => {
             {
                 description:
                     'push / pull mode > should return 0 when pulling from empty buffer %s',
-                testFunction: () => AnonFunc()`
-                    const soundBuffer = buf_create(5)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 0)
-                    assert_floatsEqual(buf_pullSample(soundBuffer), 0)
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    const soundBuffer = ${globalCode.buf!.create!}(5)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 0)
+                    assert_floatsEqual(${globalCode.buf!.pullSample!}(soundBuffer), 0)
                 `,
             },
 
             {
                 description:
                     'read / write mode > should return 0 when reading from an empty buffer %s',
-                testFunction: () => AnonFunc()`
-                    const soundBuffer = buf_create(5)
-                    assert_floatsEqual(buf_readSample(soundBuffer, 0), 0)
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    const soundBuffer = ${globalCode.buf!.create!}(5)
+                    assert_floatsEqual(${globalCode.buf!.readSample!}(soundBuffer, 0), 0)
                 `,
             },
 
             {
                 description:
                     'read / write mode > should write a sample to the buffer %s',
-                testFunction: () => AnonFunc()`
-                    const soundBuffer = buf_create(3)
-                    buf_writeSample(soundBuffer, 11)
-                    buf_writeSample(soundBuffer, 22)
-                    buf_writeSample(soundBuffer, 33)
-                    assert_floatsEqual(buf_readSample(soundBuffer, 0), 33)
-                    assert_floatsEqual(buf_readSample(soundBuffer, 1), 22)
-                    assert_floatsEqual(buf_readSample(soundBuffer, 2), 11)
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    const soundBuffer = ${globalCode.buf!.create!}(3)
+                    ${globalCode.buf!.writeSample!}(soundBuffer, 11)
+                    ${globalCode.buf!.writeSample!}(soundBuffer, 22)
+                    ${globalCode.buf!.writeSample!}(soundBuffer, 33)
+                    assert_floatsEqual(${globalCode.buf!.readSample!}(soundBuffer, 0), 33)
+                    assert_floatsEqual(${globalCode.buf!.readSample!}(soundBuffer, 1), 22)
+                    assert_floatsEqual(${globalCode.buf!.readSample!}(soundBuffer, 2), 11)
                 `,
             },
 
             {
                 description:
                     'read / write mode > should not throw an error with wrong values for read offset %s',
-                testFunction: () => AnonFunc()`
-                    const soundBuffer = buf_create(3)
-                    buf_writeSample(soundBuffer, 11)
-                    buf_writeSample(soundBuffer, 22)
-                    buf_writeSample(soundBuffer, 33)
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    const soundBuffer = ${globalCode.buf!.create!}(3)
+                    ${globalCode.buf!.writeSample!}(soundBuffer, 11)
+                    ${globalCode.buf!.writeSample!}(soundBuffer, 22)
+                    ${globalCode.buf!.writeSample!}(soundBuffer, 33)
                     // Should not throw :
-                    buf_readSample(soundBuffer, 4)
+                    ${globalCode.buf!.readSample!}(soundBuffer, 4)
                     // Should not throw :
-                    buf_readSample(soundBuffer, 1000)
+                    ${globalCode.buf!.readSample!}(soundBuffer, 1000)
                     // Should not throw :
-                    buf_readSample(soundBuffer, -1345)
+                    ${globalCode.buf!.readSample!}(soundBuffer, -1345)
                 `,
             },
         ],

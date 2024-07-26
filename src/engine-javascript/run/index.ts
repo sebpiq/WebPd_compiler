@@ -28,72 +28,92 @@
  * @module
  */
 
-import { getFloatArrayType } from '../../run/run-helpers'
+import { RawModuleWithNameMapping, getFloatArrayType } from '../../run/run-helpers'
 import { createModule } from '../../run/run-helpers'
-import { Bindings } from '../../run/types'
-import { AudioSettings } from '../../compile/types'
+import { Bindings, EngineMetadata } from '../../run/types'
 import { Code } from '../../ast/types'
 import { Engine, FloatArray, RawModule } from '../../run/types'
 
-interface CommonsRawModule extends RawModule {
-    commons_getArray: Engine['commons']['getArray']
-    commons_setArray: Engine['commons']['setArray']
-}
-
-interface FsRawModule extends RawModule {
-    x_fs_onReadSoundFileResponse: Engine['fs']['sendReadSoundFileResponse']
-    x_fs_onWriteSoundFileResponse: Engine['fs']['sendWriteSoundFileResponse']
-    x_fs_onCloseSoundStream: Engine['fs']['closeSoundStream']
-    x_fs_onSoundStreamData: Engine['fs']['sendSoundStreamData']
-    i_fs_openSoundWriteStream: Engine['fs']['onOpenSoundWriteStream']
-    i_fs_sendSoundStreamData: Engine['fs']['onSoundStreamData']
-    i_fs_openSoundReadStream: Engine['fs']['onOpenSoundReadStream']
-    i_fs_closeSoundStream: Engine['fs']['onCloseSoundStream']
-    i_fs_writeSoundFile: Engine['fs']['onWriteSoundFile']
-    i_fs_readSoundFile: Engine['fs']['onReadSoundFile']
-}
-
-interface EngineLifecycleRawModule extends RawModule {
+export interface EngineLifecycleRawModule extends RawModule {
     metadata: Engine['metadata']
     initialize: Engine['initialize']
     dspLoop: Engine['dspLoop']
     io: Engine['io']
 }
 
+interface CommonsRawModule extends EngineLifecycleRawModule {
+    commons: {
+        getArray: Engine['commons']['getArray']
+        setArray: Engine['commons']['setArray']
+    }
+}
+
+interface FsRawModule extends EngineLifecycleRawModule {
+    fs: {
+        x_onReadSoundFileResponse: NonNullable<Engine['fs']>['sendReadSoundFileResponse']
+        x_onWriteSoundFileResponse: NonNullable<Engine['fs']>['sendWriteSoundFileResponse']
+        x_onCloseSoundStream: NonNullable<Engine['fs']>['closeSoundStream']
+        x_onSoundStreamData: NonNullable<Engine['fs']>['sendSoundStreamData']
+        i_openSoundWriteStream: NonNullable<Engine['fs']>['onOpenSoundWriteStream']
+        i_sendSoundStreamData: NonNullable<Engine['fs']>['onSoundStreamData']
+        i_openSoundReadStream: NonNullable<Engine['fs']>['onOpenSoundReadStream']
+        i_closeSoundStream: NonNullable<Engine['fs']>['onCloseSoundStream']
+        i_writeSoundFile: NonNullable<Engine['fs']>['onWriteSoundFile']
+        i_readSoundFile: NonNullable<Engine['fs']>['onReadSoundFile']
+    }
+}
+
 export type RawJavaScriptEngine = CommonsRawModule &
     FsRawModule &
     EngineLifecycleRawModule
 
-export const createRawModule = (code: Code): RawModule =>
+export const compileRawModule = (code: Code): EngineLifecycleRawModule =>
     new Function(`
         ${code}
         return exports
     `)()
 
+export const applyNameMappingToRawModule = (rawModule: EngineLifecycleRawModule): RawJavaScriptEngine => {
+    const rawModuleWithNameMapping = RawModuleWithNameMapping<RawJavaScriptEngine>(
+        rawModule, 
+        rawModule.metadata.compilation.variableNamesIndex.globalCode
+    )
+    return rawModuleWithNameMapping
+}
+
 export const createBindings = (
     rawModule: RawJavaScriptEngine
-): Bindings<Engine> => ({
-    fs: { type: 'proxy', value: createFsModule(rawModule) },
-    metadata: { type: 'raw' },
-    initialize: { type: 'raw' },
-    dspLoop: { type: 'raw' },
-    io: { type: 'raw' },
-    commons: {
-        type: 'proxy',
-        value: createCommonsModule(
-            rawModule,
-            rawModule.metadata.audioSettings.bitDepth
-        ),
-    },
-})
+): Bindings<Engine> => {
+    const exportedNames = rawModule.metadata!.compilation.variableNamesIndex.globalCode
+    const optionalBindings: Partial<Bindings<Engine>> = {}
+    if ('fs' in exportedNames) {
+        optionalBindings.fs = { type: 'proxy', value: createFsModule(rawModule) }
+    }
+
+    return {
+        ...optionalBindings,
+        metadata: { type: 'raw' },
+        initialize: { type: 'raw' },
+        dspLoop: { type: 'raw' },
+        io: { type: 'raw' },
+        commons: {
+            type: 'proxy',
+            value: createCommonsModule(
+                rawModule,
+                rawModule.metadata
+            ),
+        },
+    }
+}
 
 export const createEngine = (code: Code): Engine => {
-    const rawModule = createRawModule(code) as RawJavaScriptEngine
+    const rawModule = applyNameMappingToRawModule(compileRawModule(code))
     return createModule(rawModule, createBindings(rawModule))
 }
 
 const createFsModule = (rawModule: FsRawModule): Engine['fs'] => {
-    const fs = createModule<Engine['fs']>(rawModule, {
+    const fsExportedNames = rawModule.metadata.compilation.variableNamesIndex.globalCode.fs!
+    const fs = createModule<NonNullable<Engine['fs']>>(rawModule, {
         onReadSoundFile: { type: 'callback', value: () => undefined },
         onWriteSoundFile: { type: 'callback', value: () => undefined },
         onOpenSoundReadStream: { type: 'callback', value: () => undefined },
@@ -102,54 +122,79 @@ const createFsModule = (rawModule: FsRawModule): Engine['fs'] => {
         onCloseSoundStream: { type: 'callback', value: () => undefined },
         sendReadSoundFileResponse: {
             type: 'proxy',
-            value: rawModule.x_fs_onReadSoundFileResponse,
+            value:
+                'x_onReadSoundFileResponse' in fsExportedNames
+                    ? rawModule.fs.x_onReadSoundFileResponse
+                    : undefined,
         },
         sendWriteSoundFileResponse: {
             type: 'proxy',
-            value: rawModule.x_fs_onWriteSoundFileResponse,
+            value:
+                'x_onWriteSoundFileResponse' in fsExportedNames
+                    ? rawModule.fs.x_onWriteSoundFileResponse
+                    : undefined,
         },
+        //should register the operation success { bitDepth: 32, target: 'javascript' }
         sendSoundStreamData: {
             type: 'proxy',
-            value: rawModule.x_fs_onSoundStreamData,
+            value:
+                'x_onSoundStreamData' in fsExportedNames
+                    ? rawModule.fs.x_onSoundStreamData
+                    : undefined,
         },
         closeSoundStream: {
             type: 'proxy',
-            value: rawModule.x_fs_onCloseSoundStream,
+            value:
+                'x_onCloseSoundStream' in fsExportedNames
+                    ? rawModule.fs.x_onCloseSoundStream
+                    : undefined,
         },
     })
 
-    rawModule.i_fs_openSoundWriteStream = (
-        ...args: Parameters<Engine['fs']['onOpenSoundWriteStream']>
-    ) => fs.onOpenSoundWriteStream(...args)
-    rawModule.i_fs_sendSoundStreamData = (
-        ...args: Parameters<Engine['fs']['onSoundStreamData']>
-    ) => fs.onSoundStreamData(...args)
-    rawModule.i_fs_openSoundReadStream = (
-        ...args: Parameters<Engine['fs']['onOpenSoundReadStream']>
-    ) => fs.onOpenSoundReadStream(...args)
-    rawModule.i_fs_closeSoundStream = (
-        ...args: Parameters<Engine['fs']['onCloseSoundStream']>
-    ) => fs.onCloseSoundStream(...args)
-    rawModule.i_fs_writeSoundFile = (
-        ...args: Parameters<Engine['fs']['onWriteSoundFile']>
-    ) => fs.onWriteSoundFile(...args)
-    rawModule.i_fs_readSoundFile = (
-        ...args: Parameters<Engine['fs']['onReadSoundFile']>
-    ) => fs.onReadSoundFile(...args)
+    if ('i_openSoundWriteStream' in fsExportedNames) {
+        rawModule.fs.i_openSoundWriteStream = (
+            ...args: Parameters<NonNullable<Engine['fs']>['onOpenSoundWriteStream']>
+        ) => fs.onOpenSoundWriteStream(...args)
+    }
+    if ('i_sendSoundStreamData' in fsExportedNames) {
+        rawModule.fs.i_sendSoundStreamData = (
+            ...args: Parameters<NonNullable<Engine['fs']>['onSoundStreamData']>
+        ) => fs.onSoundStreamData(...args)
+    }
+    if ('i_openSoundReadStream' in fsExportedNames) {
+        rawModule.fs.i_openSoundReadStream = (
+            ...args: Parameters<NonNullable<Engine['fs']>['onOpenSoundReadStream']>
+        ) => fs.onOpenSoundReadStream(...args)
+    }
+    if ('i_closeSoundStream' in fsExportedNames) {
+        rawModule.fs.i_closeSoundStream = (
+            ...args: Parameters<NonNullable<Engine['fs']>['onCloseSoundStream']>
+        ) => fs.onCloseSoundStream(...args)
+    }
+    if ('i_writeSoundFile' in fsExportedNames) {
+        rawModule.fs.i_writeSoundFile = (
+            ...args: Parameters<NonNullable<Engine['fs']>['onWriteSoundFile']>
+        ) => fs.onWriteSoundFile(...args)
+    }
+    if ('i_readSoundFile' in fsExportedNames) {
+        rawModule.fs.i_readSoundFile = (
+            ...args: Parameters<NonNullable<Engine['fs']>['onReadSoundFile']>
+        ) => fs.onReadSoundFile(...args)
+    }
     return fs
 }
 
 const createCommonsModule = (
     rawModule: CommonsRawModule,
-    bitDepth: AudioSettings['bitDepth']
+    metadata: EngineMetadata,
 ): Engine['commons'] => {
-    const floatArrayType = getFloatArrayType(bitDepth)
+    const floatArrayType = getFloatArrayType(metadata.audioSettings.bitDepth)
     return createModule<Engine['commons']>(rawModule, {
-        getArray: { type: 'proxy', value: rawModule.commons_getArray },
+        getArray: { type: 'proxy', value: (arrayName) => rawModule.commons.getArray(arrayName) },
         setArray: {
             type: 'proxy',
             value: (arrayName: string, array: FloatArray | Array<number>) =>
-                rawModule.commons_setArray(
+                rawModule.commons.setArray(
                     arrayName,
                     new floatArrayType(array)
                 ),

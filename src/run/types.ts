@@ -82,6 +82,7 @@ export interface EngineMetadata {
         readonly io: CompilationSettings['io']
         readonly variableNamesIndex: {
             readonly io: VariableNamesIndex['io']
+            readonly globalCode: VariableNamesIndex['globalCode']
         }
     }
 }
@@ -117,7 +118,7 @@ export interface Engine {
     }
 
     /** Filesystem API for the engine */
-    fs: {
+    fs?: {
         /** Callback which the host environment must set to receive "read sound file" requests. */
         onReadSoundFile: (
             operationId: number,
@@ -172,25 +173,25 @@ export interface Engine {
          *
          * @param sound Empty array if the operation has failed.
          */
-        sendReadSoundFileResponse: (
+        sendReadSoundFileResponse?: (
             operationId: number,
             status: fs_OperationStatus,
             sound: Array<FloatArray>
         ) => void
 
-        sendWriteSoundFileResponse: (
+        sendWriteSoundFileResponse?: (
             operationId: number,
-            status: fs_OperationStatus
+            status: fs_OperationStatus,
         ) => void
 
-        sendSoundStreamData: (
+        sendSoundStreamData?: (
             operationId: number,
             sound: Array<FloatArray>
         ) => number
 
-        closeSoundStream: (
+        closeSoundStream?: (
             operationId: number,
-            status: fs_OperationStatus
+            status: fs_OperationStatus,
         ) => void
     }
 }

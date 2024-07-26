@@ -28,6 +28,19 @@ import {
 } from './types'
 import { Sequence, ast } from '../../ast/declare'
 
+const NS = {
+    GLOBS: 'G',
+    NODES: 'N',
+    NODE_TYPES: 'NT',
+    GLOBAL_CODE: 'C',
+    IO: 'IO',
+    COLD: 'COLD',
+    // Reserved namespace for variables exported by the engine.
+    // For convenience (for typing and bindings) the names of these
+    // are hardcoded rather than assigned dynamically.
+    EXPORTED: 'x',
+}
+
 // ---------------------------- VariableNamesIndex ---------------------------- //
 export const VariableNamesAssigner = ({
     input: context,
@@ -41,18 +54,6 @@ export const createVariableNamesIndex = (
     precompilationInput: PrecompilationInput
 ) => Assigner.ensureValue({}, _VariableNamesAssignerSpec, precompilationInput)
 
-export const createGlobsVariableNames = (): VariableNamesIndex['globs'] => ({
-    iterFrame: 'F',
-    frame: 'FRAME',
-    blockSize: 'BLOCK_SIZE',
-    sampleRate: 'SAMPLE_RATE',
-    output: 'OUTPUT',
-    input: 'INPUT',
-    nullMessageReceiver: 'SND_TO_NULL',
-    nullSignal: 'NULL_SIGNAL',
-    emptyMessage: 'EMPTY_MESSAGE',
-})
-
 const _VariableNamesAssignerSpec: AssignerSpec<
     VariableNamesIndex,
     PrecompilationInput
@@ -60,15 +61,23 @@ const _VariableNamesAssignerSpec: AssignerSpec<
     nodes: Assigner.Index((nodeId: DspGraph.NodeId) =>
         Assigner.Interface({
             signalOuts: Assigner.Index((portletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('N', nodeId, 'outs', portletId))
+                Assigner.Literal(() =>
+                    _name(NS.NODES, nodeId, 'outs', portletId)
+                )
             ),
             messageSenders: Assigner.Index((portletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('N', nodeId, 'snds', portletId))
+                Assigner.Literal(() =>
+                    _name(NS.NODES, nodeId, 'snds', portletId)
+                )
             ),
             messageReceivers: Assigner.Index((portletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('N', nodeId, 'rcvs', portletId))
+                Assigner.Literal(() =>
+                    _name(NS.NODES, nodeId, 'rcvs', portletId)
+                )
             ),
-            state: Assigner.LiteralDefaultNull(() => _name('N', nodeId, 'state')),
+            state: Assigner.LiteralDefaultNull(() =>
+                _name(NS.NODES, nodeId, 'state')
+            ),
         })
     ),
 
@@ -77,39 +86,53 @@ const _VariableNamesAssignerSpec: AssignerSpec<
             nodeImplementations,
             nodeType
         )
-        const nodeTypePrefix = 
+        const nodeTypePrefix =
             (nodeImplementation.flags
                 ? nodeImplementation.flags.alphaName
                 : null) || nodeType
 
         return Assigner.Index((name) =>
-            Assigner.Literal(() => _name('NT', nodeTypePrefix, name))
+            Assigner.Literal(() => _name(NS.NODE_TYPES, nodeTypePrefix, name))
         )
     }),
 
-    globs: Assigner.Literal(createGlobsVariableNames),
+    globs: Assigner.Literal(() => ({
+        iterFrame: _name(NS.GLOBS, 'F'),
+        frame: _name(NS.GLOBS, 'FRAME'),
+        blockSize: _name(NS.GLOBS, 'BLOCK_SIZE'),
+        sampleRate: _name(NS.GLOBS, 'SAMPLE_RATE'),
+        output: _name(NS.GLOBS, 'OUTPUT'),
+        input: _name(NS.GLOBS, 'INPUT'),
+        nullMessageReceiver: _name(NS.GLOBS, 'SND_TO_NULL'),
+        nullSignal: _name(NS.GLOBS, 'NULL_SIGNAL'),
+        emptyMessage: _name(NS.GLOBS, 'EMPTY_MESSAGE'),
+    })),
 
     globalCode: Assigner.Index((ns) =>
         Assigner.Index((name) =>
-            Assigner.Literal(() => _name('G', ns, name))
+            ns === 'core'
+            // We don't prefix stdlib core module, because these are super 
+            // basic functions that are always included in the global scope.
+                ? Assigner.Literal(() => name)
+                : Assigner.Literal(() => _name(NS.GLOBAL_CODE, ns, name))
         )
     ),
 
     io: Assigner.Interface({
         messageReceivers: Assigner.Index((nodeId: DspGraph.NodeId) =>
             Assigner.Index((inletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('IORCV', nodeId, inletId))
+                Assigner.Literal(() => _name(NS.IO, 'rcv', nodeId, inletId))
             )
         ),
         messageSenders: Assigner.Index((nodeId: DspGraph.NodeId) =>
             Assigner.Index((outletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('IOSND', nodeId, outletId))
+                Assigner.Literal(() => _name(NS.IO, 'snd', nodeId, outletId))
             )
         ),
     }),
 
     coldDspGroups: Assigner.Index((groupId: string) =>
-        Assigner.Literal(() => _name('COLD', groupId))
+        Assigner.Literal(() => _name(NS.COLD, groupId))
     ),
 })
 
@@ -197,7 +220,8 @@ const _PrecompiledCodeAssignerSpec: AssignerSpec<
 })
 
 // ---------------------------- MISC ---------------------------- //
-const _name = (...parts: Array<string>) => parts.map(assertValidNamePart).join('_')
+const _name = (...parts: Array<string>) =>
+    parts.map(assertValidNamePart).join('_')
 
 export const assertValidNamePart = (namePart: string) => {
     const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)
