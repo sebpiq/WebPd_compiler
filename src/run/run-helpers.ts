@@ -28,7 +28,7 @@ export const getFloatArrayType = (bitDepth: AudioSettings['bitDepth']) =>
     bitDepth === 64 ? Float64Array : Float32Array
 
 /** Helper to create a Module by wrapping a RawModule with Bindings */
-export const createModule = <ModuleType extends { [key: string]: any }>(
+export const attachBindings = <ModuleType extends { [key: string]: any }>(
     rawModule: { [key: string]: any },
     bindings: Bindings<ModuleType>
 ): ModuleType =>
@@ -65,7 +65,9 @@ export const createModule = <ModuleType extends { [key: string]: any }>(
                     return undefined
                 }
             },
-
+            has: function(_, k) {
+                return k in bindings
+            },
             set: (_, k, newValue) => {
                 if (bindings.hasOwnProperty(String(k))) {
                     const key = String(k) as keyof ModuleType

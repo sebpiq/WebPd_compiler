@@ -29,7 +29,7 @@
  */
 
 import { RawModuleWithNameMapping, getFloatArrayType } from '../../run/run-helpers'
-import { createModule } from '../../run/run-helpers'
+import { attachBindings } from '../../run/run-helpers'
 import { Bindings, EngineMetadata } from '../../run/types'
 import { Code } from '../../ast/types'
 import { Engine, FloatArray, RawModule } from '../../run/types'
@@ -81,7 +81,7 @@ export const applyNameMappingToRawModule = (rawModule: EngineLifecycleRawModule)
     return rawModuleWithNameMapping
 }
 
-export const createBindings = (
+export const createEngineBindings = (
     rawModule: RawJavaScriptEngine
 ): Bindings<Engine> => {
     const exportedNames = rawModule.metadata!.compilation.variableNamesIndex.globalCode
@@ -108,12 +108,12 @@ export const createBindings = (
 
 export const createEngine = (code: Code): Engine => {
     const rawModule = applyNameMappingToRawModule(compileRawModule(code))
-    return createModule(rawModule, createBindings(rawModule))
+    return attachBindings(rawModule, createEngineBindings(rawModule))
 }
 
 const createFsModule = (rawModule: FsRawModule): Engine['fs'] => {
     const fsExportedNames = rawModule.metadata.compilation.variableNamesIndex.globalCode.fs!
-    const fs = createModule<NonNullable<Engine['fs']>>(rawModule, {
+    const fs = attachBindings<NonNullable<Engine['fs']>>(rawModule, {
         onReadSoundFile: { type: 'callback', value: () => undefined },
         onWriteSoundFile: { type: 'callback', value: () => undefined },
         onOpenSoundReadStream: { type: 'callback', value: () => undefined },
@@ -189,7 +189,7 @@ const createCommonsModule = (
     metadata: EngineMetadata,
 ): Engine['commons'] => {
     const floatArrayType = getFloatArrayType(metadata.audioSettings.bitDepth)
-    return createModule<Engine['commons']>(rawModule, {
+    return attachBindings<Engine['commons']>(rawModule, {
         getArray: { type: 'proxy', value: (arrayName) => rawModule.commons.getArray(arrayName) },
         setArray: {
             type: 'proxy',

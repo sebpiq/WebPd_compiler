@@ -74,7 +74,7 @@ export interface EngineData {
  */
 export interface ForwardReferences<RawModuleType> {
     rawModule?: RawModuleType
-    engineData?: EngineData
+    engineData: EngineData
     modules: {
         fs?: Engine['fs']
         io?: Engine['io']

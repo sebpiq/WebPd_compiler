@@ -38,14 +38,15 @@ import {
 import { mapArray, renderSwitch } from './functional-helpers'
 import {
     createRawModule as createAssemblyScriptWasmRawModule,
-    createBindings as createAssemblyScriptWasmEngineBindings,
+    createEngineBindings as createAssemblyScriptWasmEngineBindings,
+    assignReferences,
 } from './engine-assemblyscript/run'
 import {
-    createBindings as createJavaScriptEngineBindings,
+    createEngineBindings as createJavaScriptEngineBindings,
     applyNameMappingToRawModule,
     EngineLifecycleRawModule,
 } from './engine-javascript/run'
-import { createModule } from './run/run-helpers'
+import { attachBindings, RawModuleWithNameMapping } from './run/run-helpers'
 import render from './compile/render'
 import {
     collectAndDedupeExports,
@@ -56,6 +57,7 @@ import {
     makeGlobalCodePrecompilationContext,
     makePrecompilation,
 } from './compile/test-helpers'
+import { EngineRawModule } from './engine-assemblyscript/run/types'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
@@ -140,7 +142,7 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
         javascript: async (rawModule: EngineLifecycleRawModule) => {
             const rawModuleWithMapping = applyNameMappingToRawModule(rawModule)
-            return createModule(rawModule, {
+            return attachBindings(rawModule, {
                 ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
                 ...createJavaScriptEngineBindings(
                     rawModuleWithMapping
@@ -148,17 +150,22 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
             })
         },
         assemblyscript: async (buffer) => {
-            const { rawModuleWithNameMapping, engineData, forwardReferences } =
+            const { rawModule, engineData, forwardReferences } =
                 await createAssemblyScriptWasmRawModule(buffer)
+            const rawModuleWithNameMapping = RawModuleWithNameMapping<EngineRawModule>(
+                rawModule,
+                engineData.metadata.compilation.variableNamesIndex.globalCode
+            )
             const engineBindings = await createAssemblyScriptWasmEngineBindings(
                 rawModuleWithNameMapping,
                 engineData,
-                forwardReferences
             )
-            return createModule(rawModuleWithNameMapping, {
+            const engine = attachBindings(rawModuleWithNameMapping, {
                 ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
                 ...engineBindings,
             })
+            assignReferences(forwardReferences, rawModuleWithNameMapping, engine)
+            return engine
         },
     })
 }

@@ -19,12 +19,12 @@
  */
 
 import assert from 'assert'
-import { RawModuleWithNameMapping, createModule } from './run-helpers'
+import { RawModuleWithNameMapping, attachBindings } from './run-helpers'
 
 describe('modules-helpers', () => {
-    describe('createModule', () => {
+    describe('attachBindings', () => {
         it('should read undefined for binding that is not declared', () => {
-            const module = createModule(
+            const module = attachBindings(
                 { blo: 'bli' },
                 {
                     bla: {
@@ -37,7 +37,7 @@ describe('modules-helpers', () => {
         })
 
         it('should read raw attribute from the RawModule', () => {
-            const module = createModule(
+            const module = attachBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -49,7 +49,7 @@ describe('modules-helpers', () => {
         })
 
         it('should read proxied attribute from the bindings', () => {
-            const module = createModule(
+            const module = attachBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -63,7 +63,7 @@ describe('modules-helpers', () => {
 
         it('should read callback attribute from the bindings', () => {
             const blo = (): null => null
-            const module = createModule(
+            const module = attachBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -78,7 +78,7 @@ describe('modules-helpers', () => {
         it('should allow writing callback', () => {
             const blo1 = (): null => null
             const blo2 = (): null => null
-            const module = createModule(
+            const module = attachBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -91,8 +91,21 @@ describe('modules-helpers', () => {
             assert.strictEqual(module.bla, blo2)
         })
 
+        it('should support in operator', () => {
+            const module = attachBindings(
+                { bla: 'bli', blo: 'blu' },
+                {
+                    bla: {
+                        type: 'raw',
+                    },
+                }
+            )
+            assert.ok('bla' in module)
+            assert.ok(!('blo' in module))
+        })
+
         it('should throw error for reading raw attribute that is not defined', () => {
-            const module = createModule(
+            const module = attachBindings(
                 { blo: 'bli' },
                 {
                     bla: {
@@ -104,7 +117,7 @@ describe('modules-helpers', () => {
         })
 
         it('should throw error for writing unknown attribute', () => {
-            const module = createModule(
+            const module = attachBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -116,7 +129,7 @@ describe('modules-helpers', () => {
         })
 
         it('should throw error for writing attribute that is not writable', () => {
-            const module = createModule(
+            const module = attachBindings(
                 { bla: 'bli' },
                 {
                     bla: {
