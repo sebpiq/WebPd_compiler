@@ -58,8 +58,8 @@ describe('engine-lifecycle-bindings', () => {
 
             const nodeImplementations: NodeImplementations = {
                 DUMMY: {
-                    messageReceivers: ({ globalCode }) => ({
-                        '0': AnonFunc([Var(globalCode.msg!.Message!, 'm')])``,
+                    messageReceivers: ({ globals }) => ({
+                        '0': AnonFunc([Var(globals.msg!.Message!, 'm')])``,
                     }),
                 },
             }
@@ -107,7 +107,7 @@ describe('engine-lifecycle-bindings', () => {
                         },
                         // We don't test the details of the variable names generated
                         // for global code, as they are generated dynamically.
-                        globalCode: metadata.compilation.variableNamesIndex.globalCode,
+                        globals: metadata.compilation.variableNamesIndex.globals,
                     },
                     io: {
                         messageReceivers:

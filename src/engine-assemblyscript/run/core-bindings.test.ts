@@ -70,7 +70,7 @@ describe('core-bindings', () => {
                 audio: { bitDepth, channelCount: { in: 2, out: 2 } },
             },
         })
-        const assignerNs = precompilation.variableNamesAssigner.globalCode.core!
+        const assignerNs = precompilation.variableNamesAssigner.globals.core!
         const context = makeGlobalCodePrecompilationContext(precompilation)
         return render(
             macros,
@@ -105,7 +105,7 @@ describe('core-bindings', () => {
         )
         return RawModuleWithNameMapping<EngineRawModule & CoreTestRawModule>(
             rawModule,
-            precompilation.variableNamesIndex.globalCode
+            precompilation.variableNamesIndex.globals
         )
     }
 

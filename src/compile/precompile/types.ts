@@ -147,7 +147,7 @@ export interface VariableNamesIndex {
         [nodeType: DspGraph.NodeType]: { [name: string]: VariableName }
     }
 
-    readonly globalCode: {
+    readonly globals: {
         [ns: DspGraph.NodeType]: { [name: string]: VariableName }
     }
 

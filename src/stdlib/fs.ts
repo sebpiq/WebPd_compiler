@@ -31,7 +31,7 @@ export const FS_OPERATION_FAILURE = 1
 
 export const fsCore: GlobalsDefinitions = {
     namespace: NAMESPACE,
-    code: (fs, { globalCode, settings: { target } }) => {
+    code: (fs, { globals, settings: { target } }) => {
         const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`
@@ -95,24 +95,24 @@ export const fsCore: GlobalsDefinitions = {
 
             Func(fs.soundInfoToMessage!, [
                 Var(fs.SoundInfo!, 'soundInfo')
-            ], globalCode.msg!.Message!)`
-                ${ConstVar(globalCode.msg!.Message!, 'info', `${globalCode.msg!.create!}([
-                    ${globalCode.msg!.FLOAT_TOKEN!},
-                    ${globalCode.msg!.FLOAT_TOKEN!},
-                    ${globalCode.msg!.FLOAT_TOKEN!},
-                    ${globalCode.msg!.STRING_TOKEN!},
+            ], globals.msg!.Message!)`
+                ${ConstVar(globals.msg!.Message!, 'info', `${globals.msg!.create!}([
+                    ${globals.msg!.FLOAT_TOKEN!},
+                    ${globals.msg!.FLOAT_TOKEN!},
+                    ${globals.msg!.FLOAT_TOKEN!},
+                    ${globals.msg!.STRING_TOKEN!},
                     soundInfo.encodingFormat.length,
-                    ${globalCode.msg!.STRING_TOKEN!},
+                    ${globals.msg!.STRING_TOKEN!},
                     soundInfo.endianness.length,
-                    ${globalCode.msg!.STRING_TOKEN!},
+                    ${globals.msg!.STRING_TOKEN!},
                     soundInfo.extraOptions.length
                 ])`)}
-                ${globalCode.msg!.writeFloatToken!}(info, 0, toFloat(soundInfo.channelCount))
-                ${globalCode.msg!.writeFloatToken!}(info, 1, toFloat(soundInfo.sampleRate))
-                ${globalCode.msg!.writeFloatToken!}(info, 2, toFloat(soundInfo.bitDepth))
-                ${globalCode.msg!.writeStringToken!}(info, 3, soundInfo.encodingFormat)
-                ${globalCode.msg!.writeStringToken!}(info, 4, soundInfo.endianness)
-                ${globalCode.msg!.writeStringToken!}(info, 5, soundInfo.extraOptions)
+                ${globals.msg!.writeFloatToken!}(info, 0, toFloat(soundInfo.channelCount))
+                ${globals.msg!.writeFloatToken!}(info, 1, toFloat(soundInfo.sampleRate))
+                ${globals.msg!.writeFloatToken!}(info, 2, toFloat(soundInfo.bitDepth))
+                ${globals.msg!.writeStringToken!}(info, 3, soundInfo.encodingFormat)
+                ${globals.msg!.writeStringToken!}(info, 4, soundInfo.endianness)
+                ${globals.msg!.writeStringToken!}(info, 5, soundInfo.extraOptions)
                 return info
             `,
     
@@ -177,13 +177,13 @@ export const fsReadSoundFile: GlobalsDefinitions = {
 
     exports: (fs) => [fs.x_onReadSoundFileResponse!],
 
-    imports: (fs, { globalCode }) => [
+    imports: (fs, { globals }) => [
         Func(
             fs.i_readSoundFile!,
             [
                 Var(fs.OperationId!, 'id'),
                 Var(fs.Url!, 'url'),
-                Var(globalCode.msg!.Message!, 'info'),
+                Var(globals.msg!.Message!, 'info'),
             ],
             'void'
         )``,
@@ -229,14 +229,14 @@ export const fsWriteSoundFile: GlobalsDefinitions = {
 
     exports: (fs) => [fs.x_onWriteSoundFileResponse!],
 
-    imports: (fs, { globalCode }) => [
+    imports: (fs, { globals }) => [
         Func(
             fs.i_writeSoundFile!,
             [
                 Var(fs.OperationId!, 'id'),
                 Var('FloatArray[]', 'sound'),
                 Var(fs.Url!, 'url'),
-                Var(globalCode.msg!.Message!, 'info'),
+                Var(globals.msg!.Message!, 'info'),
             ],
             'void'
         )``,
@@ -249,9 +249,9 @@ export const fsSoundStreamCore: GlobalsDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (fs, { globalCode }) => Sequence([
+    code: (fs, { globals }) => Sequence([
         ConstVar(
-            `Map<${fs.OperationId!}, Array<${globalCode.buf!.SoundBuffer!}>>`,
+            `Map<${fs.OperationId!}, Array<${globals.buf!.SoundBuffer!}>>`,
             fs._SOUND_STREAM_BUFFERS!,
             'new Map()'
         ),
@@ -307,7 +307,7 @@ export const fsReadSoundStream: GlobalsDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (fs, { globalCode }) => Sequence([
+    code: (fs, { globals }) => Sequence([
         Func(fs.openSoundReadStream!, [
             Var(fs.Url!, 'url'),
             Var(fs.SoundInfo!, 'soundInfo'),
@@ -319,12 +319,12 @@ export const fsReadSoundStream: GlobalsDefinitions = {
                 `${fs._createOperationId!}()`
             )}
             ${ConstVar(
-                `Array<${globalCode.buf!.SoundBuffer!}>`, 
+                `Array<${globals.buf!.SoundBuffer!}>`, 
                 'buffers', 
                 '[]'
             )}
             for (${Var('Int', 'channel', '0')}; channel < soundInfo.channelCount; channel++) {
-                buffers.push(${globalCode.buf!.create!}(${fs._SOUND_BUFFER_LENGTH!}))
+                buffers.push(${globals.buf!.create!}(${fs._SOUND_BUFFER_LENGTH!}))
             }
             ${fs._SOUND_STREAM_BUFFERS!}.set(id, buffers)
             ${fs._OPERATIONS_CALLBACKS!}.set(id, callback)
@@ -340,7 +340,7 @@ export const fsReadSoundStream: GlobalsDefinitions = {
             ${fs._assertOperationExists!}(id, "${fs.x_onSoundStreamData!}")
             const buffers = ${fs._SOUND_STREAM_BUFFERS!}.get(id)
             for (${Var('Int', 'i', '0')}; i < buffers.length; i++) {
-                ${globalCode.buf!.pushBlock!}(buffers[i], block[i])
+                ${globals.buf!.pushBlock!}(buffers[i], block[i])
             }
             return buffers[0].pullAvailableLength
         `
@@ -349,11 +349,11 @@ export const fsReadSoundStream: GlobalsDefinitions = {
     exports: (fs) => [fs.x_onSoundStreamData!],
 
     // prettier-ignore
-    imports: (fs, { globalCode }) => [
+    imports: (fs, { globals }) => [
         Func(fs.i_openSoundReadStream!, [
             Var(fs.OperationId!, 'id'),
             Var(fs.Url!, 'url'),
-            Var(globalCode.msg!.Message!, 'info'),
+            Var(globals.msg!.Message!, 'info'),
         ], 'void')``,
     ],
 
@@ -389,11 +389,11 @@ export const fsWriteSoundStream: GlobalsDefinitions = {
     ]),
 
     // prettier-ignore
-    imports: (fs, { globalCode }) => [
+    imports: (fs, { globals }) => [
         Func(fs.i_openSoundWriteStream!, [
             Var(fs.OperationId!, 'id'),
             Var(fs.Url!, 'url'),
-            Var(globalCode.msg!.Message!, 'info'),
+            Var(globals.msg!.Message!, 'info'),
         ], 'void')``,
         Func(fs.i_sendSoundStreamData!, [
             Var(fs.OperationId!, 'id'), 

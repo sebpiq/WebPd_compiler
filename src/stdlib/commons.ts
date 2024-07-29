@@ -26,16 +26,16 @@ const NAMESPACE = 'commons'
 
 export const commonsArrays: GlobalsDefinitions = {
     namespace: NAMESPACE,
-    code: (commons, { globalCode, settings }) => Sequence([
+    code: (commons, { globals, settings }) => Sequence([
         ConstVar(
             'Map<string, FloatArray>', 
             commons._ARRAYS!, 
             'new Map()'
         ),
         ConstVar(
-            globalCode.sked!.Skeduler!, 
+            globals.sked!.Skeduler!, 
             commons._ARRAYS_SKEDULER!, 
-            `${globalCode.sked!.create!}(false)`
+            `${globals.sked!.create!}(false)`
         ),
 
         /** Gets an named array, throwing an error if the array doesn't exist. */
@@ -59,7 +59,7 @@ export const commonsArrays: GlobalsDefinitions = {
             Var('FloatArray', 'array'),
         ], 'void')`
             ${commons._ARRAYS!}.set(arrayName, array)
-            ${globalCode.sked!.emit!}(${commons._ARRAYS_SKEDULER!}, arrayName)
+            ${globals.sked!.emit!}(${commons._ARRAYS_SKEDULER!}, arrayName)
         `,
 
         /** 
@@ -69,9 +69,9 @@ export const commonsArrays: GlobalsDefinitions = {
          */
         Func(commons.subscribeArrayChanges!, [
             Var('string', 'arrayName'), 
-            Var(globalCode.sked!.Callback!, 'callback'),
-        ], globalCode.sked!.Id!)`
-            const id = ${globalCode.sked!.subscribe!}(${commons._ARRAYS_SKEDULER!}, arrayName, callback)
+            Var(globals.sked!.Callback!, 'callback'),
+        ], globals.sked!.Id!)`
+            const id = ${globals.sked!.subscribe!}(${commons._ARRAYS_SKEDULER!}, arrayName, callback)
             if (${commons._ARRAYS!}.has(arrayName)) {
                 callback(arrayName)
             }
@@ -82,9 +82,9 @@ export const commonsArrays: GlobalsDefinitions = {
          * @param id The id received when subscribing.
          */
         Func(commons.cancelArrayChangesSubscription!, [
-            Var(globalCode.sked!.Id!, 'id')
+            Var(globals.sked!.Id!, 'id')
         ], 'void')`
-            ${globalCode.sked!.cancel!}(${commons._ARRAYS_SKEDULER!}, id)
+            ${globals.sked!.cancel!}(${commons._ARRAYS_SKEDULER!}, id)
         `,
 
         // Embed arrays passed at engine creation directly in the code.
@@ -108,17 +108,17 @@ export const commonsArrays: GlobalsDefinitions = {
 
 export const commonsWaitFrame: GlobalsDefinitions = {
     namespace: NAMESPACE,
-    code: (commons, { globalCode }) => Sequence([
+    code: (commons, { globals }) => Sequence([
         ConstVar(
-            globalCode.sked!.Skeduler!, 
+            globals.sked!.Skeduler!, 
             commons._FRAME_SKEDULER!, 
-            `${globalCode.sked!.create!}(false)`,
+            `${globals.sked!.create!}(false)`,
         ),
 
         Func(commons._emitFrame!, [
             Var('Int', 'frame')
         ], 'void')`
-            ${globalCode.sked!.emit!}(${commons._FRAME_SKEDULER!}, frame.toString())
+            ${globals.sked!.emit!}(${commons._FRAME_SKEDULER!}, frame.toString())
         `,
 
         /** 
@@ -127,18 +127,18 @@ export const commonsWaitFrame: GlobalsDefinitions = {
          */
         Func(commons.waitFrame!, [
             Var('Int', 'frame'), 
-            Var(globalCode.sked!.Callback!, 'callback'),
-        ], globalCode.sked!.Id!)`
-            return ${globalCode.sked!.waitFuture!}(${commons._FRAME_SKEDULER!}, frame.toString(), callback)
+            Var(globals.sked!.Callback!, 'callback'),
+        ], globals.sked!.Id!)`
+            return ${globals.sked!.waitFuture!}(${commons._FRAME_SKEDULER!}, frame.toString(), callback)
         `,
 
         /** 
          * Cancels waiting for a frame to occur.
          */
         Func(commons.cancelWaitFrame!, [
-            Var(globalCode.sked!.Id!, 'id')
+            Var(globals.sked!.Id!, 'id')
         ], 'void')`
-            ${globalCode.sked!.cancel!}(${commons._FRAME_SKEDULER!}, id)
+            ${globals.sked!.cancel!}(${commons._FRAME_SKEDULER!}, id)
         `,
     ]),
     dependencies: [sked],

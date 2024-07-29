@@ -10,12 +10,12 @@ describe('metadata', () => {
     describe('buildMetadata', () => {
         it('should filter exported and imported functions from compilation object and add them to variableNamesIndex', () => {
             const precompilation = makePrecompilation({})
-            precompilation.variableNamesIndex.globalCode.bla = {
+            precompilation.variableNamesIndex.globals.bla = {
                 hello: 'bla_hello',
                 bye: 'bla_bye',
                 blah: 'bla_blah',
             }
-            precompilation.variableNamesIndex.globalCode.blo = {
+            precompilation.variableNamesIndex.globals.blo = {
                 good: 'blo_good',
                 blurg: 'blo_blurg',
             }
@@ -33,7 +33,7 @@ describe('metadata', () => {
             const metadata = buildMetadata(renderInput)
 
             assert.deepStrictEqual(
-                metadata.compilation.variableNamesIndex.globalCode,
+                metadata.compilation.variableNamesIndex.globals,
                 {
                     bla: {
                         hello: 'bla_hello',

@@ -32,13 +32,13 @@ describe('commons', () => {
             {
                 description:
                     'setArray > should set the array and notifiy the subscribers hooks %s',
-                testFunction: ({ globalCode }) => AnonFunc()`
+                testFunction: ({ globals }) => AnonFunc()`
                     callbackCallCounter = 0
 
                     ${ConstVar(
-                        globalCode.sked!.Id!,
+                        globals.sked!.Id!,
                         'subscription',
-                        ast`${globalCode.commons!.subscribeArrayChanges!}(
+                        ast`${globals.commons!.subscribeArrayChanges!}(
                             'array1', 
                             ${Func('callback')`
                                 callbackCallCounter++
@@ -47,25 +47,25 @@ describe('commons', () => {
                     )}
 
                     // First time array is set, subscriber is notified
-                    ${globalCode.commons!.setArray!}('array1', createFloatArray(5))
+                    ${globals.commons!.setArray!}('array1', createFloatArray(5))
                     assert_integersEqual(callbackCallCounter, 1)
 
                     // Second time too
-                    ${globalCode.commons!.setArray!}('array1', createFloatArray(4))
+                    ${globals.commons!.setArray!}('array1', createFloatArray(4))
                     assert_integersEqual(callbackCallCounter, 2)
                     
                     // But after unsubscribe, it isn't
-                    ${globalCode.commons!.cancelArrayChangesSubscription!}(subscription)
+                    ${globals.commons!.cancelArrayChangesSubscription!}(subscription)
                     const someArray = createFloatArray(3)
                     someArray[0] = 1.1
                     someArray[1] = 1.2
                     someArray[2] = 1.3
-                    ${globalCode.commons!.setArray!}('array1', someArray)
+                    ${globals.commons!.setArray!}('array1', someArray)
                     assert_integersEqual(callbackCallCounter, 2)
 
                     // But array is still what was set last
                     assert_floatArraysEqual(
-                        ${globalCode.commons!.getArray!}('array1'),
+                        ${globals.commons!.getArray!}('array1'),
                         someArray
                     )
                 `,
@@ -73,9 +73,9 @@ describe('commons', () => {
             {
                 description:
                     'arrays > should embed arrays passed in settings %s',
-                testFunction: ({ globalCode }) => AnonFunc()`
+                testFunction: ({ globals }) => AnonFunc()`
                     ${ConstVar(
-                        globalCode.core!.FloatArray!,
+                        globals.core!.FloatArray!,
                         'expected',
                         `createFloatArray(3)`
                     )}
@@ -84,7 +84,7 @@ describe('commons', () => {
                     expected[2] = 666
 
                     assert_floatArraysEqual(
-                        ${globalCode.commons!.getArray!}('embeddedArray'),
+                        ${globals.commons!.getArray!}('embeddedArray'),
                         expected,
                     )
                 `,

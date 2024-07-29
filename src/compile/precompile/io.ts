@@ -37,10 +37,10 @@ interface MessageSenderNodeArgs {
 
 const messageSenderNodeImplementation: NodeImplementation<MessageSenderNodeArgs> =
     {
-        messageReceivers: ({ globalCode, node: { args } }) => ({
+        messageReceivers: ({ globals, node: { args } }) => ({
             // prettier-ignore
             '0': AnonFunc([
-                Var(globalCode.msg!.Message!, 'm')
+                Var(globals.msg!.Message!, 'm')
             ])`
                 ${args.messageSenderName}(m)
                 return

@@ -38,8 +38,8 @@ describe('readMetadata', () => {
     })
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         DUMMY: {
-            messageReceivers: ({ globalCode }) => ({
-                '0': AnonFunc([Var(globalCode.msg!.Message!, 'message')])``,
+            messageReceivers: ({ globals }) => ({
+                '0': AnonFunc([Var(globals.msg!.Message!, 'message')])``,
             }),
         },
     }
@@ -84,7 +84,7 @@ describe('readMetadata', () => {
                     },
                     messageSenders: {},
                 },
-                globalCode: actual.compilation.variableNamesIndex.globalCode,
+                globals: actual.compilation.variableNamesIndex.globals,
             },
         },
     })}

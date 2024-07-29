@@ -37,7 +37,7 @@ export default (
     ])
 
     const context: GlobalCodePrecompilationContext = {
-        globalCode: ReadOnlyIndex(precompilation.variableNamesIndex.globalCode),
+        globals: ReadOnlyIndex(precompilation.variableNamesIndex.globals),
         settings,
     }
 
@@ -195,4 +195,4 @@ const _deepEqual = (ast1: AstElement, ast2: AstElement) =>
 const _getAssignerNamespace = (
     variableNamesAssigner: VariableNamesIndex,
     globalsDefinitions: GlobalsDefinitions
-) => variableNamesAssigner.globalCode[globalsDefinitions.namespace]!
+) => variableNamesAssigner.globals[globalsDefinitions.namespace]!

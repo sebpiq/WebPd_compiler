@@ -28,12 +28,12 @@ export const buildMetadata = ({
     precompiledCode: { dependencies },
     settings: { audio: audioSettings, io },
 }: RenderInput): EngineMetadata => {
-    const filteredGlobalCode: VariableNamesIndex['globalCode'] = {}
+    const filteredGlobalCode: VariableNamesIndex['globals'] = {}
     const exportsAndImportsNames = [
         ...dependencies.exports,
         ...dependencies.imports.map((astFunc) => astFunc.name),
     ]
-    Object.entries(variableNamesReadOnly.globalCode).forEach(([ns, names]) =>
+    Object.entries(variableNamesReadOnly.globals).forEach(([ns, names]) =>
         Object.entries(names).forEach(([name, variableName]) => {
             if (exportsAndImportsNames.includes(variableName)) {
                 if (!filteredGlobalCode[ns]) {
@@ -56,7 +56,7 @@ export const buildMetadata = ({
             io,
             variableNamesIndex: {
                 io: variableNamesReadOnly.io,
-                globalCode: filteredGlobalCode,
+                globals: filteredGlobalCode,
             },
         },
     }

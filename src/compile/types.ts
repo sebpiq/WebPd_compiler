@@ -21,7 +21,6 @@
 import { AstClass, AstElement, AstFunc, AstSequence } from '../ast/types'
 import { VariableName } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
-import { VariableNamesIndex } from './precompile/types'
 
 type PortletsSpecMetadataBasicValue = boolean | string | number
 
@@ -104,20 +103,20 @@ export interface NodeImplementation<NodeArgsType = {}> {
     }
 
     state?: (context: {
-        globalCode: GlobalCodePrecompilationContext['globalCode']
+        globals: GlobalCodePrecompilationContext['globals']
         ns: AssignerNamespace
         node: DspGraph.Node<NodeArgsType>
         settings: CompilationSettings
     }) => AstClass
 
     core?: (context: {
-        globalCode: GlobalCodePrecompilationContext['globalCode']
+        globals: GlobalCodePrecompilationContext['globals']
         ns: AssignerNamespace
         settings: CompilationSettings
     }) => AstElement
 
     initialization?: (context: {
-        globalCode: GlobalCodePrecompilationContext['globalCode']
+        globals: GlobalCodePrecompilationContext['globals']
         ns: AssignerNamespace
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
@@ -133,7 +132,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
      * This allows to optimize the dsp loop by only running the code that is necessary.
      */
     dsp?: (context: {
-        globalCode: GlobalCodePrecompilationContext['globalCode']
+        globals: GlobalCodePrecompilationContext['globals']
         ns: AssignerNamespace
         state: NodePrecompilationContext['state']
         ins: NodePrecompilationContext['ins']
@@ -152,7 +151,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
      * Generate code for message receivers for a given node instance.
      */
     messageReceivers?: (context: {
-        globalCode: GlobalCodePrecompilationContext['globalCode']
+        globals: GlobalCodePrecompilationContext['globals']
         ns: AssignerNamespace
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
@@ -174,7 +173,7 @@ interface NodePrecompilationContext {
 }
 
 export interface GlobalCodePrecompilationContext {
-    globalCode: { [nsName: string]: { [name: string]: VariableName } }
+    globals: { [nsName: string]: { [name: string]: VariableName } }
     settings: CompilationSettings
 }
 

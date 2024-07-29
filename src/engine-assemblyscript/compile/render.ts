@@ -28,10 +28,10 @@ import { RenderInput } from '../../compile/render/types'
 
 export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
     const { precompiledCode, settings, variableNamesReadOnly: variableNamesIndex } = renderInput
-    const globalCode = variableNamesIndex.globalCode
+    const globals = variableNamesIndex.globals
     const renderTemplateInput = {
         settings,
-        globalCode,
+        globals,
         precompiledCode,
     }
     const { channelCount } = settings.audio
@@ -50,13 +50,13 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
         ${templates.coldDspFunctions(renderTemplateInput)}
         ${templates.ioMessageReceivers(renderTemplateInput)}
         ${templates.ioMessageSenders(renderTemplateInput, (variableName) => 
-            ast`export declare function ${variableName}(m: ${globalCode.msg!.Message!}): void`)}
+            ast`export declare function ${variableName}(m: ${globals.msg!.Message!}): void`)}
 
         export function initialize(sampleRate: Float, blockSize: Int): void {
-            ${globalCode.core!.INPUT!} = createFloatArray(blockSize * ${channelCount.in.toString()})
-            ${globalCode.core!.OUTPUT!} = createFloatArray(blockSize * ${channelCount.out.toString()})
-            ${globalCode.core!.SAMPLE_RATE!} = sampleRate
-            ${globalCode.core!.BLOCK_SIZE!} = blockSize
+            ${globals.core!.INPUT!} = createFloatArray(blockSize * ${channelCount.in.toString()})
+            ${globals.core!.OUTPUT!} = createFloatArray(blockSize * ${channelCount.out.toString()})
+            ${globals.core!.SAMPLE_RATE!} = sampleRate
+            ${globals.core!.BLOCK_SIZE!} = blockSize
 
             ${templates.nodeInitializations(renderTemplateInput)}
             ${templates.coldDspInitialization(renderTemplateInput)}

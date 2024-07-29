@@ -57,7 +57,7 @@ export const precompileSignalInletWithNoSource = (
     inletId: DspGraph.PortletId
 ) => {
     precompiledCodeAssigner.nodes[node.id]!.signalIns[inletId] =
-        variableNamesAssigner.globalCode.core!.NULL_SIGNAL!
+        variableNamesAssigner.globals.core!.NULL_SIGNAL!
 }
 
 export const precompileMessageOutlet = (
@@ -137,7 +137,7 @@ export const precompileMessageOutlet = (
     // a function that does nothing
     else {
         precompiledNode.messageSenders[outletId] = {
-            messageSenderName: variableNamesAssigner.globalCode.msg!.nullMessageReceiver!,
+            messageSenderName: variableNamesAssigner.globals.msg!.nullMessageReceiver!,
             sinkFunctionNames: [],
         }
     }
@@ -149,7 +149,7 @@ export const precompileMessageInlet = (
     inletId: DspGraph.PortletId
 ) => {
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
-    const globalCode = variableNamesAssigner.globalCode
+    const globals = variableNamesAssigner.globals
     if (getters.getSources(node, inletId).length >= 1) {
         const messageReceiverName =
             variableNamesAssigner.nodes[node.id]!.messageReceivers[inletId]!
@@ -158,7 +158,7 @@ export const precompileMessageInlet = (
         // precompiling message receivers.
         precompiledNode.messageReceivers[inletId] = Func(
             messageReceiverName,
-            [Var(globalCode.msg!.Message!, 'm')],
+            [Var(globals.msg!.Message!, 'm')],
             'void'
         )`throw new Error("This placeholder should have been replaced during precompilation")`
     } else {

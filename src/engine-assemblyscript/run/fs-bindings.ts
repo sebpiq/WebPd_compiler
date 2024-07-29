@@ -94,7 +94,7 @@ export const createFsBindings = (
     rawModule: FsWithDependenciesRawModule,
     engineData: EngineData
 ): Bindings<NonNullable<Engine['fs']>> => {
-    const fsExportedNames = engineData.metadata.compilation.variableNamesIndex.globalCode.fs!
+    const fsExportedNames = engineData.metadata.compilation.variableNamesIndex.globals.fs!
     return {
         sendReadSoundFileResponse: {
             type: 'proxy',
@@ -170,7 +170,7 @@ export const createFsImports = (
     metadata: EngineMetadata,
 ): FsImports => {
     const wasmImports: FsImports = {}
-    const exportedNames = metadata.compilation.variableNamesIndex.globalCode
+    const exportedNames = metadata.compilation.variableNamesIndex.globals
     if ('fs' in exportedNames) {
         const nameMapping = RawModuleWithNameMapping<FsImports>(wasmImports!, exportedNames!.fs!)
         if ('i_readSoundFile' in exportedNames.fs!) {

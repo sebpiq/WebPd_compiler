@@ -55,7 +55,7 @@ export const makePrecompilation = (
 export const makeGlobalCodePrecompilationContext = (
     precompilation: Precompilation
 ): GlobalCodePrecompilationContext => ({
-    globalCode: precompilation.variableNamesAssigner.globalCode,
+    globals: precompilation.variableNamesAssigner.globals,
     settings: precompilation.settings,
 })
 
@@ -73,7 +73,7 @@ export const precompilationToRenderTemplateInput = (
     precompilation: Precompilation
 ): RenderTemplateInput => {
     return {
-        globalCode: ReadOnlyIndex(precompilation.variableNamesIndex).globalCode,
+        globals: ReadOnlyIndex(precompilation.variableNamesIndex).globals,
         precompiledCode: precompilation.precompiledCode,
         settings: precompilation.settings,
     }

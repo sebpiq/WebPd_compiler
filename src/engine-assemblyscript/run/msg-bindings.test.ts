@@ -81,24 +81,24 @@ describe('msg-bindings', () => {
                 },
             }
         })
-        const globalCode = precompilation.variableNamesAssigner.globalCode
+        const globals = precompilation.variableNamesAssigner.globals
         const context = makeGlobalCodePrecompilationContext(precompilation)
         return render(
             macros,
             Sequence([
-                core.code(globalCode.core!, context),
-                sked.code(globalCode.sked!, context),
-                msg.code(globalCode.msg!, context),
-                `export function testReadMessageData(message: ${globalCode.msg!
+                core.code(globals.core!, context),
+                sked.code(globals.sked!, context),
+                msg.code(globals.msg!, context),
+                `export function testReadMessageData(message: ${globals.msg!
                     .Message!}, index: Int): Int {
                     return message.dataView.getInt32(index * sizeof<Int>())
                 }`,
                 core.exports!(
-                    precompilation.variableNamesAssigner.globalCode.core!,
+                    precompilation.variableNamesAssigner.globals.core!,
                     context,
                 ).map((name) => `export { ${name} }`),
                 msg.exports!(
-                    precompilation.variableNamesAssigner.globalCode.msg!,
+                    precompilation.variableNamesAssigner.globals.msg!,
                     context,
                 ).map((name) => `export { ${name} }`),
             ])
@@ -126,7 +126,7 @@ describe('msg-bindings', () => {
         )
         return RawModuleWithNameMapping<EngineRawModule & MsgTestRawModule>(
             rawModule,
-            precompilation.variableNamesIndex.globalCode
+            precompilation.variableNamesIndex.globals
         )
     }
 
@@ -213,18 +213,18 @@ describe('msg-bindings', () => {
             'should read message to a JavaScript array %s',
             async ({ bitDepth }) => {
                 const precompilation = makePrecompilation({})
-                const globalCode =
-                    precompilation.variableNamesAssigner.globalCode
+                const globals =
+                    precompilation.variableNamesAssigner.globals
 
                 // prettier-ignore
                 const code = getBaseTestCode(bitDepth) + `
-                    export function testCreateMessage(): ${globalCode.msg!.Message!} {
-                        const message: ${globalCode.msg!.Message!} = ${globalCode.msg!.create!}([
-                            ${globalCode.msg!.STRING_TOKEN!}, 5,
-                            ${globalCode.msg!.FLOAT_TOKEN!},
+                    export function testCreateMessage(): ${globals.msg!.Message!} {
+                        const message: ${globals.msg!.Message!} = ${globals.msg!.create!}([
+                            ${globals.msg!.STRING_TOKEN!}, 5,
+                            ${globals.msg!.FLOAT_TOKEN!},
                         ])
-                        ${globalCode.msg!.writeStringToken!}(message, 0, "hello")
-                        ${globalCode.msg!.writeFloatToken!}(message, 1, 666)
+                        ${globals.msg!.writeStringToken!}(message, 0, "hello")
+                        ${globals.msg!.writeFloatToken!}(message, 1, 666)
                         return message
                     }
                 `

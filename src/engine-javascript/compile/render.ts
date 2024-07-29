@@ -32,10 +32,10 @@ export default (
 ): JavaScriptEngineCode => {
     const { precompiledCode, settings, variableNamesReadOnly: variableNamesIndex } = renderInput
     const variableNamesReadOnly = ReadOnlyIndex(variableNamesIndex)
-    const { globalCode } = variableNamesReadOnly
+    const { globals } = variableNamesReadOnly
     const renderTemplateInput = {
         settings,
-        globalCode,
+        globals,
         precompiledCode,
     }
     const metadata = buildMetadata(renderInput)
@@ -61,13 +61,13 @@ export default (
             initialize: (sampleRate, blockSize) => {
                 exports.metadata.audioSettings.sampleRate = sampleRate
                 exports.metadata.audioSettings.blockSize = blockSize
-                ${globalCode.core!.SAMPLE_RATE!} = sampleRate
-                ${globalCode.core!.BLOCK_SIZE!} = blockSize
+                ${globals.core!.SAMPLE_RATE!} = sampleRate
+                ${globals.core!.BLOCK_SIZE!} = blockSize
 
                 ${templates.nodeInitializations(renderTemplateInput)}
                 ${templates.coldDspInitialization(renderTemplateInput)}
             },
-            dspLoop: (${globalCode.core!.INPUT!}, ${globalCode.core!.OUTPUT!}) => {
+            dspLoop: (${globals.core!.INPUT!}, ${globals.core!.OUTPUT!}) => {
                 ${templates.dspLoop(renderTemplateInput)}
             },
             io: {

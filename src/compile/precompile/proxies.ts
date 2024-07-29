@@ -96,7 +96,7 @@ const _VariableNamesAssignerSpec: AssignerSpec<
         )
     }),
 
-    globalCode: Assigner.Index((ns) =>
+    globals: Assigner.Index((ns) =>
         Assigner.Index((name) =>
             ns === 'core'
             // We don't prefix stdlib core module, because these are super 

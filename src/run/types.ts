@@ -82,7 +82,7 @@ export interface EngineMetadata {
         readonly io: CompilationSettings['io']
         readonly variableNamesIndex: {
             readonly io: VariableNamesIndex['io']
-            readonly globalCode: VariableNamesIndex['globalCode']
+            readonly globals: VariableNamesIndex['globals']
         }
     }
 }

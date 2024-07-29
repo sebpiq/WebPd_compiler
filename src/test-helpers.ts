@@ -164,7 +164,7 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
                 await createAssemblyScriptWasmRawModule(buffer)
             const rawModuleWithNameMapping = RawModuleWithNameMapping<EngineRawModule>(
                 rawModule,
-                engineData.metadata.compilation.variableNamesIndex.globalCode
+                engineData.metadata.compilation.variableNamesIndex.globals
             )
             const engineBindings = await createAssemblyScriptWasmEngineBindings(
                 rawModuleWithNameMapping,
@@ -185,10 +185,10 @@ export const runTestSuite = (
         description: string
         testFunction: ({
             target,
-            globalCode,
+            globals,
         }: {
             target: CompilerTarget
-            globalCode: GlobalCodePrecompilationContext['globalCode']
+            globals: GlobalCodePrecompilationContext['globals']
         }) => AstFunc
     }>,
     dependencies: Array<GlobalsDefinitions> = [],
@@ -217,8 +217,8 @@ export const runTestSuite = (
                     ({ testFunction }, i) => {
                         const astTestFunc = testFunction({
                             target,
-                            globalCode:
-                                precompilation.variableNamesAssigner.globalCode,
+                            globals:
+                                precompilation.variableNamesAssigner.globals,
                         })
                         const codeGeneratorWithSettings: GlobalsDefinitions =
                             {

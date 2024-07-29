@@ -64,7 +64,7 @@ export const createEngine = async (
         await createRawModule(wasmBuffer)
     const rawModuleWithNameMapping = RawModuleWithNameMapping<EngineRawModule>(
         rawModule,
-        engineData.metadata.compilation.variableNamesIndex.globalCode
+        engineData.metadata.compilation.variableNamesIndex.globals
     )
     const engineBindings = createEngineBindings(
         rawModuleWithNameMapping,
@@ -112,7 +112,7 @@ export const createEngineBindings = (
     engineData: EngineData,
 ): Bindings<Engine> => {
     const optionalBindings: Partial<Bindings<Engine>> = {}
-    const exportedNames = engineData.metadata.compilation.variableNamesIndex.globalCode
+    const exportedNames = engineData.metadata.compilation.variableNamesIndex.globals
 
     // Create bindings for core modules
     const commons = attachBindings(

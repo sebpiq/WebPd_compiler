@@ -84,7 +84,7 @@ const nodeInitializations = ({
     ])
 
 const ioMessageReceivers = ({
-    globalCode,
+    globals,
     precompiledCode: { io },
 }: RenderTemplateInput): AstSequence =>
     Sequence(
@@ -93,7 +93,7 @@ const ioMessageReceivers = ({
                 (precompiledIoMessageReceiver) => {
                     // prettier-ignore
                     return Func(precompiledIoMessageReceiver.functionName, [
-                    Var(globalCode.msg!.Message!, 'm')
+                    Var(globals.msg!.Message!, 'm')
                 ], 'void')`
                     ${precompiledIoMessageReceiver.getSinkFunctionName()}(m)
                 `
@@ -126,7 +126,7 @@ const ioMessageSenders = (
     )
 
 const portletsDeclarations = ({
-    globalCode,
+    globals,
     precompiledCode: { graph, nodes },
     settings: { debug },
 }: RenderTemplateInput): AstSequence =>
@@ -145,7 +145,7 @@ const portletsDeclarations = ({
                         // prettier-ignore
                         return Func(astFunc.name!, astFunc.args, astFunc.returnType)`
                             ${astFunc.body}
-                            throw new Error('Node "${nodeId}", inlet "${inletId}", unsupported message : ' + ${globalCode.msg!.display!}(${astFunc.args[0]!.name})${
+                            throw new Error('Node "${nodeId}", inlet "${inletId}", unsupported message : ' + ${globals.msg!.display!}(${astFunc.args[0]!.name})${
                                 debug
                                     ? " + '\\nDEBUG : remember, you must return from message receiver'"
                                     : ''})
@@ -166,7 +166,7 @@ const portletsDeclarations = ({
                 ({ messageSenderName, sinkFunctionNames }) =>
                     // prettier-ignore
                     Func(messageSenderName, [
-                        Var(globalCode.msg!.Message!, 'm')
+                        Var(globals.msg!.Message!, 'm')
                     ], 'void')`
                         ${sinkFunctionNames.map(functionName => 
                             `${functionName}(m)`)}
@@ -175,7 +175,7 @@ const portletsDeclarations = ({
     ])
 
 const dspLoop = ({
-    globalCode,
+    globals,
     precompiledCode: {
         nodes,
         graph: { hotDspGroup, coldDspGroups },
@@ -183,8 +183,8 @@ const dspLoop = ({
 }: RenderTemplateInput) =>
     // prettier-ignore
     ast`
-        for (${globalCode.core!.IT_FRAME!} = 0; ${globalCode.core!.IT_FRAME!} < ${globalCode.core!.BLOCK_SIZE!}; ${globalCode.core!.IT_FRAME!}++) {
-            ${globalCode.commons!._emitFrame!}(${globalCode.core!.FRAME!})
+        for (${globals.core!.IT_FRAME!} = 0; ${globals.core!.IT_FRAME!} < ${globals.core!.BLOCK_SIZE!}; ${globals.core!.IT_FRAME!}++) {
+            ${globals.commons!._emitFrame!}(${globals.core!.FRAME!})
             ${hotDspGroup.traversal.map((nodeId) => [
                 // For all inlets dsp functions, we render those that are not
                 // the sink of a cold dsp group.
@@ -201,22 +201,22 @@ const dspLoop = ({
                     ),
                 nodes[nodeId]!.dsp.loop
             ])}
-            ${globalCode.core!.FRAME!}++
+            ${globals.core!.FRAME!}++
         }
     `
 
 const coldDspInitialization = ({
-    globalCode,
+    globals,
     precompiledCode: { graph },
 }: RenderTemplateInput) =>
     Sequence(
         Object.values(graph.coldDspGroups).map(
-            ({ functionName }) => `${functionName}(${globalCode.msg!.emptyMessage!})`
+            ({ functionName }) => `${functionName}(${globals.msg!.emptyMessage!})`
         )
     )
 
 const coldDspFunctions = ({
-    globalCode,
+    globals,
     precompiledCode: {
         graph: { coldDspGroups },
         nodes,
@@ -231,7 +231,7 @@ const coldDspFunctions = ({
             }) =>
                 // prettier-ignore
                 Func(functionName, [
-                    Var(globalCode.msg!.Message!, 'm')
+                    Var(globals.msg!.Message!, 'm')
                 ], 'void')`
                     ${dspGroup.traversal.map((nodeId) => 
                         nodes[nodeId]!.dsp.loop

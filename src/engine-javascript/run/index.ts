@@ -76,7 +76,7 @@ export const compileRawModule = (code: Code): EngineLifecycleRawModule =>
 export const applyNameMappingToRawModule = (rawModule: EngineLifecycleRawModule): RawJavaScriptEngine => {
     const rawModuleWithNameMapping = RawModuleWithNameMapping<RawJavaScriptEngine>(
         rawModule, 
-        rawModule.metadata.compilation.variableNamesIndex.globalCode
+        rawModule.metadata.compilation.variableNamesIndex.globals
     )
     return rawModuleWithNameMapping
 }
@@ -84,7 +84,7 @@ export const applyNameMappingToRawModule = (rawModule: EngineLifecycleRawModule)
 export const createEngineBindings = (
     rawModule: RawJavaScriptEngine
 ): Bindings<Engine> => {
-    const exportedNames = rawModule.metadata!.compilation.variableNamesIndex.globalCode
+    const exportedNames = rawModule.metadata!.compilation.variableNamesIndex.globals
     const optionalBindings: Partial<Bindings<Engine>> = {}
     if ('fs' in exportedNames) {
         optionalBindings.fs = { type: 'proxy', value: createFsModule(rawModule) }
@@ -112,7 +112,7 @@ export const createEngine = (code: Code): Engine => {
 }
 
 const createFsModule = (rawModule: FsRawModule): Engine['fs'] => {
-    const fsExportedNames = rawModule.metadata.compilation.variableNamesIndex.globalCode.fs!
+    const fsExportedNames = rawModule.metadata.compilation.variableNamesIndex.globals.fs!
     const fs = attachBindings<NonNullable<Engine['fs']>>(rawModule, {
         onReadSoundFile: { type: 'callback', value: () => undefined },
         onWriteSoundFile: { type: 'callback', value: () => undefined },
