@@ -25,15 +25,16 @@ import render from '../../compile/render'
 import macros from './macros'
 import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
+import { ReadOnlyIndex } from '../../compile/proxies'
 
 export default (
     renderInput: RenderInput,
 ): JavaScriptEngineCode => {
-    const { precompiledCode, settings, variableNamesIndex } = renderInput
-    const { globs, globalCode } = variableNamesIndex
+    const { precompiledCode, settings, variableNamesReadOnly: variableNamesIndex } = renderInput
+    const variableNamesReadOnly = ReadOnlyIndex(variableNamesIndex)
+    const { globalCode } = variableNamesReadOnly
     const renderTemplateInput = {
         settings,
-        globs,
         globalCode,
         precompiledCode,
     }
@@ -43,10 +44,6 @@ export default (
     return render(macros, ast`
         ${templates.dependencies(renderTemplateInput)}
         ${templates.nodeImplementationsCoreAndStateClasses(renderTemplateInput)}
-
-        ${templates.globs(renderTemplateInput)}
-
-        ${templates.embeddedArrays(renderTemplateInput)}
 
         ${templates.nodeStateInstances(renderTemplateInput)}
         ${templates.portletsDeclarations(renderTemplateInput)}
@@ -64,13 +61,13 @@ export default (
             initialize: (sampleRate, blockSize) => {
                 exports.metadata.audioSettings.sampleRate = sampleRate
                 exports.metadata.audioSettings.blockSize = blockSize
-                ${globs.sampleRate} = sampleRate
-                ${globs.blockSize} = blockSize
+                ${globalCode.core!.SAMPLE_RATE!} = sampleRate
+                ${globalCode.core!.BLOCK_SIZE!} = blockSize
 
                 ${templates.nodeInitializations(renderTemplateInput)}
                 ${templates.coldDspInitialization(renderTemplateInput)}
             },
-            dspLoop: (${globs.input}, ${globs.output}) => {
+            dspLoop: (${globalCode.core!.INPUT!}, ${globalCode.core!.OUTPUT!}) => {
                 ${templates.dspLoop(renderTemplateInput)}
             },
             io: {

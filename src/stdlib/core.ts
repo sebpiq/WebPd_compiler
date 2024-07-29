@@ -48,6 +48,16 @@ export const core: GlobalsDefinitions = {
             ], 'Float')
         }
 
+        const shared = [
+            Var('Int', core.IT_FRAME!, '0'),
+            Var('Int', core.FRAME!, '0'),
+            Var('Int', core.BLOCK_SIZE!, '0'),
+            Var('Float', core.SAMPLE_RATE!, '0'),
+            Var('Float', core.NULL_SIGNAL!, '0'),
+            Var('FloatArray', core.INPUT!, 'createFloatArray(0)'),
+            Var('FloatArray', core.OUTPUT!, 'createFloatArray(0)'),
+        ]
+
         if (target === 'assemblyscript') {
             return Sequence([
                 `
@@ -95,7 +105,16 @@ export const core: GlobalsDefinitions = {
                     Var('Int', 'index')
                 ], 'FloatArray')`
                     return arrays[index]
-                `
+                `,
+                
+                Func(core.x_getInput!,[], 'FloatArray')`
+                    return ${core.INPUT!}
+                `,
+                Func(core.x_getOutput!,[], 'FloatArray')`
+                    return ${core.OUTPUT!}
+                `,
+
+                ...shared,
             ])
         } else if (target === 'javascript') {
             return Sequence([
@@ -119,6 +138,8 @@ export const core: GlobalsDefinitions = {
                 declareFuncs.getFloatDataView`
                     return dataView.${getFloat}(position)
                 `,
+
+                ...shared,
             ])
         } else {
             throw new Error(`Unexpected target: ${target}`)
@@ -130,6 +151,8 @@ export const core: GlobalsDefinitions = {
         core.x_pushToListOfArrays!,
         core.x_getListOfArraysLength!,
         core.x_getListOfArraysElem!,
+        core.x_getInput!,
+        core.x_getOutput!,
         core.createFloatArray!,
     ]: [],
 }

@@ -44,9 +44,8 @@ export const precompileStateClass = (
                 `No node of type "${nodeType}" exists in the graph.`
             )
         }
-        const { ns, globs, globalCode } = _getContext(nodeType, variableNamesAssigner)
+        const { ns, globalCode } = _getContext(nodeType, variableNamesAssigner)
         const astClass = precompiledImplementation.nodeImplementation.state({
-            globs,
             globalCode,
             ns,
             node: sampleNode,
@@ -75,10 +74,9 @@ export const precompileCore = (
         precompiledCodeAssigner.nodeImplementations[nodeType]!
     const nodeImplementation = precompiledImplementation.nodeImplementation
     if (nodeImplementation.core) {
-        const { ns, globs, globalCode } = _getContext(nodeType, variableNamesAssigner)
+        const { ns, globalCode } = _getContext(nodeType, variableNamesAssigner)
         precompiledImplementation.core = nodeImplementation.core({
             settings,
-            globs,
             globalCode,
             ns,
         })
@@ -89,7 +87,6 @@ const _getContext = (
     nodeType: DspGraph.NodeType,
     variableNamesAssigner: VariableNamesIndex
 ) => ({
-    globs: ReadOnlyIndex(variableNamesAssigner.globs),
     globalCode: ReadOnlyIndex(variableNamesAssigner.globalCode),
     ns: variableNamesAssigner.nodeImplementations[nodeType]!,
 })

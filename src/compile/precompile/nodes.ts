@@ -58,14 +58,13 @@ export const precompileState = (
             throw new Error(`No ${STATE_CLASS_NAME} defined for ${nodeType}`)
         }
 
-        const { ns, globs, globalCode } = _getContext(
+        const { ns, globalCode } = _getContext(
             node.id,
             precompiledNode,
             variableNamesAssigner
         )
         const astClass = precompiledNodeImplementation.nodeImplementation.state(
             {
-                globs,
                 globalCode,
                 ns,
                 node,
@@ -102,7 +101,7 @@ export const precompileMessageReceivers = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { state, snds, ns, globalCode, globs } = _getContext(
+    const { state, snds, ns, globalCode } = _getContext(
         node.id,
         precompiledNode,
         variableNamesAssigner
@@ -111,7 +110,6 @@ export const precompileMessageReceivers = (
         precompiledNodeImplementation.nodeImplementation.messageReceivers
             ? precompiledNodeImplementation.nodeImplementation.messageReceivers(
                   {
-                      globs,
                       globalCode,
                       ns,
                       state,
@@ -154,7 +152,7 @@ export const precompileInitialization = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { state, snds, ns, globalCode, globs } = _getContext(
+    const { state, snds, ns, globalCode } = _getContext(
         node.id,
         precompiledNode,
         variableNamesAssigner
@@ -162,7 +160,6 @@ export const precompileInitialization = (
     precompiledNode.initialization = precompiledNodeImplementation
         .nodeImplementation.initialization
         ? precompiledNodeImplementation.nodeImplementation.initialization({
-              globs,
               globalCode,
               ns,
               state,
@@ -184,7 +181,7 @@ export const precompileDsp = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { outs, ins, snds, state, ns, globalCode, globs } = _getContext(
+    const { outs, ins, snds, state, ns, globalCode } = _getContext(
         node.id,
         precompiledNode,
         variableNamesAssigner
@@ -195,7 +192,6 @@ export const precompileDsp = (
     }
 
     const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp({
-        globs,
         globalCode,
         ns,
         node,
@@ -266,7 +262,7 @@ export const precompileInlineDsp = (
                 precompiledCodeAssigner.nodeImplementations[
                     precompiledNode.nodeType
                 ]!
-            const { ins, outs, snds, state, ns, globalCode, globs } =
+            const { ins, outs, snds, state, ns, globalCode } =
                 _getContext(nodeId, precompiledNode, variableNamesAssigner)
             const node = getters.getNode(graph, nodeId)
             const inlinedInputs: InlinedInputs = mapArray(
@@ -307,7 +303,6 @@ export const precompileInlineDsp = (
 
             const compiledDsp =
                 precompiledNodeImplementation.nodeImplementation.dsp({
-                    globs,
                     globalCode,
                     ns,
                     state,
@@ -349,7 +344,6 @@ const _getContext = (
     precompiledNode: PrecompiledNodeCode,
     variableNamesAssigner: VariableNamesIndex
 ) => ({
-    globs: ReadOnlyIndex(variableNamesAssigner.globs),
     globalCode: ReadOnlyIndex(variableNamesAssigner.globalCode),
     ns: ReadOnlyIndex(
         variableNamesAssigner.nodeImplementations[precompiledNode.nodeType]!

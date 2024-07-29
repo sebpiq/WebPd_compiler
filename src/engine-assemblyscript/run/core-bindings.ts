@@ -48,9 +48,12 @@ export interface CoreRawModule {
             listOfArraysPointer: InternalPointer,
             index: number
         ) => number
-        // Signatures of internal methods that enable to access wasm memory.
-        // REF : https://www.assemblyscript.org/runtime.html#interface
+        // Pointers to input and output buffers
+        x_getOutput: () => FloatArrayPointer
+        x_getInput: () => FloatArrayPointer
     }
+    // Signatures of internal methods that enable to access wasm memory.
+    // REF : https://www.assemblyscript.org/runtime.html#interface
     __new: (length: number, classType: number) => InternalPointer
     memory: WebAssembly.Memory
 }

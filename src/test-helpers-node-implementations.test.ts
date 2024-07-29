@@ -99,11 +99,11 @@ describe('test-helpers-node-implementations', () => {
             'should send message at the right frame %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ globalCode, globs, snds }) => ({
+                    messageReceivers: ({ globalCode, snds }) => ({
                         '0': AnonFunc([
                             Var(globalCode.msg!.Message!, 'm')
                         ], 'void')`
-                        ${snds.$0!}(${globalCode.msg!.floats!}([toFloat(${globs.frame})]))
+                        ${snds.$0!}(${globalCode.msg!.floats!}([toFloat(${globalCode.core!.FRAME!})]))
                         return
                     `,
                     }),

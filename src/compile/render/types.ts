@@ -39,10 +39,9 @@ export interface CodeMacros {
 export interface RenderInput {
     readonly settings: Readonly<CompilationSettings>
     readonly precompiledCode: Readonly<PrecompiledCode>
-    readonly variableNamesIndex: Readonly<VariableNamesIndex>
+    readonly variableNamesReadOnly: Readonly<VariableNamesIndex>
 }
 
-export type RenderTemplateInput = Omit<RenderInput, 'variableNamesIndex'> & {
-    readonly globs: VariableNamesIndex['globs']
+export type RenderTemplateInput = Omit<RenderInput, 'variableNamesReadOnly'> & {
     readonly globalCode: VariableNamesIndex['globalCode']
 }

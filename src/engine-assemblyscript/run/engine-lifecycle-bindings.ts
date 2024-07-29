@@ -32,7 +32,6 @@ import { CoreRawModule, liftString, readTypedArray } from './core-bindings'
 import { liftMessage, lowerMessage, MsgRawModule } from './msg-bindings'
 import {
     EngineData,
-    FloatArrayPointer,
     MessagePointer,
     ForwardReferences,
     EngineRawModule,
@@ -42,10 +41,6 @@ import { instantiateWasmModule } from './wasm-helpers'
 export interface EngineLifecycleRawModule extends RawModule {
     initialize: (sampleRate: number, blockSize: number) => void
     dspLoop: () => void
-
-    // Pointers to input and output buffers
-    getOutput: () => FloatArrayPointer
-    getInput: () => FloatArrayPointer
 
     // Pointer to a JSON string representation of `EngineMetadata`
     metadata: WebAssembly.Global
@@ -71,12 +66,12 @@ export const updateWasmInOuts = (
     engineData.wasmOutput = readTypedArray(
         rawModule,
         engineData.arrayType,
-        rawModule.getOutput()
+        rawModule.core.x_getOutput()
     ) as FloatArray
     engineData.wasmInput = readTypedArray(
         rawModule,
         engineData.arrayType,
-        rawModule.getInput()
+        rawModule.core.x_getInput()
     ) as FloatArray
 }
 

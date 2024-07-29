@@ -24,6 +24,7 @@ import { PrecompilationInput, Precompilation } from './precompile/types'
 import { RenderInput, RenderTemplateInput } from './render/types'
 import { AstSequence, AstElement, Code } from '../ast/types'
 import { CompilationSettings, GlobalCodePrecompilationContext } from './types'
+import { ReadOnlyIndex } from './proxies'
 
 type PartialSettings = Partial<CompilationSettings>
 
@@ -54,7 +55,6 @@ export const makePrecompilation = (
 export const makeGlobalCodePrecompilationContext = (
     precompilation: Precompilation
 ): GlobalCodePrecompilationContext => ({
-    globs: precompilation.variableNamesAssigner.globs,
     globalCode: precompilation.variableNamesAssigner.globalCode,
     settings: precompilation.settings,
 })
@@ -65,7 +65,7 @@ export const precompilationToRenderInput = (
     return {
         precompiledCode: precompilation.precompiledCode,
         settings: precompilation.settings,
-        variableNamesIndex: precompilation.variableNamesIndex,
+        variableNamesReadOnly: ReadOnlyIndex(precompilation.variableNamesIndex),
     }
 }
 
@@ -73,8 +73,7 @@ export const precompilationToRenderTemplateInput = (
     precompilation: Precompilation
 ): RenderTemplateInput => {
     return {
-        globs: precompilation.variableNamesIndex.globs,
-        globalCode: precompilation.variableNamesIndex.globalCode,
+        globalCode: ReadOnlyIndex(precompilation.variableNamesIndex).globalCode,
         precompiledCode: precompilation.precompiledCode,
         settings: precompilation.settings,
     }

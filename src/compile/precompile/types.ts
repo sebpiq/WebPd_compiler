@@ -147,21 +147,6 @@ export interface VariableNamesIndex {
         [nodeType: DspGraph.NodeType]: { [name: string]: VariableName }
     }
 
-    /** Namespace for global variables */
-    readonly globs: {
-        /** Frame count, reinitialized at each dsp loop start */
-        iterFrame: string
-        /** Frame count, never reinitialized */
-        frame: string
-        blockSize: string
-        sampleRate: string
-        output: string
-        input: string
-        nullMessageReceiver: string
-        nullSignal: string
-        emptyMessage: string
-    }
-
     readonly globalCode: {
         [ns: DspGraph.NodeType]: { [name: string]: VariableName }
     }

@@ -57,7 +57,7 @@ export const precompileSignalInletWithNoSource = (
     inletId: DspGraph.PortletId
 ) => {
     precompiledCodeAssigner.nodes[node.id]!.signalIns[inletId] =
-        variableNamesAssigner.globs.nullSignal
+        variableNamesAssigner.globalCode.core!.NULL_SIGNAL!
 }
 
 export const precompileMessageOutlet = (
@@ -137,7 +137,7 @@ export const precompileMessageOutlet = (
     // a function that does nothing
     else {
         precompiledNode.messageSenders[outletId] = {
-            messageSenderName: variableNamesAssigner.globs.nullMessageReceiver,
+            messageSenderName: variableNamesAssigner.globalCode.msg!.nullMessageReceiver!,
             sinkFunctionNames: [],
         }
     }

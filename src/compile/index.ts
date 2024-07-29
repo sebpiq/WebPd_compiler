@@ -30,6 +30,8 @@ import { AssemblyScriptWasmEngineCode } from '../engine-assemblyscript/compile/t
 import { DspGraph } from '../dsp-graph/types'
 import precompile from './precompile'
 import { validateSettings } from './settings'
+import { RenderInput } from './render/types'
+import { ReadOnlyIndex } from './proxies'
 
 interface CompilationSuccess {
     status: 0
@@ -58,18 +60,15 @@ export default (
     )
 
     let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
+    const renderInput: RenderInput = {
+        precompiledCode,
+        settings,
+        variableNamesReadOnly: ReadOnlyIndex(variableNamesIndex),
+    }
     if (target === 'javascript') {
-        code = renderToJavascript({
-            precompiledCode,
-            settings,
-            variableNamesIndex,
-        })
+        code = renderToJavascript(renderInput)
     } else if (target === 'assemblyscript') {
-        code = renderToAssemblyscript({
-            precompiledCode,
-            settings,
-            variableNamesIndex,
-        })
+        code = renderToAssemblyscript(renderInput)
     } else {
         throw new Error(`Invalid target ${target}`)
     }

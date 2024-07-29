@@ -38,6 +38,7 @@ import {
 } from '../test-helpers'
 import templates from './templates'
 import { AstSequence } from '../../ast/types'
+import { VariableNamesIndex } from '../precompile/types'
 
 describe('templates', () => {
     describe('templates.portletsDeclarations', () => {
@@ -423,6 +424,13 @@ describe('templates', () => {
     })
 
     describe('templates.dspLoop', () => {
+        const _ensureVariableNames = (globalCode: VariableNamesIndex['globalCode']) => {
+            globalCode.commons!._emitFrame!
+            globalCode.core!.IT_FRAME!
+            globalCode.core!.BLOCK_SIZE!
+            globalCode.core!.FRAME!
+        }
+
         it('should compile the dsp loop function', () => {
             const graph = makeGraph({
                 n1: {
@@ -440,8 +448,7 @@ describe('templates', () => {
                 graph,
             })
             const globalCode = precompilation.variableNamesAssigner.globalCode
-            // Make sure they are defined
-            globalCode.commons!._emitFrame!
+            _ensureVariableNames(globalCode)
 
             precompilation.precompiledCodeAssigner.graph.hotDspGroup = {
                 traversal: ['n1', 'n2', 'n3'],
@@ -458,11 +465,11 @@ describe('templates', () => {
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    `for (G_F = 0; G_F < G_BLOCK_SIZE; G_F++) {\n${globalCode.commons!._emitFrame!}(G_FRAME)\n` +
+                    `for (IT_FRAME = 0; IT_FRAME < BLOCK_SIZE; IT_FRAME++) {\n${globalCode.commons!._emitFrame!}(FRAME)\n` +
                         '// n1\n' +
                         '// n2\n' +
                         '// n3\n' +
-                        `G_FRAME++\n}`,
+                        `FRAME++\n}`,
                 ])
             )
         })
@@ -478,8 +485,7 @@ describe('templates', () => {
                 graph,
             })
             const globalCode = precompilation.variableNamesAssigner.globalCode
-            // Make sure they are defined
-            globalCode.commons!._emitFrame!
+            _ensureVariableNames(globalCode)
 
             precompilation.precompiledCodeAssigner.nodes.n1!.dsp.inlets[
                 '0'
@@ -498,10 +504,10 @@ describe('templates', () => {
             assert.deepStrictEqual<AstSequence>(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    `for (G_F = 0; G_F < G_BLOCK_SIZE; G_F++) {\n${globalCode.commons!._emitFrame!}(G_FRAME)\n` +
+                    `for (IT_FRAME = 0; IT_FRAME < BLOCK_SIZE; IT_FRAME++) {\n${globalCode.commons!._emitFrame!}(FRAME)\n` +
                         '// inlet dsp 0\n' +
                         '// n1\n' +
-                        'G_FRAME++\n}',
+                        'FRAME++\n}',
                 ])
             )
         })
@@ -514,6 +520,9 @@ describe('templates', () => {
             const precompilation = makePrecompilation({
                 graph,
             })
+            const globalCode = precompilation.variableNamesAssigner.globalCode
+            // Make sure they are defined
+            globalCode.msg!.emptyMessage!
 
             precompilation.precompiledCodeAssigner.graph.coldDspGroups = {
                 '0': {
@@ -540,7 +549,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([`COLD_0(G_EMPTY_MESSAGE)\nCOLD_1(G_EMPTY_MESSAGE)`])
+                Sequence([`COLD_0(C_msg_emptyMessage)\nCOLD_1(C_msg_emptyMessage)`])
             )
         })
     })

@@ -37,7 +37,6 @@ export default (
     ])
 
     const context: GlobalCodePrecompilationContext = {
-        globs: ReadOnlyIndex(precompilation.variableNamesIndex.globs),
         globalCode: ReadOnlyIndex(precompilation.variableNamesIndex.globalCode),
         settings,
     }

@@ -95,7 +95,7 @@ describe('precompile.portlets', () => {
             // Substitute with empty signal in signalIns
             assert.strictEqual(
                 precompilation.precompiledCode.nodes.n1!.signalIns['0'],
-                precompilation.variableNamesIndex.globs.nullSignal
+                precompilation.variableNamesIndex.globalCode.core!.NULL_SIGNAL!
             )
         })
     })
@@ -218,7 +218,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n1!.messageSenders['0'],
                 {
                     messageSenderName:
-                        precompilation.variableNamesIndex.globs
+                        precompilation.variableNamesIndex.globalCode.msg!
                             .nullMessageReceiver,
                     sinkFunctionNames: [],
                 }

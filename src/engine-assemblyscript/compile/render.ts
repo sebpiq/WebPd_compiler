@@ -27,16 +27,14 @@ import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
 
 export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
-    const { precompiledCode, settings, variableNamesIndex } = renderInput
+    const { precompiledCode, settings, variableNamesReadOnly: variableNamesIndex } = renderInput
     const globalCode = variableNamesIndex.globalCode
     const renderTemplateInput = {
         settings,
-        globs: variableNamesIndex.globs,
         globalCode,
         precompiledCode,
     }
     const { channelCount } = settings.audio
-    const globs = variableNamesIndex.globs
     const metadata = buildMetadata(renderInput)
 
     // prettier-ignore
@@ -45,12 +43,6 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
 
         ${templates.dependencies(renderTemplateInput)}
         ${templates.nodeImplementationsCoreAndStateClasses(renderTemplateInput)}
-
-        ${templates.globs(renderTemplateInput)}
-        let ${globs.input}: FloatArray = createFloatArray(0)
-        let ${globs.output}: FloatArray = createFloatArray(0)
-
-        ${templates.embeddedArrays(renderTemplateInput)}
 
         ${templates.nodeStateInstances(renderTemplateInput)}
         ${templates.portletsDeclarations(renderTemplateInput)}
@@ -61,18 +53,14 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
             ast`export declare function ${variableName}(m: ${globalCode.msg!.Message!}): void`)}
 
         export function initialize(sampleRate: Float, blockSize: Int): void {
-            ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
-            ${globs.output} = createFloatArray(blockSize * ${channelCount.out.toString()})
-            ${globs.sampleRate} = sampleRate
-            ${globs.blockSize} = blockSize
+            ${globalCode.core!.INPUT!} = createFloatArray(blockSize * ${channelCount.in.toString()})
+            ${globalCode.core!.OUTPUT!} = createFloatArray(blockSize * ${channelCount.out.toString()})
+            ${globalCode.core!.SAMPLE_RATE!} = sampleRate
+            ${globalCode.core!.BLOCK_SIZE!} = blockSize
 
             ${templates.nodeInitializations(renderTemplateInput)}
             ${templates.coldDspInitialization(renderTemplateInput)}
         }
-
-        export function getInput(): FloatArray { return ${globs.input} }
-
-        export function getOutput(): FloatArray { return ${globs.output} }
 
         export function dspLoop(): void {
             ${templates.dspLoop(renderTemplateInput)}

@@ -96,18 +96,6 @@ const _VariableNamesAssignerSpec: AssignerSpec<
         )
     }),
 
-    globs: Assigner.Literal(() => ({
-        iterFrame: _name(NS.GLOBS, 'F'),
-        frame: _name(NS.GLOBS, 'FRAME'),
-        blockSize: _name(NS.GLOBS, 'BLOCK_SIZE'),
-        sampleRate: _name(NS.GLOBS, 'SAMPLE_RATE'),
-        output: _name(NS.GLOBS, 'OUTPUT'),
-        input: _name(NS.GLOBS, 'INPUT'),
-        nullMessageReceiver: _name(NS.GLOBS, 'SND_TO_NULL'),
-        nullSignal: _name(NS.GLOBS, 'NULL_SIGNAL'),
-        emptyMessage: _name(NS.GLOBS, 'EMPTY_MESSAGE'),
-    })),
-
     globalCode: Assigner.Index((ns) =>
         Assigner.Index((name) =>
             ns === 'core'

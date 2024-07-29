@@ -24,7 +24,7 @@ import { RenderInput } from './types'
 
 /** Helper to build engine metadata from compilation object */
 export const buildMetadata = ({
-    variableNamesIndex,
+    variableNamesReadOnly,
     precompiledCode: { dependencies },
     settings: { audio: audioSettings, io },
 }: RenderInput): EngineMetadata => {
@@ -33,7 +33,7 @@ export const buildMetadata = ({
         ...dependencies.exports,
         ...dependencies.imports.map((astFunc) => astFunc.name),
     ]
-    Object.entries(variableNamesIndex.globalCode).forEach(([ns, names]) =>
+    Object.entries(variableNamesReadOnly.globalCode).forEach(([ns, names]) =>
         Object.entries(names).forEach(([name, variableName]) => {
             if (exportsAndImportsNames.includes(variableName)) {
                 if (!filteredGlobalCode[ns]) {
@@ -55,7 +55,7 @@ export const buildMetadata = ({
         compilation: {
             io,
             variableNamesIndex: {
-                io: variableNamesIndex.io,
+                io: variableNamesReadOnly.io,
                 globalCode: filteredGlobalCode,
             },
         },

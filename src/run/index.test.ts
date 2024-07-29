@@ -27,7 +27,7 @@ import { AnonFunc, Var } from '../ast/declare'
 import { EngineMetadata } from './types'
 import { UserCompilationSettings, NodeImplementations } from '../compile/types'
 
-describe.only('readMetadata', () => {
+describe('readMetadata', () => {
     const GRAPH = makeGraph({
         node1: {
             inlets: {

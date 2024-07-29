@@ -104,7 +104,6 @@ export interface NodeImplementation<NodeArgsType = {}> {
     }
 
     state?: (context: {
-        globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: AssignerNamespace
         node: DspGraph.Node<NodeArgsType>
@@ -112,14 +111,12 @@ export interface NodeImplementation<NodeArgsType = {}> {
     }) => AstClass
 
     core?: (context: {
-        globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: AssignerNamespace
         settings: CompilationSettings
     }) => AstElement
 
     initialization?: (context: {
-        globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: AssignerNamespace
         state: NodePrecompilationContext['state']
@@ -136,7 +133,6 @@ export interface NodeImplementation<NodeArgsType = {}> {
      * This allows to optimize the dsp loop by only running the code that is necessary.
      */
     dsp?: (context: {
-        globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: AssignerNamespace
         state: NodePrecompilationContext['state']
@@ -156,7 +152,6 @@ export interface NodeImplementation<NodeArgsType = {}> {
      * Generate code for message receivers for a given node instance.
      */
     messageReceivers?: (context: {
-        globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
         ns: AssignerNamespace
         state: NodePrecompilationContext['state']
@@ -180,7 +175,6 @@ interface NodePrecompilationContext {
 
 export interface GlobalCodePrecompilationContext {
     globalCode: { [nsName: string]: { [name: string]: VariableName } }
-    globs: VariableNamesIndex['globs']
     settings: CompilationSettings
 }
 

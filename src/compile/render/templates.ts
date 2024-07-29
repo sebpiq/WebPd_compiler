@@ -31,32 +31,6 @@ import { RenderTemplateInput } from './types'
 const dependencies = ({ precompiledCode }: RenderTemplateInput) =>
     precompiledCode.dependencies.ast
 
-const globs = ({ globs, globalCode }: RenderTemplateInput): AstSequence =>
-    // prettier-ignore
-    Sequence([
-        Var('Int', globs.iterFrame, '0'),
-        Var('Int', globs.frame, '0'),
-        Var('Int', globs.blockSize, '0'),
-        Var('Float', globs.sampleRate, '0'),
-        Var('Float', globs.nullSignal, '0'),
-        Func(globs.nullMessageReceiver, [
-            Var(globalCode.msg!.Message!, 'm')
-        ], 'void')``,
-        Var(globalCode.msg!.Message!, globs.emptyMessage, `${globalCode.msg!.create!}([])`),
-    ])
-
-const embeddedArrays = ({ globalCode, settings: { arrays } }: RenderTemplateInput) =>
-    Sequence(
-        Object.entries(arrays).map(([arrayName, array]) =>
-            Sequence([
-                `${globalCode.commons!.setArray!}("${arrayName}", createFloatArray(${array.length}))`,
-                `${globalCode.commons!.getArray!}("${arrayName}").set(${JSON.stringify(
-                    Array.from(array)
-                )})`,
-            ])
-        )
-    )
-
 const nodeImplementationsCoreAndStateClasses = ({
     precompiledCode: { nodeImplementations },
 }: RenderTemplateInput): AstSequence =>
@@ -201,7 +175,6 @@ const portletsDeclarations = ({
     ])
 
 const dspLoop = ({
-    globs,
     globalCode,
     precompiledCode: {
         nodes,
@@ -210,8 +183,8 @@ const dspLoop = ({
 }: RenderTemplateInput) =>
     // prettier-ignore
     ast`
-        for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
-            ${globalCode.commons!._emitFrame!}(${globs.frame})
+        for (${globalCode.core!.IT_FRAME!} = 0; ${globalCode.core!.IT_FRAME!} < ${globalCode.core!.BLOCK_SIZE!}; ${globalCode.core!.IT_FRAME!}++) {
+            ${globalCode.commons!._emitFrame!}(${globalCode.core!.FRAME!})
             ${hotDspGroup.traversal.map((nodeId) => [
                 // For all inlets dsp functions, we render those that are not
                 // the sink of a cold dsp group.
@@ -228,17 +201,17 @@ const dspLoop = ({
                     ),
                 nodes[nodeId]!.dsp.loop
             ])}
-            ${globs.frame}++
+            ${globalCode.core!.FRAME!}++
         }
     `
 
 const coldDspInitialization = ({
-    globs,
+    globalCode,
     precompiledCode: { graph },
 }: RenderTemplateInput) =>
     Sequence(
         Object.values(graph.coldDspGroups).map(
-            ({ functionName }) => `${functionName}(${globs.emptyMessage})`
+            ({ functionName }) => `${functionName}(${globalCode.msg!.emptyMessage!})`
         )
     )
 
@@ -288,9 +261,7 @@ const importsExports = (
     ])
 
 export default {
-    globs,
     dependencies,
-    embeddedArrays,
     nodeImplementationsCoreAndStateClasses,
     nodeStateInstances,
     nodeInitializations,

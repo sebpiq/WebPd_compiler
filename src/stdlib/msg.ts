@@ -76,6 +76,14 @@ export const msg: GlobalsDefinitions = {
                 Var(msg.Message!, 'message'),
             ], 'string')
         }
+
+        const shared = [
+            Func(msg.nullMessageReceiver!, [
+                Var(msg.Message!, 'm')
+            ], 'void')``,
+            Var(msg.Message!, msg.emptyMessage!, `${msg.create!}([])`),
+        ]
+
         if (target === 'assemblyscript') {
             // prettier-ignore
             return Sequence([
@@ -321,6 +329,8 @@ export const msg: GlobalsDefinitions = {
                 ], msg._Header!)`
                     return header.slice(1 + header[0])
                 `,
+
+                ...shared,
             ])
         } else if (target === 'javascript') {
             // prettier-ignore
@@ -382,6 +392,8 @@ export const msg: GlobalsDefinitions = {
                         .map(t => typeof t === 'string' ? '"' + t + '"' : t.toString())
                         .join(', ') + ']'
                 `,
+
+                ...shared,
             ])
         } else {
             throw new Error(`Unexpected target: ${target}`)

@@ -26,7 +26,7 @@ const NAMESPACE = 'commons'
 
 export const commonsArrays: GlobalsDefinitions = {
     namespace: NAMESPACE,
-    code: (commons, { globalCode }) => Sequence([
+    code: (commons, { globalCode, settings }) => Sequence([
         ConstVar(
             'Map<string, FloatArray>', 
             commons._ARRAYS!, 
@@ -86,6 +86,17 @@ export const commonsArrays: GlobalsDefinitions = {
         ], 'void')`
             ${globalCode.sked!.cancel!}(${commons._ARRAYS_SKEDULER!}, id)
         `,
+
+        // Embed arrays passed at engine creation directly in the code.
+        // This enables the engine to come with some preloaded samples / data.
+        Object.entries(settings.arrays).map(([arrayName, array]) =>
+            Sequence([
+                `${commons.setArray!}("${arrayName}", createFloatArray(${array.length}))`,
+                `${commons.getArray!}("${arrayName}").set(${JSON.stringify(
+                    Array.from(array)
+                )})`,
+            ])
+        )
     ]),
 
     exports: (commons) => [
