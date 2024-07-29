@@ -23,6 +23,7 @@ import {
     CompilerTarget,
     GlobalsDefinitions,
     GlobalCodePrecompilationContext,
+    CompilationSettings,
 } from './compile/types'
 import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
@@ -190,7 +191,8 @@ export const runTestSuite = (
             globalCode: GlobalCodePrecompilationContext['globalCode']
         }) => AstFunc
     }>,
-    dependencies: Array<GlobalsDefinitions> = []
+    dependencies: Array<GlobalsDefinitions> = [],
+    settings: Partial<CompilationSettings> = {},
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
     let testCounter = 1
@@ -201,6 +203,7 @@ export const runTestSuite = (
             const { target, bitDepth } = testParameters
             const precompilation = makePrecompilation({
                 settings: {
+                    ...settings,
                     audio: {
                         bitDepth,
                         channelCount: { in: 2, out: 2 },

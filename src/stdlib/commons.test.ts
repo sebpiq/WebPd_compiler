@@ -70,6 +70,25 @@ describe('commons', () => {
                     )
                 `,
             },
+            {
+                description:
+                    'arrays > should embed arrays passed in settings %s',
+                testFunction: ({ globalCode }) => AnonFunc()`
+                    ${ConstVar(
+                        globalCode.core!.FloatArray!,
+                        'expected',
+                        `createFloatArray(3)`
+                    )}
+                    expected[0] = 11
+                    expected[1] = 12
+                    expected[2] = 666
+
+                    assert_floatArraysEqual(
+                        ${globalCode.commons!.getArray!}('embeddedArray'),
+                        expected,
+                    )
+                `,
+            },
         ],
         [
             core,
@@ -80,6 +99,11 @@ describe('commons', () => {
                 namespace: 'tests',
                 code: () => Var('Int', 'callbackCallCounter', '0')
             }
-        ]
+        ],
+        {
+            arrays: {
+                embeddedArray: new Float32Array([11, 12, 666]),
+            }
+        }
     )
 })
