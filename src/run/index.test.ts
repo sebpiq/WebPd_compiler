@@ -26,9 +26,8 @@ import { readMetadata } from './index'
 import { AnonFunc, Var } from '../ast/declare'
 import { EngineMetadata } from './types'
 import { UserCompilationSettings, NodeImplementations } from '../compile/types'
-import { VariableNamesIndex } from '../compile/precompile/types'
 
-describe('readMetadata', () => {
+describe.only('readMetadata', () => {
     const GRAPH = makeGraph({
         node1: {
             inlets: {

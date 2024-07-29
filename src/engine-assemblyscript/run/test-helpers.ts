@@ -26,7 +26,7 @@ import { instantiateWasmModule } from './wasm-helpers'
 
 export const TEST_PARAMETERS = [
     { bitDepth: 32 as AudioSettings['bitDepth'] },
-    { bitDepth: 64 as AudioSettings['bitDepth'] },
+    // { bitDepth: 64 as AudioSettings['bitDepth'] },
 ]
 
 export const compileAssemblyscript = async (

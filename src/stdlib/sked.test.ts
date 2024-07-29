@@ -256,14 +256,17 @@ describe('sked', () => {
             },
         ],
         [
-            core.codeGenerator,
+            core,
             sked,
-            () => Sequence([
-                Var('Array<Int>', 'received', '[]'),
-                Func('initializeTests')`
-                    received = []
-                `,
-            ]),
+            {
+                namespace: '_',
+                code: () => Sequence([
+                    Var('Array<Int>', 'received', '[]'),
+                    Func('initializeTests')`
+                        received = []
+                    `,
+                ])
+            },
         ]
     )
 })

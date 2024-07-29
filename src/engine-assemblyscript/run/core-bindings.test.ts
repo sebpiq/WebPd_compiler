@@ -27,13 +27,19 @@ import {
 } from './core-bindings'
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { RawModuleWithNameMapping, getFloatArrayType } from '../../run/run-helpers'
+import {
+    RawModuleWithNameMapping,
+    getFloatArrayType,
+} from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
 import { EngineRawModule, FloatArrayPointer, InternalPointer } from './types'
 import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../compile/render'
-import { makeGlobalCodePrecompilationContext, makePrecompilation, makeSettings } from '../../compile/test-helpers'
+import {
+    makeGlobalCodePrecompilationContext,
+    makePrecompilation,
+} from '../../compile/test-helpers'
 import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
 
@@ -62,30 +68,44 @@ describe('core-bindings', () => {
             settings: {
                 target: 'assemblyscript',
                 audio: { bitDepth, channelCount: { in: 2, out: 2 } },
-            }
+            },
         })
+        const assignerNs = precompilation.variableNamesAssigner.globalCode.core!
         const context = makeGlobalCodePrecompilationContext(precompilation)
-        return render(macros, Sequence([
-            core.codeGenerator(context),
-            core.exports!(context).map((name) => `export { ${name} }`)
-        ]))
+        return render(
+            macros,
+            Sequence([
+                core.code(assignerNs, context),
+                core.exports!(
+                    assignerNs,
+                    context
+                ).map((name) => `export { ${name} }`),
+            ])
+        )
     }
 
-    const compileRawModule = async (code: Code, bitDepth: AudioSettings['bitDepth']) => {
-        const rawModule = await ascCodeToRawModule<CoreTestRawModule>(code, bitDepth)
+    const compileRawModule = async (
+        code: Code,
+        bitDepth: AudioSettings['bitDepth']
+    ) => {
+        const rawModule = await ascCodeToRawModule<CoreTestRawModule>(
+            code,
+            bitDepth
+        )
         const precompilation = makePrecompilation({
             settings: {
-                target: 'assemblyscript'
-            }
+                target: 'assemblyscript',
+            },
         })
         // We instantiate the code to make sure all names are assigned
         instantiateAndDedupeDependencies(
             [core],
+            precompilation.variableNamesAssigner,
             makeGlobalCodePrecompilationContext(precompilation)
         )
         return RawModuleWithNameMapping<EngineRawModule & CoreTestRawModule>(
             rawModule,
-            precompilation.variableNamesIndex.globalCode,
+            precompilation.variableNamesIndex.globalCode
         )
     }
 
@@ -259,73 +279,41 @@ describe('core-bindings', () => {
                 )
 
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayLength(
-                        arraysPointer,
-                        0
-                    ),
+                    rawModule.testReadFloatArraysArrayLength(arraysPointer, 0),
                     3
                 )
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayLength(
-                        arraysPointer,
-                        1
-                    ),
+                    rawModule.testReadFloatArraysArrayLength(arraysPointer, 1),
                     3
                 )
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayLength(
-                        arraysPointer,
-                        2
-                    ),
+                    rawModule.testReadFloatArraysArrayLength(arraysPointer, 2),
                     2
                 )
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayLength(
-                        arraysPointer,
-                        3
-                    ),
+                    rawModule.testReadFloatArraysArrayLength(arraysPointer, 3),
                     1
                 )
 
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayElem(
-                        arraysPointer,
-                        0,
-                        0
-                    ),
+                    rawModule.testReadFloatArraysArrayElem(arraysPointer, 0, 0),
                     111
                 )
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayElem(
-                        arraysPointer,
-                        0,
-                        1
-                    ),
+                    rawModule.testReadFloatArraysArrayElem(arraysPointer, 0, 1),
                     222
                 )
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayElem(
-                        arraysPointer,
-                        0,
-                        2
-                    ),
+                    rawModule.testReadFloatArraysArrayElem(arraysPointer, 0, 2),
                     333
                 )
 
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayElem(
-                        arraysPointer,
-                        2,
-                        0
-                    ),
+                    rawModule.testReadFloatArraysArrayElem(arraysPointer, 2, 0),
                     777
                 )
                 assert.strictEqual(
-                    rawModule.testReadFloatArraysArrayElem(
-                        arraysPointer,
-                        2,
-                        1
-                    ),
+                    rawModule.testReadFloatArraysArrayElem(arraysPointer, 2, 1),
                     888
                 )
             }

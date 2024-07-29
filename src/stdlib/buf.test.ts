@@ -137,6 +137,6 @@ describe('buf', () => {
                 `,
             },
         ],
-        [core.codeGenerator, bufCore, bufPushPull, bufWriteRead]
+        [core, bufCore, bufPushPull, bufWriteRead]
     )
 })

@@ -72,11 +72,14 @@ describe('commons', () => {
             },
         ],
         [
-            core.codeGenerator,
+            core,
             sked,
-            commonsArrays.codeGenerator,
+            commonsArrays,
             commonsWaitFrame,
-            () => Var('Int', 'callbackCallCounter', '0')
+            {
+                namespace: 'tests',
+                code: () => Var('Int', 'callbackCallCounter', '0')
+            }
         ]
     )
 })

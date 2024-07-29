@@ -160,6 +160,6 @@ describe('msg', () => {
                 `,
             },
         ],
-        [core.codeGenerator, msg.codeGenerator]
+        [core, msg]
     )
 })

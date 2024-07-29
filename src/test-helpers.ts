@@ -21,8 +21,7 @@
 import {
     AudioSettings,
     CompilerTarget,
-    GlobalCodeDefinition,
-    GlobalCodeGeneratorWithSettings,
+    GlobalsDefinitions,
     GlobalCodePrecompilationContext,
 } from './compile/types'
 import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
@@ -130,12 +129,22 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    dependencies: Array<GlobalCodeDefinition> = []
+    dependencies: Array<GlobalsDefinitions> = []
 ) => {
-    const context = makeGlobalCodePrecompilationContext(makePrecompilation({}))
+    const precompilation = makePrecompilation({
+        settings: {
+            target,
+            audio: {
+                bitDepth,
+                channelCount: { in: 2, out: 2 },
+            }
+        }
+    })
+    const context = makeGlobalCodePrecompilationContext(precompilation)
     const exports = collectAndDedupeExports(
         flattenDependencies(dependencies),
-        context
+        precompilation.variableNamesAssigner,
+        context,
     )
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
@@ -181,7 +190,7 @@ export const runTestSuite = (
             globalCode: GlobalCodePrecompilationContext['globalCode']
         }) => AstFunc
     }>,
-    dependencies: Array<GlobalCodeDefinition> = []
+    dependencies: Array<GlobalsDefinitions> = []
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
     let testCounter = 1
@@ -199,17 +208,19 @@ export const runTestSuite = (
                     target,
                 },
             })
-            const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
-                tests.map<GlobalCodeGeneratorWithSettings>(
+            const context = makeGlobalCodePrecompilationContext(precompilation)
+            const testsCodeDefinitions: Array<GlobalsDefinitions> =
+                tests.map<GlobalsDefinitions>(
                     ({ testFunction }, i) => {
                         const astTestFunc = testFunction({
                             target,
                             globalCode:
                                 precompilation.variableNamesAssigner.globalCode,
                         })
-                        const codeGeneratorWithSettings: GlobalCodeGeneratorWithSettings =
+                        const codeGeneratorWithSettings: GlobalsDefinitions =
                             {
-                                codeGenerator: () => ({
+                                namespace: 'tests',
+                                code: () => ({
                                     ...astTestFunc,
                                     name: testFunctionNames[i]!,
                                 }),
@@ -295,6 +306,7 @@ export const runTestSuite = (
                         ...dependencies,
                         ...testsCodeDefinitions,
                     ]),
+                    precompilation.variableNamesAssigner,
                     makeGlobalCodePrecompilationContext(precompilation)
                 ),
 
@@ -304,7 +316,8 @@ export const runTestSuite = (
                     target,
                     collectAndDedupeExports(
                         [...dependencies, ...testsCodeDefinitions],
-                        makeGlobalCodePrecompilationContext(precompilation)
+                        precompilation.variableNamesAssigner,
+                        context,
                     )
                 ),
             ])

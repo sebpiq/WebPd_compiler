@@ -636,213 +636,215 @@ describe('fs', () => {
             },
         ],
         [
-            core.codeGenerator,
-            msg.codeGenerator,
+            core,
+            msg,
             bufCore,
             bufPushPull,
             fsCore,
-            fsReadSoundFile.codeGenerator,
-            fsWriteSoundFile.codeGenerator,
-            fsSoundStreamCore.codeGenerator,
-            fsReadSoundStream.codeGenerator,
-            fsWriteSoundStream.codeGenerator,
-            ({ globalCode }) => Sequence([
-                // Global test variables
-                Var('Array<string>', 'calls', '[]'),
-                Var(`Array<${globalCode.fs!.OperationId!}>`, 'id_received', '[]'),
-                Var('FloatArray[][]', 'sound_received', '[]'),
-                Var(`Array<${globalCode.fs!.Url!}>`, 'url_received', '[]'),
-                Var(`Array<${globalCode.msg!.Message!}>`, 'info_received', '[]'),
-                Var(globalCode.fs!.OperationStatus!, 'status_received', '-1'),
-                Var('Int', 'callbackOperationId', '0'),
-                Var(globalCode.fs!.OperationStatus!, 'callbackOperationStatus', '-1'),
-                Var('FloatArray[]', 'callbackOperationSound', '[]'),
-                
-                Func('initializeTest')`
-                    calls = []        
-                    id_received = []
-                    sound_received = []
-                    url_received = []
-                    info_received = []
-                    status_received = -1
-
-                    callbackOperationId = 0
-                    callbackOperationStatus = -1
-                    callbackOperationSound = []
-                `,
-
-                // Dummy import
-                Func(globalCode.fs!.i_readSoundFile!, [
-                    Var(globalCode.fs!.OperationId!, 'id'),
-                    Var(globalCode.fs!.Url!, 'url'),
-                    Var(globalCode.msg!.Message!, 'info'),
-                ], 'void')`
-                    calls.push('readSoundFile')
-                    id_received.push(id)
-                    url_received.push(url)
-                    info_received.push(info)
-                `,
-
-                Func(globalCode.fs!.i_openSoundReadStream!, [
-                    Var(globalCode.fs!.OperationId!, 'id'),
-                    Var(globalCode.fs!.Url!, 'url'),
-                    Var(globalCode.msg!.Message!, 'info'),
-                ], 'void')`
-                    calls.push('openSoundReadStream')
-                    id_received.push(id)
-                    url_received.push(url)
-                    info_received.push(info)
-                `,
-
-                Func(globalCode.fs!.i_openSoundWriteStream!, [
-                    Var(globalCode.fs!.OperationId!, 'id'),
-                    Var(globalCode.fs!.Url!, 'url'),
-                    Var(globalCode.msg!.Message!, 'info'),
-                ], 'void')`
-                    calls.push('openSoundWriteStream')
-                    id_received.push(id)
-                    url_received.push(url)
-                    info_received.push(info)
-                `,
-
-                Func(globalCode.fs!.i_writeSoundFile!, [
-                    Var(globalCode.fs!.OperationId!, 'id'),
-                    Var('FloatArray[]', 'sound'),
-                    Var(globalCode.fs!.Url!, 'url'),
-                    Var(globalCode.msg!.Message!, 'info'),
-                ], 'void')`
-                    calls.push('writeSoundFile')
-                    id_received.push(id)
-                    sound_received.push(sound)
-                    url_received.push(url)
-                    info_received.push(info)
-                `,
-
-                Func(globalCode.fs!.i_sendSoundStreamData!, [
-                    Var(globalCode.fs!.OperationId!, 'id'), 
-                    Var('FloatArray[]', 'sound')
-                ], 'void')`
-                    calls.push('sendSoundStreamData')
-                    id_received.push(id)
-                    sound_received.push(sound)
-                `,
-
-                Func(globalCode.fs!.i_closeSoundStream!, [
-                    Var(globalCode.fs!.OperationId!, 'id'),
-                    Var(globalCode.fs!.OperationStatus!, 'status'),
-                ], 'void')`
-                    calls.push('closeSoundStream')
-                    id_received.push(id)
-                    status_received = status
-                `,
-
-                Func('someSoundCallback', [
-                    Var(globalCode.fs!.OperationId!, 'id'),
-                    Var(globalCode.fs!.OperationStatus!, 'status'),
-                    Var('FloatArray[]', 'sound'),
-                ], 'void')`
-                    callbackOperationId = id
-                    callbackOperationStatus = status
-                    callbackOperationSound = sound
-                `,
-
-                Func('someCallback', [
-                    Var(globalCode.fs!.OperationId!, 'id'),
-                    Var(globalCode.fs!.OperationStatus!, 'status'),
-                ], 'void')`
-                    callbackOperationId = id
-                    callbackOperationStatus = status
-                `,
-
-                Func('assert_operationCleaned', [
-                    Var(globalCode.fs!.OperationId!, 'id')
-                ], 'void')`
-                    if(
-                        ${globalCode.fs!._OPERATIONS_IDS!}.has(id)
-                        || ${globalCode.fs!._OPERATIONS_CALLBACKS!}.has(id)
-                        || ${globalCode.fs!._OPERATIONS_SOUND_CALLBACKS!}.has(id)
-                        || ${globalCode.fs!._SOUND_STREAM_BUFFERS!}.has(id)
-                    ) {
-                        reportTestFailure('operation ' + id.toString() + ' was not cleaned properly')
-                    }
-                `,
-
-                Func('assert_soundInfoMessagesEqual', [
-                    Var(globalCode.msg!.Message!, 'actual'), 
-                    Var(globalCode.msg!.Message!, 'expected')
-                ], 'void')`
-                    if (!${globalCode.msg!.isMatching!}(actual, [
-                        ${globalCode.msg!.FLOAT_TOKEN!}, 
-                        ${globalCode.msg!.FLOAT_TOKEN!}, 
-                        ${globalCode.msg!.FLOAT_TOKEN!}, 
-                        ${globalCode.msg!.STRING_TOKEN!}, 
-                        ${globalCode.msg!.STRING_TOKEN!}, 
-                        ${globalCode.msg!.STRING_TOKEN!}
-                    ])) {
-                        reportTestFailure('Unexpected sound info message shape for <actual> arg')
-                    }
+            fsReadSoundFile,
+            fsWriteSoundFile,
+            fsSoundStreamCore,
+            fsReadSoundStream,
+            fsWriteSoundStream,
+            {
+                namespace: '_',
+                code: (_, { globalCode }) => Sequence([
+                    // Global test variables
+                    Var('Array<string>', 'calls', '[]'),
+                    Var(`Array<${globalCode.fs!.OperationId!}>`, 'id_received', '[]'),
+                    Var('FloatArray[][]', 'sound_received', '[]'),
+                    Var(`Array<${globalCode.fs!.Url!}>`, 'url_received', '[]'),
+                    Var(`Array<${globalCode.msg!.Message!}>`, 'info_received', '[]'),
+                    Var(globalCode.fs!.OperationStatus!, 'status_received', '-1'),
+                    Var('Int', 'callbackOperationId', '0'),
+                    Var(globalCode.fs!.OperationStatus!, 'callbackOperationStatus', '-1'),
+                    Var('FloatArray[]', 'callbackOperationSound', '[]'),
                     
-                    if (!${globalCode.msg!.isMatching!}(expected, [
-                        ${globalCode.msg!.FLOAT_TOKEN!}, 
-                        ${globalCode.msg!.FLOAT_TOKEN!}, 
-                        ${globalCode.msg!.FLOAT_TOKEN!}, 
-                        ${globalCode.msg!.STRING_TOKEN!}, 
-                        ${globalCode.msg!.STRING_TOKEN!}, 
-                        ${globalCode.msg!.STRING_TOKEN!}
-                    ])) {
-                        reportTestFailure('Unexpected sound info message shape for <expected> arg')
-                    }
+                    Func('initializeTest')`
+                        calls = []        
+                        id_received = []
+                        sound_received = []
+                        url_received = []
+                        info_received = []
+                        status_received = -1
 
-                    const actualChannelCount = ${globalCode.msg!.readFloatToken!}(actual, 0)
-                    const expectedChannelCount = ${globalCode.msg!.readFloatToken!}(expected, 0)
-                    if (actualChannelCount !== expectedChannelCount) {
-                        reportTestFailure(
-                            'Got SoundInfo.channelCount ' + actualChannelCount.toString() 
-                            + ' expected ' + expectedChannelCount.toString())
-                    }
+                        callbackOperationId = 0
+                        callbackOperationStatus = -1
+                        callbackOperationSound = []
+                    `,
 
-                    const actualSampleRate = ${globalCode.msg!.readFloatToken!}(actual, 1)
-                    const expectedSampleRate = ${globalCode.msg!.readFloatToken!}(expected, 1)
-                    if (actualSampleRate !== expectedSampleRate) {
-                        reportTestFailure(
-                            'Got SoundInfo.sampleRate ' + actualSampleRate.toString() 
-                            + ' expected ' + expectedSampleRate.toString())
-                    }
+                    // Dummy import
+                    Func(globalCode.fs!.i_readSoundFile!, [
+                        Var(globalCode.fs!.OperationId!, 'id'),
+                        Var(globalCode.fs!.Url!, 'url'),
+                        Var(globalCode.msg!.Message!, 'info'),
+                    ], 'void')`
+                        calls.push('readSoundFile')
+                        id_received.push(id)
+                        url_received.push(url)
+                        info_received.push(info)
+                    `,
 
-                    const actualBitDepth = ${globalCode.msg!.readFloatToken!}(actual, 2)
-                    const expectedBitDepth = ${globalCode.msg!.readFloatToken!}(expected, 2)
-                    if (actualBitDepth !== expectedBitDepth) {
-                        reportTestFailure(
-                            'Got SoundInfo.bitDepth ' + actualBitDepth.toString() 
-                            + ' expected ' + expectedBitDepth.toString())
-                    }
+                    Func(globalCode.fs!.i_openSoundReadStream!, [
+                        Var(globalCode.fs!.OperationId!, 'id'),
+                        Var(globalCode.fs!.Url!, 'url'),
+                        Var(globalCode.msg!.Message!, 'info'),
+                    ], 'void')`
+                        calls.push('openSoundReadStream')
+                        id_received.push(id)
+                        url_received.push(url)
+                        info_received.push(info)
+                    `,
 
-                    const actualEncodingFormat = ${globalCode.msg!.readStringToken!}(actual, 3)
-                    const expectedEncodingFormat = ${globalCode.msg!.readStringToken!}(expected, 3)
-                    if (actualEncodingFormat !== expectedEncodingFormat) {
-                        reportTestFailure(
-                            'Got SoundInfo.encodingFormat ' + actualEncodingFormat.toString() 
-                            + ' expected ' + expectedEncodingFormat.toString())
-                    }
+                    Func(globalCode.fs!.i_openSoundWriteStream!, [
+                        Var(globalCode.fs!.OperationId!, 'id'),
+                        Var(globalCode.fs!.Url!, 'url'),
+                        Var(globalCode.msg!.Message!, 'info'),
+                    ], 'void')`
+                        calls.push('openSoundWriteStream')
+                        id_received.push(id)
+                        url_received.push(url)
+                        info_received.push(info)
+                    `,
 
-                    const actualEndianness = ${globalCode.msg!.readStringToken!}(actual, 4)
-                    const expectedEndianness = ${globalCode.msg!.readStringToken!}(expected, 4)
-                    if (actualEndianness !== expectedEndianness) {
-                        reportTestFailure(
-                            'Got SoundInfo.endianness ' + actualEndianness.toString() 
-                            + ' expected ' + expectedEndianness.toString())
-                    }
+                    Func(globalCode.fs!.i_writeSoundFile!, [
+                        Var(globalCode.fs!.OperationId!, 'id'),
+                        Var('FloatArray[]', 'sound'),
+                        Var(globalCode.fs!.Url!, 'url'),
+                        Var(globalCode.msg!.Message!, 'info'),
+                    ], 'void')`
+                        calls.push('writeSoundFile')
+                        id_received.push(id)
+                        sound_received.push(sound)
+                        url_received.push(url)
+                        info_received.push(info)
+                    `,
 
-                    const actualExtraOptions = ${globalCode.msg!.readStringToken!}(actual, 5)
-                    const expectedExtraOptions = ${globalCode.msg!.readStringToken!}(expected, 5)
-                    if (actualExtraOptions !== expectedExtraOptions) {
-                        reportTestFailure(
-                            'Got SoundInfo.extraOptions ' + actualExtraOptions.toString() 
-                            + ' expected ' + expectedExtraOptions.toString())
-                    }
-                `,
+                    Func(globalCode.fs!.i_sendSoundStreamData!, [
+                        Var(globalCode.fs!.OperationId!, 'id'), 
+                        Var('FloatArray[]', 'sound')
+                    ], 'void')`
+                        calls.push('sendSoundStreamData')
+                        id_received.push(id)
+                        sound_received.push(sound)
+                    `,
 
-            ]),
+                    Func(globalCode.fs!.i_closeSoundStream!, [
+                        Var(globalCode.fs!.OperationId!, 'id'),
+                        Var(globalCode.fs!.OperationStatus!, 'status'),
+                    ], 'void')`
+                        calls.push('closeSoundStream')
+                        id_received.push(id)
+                        status_received = status
+                    `,
+
+                    Func('someSoundCallback', [
+                        Var(globalCode.fs!.OperationId!, 'id'),
+                        Var(globalCode.fs!.OperationStatus!, 'status'),
+                        Var('FloatArray[]', 'sound'),
+                    ], 'void')`
+                        callbackOperationId = id
+                        callbackOperationStatus = status
+                        callbackOperationSound = sound
+                    `,
+
+                    Func('someCallback', [
+                        Var(globalCode.fs!.OperationId!, 'id'),
+                        Var(globalCode.fs!.OperationStatus!, 'status'),
+                    ], 'void')`
+                        callbackOperationId = id
+                        callbackOperationStatus = status
+                    `,
+
+                    Func('assert_operationCleaned', [
+                        Var(globalCode.fs!.OperationId!, 'id')
+                    ], 'void')`
+                        if(
+                            ${globalCode.fs!._OPERATIONS_IDS!}.has(id)
+                            || ${globalCode.fs!._OPERATIONS_CALLBACKS!}.has(id)
+                            || ${globalCode.fs!._OPERATIONS_SOUND_CALLBACKS!}.has(id)
+                            || ${globalCode.fs!._SOUND_STREAM_BUFFERS!}.has(id)
+                        ) {
+                            reportTestFailure('operation ' + id.toString() + ' was not cleaned properly')
+                        }
+                    `,
+
+                    Func('assert_soundInfoMessagesEqual', [
+                        Var(globalCode.msg!.Message!, 'actual'), 
+                        Var(globalCode.msg!.Message!, 'expected')
+                    ], 'void')`
+                        if (!${globalCode.msg!.isMatching!}(actual, [
+                            ${globalCode.msg!.FLOAT_TOKEN!}, 
+                            ${globalCode.msg!.FLOAT_TOKEN!}, 
+                            ${globalCode.msg!.FLOAT_TOKEN!}, 
+                            ${globalCode.msg!.STRING_TOKEN!}, 
+                            ${globalCode.msg!.STRING_TOKEN!}, 
+                            ${globalCode.msg!.STRING_TOKEN!}
+                        ])) {
+                            reportTestFailure('Unexpected sound info message shape for <actual> arg')
+                        }
+                        
+                        if (!${globalCode.msg!.isMatching!}(expected, [
+                            ${globalCode.msg!.FLOAT_TOKEN!}, 
+                            ${globalCode.msg!.FLOAT_TOKEN!}, 
+                            ${globalCode.msg!.FLOAT_TOKEN!}, 
+                            ${globalCode.msg!.STRING_TOKEN!}, 
+                            ${globalCode.msg!.STRING_TOKEN!}, 
+                            ${globalCode.msg!.STRING_TOKEN!}
+                        ])) {
+                            reportTestFailure('Unexpected sound info message shape for <expected> arg')
+                        }
+
+                        const actualChannelCount = ${globalCode.msg!.readFloatToken!}(actual, 0)
+                        const expectedChannelCount = ${globalCode.msg!.readFloatToken!}(expected, 0)
+                        if (actualChannelCount !== expectedChannelCount) {
+                            reportTestFailure(
+                                'Got SoundInfo.channelCount ' + actualChannelCount.toString() 
+                                + ' expected ' + expectedChannelCount.toString())
+                        }
+
+                        const actualSampleRate = ${globalCode.msg!.readFloatToken!}(actual, 1)
+                        const expectedSampleRate = ${globalCode.msg!.readFloatToken!}(expected, 1)
+                        if (actualSampleRate !== expectedSampleRate) {
+                            reportTestFailure(
+                                'Got SoundInfo.sampleRate ' + actualSampleRate.toString() 
+                                + ' expected ' + expectedSampleRate.toString())
+                        }
+
+                        const actualBitDepth = ${globalCode.msg!.readFloatToken!}(actual, 2)
+                        const expectedBitDepth = ${globalCode.msg!.readFloatToken!}(expected, 2)
+                        if (actualBitDepth !== expectedBitDepth) {
+                            reportTestFailure(
+                                'Got SoundInfo.bitDepth ' + actualBitDepth.toString() 
+                                + ' expected ' + expectedBitDepth.toString())
+                        }
+
+                        const actualEncodingFormat = ${globalCode.msg!.readStringToken!}(actual, 3)
+                        const expectedEncodingFormat = ${globalCode.msg!.readStringToken!}(expected, 3)
+                        if (actualEncodingFormat !== expectedEncodingFormat) {
+                            reportTestFailure(
+                                'Got SoundInfo.encodingFormat ' + actualEncodingFormat.toString() 
+                                + ' expected ' + expectedEncodingFormat.toString())
+                        }
+
+                        const actualEndianness = ${globalCode.msg!.readStringToken!}(actual, 4)
+                        const expectedEndianness = ${globalCode.msg!.readStringToken!}(expected, 4)
+                        if (actualEndianness !== expectedEndianness) {
+                            reportTestFailure(
+                                'Got SoundInfo.endianness ' + actualEndianness.toString() 
+                                + ' expected ' + expectedEndianness.toString())
+                        }
+
+                        const actualExtraOptions = ${globalCode.msg!.readStringToken!}(actual, 5)
+                        const expectedExtraOptions = ${globalCode.msg!.readStringToken!}(expected, 5)
+                        if (actualExtraOptions !== expectedExtraOptions) {
+                            reportTestFailure(
+                                'Got SoundInfo.extraOptions ' + actualExtraOptions.toString() 
+                                + ' expected ' + expectedExtraOptions.toString())
+                        }
+                    `,
+                ])
+            },
         ]
     )
 })

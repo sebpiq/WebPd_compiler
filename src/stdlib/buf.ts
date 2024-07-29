@@ -20,43 +20,48 @@
 
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 import {
-    GlobalCodeGenerator,
-    GlobalCodeGeneratorWithSettings,
+    GlobalsDefinitions,
 } from '../compile/types'
 
-export const bufCore: GlobalCodeGenerator = ({ globalCode }) => Sequence([
-    /**
-     * Ring buffer 
-     */
-    Class(globalCode.buf!.SoundBuffer!, [
-        Var('FloatArray', 'data'),
-        Var('Int', 'length'),
-        Var('Int', 'writeCursor'),
-        Var('Int', 'pullAvailableLength'),
-    ]),
+const NAMESPACE = 'buf'
 
-    /** Erases all the content from the buffer */
-    Func(globalCode.buf!.clear!, [
-        Var(globalCode.buf!.SoundBuffer!, 'buffer')
-    ], 'void')`
-        buffer.data.fill(0)
-    `,
+export const bufCore: GlobalsDefinitions = {
+    namespace: NAMESPACE,
+    code: (buf) => Sequence([
+        /**
+         * Ring buffer 
+         */
+        Class(buf.SoundBuffer!, [
+            Var('FloatArray', 'data'),
+            Var('Int', 'length'),
+            Var('Int', 'writeCursor'),
+            Var('Int', 'pullAvailableLength'),
+        ]),
 
-    /** Erases all the content from the buffer */
-    Func(globalCode.buf!.create!, [
-        Var('Int', 'length')
-    ], globalCode.buf!.SoundBuffer!)`
-        return {
-            data: createFloatArray(length),
-            length: length,
-            writeCursor: 0,
-            pullAvailableLength: 0,
-        }
-    `
-])
+        /** Erases all the content from the buffer */
+        Func(buf.clear!, [
+            Var(buf.SoundBuffer!, 'buffer')
+        ], 'void')`
+            buffer.data.fill(0)
+        `,
 
-export const bufPushPull: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ globalCode }) => Sequence([
+        /** Erases all the content from the buffer */
+        Func(buf.create!, [
+            Var('Int', 'length')
+        ], buf.SoundBuffer!)`
+            return {
+                data: createFloatArray(length),
+                length: length,
+                writeCursor: 0,
+                pullAvailableLength: 0,
+            }
+        `
+    ])
+}
+
+export const bufPushPull: GlobalsDefinitions = {
+    namespace: NAMESPACE,
+    code: (buf) => Sequence([
         /**
          * Pushes a block to the buffer, throwing an error if the buffer is full. 
          * If the block is written successfully, {@link buf.SoundBuffer#writeCursor} 
@@ -64,8 +69,8 @@ export const bufPushPull: GlobalCodeGeneratorWithSettings = {
          * 
          * @todo : Optimize by allowing to read/write directly from host
          */
-        Func(globalCode.buf!.pushBlock!, [
-            Var(globalCode.buf!.SoundBuffer!, 'buffer'), 
+        Func(buf.pushBlock!, [
+            Var(buf.SoundBuffer!, 'buffer'), 
             Var('FloatArray', 'block')
         ], 'Int')`
             if (buffer.pullAvailableLength + block.length > buffer.length) {
@@ -97,8 +102,8 @@ export const bufPushPull: GlobalCodeGeneratorWithSettings = {
          * This is a destructive operation, and the sample will be 
          * unavailable for subsequent readers with the same operation.
          */
-        Func(globalCode.buf!.pullSample!, [
-            Var(globalCode.buf!.SoundBuffer!, 'buffer')
+        Func(buf.pullSample!, [
+            Var(buf.SoundBuffer!, 'buffer')
         ], 'Float')`
             if (buffer.pullAvailableLength <= 0) {
                 return 0
@@ -111,13 +116,14 @@ export const bufPushPull: GlobalCodeGeneratorWithSettings = {
     dependencies: [bufCore],
 }
 
-export const bufWriteRead: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ globalCode }) => Sequence([
+export const bufWriteRead: GlobalsDefinitions = {
+    namespace: NAMESPACE,
+    code: (buf) => Sequence([
         /**
          * Writes a sample at \`@link writeCursor\` and increments \`writeCursor\` by one.
          */
-        Func(globalCode.buf!.writeSample!, [
-            Var(globalCode.buf!.SoundBuffer!, 'buffer'), 
+        Func(buf.writeSample!, [
+            Var(buf.SoundBuffer!, 'buffer'), 
             Var('Float', 'value')
         ], 'void')`
             buffer.data[buffer.writeCursor] = value
@@ -130,8 +136,8 @@ export const bufWriteRead: GlobalCodeGeneratorWithSettings = {
          *  and {@link buf.SoundBuffer#length} - 1. A value outside these bounds will not cause 
          *  an error, but might cause unexpected results.
          */
-        Func(globalCode.buf!.readSample!, [
-            Var(globalCode.buf!.SoundBuffer!, 'buffer'), 
+        Func(buf.readSample!, [
+            Var(buf.SoundBuffer!, 'buffer'), 
             Var('Int', 'offset')
         ], 'Float')`
             // R = (buffer.writeCursor - 1 - offset) -> ideal read position

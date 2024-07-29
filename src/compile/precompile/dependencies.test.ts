@@ -19,11 +19,7 @@
  */
 
 import assert from 'assert'
-import {
-    GlobalCodeDefinition,
-    GlobalCodeGenerator,
-    GlobalCodeGeneratorWithSettings,
-} from '../types'
+import { GlobalsDefinitions } from '../types'
 import precompileDependencies, {
     collectAndDedupeExports,
     collectAndDedupeImports,
@@ -42,23 +38,28 @@ describe('precompile.dependencies', () => {
     describe('default', () => {
         it('should collect, precompile and deduplicate nested dependencies code and add minimal dependencies', () => {
             // ARRANGE
-            const codeDefinition1 = {
-                codeGenerator: () => ast`"bli"`,
-                dependencies: [() => ast`"bla"`, () => ast`"ble"`],
-            }
-
-            const codeDefinition2 = {
-                codeGenerator: () => ast`"blu"`,
+            const globalsDefinitions1: GlobalsDefinitions = {
+                namespace: 'module1',
+                code: () => ast`"bli"`,
                 dependencies: [
-                    () => ast`"bly"`,
-                    () => ast`"blo"`,
-                    codeDefinition1,
+                    { namespace: '_', code: () => ast`"bla"` },
+                    { namespace: '_', code: () => ast`"ble"` },
                 ],
             }
 
-            const dependencies: Array<GlobalCodeDefinition> = [
-                () => ast`"bla"`,
-                codeDefinition2,
+            const globalsDefinitions2: GlobalsDefinitions = {
+                namespace: 'module2',
+                code: () => ast`"blu"`,
+                dependencies: [
+                    { namespace: '_', code: () => ast`"bly"` },
+                    { namespace: '_', code: () => ast`"blo"` },
+                    globalsDefinitions1,
+                ],
+            }
+
+            const dependencies: Array<GlobalsDefinitions> = [
+                { namespace: '_', code: () => ast`"bla"` },
+                globalsDefinitions2,
             ]
 
             const graph = makeGraph({
@@ -103,21 +104,23 @@ describe('precompile.dependencies', () => {
 
         it('should collect, precompile and deduplicate imports and exports', () => {
             // ARRANGE
-            const codeDefinition1 = {
-                codeGenerator: () => ast`"bli"`,
-                dependencies: [] as Array<GlobalCodeDefinition>,
+            const globalsDefinitions1: GlobalsDefinitions = {
+                namespace: 'module1',
+                code: () => ast`"bli"`,
+                dependencies: [] as Array<GlobalsDefinitions>,
                 imports: () => [Func('bla')``, Func('bli')``],
                 exports: () => ['ble', 'blo'],
             }
-            const codeDefinition2 = {
-                codeGenerator: () => ast`"blu"`,
-                dependencies: [codeDefinition1],
+            const globalsDefinitions2: GlobalsDefinitions = {
+                namespace: 'module2',
+                code: () => ast`"blu"`,
+                dependencies: [globalsDefinitions1],
                 imports: () => [Func('bli')``],
                 exports: () => ['blo'],
             }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                () => ast`"bla"`,
-                codeDefinition2,
+            const dependencies: Array<GlobalsDefinitions> = [
+                { namespace: '_', code: () => ast`"bla"` },
+                globalsDefinitions2,
             ]
 
             const graph = makeGraph({
@@ -155,13 +158,19 @@ describe('precompile.dependencies', () => {
 
         it('should add new variables to the namespace', () => {
             // ARRANGE
-            const dependencies: Array<GlobalCodeDefinition> = [
-                ({ globalCode }) =>
-                    Sequence([
-                        Func(globalCode.module1!.func1!)``,
-                        Class(globalCode.module1!.Class1!, []),
-                        Func(globalCode.module2!.func2!)``,
-                    ]),
+            const dependencies: Array<GlobalsDefinitions> = [
+                {
+                    namespace: 'module1',
+                    code: (module1) =>
+                        Sequence([
+                            Func(module1.func1!)``,
+                            Class(module1.Class1!, []),
+                        ]),
+                },
+                {
+                    namespace: 'module2',
+                    code: (module2) => Sequence([Func(module2.func2!)``]),
+                },
             ]
 
             const graph = makeGraph({
@@ -211,19 +220,30 @@ describe('precompile.dependencies', () => {
             const bla1 = ast`"bla"`
             const bla2 = ast`"bla"`
 
-            const bloGenerator: GlobalCodeGenerator = () => blo
-            const blaGenerator1: GlobalCodeGenerator = () => bla1
-            const blaGenerator2: GlobalCodeGenerator = () => bla2
+            const bloDefinitions: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => blo,
+            }
+            const blaDefinitions1: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => bla1,
+            }
+            const blaDefinitions2: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => bla2,
+            }
             const astSequence = instantiateAndDedupeDependencies(
                 [
-                    bloGenerator,
-                    blaGenerator1,
+                    bloDefinitions,
+                    blaDefinitions1,
                     {
-                        codeGenerator: () => bli,
-                        dependencies: [bloGenerator],
+                        namespace: 'module1',
+                        code: () => bli,
+                        dependencies: [bloDefinitions],
                     },
-                    blaGenerator2,
+                    blaDefinitions2,
                 ],
+                precompilation.variableNamesAssigner,
                 makeGlobalCodePrecompilationContext(precompilation)
             )
             assert.deepStrictEqual(astSequence, Sequence([blo, bla1, bli]))
@@ -232,65 +252,91 @@ describe('precompile.dependencies', () => {
 
     describe('flattenDependencies', () => {
         it('should render code and dependencies recursively, dependencies should come first', () => {
-            const codeGenerator1 = () => ast`"bla"`
-            const codeGenerator2 = () => ast`"bli"`
-            const codeGenerator3 = () => ast`"blo"`
-            const codeGenerator4 = () => ast`"blu"`
-            const codeGenerator5 = () => ast`"bly"`
-            const codeGenerator6 = () => ast`"ble"`
+            const globalsDefinitions1: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => ast`"bla"`,
+            }
+            const globalsDefinitions2: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => ast`"bli"`,
+            }
+            const globalsDefinitions3: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => ast`"blo"`,
+            }
+            const globalsDefinitions4: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => ast`"bly"`,
+            }
+            const globalsDefinitions5: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => ast`"ble"`,
+                dependencies: [globalsDefinitions2],
+            }
 
-            const codeDefinition1 = {
-                codeGenerator: codeGenerator2,
-                dependencies: [codeGenerator1, codeGenerator6],
+            const globalsDefinitions6: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => ast`"blb"`,
+                dependencies: [globalsDefinitions1, globalsDefinitions5],
             }
-            const codeDefinition2 = {
-                codeGenerator: codeGenerator4,
-                dependencies: [codeGenerator5, codeGenerator3, codeDefinition1],
+            const globalsDefinitions7: GlobalsDefinitions = {
+                namespace: '_',
+                code: () => ast`"blc"`,
+                dependencies: [
+                    globalsDefinitions4,
+                    globalsDefinitions3,
+                    globalsDefinitions1,
+                ],
             }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                codeGenerator1,
-                codeDefinition2,
+            const dependencies: Array<GlobalsDefinitions> = [
+                globalsDefinitions6,
+                globalsDefinitions7,
             ]
             const generated = flattenDependencies(dependencies)
 
-            assert.strictEqual(generated.length, 7)
-            assert.strictEqual(generated[0], codeGenerator1)
-            assert.strictEqual(generated[1], codeGenerator5)
-            assert.strictEqual(generated[2], codeGenerator3)
-            assert.strictEqual(generated[3], codeGenerator1)
-            assert.strictEqual(generated[4], codeGenerator6)
-            assert.strictEqual(generated[5], codeDefinition1)
-            assert.strictEqual(generated[6], codeDefinition2)
+            assert.strictEqual(generated.length, 8)
+            assert.deepStrictEqual(generated[0], globalsDefinitions1)
+            assert.deepStrictEqual(generated[1], globalsDefinitions2)
+            assert.deepStrictEqual(generated[2], globalsDefinitions5)
+            assert.deepStrictEqual(generated[3], globalsDefinitions6)
+            assert.deepStrictEqual(generated[4], globalsDefinitions4)
+            assert.deepStrictEqual(generated[5], globalsDefinitions3)
+            assert.deepStrictEqual(generated[6], globalsDefinitions1)
+            assert.deepStrictEqual(generated[7], globalsDefinitions7)
         })
     })
 
     describe('collectAndDedupeExports', () => {
         it('should collect exports and remove duplicates', () => {
             const precompilation = makePrecompilation({})
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
+            const globalsDefinitions1: GlobalsDefinitions = {
+                namespace: 'module1',
+                code: () => Sequence([]),
                 exports: () => ['ex1', 'ex3'],
             }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
+            const globalsDefinitions2: GlobalsDefinitions = {
+                namespace: 'module2',
+                code: () => Sequence([]),
                 // no exports here shouldnt break
                 dependencies: [],
             }
-            const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
+            const globalsDefinitions3: GlobalsDefinitions = {
+                namespace: 'module3',
+                code: () => Sequence([]),
                 exports: () => ['ex4', 'ex3'],
             }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                codeDefinition1,
-                () => Sequence([]),
-                codeDefinition2,
-                codeDefinition3,
-                () => Sequence([]),
+            const dependencies: Array<GlobalsDefinitions> = [
+                globalsDefinitions1,
+                { namespace: '_', code: () => Sequence([]) },
+                globalsDefinitions2,
+                globalsDefinitions3,
+                { namespace: '_', code: () => Sequence([]) },
             ]
 
             assert.deepStrictEqual(
                 collectAndDedupeExports(
                     dependencies,
+                    precompilation.variableNamesAssigner,
                     makeGlobalCodePrecompilationContext(precompilation)
                 ),
                 ['ex1', 'ex3', 'ex4']
@@ -300,30 +346,35 @@ describe('precompile.dependencies', () => {
 
     describe('collectAndDedupeImports', () => {
         it('should collect imports and remove duplicates', () => {
-            const codeDefinition1: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
+            const precompilation = makePrecompilation({})
+            const globalsDefinitions1: GlobalsDefinitions = {
+                namespace: 'module1',
+                code: () => Sequence([]),
                 imports: () => [Func('ex1')``, Func('ex3')``],
             }
-            const codeDefinition2: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
+            const globalsDefinitions2: GlobalsDefinitions = {
+                namespace: 'module2',
+                code: () => Sequence([]),
                 // no imports here shouldnt break
             }
-            const codeDefinition3: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: () => Sequence([]),
+            const globalsDefinitions3: GlobalsDefinitions = {
+                namespace: 'module3',
+                code: () => Sequence([]),
                 imports: () => [Func('ex4')``],
             }
-            const dependencies: Array<GlobalCodeDefinition> = [
-                () => Sequence([]),
-                codeDefinition1,
-                codeDefinition2,
-                () => Sequence([]),
-                codeDefinition3,
+            const dependencies: Array<GlobalsDefinitions> = [
+                { namespace: '_', code: () => Sequence([]) },
+                globalsDefinitions1,
+                globalsDefinitions2,
+                { namespace: '_', code: () => Sequence([]) },
+                globalsDefinitions3,
             ]
 
             assert.deepStrictEqual(
                 collectAndDedupeImports(
                     dependencies,
-                    makeGlobalCodePrecompilationContext(makePrecompilation({}))
+                    precompilation.variableNamesAssigner,
+                    makeGlobalCodePrecompilationContext(precompilation)
                 ),
                 [Func('ex1')``, Func('ex3')``, Func('ex4')``]
             )

@@ -17,17 +17,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { isGlobalDefinitionWithSettings } from '../compile-helpers'
-import { GlobalCodeDefinition, GlobalCodePrecompilationContext } from '../types'
+import { GlobalsDefinitions, GlobalCodePrecompilationContext } from '../types'
 import { AstElement, AstFunc, AstSequence, VariableName } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { commonsArrays, commonsWaitFrame, core, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
-import { Precompilation, PrecompiledCode } from './types'
+import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
+import { ReadOnlyIndex } from '../proxies'
 
 export default (
     precompilation: Precompilation,
-    minimalDependencies: Array<GlobalCodeDefinition>
+    minimalDependencies: Array<GlobalsDefinitions>
 ) => {
     const { settings, variableNamesAssigner, precompiledCodeAssigner } =
         precompilation
@@ -37,38 +37,46 @@ export default (
     ])
 
     const context: GlobalCodePrecompilationContext = {
-        globs: variableNamesAssigner.globs,
-        globalCode: variableNamesAssigner.globalCode,
+        globs: ReadOnlyIndex(precompilation.variableNamesIndex.globs),
+        globalCode: ReadOnlyIndex(precompilation.variableNamesIndex.globalCode),
         settings,
     }
 
     // Flatten and de-duplicate all the module's dependencies
     precompiledCodeAssigner.dependencies.ast = instantiateAndDedupeDependencies(
         dependencies,
+        variableNamesAssigner,
         context
     )
 
     // Collect and attach imports / exports info
     precompiledCodeAssigner.dependencies.exports = collectAndDedupeExports(
         dependencies,
+        variableNamesAssigner,
         context
     )
     precompiledCodeAssigner.dependencies.imports = collectAndDedupeImports(
         dependencies,
+        variableNamesAssigner,
         context
     )
 }
 
 export const instantiateAndDedupeDependencies = (
-    dependencies: Array<GlobalCodeDefinition>,
+    dependencies: Array<GlobalsDefinitions>,
+    variableNamesAssigner: VariableNamesIndex,
     context: GlobalCodePrecompilationContext
 ): AstSequence => {
     return Sequence(
         dependencies
-            .map((codeDefinition) =>
-                isGlobalDefinitionWithSettings(codeDefinition)
-                    ? codeDefinition.codeGenerator(context)
-                    : codeDefinition(context)
+            .map((globalsDefinitions) =>
+                globalsDefinitions.code(
+                    _getAssignerNamespace(
+                        variableNamesAssigner,
+                        globalsDefinitions
+                    ),
+                    context
+                )
             )
             .reduce<Array<AstElement>>(
                 (astElements, astElement) =>
@@ -82,7 +90,7 @@ export const instantiateAndDedupeDependencies = (
     )
 }
 
-export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
+export const engineMinimalDependencies = (): Array<GlobalsDefinitions> => [
     core,
     commonsArrays,
     commonsWaitFrame,
@@ -90,76 +98,83 @@ export const engineMinimalDependencies = (): Array<GlobalCodeDefinition> => [
 ]
 
 export const collectAndDedupeExports = (
-    dependencies: Array<GlobalCodeDefinition>,
+    dependencies: Array<GlobalsDefinitions>,
+    variableNamesAssigner: VariableNamesIndex,
     context: GlobalCodePrecompilationContext
 ): PrecompiledCode['dependencies']['exports'] =>
-    dependencies
-        .filter(isGlobalDefinitionWithSettings)
-        .reduce<Array<VariableName>>(
-            (exports, codeDefinition) =>
-                codeDefinition.exports
-                    ? [
-                          ...exports,
-                          ...codeDefinition
-                              .exports(context)
-                              .filter((xprt) =>
-                                  exports.every(
-                                      (otherExport) => xprt !== otherExport
-                                  )
+    dependencies.reduce<Array<VariableName>>(
+        (exports, globalsDefinitions) =>
+            globalsDefinitions.exports
+                ? [
+                      ...exports,
+                      ...globalsDefinitions
+                          .exports(
+                              _getAssignerNamespace(
+                                  variableNamesAssigner,
+                                  globalsDefinitions
                               ),
-                      ]
-                    : exports,
-            []
-        )
+                              context
+                          )
+                          .filter((xprt) =>
+                              exports.every(
+                                  (otherExport) => xprt !== otherExport
+                              )
+                          ),
+                  ]
+                : exports,
+        []
+    )
 
 export const collectAndDedupeImports = (
-    dependencies: Array<GlobalCodeDefinition>,
+    dependencies: Array<GlobalsDefinitions>,
+    variableNamesAssigner: VariableNamesIndex,
     context: GlobalCodePrecompilationContext
 ): PrecompiledCode['dependencies']['imports'] =>
-    dependencies
-        .filter(isGlobalDefinitionWithSettings)
-        .reduce<Array<AstFunc>>(
-            (imports, codeDefinition) =>
-                codeDefinition.imports
-                    ? [
-                          ...imports,
-                          ...codeDefinition
-                              .imports(context)
-                              .filter((imprt) =>
-                                  imports.every(
-                                      (otherImport) =>
-                                          imprt.name !== otherImport.name
-                                  )
+    dependencies.reduce<Array<AstFunc>>(
+        (imports, globalsDefinitions) =>
+            globalsDefinitions.imports
+                ? [
+                      ...imports,
+                      ...globalsDefinitions
+                          .imports(
+                              _getAssignerNamespace(
+                                  variableNamesAssigner,
+                                  globalsDefinitions
                               ),
-                      ]
-                    : imports,
-            []
-        )
+                              context
+                          )
+                          .filter((imprt) =>
+                              imports.every(
+                                  (otherImport) =>
+                                      imprt.name !== otherImport.name
+                              )
+                          ),
+                  ]
+                : imports,
+        []
+    )
 
 export const flattenDependencies = (
-    dependencies: Array<GlobalCodeDefinition>
-): Array<GlobalCodeDefinition> =>
-    dependencies.flatMap<GlobalCodeDefinition>((codeDefinition) => {
-        if (
-            isGlobalDefinitionWithSettings(codeDefinition) &&
-            codeDefinition.dependencies
-        ) {
+    dependencies: Array<GlobalsDefinitions>
+): Array<GlobalsDefinitions> =>
+    dependencies.flatMap<GlobalsDefinitions>((globalsDefinitions) => {
+        if (globalsDefinitions.dependencies) {
             return [
-                ...flattenDependencies(codeDefinition.dependencies),
-                codeDefinition,
+                ...flattenDependencies(globalsDefinitions.dependencies),
+                globalsDefinitions,
             ]
         } else {
-            return [codeDefinition]
+            return [globalsDefinitions]
         }
     })
 
 const _collectDependenciesFromTraversal = ({
     graph,
     precompiledCodeAssigner,
-}: Precompilation): Array<GlobalCodeDefinition> => {
+}: Precompilation): Array<GlobalsDefinitions> => {
     return traversers
         .toNodes(graph, precompiledCodeAssigner.graph.fullTraversal)
-        .reduce<Array<GlobalCodeDefinition>>((definitions, node) => {
+        .reduce<Array<GlobalsDefinitions>>((definitions, node) => {
             const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
             const precompiledNodeImplementation =
                 precompiledCodeAssigner.nodeImplementations[
@@ -177,3 +192,8 @@ const _deepEqual = (ast1: AstElement, ast2: AstElement) =>
     // This works but this flawed cause {a: 1, b: 2} and {b: 2, a: 1}
     // would compare to false.
     JSON.stringify(ast1) === JSON.stringify(ast2)
+
+const _getAssignerNamespace = (
+    variableNamesAssigner: VariableNamesIndex,
+    globalsDefinitions: GlobalsDefinitions
+) => variableNamesAssigner.globalCode[globalsDefinitions.namespace]!

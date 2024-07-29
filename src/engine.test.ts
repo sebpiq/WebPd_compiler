@@ -25,8 +25,7 @@ import {
     AudioSettings,
     CompilerTarget,
     NodeImplementations,
-    GlobalCodeDefinition,
-    GlobalCodeGeneratorWithSettings,
+    GlobalsDefinitions,
     UserCompilationSettings,
     IoMessageSpecs,
 } from './compile/types'
@@ -64,7 +63,7 @@ describe('Engine', () => {
     interface EngineTestSettings {
         graph?: DspGraph.Graph
         nodeImplementations?: NodeImplementations
-        injectedDependencies?: Array<GlobalCodeDefinition>
+        injectedDependencies?: Array<GlobalsDefinitions>
         settings?: UserCompilationSettings
     }
 
@@ -353,14 +352,17 @@ describe('Engine', () => {
                 'should get the array %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: GlobalCodeDefinition = ({ globalCode }) => ast`
-                        const array = createFloatArray(4)
-                        array[0] = 123
-                        array[1] = 456
-                        array[2] = 789
-                        array[3] = 234
-                        ${globalCode.commons!._ARRAYS!}.set('array1', array)
-                    `
+                    const testCode: GlobalsDefinitions = {
+                        namespace: '_',
+                        code: (_, { globalCode }) => ast`
+                            const array = createFloatArray(4)
+                            array[0] = 123
+                            array[1] = 456
+                            array[2] = 789
+                            array[3] = 234
+                            ${globalCode.commons!._ARRAYS!}.set('array1', array)
+                        `
+                    }
 
                     const engine = await initializeEngineTest(
                         target,
@@ -382,8 +384,9 @@ describe('Engine', () => {
             it.each(TEST_PARAMETERS)(
                 'should set the array %s',
                 async ({ target, bitDepth }) => {
-                    const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: ({ globalCode }) =>
+                    const testCode: GlobalsDefinitions = {
+                        namespace: 'tests',
+                        code: (_, { globalCode }) =>
                             Sequence([
                                 Func(
                                     'testReadArray1',
@@ -492,8 +495,9 @@ describe('Engine', () => {
 
     describe('fs', () => {
         describe('read sound file', () => {
-            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ globalCode }) =>
+            const sharedTestingCode: GlobalsDefinitions = {
+                namespace: 'tests',
+                code: (_, { globalCode }) =>
                     Sequence([
                         Var(globalCode.fs!.OperationId!, 'receivedId', '-1'),
                         Var(globalCode.fs!.OperationStatus!, 'receivedStatus', '-1'),
@@ -556,8 +560,9 @@ describe('Engine', () => {
                 'should register the operation success %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: () =>
+                    const testCode: GlobalsDefinitions = {
+                        namespace: 'tests',
+                        code: () =>
                             Sequence([
                                 Func('testReceivedSound', [], 'boolean')`
                                 return receivedSound[0][0] === -1
@@ -626,8 +631,9 @@ describe('Engine', () => {
         })
 
         describe('read sound stream', () => {
-            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ globalCode }) =>
+            const sharedTestingCode: GlobalsDefinitions = {
+                namespace: 'tests',
+                code: (_, { globalCode }) =>
                     Sequence([
                         Var(globalCode.fs!.OperationId!, 'receivedId', '-1'),
                         Var(globalCode.fs!.OperationStatus!, 'receivedStatus', '-1'),
@@ -701,8 +707,9 @@ describe('Engine', () => {
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
-                    const testCode: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: ({ globalCode }) =>
+                    const testCode: GlobalsDefinitions = {
+                        namespace: 'tests',
+                        code: (_, { globalCode }) =>
                             Sequence([
                                 Func(
                                     'testReceivedSound',
@@ -795,8 +802,9 @@ describe('Engine', () => {
         })
 
         describe('write sound stream', () => {
-            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ globalCode }) =>
+            const sharedTestingCode: GlobalsDefinitions = {
+                namespace: 'tests',
+                code: (_, { globalCode }) =>
                     Sequence([
                         Var(globalCode.fs!.OperationId!, 'receivedId', '-1'),
                         Var(globalCode.fs!.OperationStatus!, 'receivedStatus', '-1'),
@@ -967,8 +975,9 @@ describe('Engine', () => {
         })
 
         describe('write sound file', () => {
-            const sharedTestingCode: GlobalCodeGeneratorWithSettings = {
-                codeGenerator: ({ globalCode }) =>
+            const sharedTestingCode: GlobalsDefinitions = {
+                namespace: 'tests',
+                code: (_, { globalCode }) =>
                     Sequence([
                         Var(globalCode.fs!.OperationId!, 'receivedId', '-1'),
                         Var(globalCode.fs!.OperationStatus!, 'receivedStatus', '-1'),
@@ -1125,8 +1134,9 @@ describe('Engine', () => {
                     ['someNode2']: { portletIds: ['someOutlet1'] },
                 }
 
-                const testCode: GlobalCodeGeneratorWithSettings = {
-                    codeGenerator: ({ globalCode }) =>
+                const testCode: GlobalsDefinitions = {
+                    namespace: 'tests',
+                    code: (_, { globalCode }) =>
                         Sequence([
                             ConstVar(
                                 globalCode.msg!.Message!,
@@ -1247,8 +1257,9 @@ describe('Engine', () => {
                     },
                 }
 
-                const testCode: GlobalCodeGeneratorWithSettings = {
-                    codeGenerator: () =>
+                const testCode: GlobalsDefinitions = {
+                    namespace: 'tests',
+                    code: () =>
                         Sequence([
                             ConstVar(
                                 `Map<string, Array<${globalCode.msg!.Message!}>>`,

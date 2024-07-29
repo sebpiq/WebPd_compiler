@@ -27,7 +27,10 @@ import {
 } from './msg-bindings'
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
-import { RawModuleWithNameMapping, getFloatArrayType } from '../../run/run-helpers'
+import {
+    RawModuleWithNameMapping,
+    getFloatArrayType,
+} from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
 import { sked } from '../../stdlib/sked'
 import { msg } from '../../stdlib/msg'
@@ -35,9 +38,14 @@ import { EngineRawModule, MessagePointer } from './types'
 import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
 import macros from '../compile/macros'
-import { makeGlobalCodePrecompilationContext, makePrecompilation, makeSettings } from '../../compile/test-helpers'
+import {
+    makeGlobalCodePrecompilationContext,
+    makePrecompilation,
+    makeSettings,
+} from '../../compile/test-helpers'
 import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
+import { settings } from 'cluster'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule extends MsgWithDependenciesRawModule {
@@ -64,49 +72,61 @@ describe('msg-bindings', () => {
     }
 
     const getBaseTestCode = (bitDepth: AudioSettings['bitDepth']) => {
-        const precompilation = makePrecompilation({})
-        const globalCode = precompilation.variableNamesAssigner.globalCode
-        const context = {
-            settings: makeSettings({
+        const precompilation = makePrecompilation({
+            settings: {
                 target: 'assemblyscript',
                 audio: {
                     bitDepth,
                     channelCount: { in: 2, out: 2 },
                 },
-            }),
-            globs: precompilation.variableNamesAssigner.globs,
-            globalCode: precompilation.variableNamesAssigner.globalCode,
-        } as const
+            }
+        })
+        const globalCode = precompilation.variableNamesAssigner.globalCode
+        const context = makeGlobalCodePrecompilationContext(precompilation)
         return render(
             macros,
             Sequence([
-                core.codeGenerator(context),
-                sked(context),
-                msg.codeGenerator(context),
-                `export function testReadMessageData(message: ${globalCode.msg!.Message!}, index: Int): Int {
+                core.code(globalCode.core!, context),
+                sked.code(globalCode.sked!, context),
+                msg.code(globalCode.msg!, context),
+                `export function testReadMessageData(message: ${globalCode.msg!
+                    .Message!}, index: Int): Int {
                     return message.dataView.getInt32(index * sizeof<Int>())
                 }`,
-                core.exports!(context).map((name) => `export { ${name} }`),
-                msg.exports!(context).map((name) => `export { ${name} }`),
+                core.exports!(
+                    precompilation.variableNamesAssigner.globalCode.core!,
+                    context,
+                ).map((name) => `export { ${name} }`),
+                msg.exports!(
+                    precompilation.variableNamesAssigner.globalCode.msg!,
+                    context,
+                ).map((name) => `export { ${name} }`),
             ])
         )
     }
 
-    const compileRawModule = async (code: Code, bitDepth: AudioSettings['bitDepth']) => {
-        const rawModule = await ascCodeToRawModule<MsgTestRawModule>(code, bitDepth)
+    const compileRawModule = async (
+        code: Code,
+        bitDepth: AudioSettings['bitDepth']
+    ) => {
+        const rawModule = await ascCodeToRawModule<MsgTestRawModule>(
+            code,
+            bitDepth
+        )
         const precompilation = makePrecompilation({
             settings: {
-                target: 'assemblyscript'
-            }
+                target: 'assemblyscript',
+            },
         })
         // We instantiate the code to make sure all names are assigned
         instantiateAndDedupeDependencies(
             [msg],
+            precompilation.variableNamesAssigner,
             makeGlobalCodePrecompilationContext(precompilation)
         )
         return RawModuleWithNameMapping<EngineRawModule & MsgTestRawModule>(
             rawModule,
-            precompilation.variableNamesIndex.globalCode,
+            precompilation.variableNamesIndex.globalCode
         )
     }
 
@@ -116,10 +136,7 @@ describe('msg-bindings', () => {
             async ({ bitDepth }) => {
                 const code = getBaseTestCode(bitDepth)
                 const floatArrayType = getFloatArrayType(bitDepth)
-                const rawModule = await compileRawModule(
-                    code,
-                    bitDepth
-                )
+                const rawModule = await compileRawModule(code, bitDepth)
                 const messagePointer = lowerMessage(rawModule, ['bla', 2.3])
 
                 // Testing token count
@@ -196,7 +213,8 @@ describe('msg-bindings', () => {
             'should read message to a JavaScript array %s',
             async ({ bitDepth }) => {
                 const precompilation = makePrecompilation({})
-                const globalCode = precompilation.variableNamesAssigner.globalCode
+                const globalCode =
+                    precompilation.variableNamesAssigner.globalCode
 
                 // prettier-ignore
                 const code = getBaseTestCode(bitDepth) + `
@@ -211,16 +229,13 @@ describe('msg-bindings', () => {
                     }
                 `
 
-                const rawModule = await compileRawModule(
-                    code,
-                    bitDepth
-                )
+                const rawModule = await compileRawModule(code, bitDepth)
 
                 const messagePointer = rawModule.testCreateMessage()
-                assert.deepStrictEqual(
-                    liftMessage(rawModule, messagePointer),
-                    ['hello', 666]
-                )
+                assert.deepStrictEqual(liftMessage(rawModule, messagePointer), [
+                    'hello',
+                    666,
+                ])
             }
         )
     })

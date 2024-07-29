@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { NodeImplementation, GlobalCodeGeneratorWithSettings } from '../types'
+import { NodeImplementation, GlobalsDefinitions } from '../types'
 import {
     AstClass,
     AstElement,
@@ -60,8 +60,8 @@ export interface PrecompiledCode {
     }
 
     readonly dependencies: {
-        imports: ReturnType<NonNullable<GlobalCodeGeneratorWithSettings['imports']>>
-        exports: ReturnType<NonNullable<GlobalCodeGeneratorWithSettings['exports']>>
+        imports: ReturnType<NonNullable<GlobalsDefinitions['imports']>>
+        exports: ReturnType<NonNullable<GlobalsDefinitions['exports']>>
         ast: AstSequence
     }
 

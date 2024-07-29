@@ -68,22 +68,23 @@ export interface CompilationSettings {
     debug: boolean
 }
 
-/** Simplest form of generator for global code */
-export type GlobalCodeGenerator = (
-    context: GlobalCodePrecompilationContext
-) => AstElement
-
 /** Generator for global code that specifies also extra settings */
-export interface GlobalCodeGeneratorWithSettings {
-    codeGenerator: GlobalCodeGenerator
-    exports?: (context: GlobalCodePrecompilationContext) => Array<VariableName>
-    imports?: (context: GlobalCodePrecompilationContext) => Array<AstFunc>
-    dependencies?: Array<GlobalCodeDefinition>
+export type GlobalsDefinitions = {
+    code: (
+        ns: AssignerNamespace,
+        context: GlobalCodePrecompilationContext
+    ) => AstElement
+    namespace: string
+    exports?: (
+        ns: AssignerNamespace,
+        context: GlobalCodePrecompilationContext
+    ) => Array<VariableName>
+    imports?: (
+        ns: AssignerNamespace,
+        context: GlobalCodePrecompilationContext
+    ) => Array<AstFunc>
+    dependencies?: Array<GlobalsDefinitions>
 }
-
-export type GlobalCodeDefinition =
-    | GlobalCodeGenerator
-    | GlobalCodeGeneratorWithSettings
 
 /** Implementation of a graph node type */
 export interface NodeImplementation<NodeArgsType = {}> {
@@ -105,7 +106,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
     state?: (context: {
         globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
-        ns: NodeImplementationPrecompilationContext['ns']
+        ns: AssignerNamespace
         node: DspGraph.Node<NodeArgsType>
         settings: CompilationSettings
     }) => AstClass
@@ -113,14 +114,14 @@ export interface NodeImplementation<NodeArgsType = {}> {
     core?: (context: {
         globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
-        ns: NodeImplementationPrecompilationContext['ns']
+        ns: AssignerNamespace
         settings: CompilationSettings
     }) => AstElement
 
     initialization?: (context: {
         globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
-        ns: NodeImplementationPrecompilationContext['ns']
+        ns: AssignerNamespace
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
         node: DspGraph.Node<NodeArgsType>
@@ -137,7 +138,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
     dsp?: (context: {
         globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
-        ns: NodeImplementationPrecompilationContext['ns']
+        ns: AssignerNamespace
         state: NodePrecompilationContext['state']
         ins: NodePrecompilationContext['ins']
         outs: NodePrecompilationContext['outs']
@@ -157,7 +158,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
     messageReceivers?: (context: {
         globs: VariableNamesIndex['globs']
         globalCode: GlobalCodePrecompilationContext['globalCode']
-        ns: NodeImplementationPrecompilationContext['ns']
+        ns: AssignerNamespace
         state: NodePrecompilationContext['state']
         snds: NodePrecompilationContext['snds']
         node: DspGraph.Node<NodeArgsType>
@@ -167,7 +168,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
     }
 
     /** List of dependencies for this node type */
-    dependencies?: Array<GlobalCodeDefinition>
+    dependencies?: Array<GlobalsDefinitions>
 }
 
 interface NodePrecompilationContext {
@@ -175,10 +176,6 @@ interface NodePrecompilationContext {
     ins: { [portletId: DspGraph.PortletId]: VariableName }
     outs: { [portletId: DspGraph.PortletId]: VariableName }
     snds: { [portletId: DspGraph.PortletId]: VariableName }
-}
-
-interface NodeImplementationPrecompilationContext {
-    ns: { [name: string]: VariableName }
 }
 
 export interface GlobalCodePrecompilationContext {
@@ -190,3 +187,9 @@ export interface GlobalCodePrecompilationContext {
 export type NodeImplementations = {
     [nodeType: string]: NodeImplementation<any>
 }
+
+/**
+ * Namespace handled by a proxy that auto assigns a variable name
+ * when the key is accessed.
+ */
+type AssignerNamespace = { [name: string]: VariableName }

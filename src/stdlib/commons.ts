@@ -19,44 +19,47 @@
  */
 
 import { Sequence, ConstVar, Func, Var } from '../ast/declare'
-import { GlobalCodeGeneratorWithSettings } from '../compile/types'
+import { GlobalsDefinitions } from '../compile/types'
 import { sked } from './sked'
 
-export const commonsArrays: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ globalCode }) => Sequence([
+const NAMESPACE = 'commons'
+
+export const commonsArrays: GlobalsDefinitions = {
+    namespace: NAMESPACE,
+    code: (commons, { globalCode }) => Sequence([
         ConstVar(
             'Map<string, FloatArray>', 
-            globalCode.commons!._ARRAYS!, 
+            commons._ARRAYS!, 
             'new Map()'
         ),
         ConstVar(
             globalCode.sked!.Skeduler!, 
-            globalCode.commons!._ARRAYS_SKEDULER!, 
+            commons._ARRAYS_SKEDULER!, 
             `${globalCode.sked!.create!}(false)`
         ),
 
         /** Gets an named array, throwing an error if the array doesn't exist. */
-        Func(globalCode.commons!.getArray!, [
+        Func(commons.getArray!, [
             Var('string', 'arrayName')
         ], 'FloatArray')`
-            if (!${globalCode.commons!._ARRAYS!}.has(arrayName)) {
+            if (!${commons._ARRAYS!}.has(arrayName)) {
                 throw new Error('Unknown array ' + arrayName)
             }
-            return ${globalCode.commons!._ARRAYS!}.get(arrayName)
+            return ${commons._ARRAYS!}.get(arrayName)
         `,
 
-        Func(globalCode.commons!.hasArray!, [
+        Func(commons.hasArray!, [
             Var('string', 'arrayName')
         ], 'boolean')`
-            return ${globalCode.commons!._ARRAYS!}.has(arrayName)
+            return ${commons._ARRAYS!}.has(arrayName)
         `,
 
-        Func(globalCode.commons!.setArray!, [
+        Func(commons.setArray!, [
             Var('string', 'arrayName'), 
             Var('FloatArray', 'array'),
         ], 'void')`
-            ${globalCode.commons!._ARRAYS!}.set(arrayName, array)
-            ${globalCode.sked!.emit!}(${globalCode.commons!._ARRAYS_SKEDULER!}, arrayName)
+            ${commons._ARRAYS!}.set(arrayName, array)
+            ${globalCode.sked!.emit!}(${commons._ARRAYS_SKEDULER!}, arrayName)
         `,
 
         /** 
@@ -64,12 +67,12 @@ export const commonsArrays: GlobalCodeGeneratorWithSettings = {
          * the array is set again.
          * @returns An id that can be used to cancel the subscription.
          */
-        Func(globalCode.commons!.subscribeArrayChanges!, [
+        Func(commons.subscribeArrayChanges!, [
             Var('string', 'arrayName'), 
             Var(globalCode.sked!.Callback!, 'callback'),
         ], globalCode.sked!.Id!)`
-            const id = ${globalCode.sked!.subscribe!}(${globalCode.commons!._ARRAYS_SKEDULER!}, arrayName, callback)
-            if (${globalCode.commons!._ARRAYS!}.has(arrayName)) {
+            const id = ${globalCode.sked!.subscribe!}(${commons._ARRAYS_SKEDULER!}, arrayName, callback)
+            if (${commons._ARRAYS!}.has(arrayName)) {
                 callback(arrayName)
             }
             return id
@@ -78,52 +81,53 @@ export const commonsArrays: GlobalCodeGeneratorWithSettings = {
         /** 
          * @param id The id received when subscribing.
          */
-        Func(globalCode.commons!.cancelArrayChangesSubscription!, [
+        Func(commons.cancelArrayChangesSubscription!, [
             Var(globalCode.sked!.Id!, 'id')
         ], 'void')`
-            ${globalCode.sked!.cancel!}(${globalCode.commons!._ARRAYS_SKEDULER!}, id)
+            ${globalCode.sked!.cancel!}(${commons._ARRAYS_SKEDULER!}, id)
         `,
     ]),
 
-    exports: ({ globalCode }) => [
-        globalCode.commons!.getArray!,
-        globalCode.commons!.setArray!,
+    exports: (commons) => [
+        commons.getArray!,
+        commons.setArray!,
     ],
     dependencies: [sked],
 }
 
-export const commonsWaitFrame: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: ({ globalCode }) => Sequence([
+export const commonsWaitFrame: GlobalsDefinitions = {
+    namespace: NAMESPACE,
+    code: (commons, { globalCode }) => Sequence([
         ConstVar(
             globalCode.sked!.Skeduler!, 
-            globalCode.commons!._FRAME_SKEDULER!, 
+            commons._FRAME_SKEDULER!, 
             `${globalCode.sked!.create!}(false)`,
         ),
 
-        Func(globalCode.commons!._emitFrame!, [
+        Func(commons._emitFrame!, [
             Var('Int', 'frame')
         ], 'void')`
-            ${globalCode.sked!.emit!}(${globalCode.commons!._FRAME_SKEDULER!}, frame.toString())
+            ${globalCode.sked!.emit!}(${commons._FRAME_SKEDULER!}, frame.toString())
         `,
 
         /** 
          * Schedules a callback to be called at the given frame.
          * If the frame already occurred, or is the current frame, the callback won't be executed.
          */
-        Func(globalCode.commons!.waitFrame!, [
+        Func(commons.waitFrame!, [
             Var('Int', 'frame'), 
             Var(globalCode.sked!.Callback!, 'callback'),
         ], globalCode.sked!.Id!)`
-            return ${globalCode.sked!.waitFuture!}(${globalCode.commons!._FRAME_SKEDULER!}, frame.toString(), callback)
+            return ${globalCode.sked!.waitFuture!}(${commons._FRAME_SKEDULER!}, frame.toString(), callback)
         `,
 
         /** 
          * Cancels waiting for a frame to occur.
          */
-        Func(globalCode.commons!.cancelWaitFrame!, [
+        Func(commons.cancelWaitFrame!, [
             Var(globalCode.sked!.Id!, 'id')
         ], 'void')`
-            ${globalCode.sked!.cancel!}(${globalCode.commons!._FRAME_SKEDULER!}, id)
+            ${globalCode.sked!.cancel!}(${commons._FRAME_SKEDULER!}, id)
         `,
     ]),
     dependencies: [sked],
