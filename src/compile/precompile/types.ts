@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { NodeImplementation, GlobalsDefinitions } from '../types'
+import { NodeImplementation, GlobalDefinitions } from '../types'
 import {
     AstClass,
     AstElement,
@@ -38,6 +38,7 @@ export interface Precompilation {
     readonly precompiledCodeAssigner: PrecompiledCode
     readonly variableNamesIndex: VariableNamesIndex
     readonly variableNamesAssigner: VariableNamesIndex
+    readonly variableNamesReadOnly: VariableNamesIndex
 }
 
 export interface PrecompilationInput {
@@ -60,8 +61,8 @@ export interface PrecompiledCode {
     }
 
     readonly dependencies: {
-        imports: ReturnType<NonNullable<GlobalsDefinitions['imports']>>
-        exports: ReturnType<NonNullable<GlobalsDefinitions['exports']>>
+        imports: ReturnType<NonNullable<GlobalDefinitions['imports']>>
+        exports: ReturnType<NonNullable<GlobalDefinitions['exports']>>
         ast: AstSequence
     }
 

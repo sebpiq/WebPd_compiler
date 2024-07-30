@@ -58,7 +58,7 @@ describe('engine-lifecycle-bindings', () => {
 
             const nodeImplementations: NodeImplementations = {
                 DUMMY: {
-                    messageReceivers: ({ globals }) => ({
+                    messageReceivers: (_, { globals }) => ({
                         '0': AnonFunc([Var(globals.msg!.Message!, 'm')])``,
                     }),
                 },

@@ -23,7 +23,7 @@ import { initializePrecompilation } from './precompile'
 import { PrecompilationInput, Precompilation } from './precompile/types'
 import { RenderInput, RenderTemplateInput } from './render/types'
 import { AstSequence, AstElement, Code } from '../ast/types'
-import { CompilationSettings, GlobalCodePrecompilationContext } from './types'
+import { CompilationSettings, GlobalPrecompilationContext } from './types'
 import { ReadOnlyIndex } from './proxies'
 
 type PartialSettings = Partial<CompilationSettings>
@@ -54,7 +54,7 @@ export const makePrecompilation = (
 
 export const makeGlobalCodePrecompilationContext = (
     precompilation: Precompilation
-): GlobalCodePrecompilationContext => ({
+): GlobalPrecompilationContext => ({
     globals: precompilation.variableNamesAssigner.globals,
     settings: precompilation.settings,
 })

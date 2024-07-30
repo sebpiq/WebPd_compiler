@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalsDefinitions } from '../compile/types'
+import { GlobalDefinitions } from '../compile/types'
 import { bufCore, bufPushPull } from './buf'
 import { msg } from './msg'
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
@@ -29,9 +29,9 @@ const NAMESPACE = 'fs'
 export const FS_OPERATION_SUCCESS = 0
 export const FS_OPERATION_FAILURE = 1
 
-export const fsCore: GlobalsDefinitions = {
+export const fsCore: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (fs, { globals, settings: { target } }) => {
+    code: ({ ns: fs }, { globals, settings: { target } }) => {
         const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`
@@ -140,11 +140,11 @@ export const fsCore: GlobalsDefinitions = {
     dependencies: [msg],
 }
 
-export const fsReadSoundFile: GlobalsDefinitions = {
+export const fsReadSoundFile: GlobalDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (fs) => Sequence([
+    code: ({ ns: fs }) => Sequence([
         Func(fs.readSoundFile!, [
             Var(fs.Url!, 'url'),
             Var(fs.SoundInfo!, 'soundInfo'),
@@ -175,9 +175,9 @@ export const fsReadSoundFile: GlobalsDefinitions = {
         `
     ]),
 
-    exports: (fs) => [fs.x_onReadSoundFileResponse!],
+    exports: ({ ns: fs }) => [fs.x_onReadSoundFileResponse!],
 
-    imports: (fs, { globals }) => [
+    imports: ({ ns: fs }, { globals }) => [
         Func(
             fs.i_readSoundFile!,
             [
@@ -192,11 +192,11 @@ export const fsReadSoundFile: GlobalsDefinitions = {
     dependencies: [fsCore],
 }
 
-export const fsWriteSoundFile: GlobalsDefinitions = {
+export const fsWriteSoundFile: GlobalDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (fs) => Sequence([
+    code: ({ ns: fs }) => Sequence([
         Func(fs.writeSoundFile!, [
             Var('FloatArray[]', 'sound'),
             Var(fs.Url!, 'url'),
@@ -227,9 +227,9 @@ export const fsWriteSoundFile: GlobalsDefinitions = {
         `
     ]),
 
-    exports: (fs) => [fs.x_onWriteSoundFileResponse!],
+    exports: ({ ns: fs }) => [fs.x_onWriteSoundFileResponse!],
 
-    imports: (fs, { globals }) => [
+    imports: ({ ns: fs }, { globals }) => [
         Func(
             fs.i_writeSoundFile!,
             [
@@ -245,11 +245,11 @@ export const fsWriteSoundFile: GlobalsDefinitions = {
     dependencies: [fsCore],
 }
 
-export const fsSoundStreamCore: GlobalsDefinitions = {
+export const fsSoundStreamCore: GlobalDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (fs, { globals }) => Sequence([
+    code: ({ ns: fs }, { globals }) => Sequence([
         ConstVar(
             `Map<${fs.OperationId!}, Array<${globals.buf!.SoundBuffer!}>>`,
             fs._SOUND_STREAM_BUFFERS!,
@@ -290,10 +290,10 @@ export const fsSoundStreamCore: GlobalsDefinitions = {
         `
     ]),
 
-    exports: (fs) => [fs.x_onCloseSoundStream!],
+    exports: ({ ns: fs }) => [fs.x_onCloseSoundStream!],
 
     // prettier-ignore
-    imports: (fs) => [
+    imports: ({ ns: fs }) => [
         Func(fs.i_closeSoundStream!, [
             Var(fs.OperationId!, 'id'), 
             Var(fs.OperationStatus!, 'status')
@@ -303,11 +303,11 @@ export const fsSoundStreamCore: GlobalsDefinitions = {
     dependencies: [bufCore, fsCore],
 }
 
-export const fsReadSoundStream: GlobalsDefinitions = {
+export const fsReadSoundStream: GlobalDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (fs, { globals }) => Sequence([
+    code: ({ ns: fs }, { globals }) => Sequence([
         Func(fs.openSoundReadStream!, [
             Var(fs.Url!, 'url'),
             Var(fs.SoundInfo!, 'soundInfo'),
@@ -346,10 +346,10 @@ export const fsReadSoundStream: GlobalsDefinitions = {
         `
     ]),
 
-    exports: (fs) => [fs.x_onSoundStreamData!],
+    exports: ({ ns: fs }) => [fs.x_onSoundStreamData!],
 
     // prettier-ignore
-    imports: (fs, { globals }) => [
+    imports: ({ ns: fs }, { globals }) => [
         Func(fs.i_openSoundReadStream!, [
             Var(fs.OperationId!, 'id'),
             Var(fs.Url!, 'url'),
@@ -360,11 +360,11 @@ export const fsReadSoundStream: GlobalsDefinitions = {
     dependencies: [fsSoundStreamCore, bufPushPull],
 }
 
-export const fsWriteSoundStream: GlobalsDefinitions = {
+export const fsWriteSoundStream: GlobalDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (fs) => Sequence([
+    code: ({ ns: fs }) => Sequence([
         Func(fs.openSoundWriteStream!, [
                 Var(fs.Url!, 'url'),
                 Var(fs.SoundInfo!, 'soundInfo'),
@@ -389,7 +389,7 @@ export const fsWriteSoundStream: GlobalsDefinitions = {
     ]),
 
     // prettier-ignore
-    imports: (fs, { globals }) => [
+    imports: ({ ns: fs }, { globals }) => [
         Func(fs.i_openSoundWriteStream!, [
             Var(fs.OperationId!, 'id'),
             Var(fs.Url!, 'url'),

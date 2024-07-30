@@ -20,14 +20,14 @@
 
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 import {
-    GlobalsDefinitions,
+    GlobalDefinitions,
 } from '../compile/types'
 
 const NAMESPACE = 'buf'
 
-export const bufCore: GlobalsDefinitions = {
+export const bufCore: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (buf) => Sequence([
+    code: ({ ns: buf }) => Sequence([
         /**
          * Ring buffer 
          */
@@ -59,9 +59,9 @@ export const bufCore: GlobalsDefinitions = {
     ])
 }
 
-export const bufPushPull: GlobalsDefinitions = {
+export const bufPushPull: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (buf) => Sequence([
+    code: ({ ns: buf }) => Sequence([
         /**
          * Pushes a block to the buffer, throwing an error if the buffer is full. 
          * If the block is written successfully, {@link buf.SoundBuffer#writeCursor} 
@@ -116,9 +116,9 @@ export const bufPushPull: GlobalsDefinitions = {
     dependencies: [bufCore],
 }
 
-export const bufWriteRead: GlobalsDefinitions = {
+export const bufWriteRead: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (buf) => Sequence([
+    code: ({ ns: buf }) => Sequence([
         /**
          * Writes a sample at \`@link writeCursor\` and increments \`writeCursor\` by one.
          */

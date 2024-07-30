@@ -18,16 +18,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalsDefinitions } from '../compile/types'
+import { GlobalDefinitions } from '../compile/types'
 import { Sequence, Func, Var } from '../ast/declare'
 
 const NAMESPACE = 'core'
 
-export const core: GlobalsDefinitions = {
+export const core: GlobalDefinitions = {
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: (core, { settings: { target, audio: { bitDepth } } }) => {
+    code: ({ ns: core }, { settings: { target, audio: { bitDepth } } }) => {
         const Int = 'i32'
         const Float = bitDepth === 32 ? 'f32' : 'f64'
         const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
@@ -146,7 +146,7 @@ export const core: GlobalsDefinitions = {
         }
     },
 
-    exports: (core, { settings }) => settings.target === 'assemblyscript' ? [
+    exports: ({ ns: core }, { settings }) => settings.target === 'assemblyscript' ? [
         core.x_createListOfArrays!,
         core.x_pushToListOfArrays!,
         core.x_getListOfArraysLength!,

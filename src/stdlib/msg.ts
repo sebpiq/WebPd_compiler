@@ -18,14 +18,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalsDefinitions } from '../compile/types'
+import { GlobalDefinitions } from '../compile/types'
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 
 const NAMESPACE = 'msg'
 
-export const msg: GlobalsDefinitions = {
+export const msg: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (msg, { settings: { target } }) => {
+    code: ({ ns: msg }, { settings: { target } }) => {
         // prettier-ignore
         const declareFuncs = {
             create: Func(msg.create!, [Var(msg._Template!, 'template')], msg.Message!),
@@ -400,7 +400,7 @@ export const msg: GlobalsDefinitions = {
         }
     },
 
-    exports: (msg, { settings }) => settings.target === 'assemblyscript' ? [
+    exports: ({ ns: msg }, { settings }) => settings.target === 'assemblyscript' ? [
         msg.x_create!,
         msg.x_getTokenTypes!,
         msg.x_createTemplate!,

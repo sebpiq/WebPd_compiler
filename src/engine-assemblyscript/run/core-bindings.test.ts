@@ -71,14 +71,15 @@ describe('core-bindings', () => {
             },
         })
         const assignerNs = precompilation.variableNamesAssigner.globals.core!
-        const context = makeGlobalCodePrecompilationContext(precompilation)
+        const localContext = { ns: assignerNs }
+        const globalContext = makeGlobalCodePrecompilationContext(precompilation)
         return render(
             macros,
             Sequence([
-                core.code(assignerNs, context),
+                core.code(localContext, globalContext),
                 core.exports!(
-                    assignerNs,
-                    context
+                    localContext,
+                    globalContext
                 ).map((name) => `export { ${name} }`),
             ])
         )

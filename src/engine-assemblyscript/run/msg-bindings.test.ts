@@ -82,24 +82,24 @@ describe('msg-bindings', () => {
             }
         })
         const globals = precompilation.variableNamesAssigner.globals
-        const context = makeGlobalCodePrecompilationContext(precompilation)
+        const globalContext = makeGlobalCodePrecompilationContext(precompilation)
         return render(
             macros,
             Sequence([
-                core.code(globals.core!, context),
-                sked.code(globals.sked!, context),
-                msg.code(globals.msg!, context),
+                core.code({ ns: globals.core! }, globalContext),
+                sked.code({ ns: globals.sked! }, globalContext),
+                msg.code({ ns: globals.msg! }, globalContext),
                 `export function testReadMessageData(message: ${globals.msg!
                     .Message!}, index: Int): Int {
                     return message.dataView.getInt32(index * sizeof<Int>())
                 }`,
                 core.exports!(
-                    precompilation.variableNamesAssigner.globals.core!,
-                    context,
+                    { ns: precompilation.variableNamesAssigner.globals.core! },
+                    globalContext,
                 ).map((name) => `export { ${name} }`),
                 msg.exports!(
-                    precompilation.variableNamesAssigner.globals.msg!,
-                    context,
+                    { ns: precompilation.variableNamesAssigner.globals.msg! },
+                    globalContext,
                 ).map((name) => `export { ${name} }`),
             ])
         )

@@ -47,7 +47,7 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 type1: {
-                    messageReceivers: ({ globals }) => ({
+                    messageReceivers: (_, { globals }) => ({
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm'),
                         ])`// message receiver type1 inlet 0`,
@@ -57,7 +57,7 @@ describe('precompile.nodes', () => {
                     }),
                 },
                 type2: {
-                    messageReceivers: ({ globals }) => ({
+                    messageReceivers: (_, { globals }) => ({
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm'),
                         ])`// message receiver type2 inlet 0`,

@@ -67,22 +67,31 @@ export interface CompilationSettings {
     debug: boolean
 }
 
+export interface GlobalPrecompilationContext {
+    readonly globals: { readonly [nsName: string]: ReadOnlyNamespace }
+    readonly settings: CompilationSettings
+}
+
+interface GlobalDefinitionsLocalContext {
+    readonly ns: AssignerNamespace
+}
+
 /** Generator for global code that specifies also extra settings */
-export type GlobalsDefinitions = {
+export type GlobalDefinitions = {
     code: (
-        ns: AssignerNamespace,
-        context: GlobalCodePrecompilationContext
+        localContext: GlobalDefinitionsLocalContext,
+        globalContext: GlobalPrecompilationContext
     ) => AstElement
     namespace: string
     exports?: (
-        ns: AssignerNamespace,
-        context: GlobalCodePrecompilationContext
+        localContext: GlobalDefinitionsLocalContext,
+        globalContext: GlobalPrecompilationContext
     ) => Array<VariableName>
     imports?: (
-        ns: AssignerNamespace,
-        context: GlobalCodePrecompilationContext
+        localContext: GlobalDefinitionsLocalContext,
+        globalContext: GlobalPrecompilationContext
     ) => Array<AstFunc>
-    dependencies?: Array<GlobalsDefinitions>
+    dependencies?: Array<GlobalDefinitions>
 }
 
 /** Implementation of a graph node type */
@@ -102,27 +111,30 @@ export interface NodeImplementation<NodeArgsType = {}> {
         alphaName?: string
     }
 
-    state?: (context: {
-        globals: GlobalCodePrecompilationContext['globals']
-        ns: AssignerNamespace
-        node: DspGraph.Node<NodeArgsType>
-        settings: CompilationSettings
-    }) => AstClass
+    state?: (
+        localContext: {
+            ns: ReadOnlyNamespace
+            node: DspGraph.Node<NodeArgsType>
+        },
+        globalContext: GlobalPrecompilationContext
+    ) => AstClass
 
-    core?: (context: {
-        globals: GlobalCodePrecompilationContext['globals']
-        ns: AssignerNamespace
-        settings: CompilationSettings
-    }) => AstElement
+    core?: (
+        localContext: {
+            ns: AssignerNamespace
+        },
+        globalContext: GlobalPrecompilationContext
+    ) => AstElement
 
-    initialization?: (context: {
-        globals: GlobalCodePrecompilationContext['globals']
-        ns: AssignerNamespace
-        state: NodePrecompilationContext['state']
-        snds: NodePrecompilationContext['snds']
-        node: DspGraph.Node<NodeArgsType>
-        settings: CompilationSettings
-    }) => AstSequence
+    initialization?: (
+        localContext: {
+            ns: ReadOnlyNamespace
+            state: VariableName
+            snds: ReadOnlyNamespace
+            node: DspGraph.Node<NodeArgsType>
+        },
+        globalContext: GlobalPrecompilationContext
+    ) => AstSequence
 
     /**
      * Generates the code that will be ran each iteration of the dsp loop for that node instance.
@@ -131,16 +143,17 @@ export interface NodeImplementation<NodeArgsType = {}> {
      * Can also define dsp per inlet, in which case that dsp will be ran only when the inlet value changes.
      * This allows to optimize the dsp loop by only running the code that is necessary.
      */
-    dsp?: (context: {
-        globals: GlobalCodePrecompilationContext['globals']
-        ns: AssignerNamespace
-        state: NodePrecompilationContext['state']
-        ins: NodePrecompilationContext['ins']
-        outs: NodePrecompilationContext['outs']
-        snds: NodePrecompilationContext['snds']
-        node: DspGraph.Node<NodeArgsType>
-        settings: CompilationSettings
-    }) =>
+    dsp?: (
+        localContext: {
+            ns: ReadOnlyNamespace
+            state: VariableName
+            ins: ReadOnlyNamespace
+            outs: ReadOnlyNamespace
+            snds: ReadOnlyNamespace
+            node: DspGraph.Node<NodeArgsType>
+        },
+        globalContext: GlobalPrecompilationContext
+    ) =>
         | AstSequence
         | {
               loop: AstSequence
@@ -150,36 +163,31 @@ export interface NodeImplementation<NodeArgsType = {}> {
     /**
      * Generate code for message receivers for a given node instance.
      */
-    messageReceivers?: (context: {
-        globals: GlobalCodePrecompilationContext['globals']
-        ns: AssignerNamespace
-        state: NodePrecompilationContext['state']
-        snds: NodePrecompilationContext['snds']
-        node: DspGraph.Node<NodeArgsType>
-        settings: CompilationSettings
-    }) => {
+    messageReceivers?: (
+        localContext: {
+            ns: ReadOnlyNamespace
+            state: VariableName
+            snds: ReadOnlyNamespace
+            node: DspGraph.Node<NodeArgsType>
+        },
+        globalContext: GlobalPrecompilationContext
+    ) => {
         [inletId: DspGraph.PortletId]: AstFunc
     }
 
     /** List of dependencies for this node type */
-    dependencies?: Array<GlobalsDefinitions>
-}
-
-interface NodePrecompilationContext {
-    state: VariableName
-    ins: { [portletId: DspGraph.PortletId]: VariableName }
-    outs: { [portletId: DspGraph.PortletId]: VariableName }
-    snds: { [portletId: DspGraph.PortletId]: VariableName }
-}
-
-export interface GlobalCodePrecompilationContext {
-    globals: { [nsName: string]: { [name: string]: VariableName } }
-    settings: CompilationSettings
+    dependencies?: Array<GlobalDefinitions>
 }
 
 export type NodeImplementations = {
     [nodeType: string]: NodeImplementation<any>
 }
+
+/**
+ * Namespace handled by a proxy that only allows reading, and throws
+ * an error for unknown keys.
+ */
+type ReadOnlyNamespace = { readonly [name: string]: VariableName }
 
 /**
  * Namespace handled by a proxy that auto assigns a variable name

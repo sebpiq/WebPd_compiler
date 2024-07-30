@@ -60,6 +60,7 @@ import {
     precompileIoMessageSender,
     addNodeImplementationsForMessageIo,
 } from './io'
+import { ReadOnlyIndex } from '../proxies'
 
 export default (precompilationInput: PrecompilationInput) => {
     const precompilation = initializePrecompilation(precompilationInput)
@@ -116,8 +117,10 @@ export default (precompilationInput: PrecompilationInput) => {
 
     // -------------------- NODE IMPLEMENTATIONS & STATES ------------------ //
     Object.keys(precompilation.nodeImplementations).forEach((nodeType) => {
-        precompileStateClass(precompilation, nodeType)
+        // Run first because we might use some members declared here
+        // in the state initialization.
         precompileCore(precompilation, nodeType)
+        precompileStateClass(precompilation, nodeType)
     })
     nodes.forEach((node) => {
         precompileState(precompilation, node)
@@ -254,6 +257,7 @@ export const initializePrecompilation = (
             variableNamesIndex,
             input: precompilationInput,
         }),
+        variableNamesReadOnly: ReadOnlyIndex(variableNamesIndex),
         precompiledCodeAssigner: PrecompiledCodeAssigner({
             precompiledCode,
             input: precompilationInput,

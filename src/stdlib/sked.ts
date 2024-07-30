@@ -18,15 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalsDefinitions } from '../compile/types'
+import { GlobalDefinitions } from '../compile/types'
 import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
 import { AstSequenceContent } from '../ast/types'
 
 const NAMESPACE = 'sked'
 
-export const sked: GlobalsDefinitions = {
+export const sked: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (sked, { settings: { target } }) => {
+    code: ({ ns: sked }, { settings: { target } }) => {
         const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`

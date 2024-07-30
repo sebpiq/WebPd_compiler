@@ -65,7 +65,7 @@ describe('test-helpers-node-implementations', () => {
             'should work with message inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ globals, snds }) => ({
+                    messageReceivers: ({ snds }, { globals }) => ({
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`
@@ -99,7 +99,7 @@ describe('test-helpers-node-implementations', () => {
             'should send message at the right frame %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ globals, snds }) => ({
+                    messageReceivers: ({ snds }, { globals }) => ({
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`
@@ -133,7 +133,7 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests with fs %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ globals }) => ({
+                    messageReceivers: (_, { globals }) => ({
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`
@@ -184,7 +184,7 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests on arrays %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ globals }) => ({
+                    messageReceivers: (_, { globals }) => ({
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`

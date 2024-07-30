@@ -19,7 +19,7 @@
  */
 
 import assert from 'assert'
-import { GlobalsDefinitions } from '../types'
+import { GlobalDefinitions } from '../types'
 import precompileDependencies, {
     collectAndDedupeExports,
     collectAndDedupeImports,
@@ -38,7 +38,7 @@ describe('precompile.dependencies', () => {
     describe('default', () => {
         it('should collect, precompile and deduplicate nested dependencies code and add minimal dependencies', () => {
             // ARRANGE
-            const globalsDefinitions1: GlobalsDefinitions = {
+            const globalDefinitions1: GlobalDefinitions = {
                 namespace: 'module1',
                 code: () => ast`"bli"`,
                 dependencies: [
@@ -47,19 +47,19 @@ describe('precompile.dependencies', () => {
                 ],
             }
 
-            const globalsDefinitions2: GlobalsDefinitions = {
+            const globalDefinitions2: GlobalDefinitions = {
                 namespace: 'module2',
                 code: () => ast`"blu"`,
                 dependencies: [
                     { namespace: '_', code: () => ast`"bly"` },
                     { namespace: '_', code: () => ast`"blo"` },
-                    globalsDefinitions1,
+                    globalDefinitions1,
                 ],
             }
 
-            const dependencies: Array<GlobalsDefinitions> = [
+            const dependencies: Array<GlobalDefinitions> = [
                 { namespace: '_', code: () => ast`"bla"` },
-                globalsDefinitions2,
+                globalDefinitions2,
             ]
 
             const graph = makeGraph({
@@ -104,23 +104,23 @@ describe('precompile.dependencies', () => {
 
         it('should collect, precompile and deduplicate imports and exports', () => {
             // ARRANGE
-            const globalsDefinitions1: GlobalsDefinitions = {
+            const globalDefinitions1: GlobalDefinitions = {
                 namespace: 'module1',
                 code: () => ast`"bli"`,
-                dependencies: [] as Array<GlobalsDefinitions>,
+                dependencies: [] as Array<GlobalDefinitions>,
                 imports: () => [Func('bla')``, Func('bli')``],
                 exports: () => ['ble', 'blo'],
             }
-            const globalsDefinitions2: GlobalsDefinitions = {
+            const globalDefinitions2: GlobalDefinitions = {
                 namespace: 'module2',
                 code: () => ast`"blu"`,
-                dependencies: [globalsDefinitions1],
+                dependencies: [globalDefinitions1],
                 imports: () => [Func('bli')``],
                 exports: () => ['blo'],
             }
-            const dependencies: Array<GlobalsDefinitions> = [
+            const dependencies: Array<GlobalDefinitions> = [
                 { namespace: '_', code: () => ast`"bla"` },
-                globalsDefinitions2,
+                globalDefinitions2,
             ]
 
             const graph = makeGraph({
@@ -158,10 +158,10 @@ describe('precompile.dependencies', () => {
 
         it('should add new variables to the namespace', () => {
             // ARRANGE
-            const dependencies: Array<GlobalsDefinitions> = [
+            const dependencies: Array<GlobalDefinitions> = [
                 {
                     namespace: 'module1',
-                    code: (module1) =>
+                    code: ({ ns: module1 }) =>
                         Sequence([
                             Func(module1.func1!)``,
                             Class(module1.Class1!, []),
@@ -169,7 +169,7 @@ describe('precompile.dependencies', () => {
                 },
                 {
                     namespace: 'module2',
-                    code: (module2) => Sequence([Func(module2.func2!)``]),
+                    code: ({ ns: module2 }) => Sequence([Func(module2.func2!)``]),
                 },
             ]
 
@@ -220,15 +220,15 @@ describe('precompile.dependencies', () => {
             const bla1 = ast`"bla"`
             const bla2 = ast`"bla"`
 
-            const bloDefinitions: GlobalsDefinitions = {
+            const bloDefinitions: GlobalDefinitions = {
                 namespace: '_',
                 code: () => blo,
             }
-            const blaDefinitions1: GlobalsDefinitions = {
+            const blaDefinitions1: GlobalDefinitions = {
                 namespace: '_',
                 code: () => bla1,
             }
-            const blaDefinitions2: GlobalsDefinitions = {
+            const blaDefinitions2: GlobalDefinitions = {
                 namespace: '_',
                 code: () => bla2,
             }
@@ -252,84 +252,84 @@ describe('precompile.dependencies', () => {
 
     describe('flattenDependencies', () => {
         it('should render code and dependencies recursively, dependencies should come first', () => {
-            const globalsDefinitions1: GlobalsDefinitions = {
+            const globalDefinitions1: GlobalDefinitions = {
                 namespace: '_',
                 code: () => ast`"bla"`,
             }
-            const globalsDefinitions2: GlobalsDefinitions = {
+            const globalDefinitions2: GlobalDefinitions = {
                 namespace: '_',
                 code: () => ast`"bli"`,
             }
-            const globalsDefinitions3: GlobalsDefinitions = {
+            const globalDefinitions3: GlobalDefinitions = {
                 namespace: '_',
                 code: () => ast`"blo"`,
             }
-            const globalsDefinitions4: GlobalsDefinitions = {
+            const globalDefinitions4: GlobalDefinitions = {
                 namespace: '_',
                 code: () => ast`"bly"`,
             }
-            const globalsDefinitions5: GlobalsDefinitions = {
+            const globalDefinitions5: GlobalDefinitions = {
                 namespace: '_',
                 code: () => ast`"ble"`,
-                dependencies: [globalsDefinitions2],
+                dependencies: [globalDefinitions2],
             }
 
-            const globalsDefinitions6: GlobalsDefinitions = {
+            const globalDefinitions6: GlobalDefinitions = {
                 namespace: '_',
                 code: () => ast`"blb"`,
-                dependencies: [globalsDefinitions1, globalsDefinitions5],
+                dependencies: [globalDefinitions1, globalDefinitions5],
             }
-            const globalsDefinitions7: GlobalsDefinitions = {
+            const globalDefinitions7: GlobalDefinitions = {
                 namespace: '_',
                 code: () => ast`"blc"`,
                 dependencies: [
-                    globalsDefinitions4,
-                    globalsDefinitions3,
-                    globalsDefinitions1,
+                    globalDefinitions4,
+                    globalDefinitions3,
+                    globalDefinitions1,
                 ],
             }
-            const dependencies: Array<GlobalsDefinitions> = [
-                globalsDefinitions6,
-                globalsDefinitions7,
+            const dependencies: Array<GlobalDefinitions> = [
+                globalDefinitions6,
+                globalDefinitions7,
             ]
             const generated = flattenDependencies(dependencies)
 
             assert.strictEqual(generated.length, 8)
-            assert.deepStrictEqual(generated[0], globalsDefinitions1)
-            assert.deepStrictEqual(generated[1], globalsDefinitions2)
-            assert.deepStrictEqual(generated[2], globalsDefinitions5)
-            assert.deepStrictEqual(generated[3], globalsDefinitions6)
-            assert.deepStrictEqual(generated[4], globalsDefinitions4)
-            assert.deepStrictEqual(generated[5], globalsDefinitions3)
-            assert.deepStrictEqual(generated[6], globalsDefinitions1)
-            assert.deepStrictEqual(generated[7], globalsDefinitions7)
+            assert.deepStrictEqual(generated[0], globalDefinitions1)
+            assert.deepStrictEqual(generated[1], globalDefinitions2)
+            assert.deepStrictEqual(generated[2], globalDefinitions5)
+            assert.deepStrictEqual(generated[3], globalDefinitions6)
+            assert.deepStrictEqual(generated[4], globalDefinitions4)
+            assert.deepStrictEqual(generated[5], globalDefinitions3)
+            assert.deepStrictEqual(generated[6], globalDefinitions1)
+            assert.deepStrictEqual(generated[7], globalDefinitions7)
         })
     })
 
     describe('collectAndDedupeExports', () => {
         it('should collect exports and remove duplicates', () => {
             const precompilation = makePrecompilation({})
-            const globalsDefinitions1: GlobalsDefinitions = {
+            const globalDefinitions1: GlobalDefinitions = {
                 namespace: 'module1',
                 code: () => Sequence([]),
                 exports: () => ['ex1', 'ex3'],
             }
-            const globalsDefinitions2: GlobalsDefinitions = {
+            const globalDefinitions2: GlobalDefinitions = {
                 namespace: 'module2',
                 code: () => Sequence([]),
                 // no exports here shouldnt break
                 dependencies: [],
             }
-            const globalsDefinitions3: GlobalsDefinitions = {
+            const globalDefinitions3: GlobalDefinitions = {
                 namespace: 'module3',
                 code: () => Sequence([]),
                 exports: () => ['ex4', 'ex3'],
             }
-            const dependencies: Array<GlobalsDefinitions> = [
-                globalsDefinitions1,
+            const dependencies: Array<GlobalDefinitions> = [
+                globalDefinitions1,
                 { namespace: '_', code: () => Sequence([]) },
-                globalsDefinitions2,
-                globalsDefinitions3,
+                globalDefinitions2,
+                globalDefinitions3,
                 { namespace: '_', code: () => Sequence([]) },
             ]
 
@@ -347,27 +347,27 @@ describe('precompile.dependencies', () => {
     describe('collectAndDedupeImports', () => {
         it('should collect imports and remove duplicates', () => {
             const precompilation = makePrecompilation({})
-            const globalsDefinitions1: GlobalsDefinitions = {
+            const globalDefinitions1: GlobalDefinitions = {
                 namespace: 'module1',
                 code: () => Sequence([]),
                 imports: () => [Func('ex1')``, Func('ex3')``],
             }
-            const globalsDefinitions2: GlobalsDefinitions = {
+            const globalDefinitions2: GlobalDefinitions = {
                 namespace: 'module2',
                 code: () => Sequence([]),
                 // no imports here shouldnt break
             }
-            const globalsDefinitions3: GlobalsDefinitions = {
+            const globalDefinitions3: GlobalDefinitions = {
                 namespace: 'module3',
                 code: () => Sequence([]),
                 imports: () => [Func('ex4')``],
             }
-            const dependencies: Array<GlobalsDefinitions> = [
+            const dependencies: Array<GlobalDefinitions> = [
                 { namespace: '_', code: () => Sequence([]) },
-                globalsDefinitions1,
-                globalsDefinitions2,
+                globalDefinitions1,
+                globalDefinitions2,
                 { namespace: '_', code: () => Sequence([]) },
-                globalsDefinitions3,
+                globalDefinitions3,
             ]
 
             assert.deepStrictEqual(

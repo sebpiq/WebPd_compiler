@@ -21,8 +21,8 @@
 import {
     AudioSettings,
     CompilerTarget,
-    GlobalsDefinitions,
-    GlobalCodePrecompilationContext,
+    GlobalDefinitions,
+    GlobalPrecompilationContext,
     CompilationSettings,
 } from './compile/types'
 import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
@@ -130,7 +130,7 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    dependencies: Array<GlobalsDefinitions> = []
+    dependencies: Array<GlobalDefinitions> = []
 ) => {
     const precompilation = makePrecompilation({
         settings: {
@@ -188,10 +188,10 @@ export const runTestSuite = (
             globals,
         }: {
             target: CompilerTarget
-            globals: GlobalCodePrecompilationContext['globals']
+            globals: GlobalPrecompilationContext['globals']
         }) => AstFunc
     }>,
-    dependencies: Array<GlobalsDefinitions> = [],
+    dependencies: Array<GlobalDefinitions> = [],
     settings: Partial<CompilationSettings> = {},
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
@@ -212,15 +212,15 @@ export const runTestSuite = (
                 },
             })
             const context = makeGlobalCodePrecompilationContext(precompilation)
-            const testsCodeDefinitions: Array<GlobalsDefinitions> =
-                tests.map<GlobalsDefinitions>(
+            const testsCodeDefinitions: Array<GlobalDefinitions> =
+                tests.map<GlobalDefinitions>(
                     ({ testFunction }, i) => {
                         const astTestFunc = testFunction({
                             target,
                             globals:
                                 precompilation.variableNamesAssigner.globals,
                         })
-                        const codeGeneratorWithSettings: GlobalsDefinitions =
+                        const codeGeneratorWithSettings: GlobalDefinitions =
                             {
                                 namespace: 'tests',
                                 code: () => ({

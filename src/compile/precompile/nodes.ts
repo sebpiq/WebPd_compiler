@@ -31,7 +31,6 @@ import {
     PrecompiledNodeCode,
     VariableNamesIndex,
 } from './types'
-import { STATE_CLASS_NAME } from './node-implementations'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
 type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
@@ -48,16 +47,6 @@ export const precompileState = (
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     if (precompiledNodeImplementation.nodeImplementation.state) {
-        const nodeType = node.type
-        if (
-            !(
-                STATE_CLASS_NAME in
-                variableNamesAssigner.nodeImplementations[nodeType]!
-            )
-        ) {
-            throw new Error(`No ${STATE_CLASS_NAME} defined for ${nodeType}`)
-        }
-
         const { ns, globals } = _getContext(
             node.id,
             precompiledNode,
@@ -65,9 +54,11 @@ export const precompileState = (
         )
         const astClass = precompiledNodeImplementation.nodeImplementation.state(
             {
-                globals,
                 ns,
                 node,
+            },
+            {
+                globals,
                 settings,
             }
         )
@@ -110,11 +101,13 @@ export const precompileMessageReceivers = (
         precompiledNodeImplementation.nodeImplementation.messageReceivers
             ? precompiledNodeImplementation.nodeImplementation.messageReceivers(
                   {
-                      globals,
                       ns,
                       state,
                       snds,
                       node,
+                  },
+                  {
+                      globals,
                       settings,
                   }
               )
@@ -159,14 +152,18 @@ export const precompileInitialization = (
     )
     precompiledNode.initialization = precompiledNodeImplementation
         .nodeImplementation.initialization
-        ? precompiledNodeImplementation.nodeImplementation.initialization({
-              globals,
-              ns,
-              state,
-              snds,
-              node,
-              settings,
-          })
+        ? precompiledNodeImplementation.nodeImplementation.initialization(
+              {
+                  ns,
+                  state,
+                  snds,
+                  node,
+              },
+              {
+                  globals,
+                  settings,
+              }
+          )
         : ast``
 }
 
@@ -191,16 +188,20 @@ export const precompileDsp = (
         throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
     }
 
-    const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp({
-        globals,
-        ns,
-        node,
-        state,
-        ins,
-        outs,
-        snds,
-        settings,
-    })
+    const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp(
+        {
+            ns,
+            node,
+            state,
+            ins,
+            outs,
+            snds,
+        },
+        {
+            globals,
+            settings,
+        }
+    )
 
     // Nodes that come here might have inlinable dsp, but still can't
     // be inlined because, for example, they have 2 sinks.
@@ -262,8 +263,11 @@ export const precompileInlineDsp = (
                 precompiledCodeAssigner.nodeImplementations[
                     precompiledNode.nodeType
                 ]!
-            const { ins, outs, snds, state, ns, globals } =
-                _getContext(nodeId, precompiledNode, variableNamesAssigner)
+            const { ins, outs, snds, state, ns, globals } = _getContext(
+                nodeId,
+                precompiledNode,
+                variableNamesAssigner
+            )
             const node = getters.getNode(graph, nodeId)
             const inlinedInputs: InlinedInputs = mapArray(
                 // Select signal inlets with sources
@@ -302,23 +306,27 @@ export const precompileInlineDsp = (
             }
 
             const compiledDsp =
-                precompiledNodeImplementation.nodeImplementation.dsp({
-                    globals,
-                    ns,
-                    state,
-                    ins: ReadOnlyIndexWithDollarKeys(
-                        {
-                            ...ins,
-                            ...inlinedInputs,
-                        },
-                        nodeId,
-                        'ins'
-                    ),
-                    outs,
-                    snds,
-                    node,
-                    settings,
-                })
+                precompiledNodeImplementation.nodeImplementation.dsp(
+                    {
+                        ns,
+                        state,
+                        ins: ReadOnlyIndexWithDollarKeys(
+                            {
+                                ...ins,
+                                ...inlinedInputs,
+                            },
+                            nodeId,
+                            'ins'
+                        ),
+                        outs,
+                        snds,
+                        node,
+                    },
+                    {
+                        globals,
+                        settings,
+                    }
+                )
 
             if (!('astType' in compiledDsp)) {
                 throw new Error(`Inlined dsp can only be an AstSequence`)

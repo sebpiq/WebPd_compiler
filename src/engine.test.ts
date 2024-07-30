@@ -25,7 +25,7 @@ import {
     AudioSettings,
     CompilerTarget,
     NodeImplementations,
-    GlobalsDefinitions,
+    GlobalDefinitions,
     UserCompilationSettings,
     IoMessageSpecs,
 } from './compile/types'
@@ -51,7 +51,7 @@ describe('Engine', () => {
     interface EngineTestSettings {
         graph?: DspGraph.Graph
         nodeImplementations?: NodeImplementations
-        injectedDependencies?: Array<GlobalsDefinitions>
+        injectedDependencies?: Array<GlobalDefinitions>
         settings?: UserCompilationSettings
     }
 
@@ -129,7 +129,7 @@ describe('Engine', () => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        dsp: ({
+                        dsp: (_, {
                             globals: { core },
                             settings: {
                                 audio: { channelCount },
@@ -199,7 +199,7 @@ describe('Engine', () => {
             async ({ target, bitDepth }) => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        dsp: ({
+                        dsp: (_, {
                             globals: { core },
                             settings: {
                                 target,
@@ -284,7 +284,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        messageReceivers: ({ globals }) => ({
+                        messageReceivers: (_, { globals }) => ({
                             blo: AnonFunc(
                                 [Var(globals.msg!.Message!, 'm')],
                                 'void'
@@ -351,7 +351,7 @@ describe('Engine', () => {
                 'should get the array %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: GlobalsDefinitions = {
+                    const testCode: GlobalDefinitions = {
                         namespace: '_',
                         code: (_, { globals }) => ast`
                             const array = createFloatArray(4)
@@ -383,7 +383,7 @@ describe('Engine', () => {
             it.each(TEST_PARAMETERS)(
                 'should set the array %s',
                 async ({ target, bitDepth }) => {
-                    const testCode: GlobalsDefinitions = {
+                    const testCode: GlobalDefinitions = {
                         namespace: 'tests',
                         // prettier-ignore
                         code: (_, { globals }) =>
@@ -495,7 +495,7 @@ describe('Engine', () => {
 
     describe('fs', () => {
         describe('read sound file', () => {
-            const sharedTestingCode: GlobalsDefinitions = {
+            const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
                 code: (_, { globals }) =>
@@ -561,7 +561,7 @@ describe('Engine', () => {
                 'should register the operation success %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
-                    const testCode: GlobalsDefinitions = {
+                    const testCode: GlobalDefinitions = {
                         namespace: 'tests',
                         // prettier-ignore
                         code: () =>
@@ -633,7 +633,7 @@ describe('Engine', () => {
         })
 
         describe('read sound stream', () => {
-            const sharedTestingCode: GlobalsDefinitions = {
+            const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
                 code: (_, { globals }) =>
@@ -719,7 +719,7 @@ describe('Engine', () => {
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
-                    const testCode: GlobalsDefinitions = {
+                    const testCode: GlobalDefinitions = {
                         namespace: 'tests',
                         // prettier-ignore
                         code: (_, { globals }) =>
@@ -823,7 +823,7 @@ describe('Engine', () => {
         })
 
         describe('write sound stream', () => {
-            const sharedTestingCode: GlobalsDefinitions = {
+            const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
                 code: (_, { globals }) =>
@@ -1002,7 +1002,7 @@ describe('Engine', () => {
         })
 
         describe('write sound file', () => {
-            const sharedTestingCode: GlobalsDefinitions = {
+            const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
                 code: (_, { globals }) =>
@@ -1172,7 +1172,7 @@ describe('Engine', () => {
                     ['someNode2']: { portletIds: ['someOutlet1'] },
                 }
 
-                const testCode: GlobalsDefinitions = {
+                const testCode: GlobalDefinitions = {
                     namespace: 'tests',
                     // prettier-ignore
                     code: (_, { globals }) =>
@@ -1298,7 +1298,7 @@ describe('Engine', () => {
                     },
                 }
 
-                const testCode: GlobalsDefinitions = {
+                const testCode: GlobalDefinitions = {
                     namespace: 'tests',
                     // prettier-ignore
                     code: () =>
@@ -1425,7 +1425,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: ({ globals, snds }) => ({
+                        messageReceivers: ({ snds }, { globals }) => ({
                             '0': AnonFunc(
                                 [Var(globals.msg!.Message!, 'm')],
                                 'void'
@@ -1481,7 +1481,7 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: ({ globals }) => ({
+                        messageReceivers: (_, { globals }) => ({
                             // No return so an error will be thrown
                             someInlet: AnonFunc(
                                 [Var(globals.msg!.Message!, 'm')],

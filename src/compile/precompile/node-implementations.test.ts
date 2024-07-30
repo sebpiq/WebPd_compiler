@@ -27,7 +27,7 @@ import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.node-implementations', () => {
     describe('precompileStateClass', () => {
-        it('should precompile stateClass and add all names to the namespace in variableNamesIndex', () => {
+        it('should precompile stateClass in variableNamesIndex', () => {
             const graph = makeGraph({
                 // Needed as a sample node insance to compile `NodeImplementation.state`
                 n1: {
@@ -51,6 +51,8 @@ describe('precompile.node-implementations', () => {
                 graph,
                 nodeImplementations,
             })
+            // Ensure that the `SomeClass` is defined in the namespace
+            precompilation.variableNamesAssigner.nodeImplementations.type1!.SomeClass!
 
             precompileStateClass(precompilation, 'type1')
 

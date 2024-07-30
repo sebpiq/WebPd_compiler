@@ -19,14 +19,14 @@
  */
 
 import { Sequence, ConstVar, Func, Var } from '../ast/declare'
-import { GlobalsDefinitions } from '../compile/types'
+import { GlobalDefinitions } from '../compile/types'
 import { sked } from './sked'
 
 const NAMESPACE = 'commons'
 
-export const commonsArrays: GlobalsDefinitions = {
+export const commonsArrays: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (commons, { globals, settings }) => Sequence([
+    code: ({ ns: commons }, { globals, settings }) => Sequence([
         ConstVar(
             'Map<string, FloatArray>', 
             commons._ARRAYS!, 
@@ -99,16 +99,16 @@ export const commonsArrays: GlobalsDefinitions = {
         )
     ]),
 
-    exports: (commons) => [
+    exports: ({ ns: commons }) => [
         commons.getArray!,
         commons.setArray!,
     ],
     dependencies: [sked],
 }
 
-export const commonsWaitFrame: GlobalsDefinitions = {
+export const commonsWaitFrame: GlobalDefinitions = {
     namespace: NAMESPACE,
-    code: (commons, { globals }) => Sequence([
+    code: ({ ns: commons }, { globals }) => Sequence([
         ConstVar(
             globals.sked!.Skeduler!, 
             commons._FRAME_SKEDULER!, 
