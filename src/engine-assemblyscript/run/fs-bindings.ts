@@ -25,9 +25,14 @@ import {
     EngineData,
     ForwardReferences,
 } from './types'
-import { Engine, EngineMetadata, FloatArray, RawModule, SoundFileInfo } from '../../run/types'
 import {
-    CoreRawModule,
+    Engine,
+    EngineMetadata,
+    FloatArray,
+    SoundFileInfo,
+} from '../../run/types'
+import {
+    CoreRawModuleWithDependencies,
     liftString,
     lowerListOfFloatArrays,
     readListOfFloatArrays,
@@ -40,23 +45,25 @@ import {
 } from './engine-lifecycle-bindings'
 import { RawModuleWithNameMapping } from '../../run/run-helpers'
 
-export interface FsRawModule extends RawModule {
-    fs: {
-        x_onReadSoundFileResponse: (
-            id: number,
-            status: number,
-            sound: InternalPointer
-        ) => void
-        x_onWriteSoundFileResponse: (id: number, status: number) => void
-        x_onSoundStreamData: (id: number, block: InternalPointer) => number
-        x_onCloseSoundStream: (id: number, status: number) => void
+export interface FsRawModule {
+    globals: {
+        fs: {
+            x_onReadSoundFileResponse: (
+                id: number,
+                status: number,
+                sound: InternalPointer
+            ) => void
+            x_onWriteSoundFileResponse: (id: number, status: number) => void
+            x_onSoundStreamData: (id: number, block: InternalPointer) => number
+            x_onCloseSoundStream: (id: number, status: number) => void
+        }
     }
 }
 
-export type FsWithDependenciesRawModule = CoreRawModule &
+export type FsRawModuleWithDependencies = FsRawModule &
+    CoreRawModuleWithDependencies &
     EngineLifecycleRawModule &
-    MsgRawModule &
-    FsRawModule
+    MsgRawModule
 
 export interface FsImports {
     i_readSoundFile?: (
@@ -84,17 +91,15 @@ export interface FsImports {
         operationId: number,
         block: InternalPointer
     ) => void
-    i_closeSoundStream?: (
-        operationId: number,
-        operationStatus: number
-    ) => void
+    i_closeSoundStream?: (operationId: number, operationStatus: number) => void
 }
 
 export const createFsBindings = (
-    rawModule: FsWithDependenciesRawModule,
+    rawModule: FsRawModuleWithDependencies,
     engineData: EngineData
-): Bindings<NonNullable<Engine['fs']>> => {
-    const fsExportedNames = engineData.metadata.compilation.variableNamesIndex.globals.fs!
+): Bindings<NonNullable<Engine['globals']['fs']>> => {
+    const fsExportedNames =
+        engineData.metadata.compilation.variableNamesIndex.globals.fs!
     return {
         sendReadSoundFileResponse: {
             type: 'proxy',
@@ -109,7 +114,7 @@ export const createFsBindings = (
                                   sound
                               )
                           }
-                          rawModule.fs.x_onReadSoundFileResponse(
+                          rawModule.globals.fs.x_onReadSoundFileResponse(
                               operationId,
                               status,
                               soundPointer
@@ -123,7 +128,7 @@ export const createFsBindings = (
             type: 'proxy',
             value:
                 'x_onWriteSoundFileResponse' in fsExportedNames
-                    ? rawModule.fs.x_onWriteSoundFileResponse
+                    ? rawModule.globals.fs.x_onWriteSoundFileResponse
                     : undefined,
         },
 
@@ -138,7 +143,7 @@ export const createFsBindings = (
                               sound
                           )
                           const writtenFrameCount =
-                              rawModule.fs.x_onSoundStreamData(
+                              rawModule.globals.fs.x_onSoundStreamData(
                                   operationId,
                                   soundPointer
                               )
@@ -152,7 +157,7 @@ export const createFsBindings = (
             type: 'proxy',
             value:
                 'x_onCloseSoundStream' in fsExportedNames
-                    ? rawModule.fs.x_onCloseSoundStream
+                    ? rawModule.globals.fs.x_onCloseSoundStream
                     : undefined,
         },
 
@@ -166,21 +171,32 @@ export const createFsBindings = (
 }
 
 export const createFsImports = (
-    forwardReferences: ForwardReferences<FsWithDependenciesRawModule>,
-    metadata: EngineMetadata,
+    forwardReferences: ForwardReferences<FsRawModuleWithDependencies>,
+    metadata: EngineMetadata
 ): FsImports => {
     const wasmImports: FsImports = {}
     const exportedNames = metadata.compilation.variableNamesIndex.globals
     if ('fs' in exportedNames) {
-        const nameMapping = RawModuleWithNameMapping<FsImports>(wasmImports!, exportedNames!.fs!)
+        const nameMapping = RawModuleWithNameMapping(
+            wasmImports!,
+            exportedNames!.fs!
+        ) as FsImports
         if ('i_readSoundFile' in exportedNames.fs!) {
-            nameMapping!.i_readSoundFile = (operationId, urlPointer, infoPointer) => {
+            nameMapping!.i_readSoundFile = (
+                operationId,
+                urlPointer,
+                infoPointer
+            ) => {
                 const url = liftString(forwardReferences.rawModule!, urlPointer)
                 const info = liftMessage(
                     forwardReferences.rawModule!,
                     infoPointer
                 ) as SoundFileInfo
-                forwardReferences.modules.fs!.onReadSoundFile(operationId, url, info)
+                forwardReferences.modules.fs!.onReadSoundFile(
+                    operationId,
+                    url,
+                    info
+                )
             }
         }
 
@@ -209,9 +225,13 @@ export const createFsImports = (
                 )
             }
         }
-    
+
         if ('i_openSoundReadStream' in exportedNames.fs!) {
-            nameMapping!.i_openSoundReadStream = (operationId, urlPointer, infoPointer) => {
+            nameMapping!.i_openSoundReadStream = (
+                operationId,
+                urlPointer,
+                infoPointer
+            ) => {
                 const url = liftString(forwardReferences.rawModule!, urlPointer)
                 const info = liftMessage(
                     forwardReferences.rawModule!,
@@ -232,7 +252,11 @@ export const createFsImports = (
         }
 
         if ('i_openSoundWriteStream' in exportedNames.fs!) {
-            nameMapping!.i_openSoundWriteStream = (operationId, urlPointer, infoPointer) => {
+            nameMapping!.i_openSoundWriteStream = (
+                operationId,
+                urlPointer,
+                infoPointer
+            ) => {
                 const url = liftString(forwardReferences.rawModule!, urlPointer)
                 const info = liftMessage(
                     forwardReferences.rawModule!,
@@ -245,18 +269,24 @@ export const createFsImports = (
                 )
             }
         }
-    
+
         if ('i_sendSoundStreamData' in exportedNames.fs!) {
-            nameMapping!.i_sendSoundStreamData = (operationId, blockPointer) => {
+            nameMapping!.i_sendSoundStreamData = (
+                operationId,
+                blockPointer
+            ) => {
                 const block = readListOfFloatArrays(
                     forwardReferences.rawModule!,
                     forwardReferences.engineData!.bitDepth,
                     blockPointer
                 ) as Array<FloatArray>
-                forwardReferences.modules.fs!.onSoundStreamData(operationId, block)
+                forwardReferences.modules.fs!.onSoundStreamData(
+                    operationId,
+                    block
+                )
             }
         }
-    
+
         if ('i_closeSoundStream' in exportedNames.fs!) {
             nameMapping!.i_closeSoundStream = (...args) =>
                 forwardReferences.modules.fs!.onCloseSoundStream(...args)

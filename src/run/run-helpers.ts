@@ -18,9 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { VariableNamesIndex } from '../compile/precompile/types'
 import { _proxyGetHandlerThrowIfKeyUnknown } from '../compile/proxies'
 import { AudioSettings } from '../compile/types'
-import { Bindings, RawModule } from './types'
+import { Bindings, EngineMetadata } from './types'
 
 // NOTE : not necessarily the most logical place to put this function, but we need it here
 // cause it's imported by the bindings.
@@ -65,7 +66,7 @@ export const attachBindings = <ModuleType extends { [key: string]: any }>(
                     return undefined
                 }
             },
-            has: function(_, k) {
+            has: function (_, k) {
                 return k in bindings
             },
             set: (_, k, newValue) => {
@@ -89,10 +90,10 @@ export const attachBindings = <ModuleType extends { [key: string]: any }>(
         }
     ) as ModuleType
 
-export const RawModuleWithNameMapping = <RawModuleWithMappingType>(
-    rawModule: RawModule,
-    variableNamesIndex: _VariableNamesIndex
-): RawModuleWithMappingType => {
+export const RawModuleWithNameMapping = (
+    rawModule: object,
+    variableNamesIndex: NameMapping
+) => {
     if (typeof variableNamesIndex === 'string') {
         return (rawModule as any)[variableNamesIndex]
     } else if (typeof variableNamesIndex === 'object') {
@@ -102,31 +103,51 @@ export const RawModuleWithNameMapping = <RawModuleWithMappingType>(
                 if (key in rawModule) {
                     return Reflect.get(rawModule, key)
                 } else if (key in variableNamesIndex) {
-                    const nextVariableNames = variableNamesIndex[key as keyof _VariableNamesIndex]!
-                    return RawModuleWithNameMapping(rawModule, nextVariableNames)
+                    const nextVariableNames =
+                        variableNamesIndex[key as keyof NameMapping]!
+                    return RawModuleWithNameMapping(
+                        rawModule,
+                        nextVariableNames
+                    )
                 } else if (_proxyGetHandlerThrowIfKeyUnknown(rawModule, key)) {
                     return undefined
-                } 
+                }
             },
-            has: function(_, k) {
+            has: function (_, k) {
                 return k in rawModule || k in variableNamesIndex
             },
             set: (_, k, value) => {
                 const key = String(k)
                 if (key in variableNamesIndex) {
-                    const variableName = variableNamesIndex[key as keyof _VariableNamesIndex]!
+                    const variableName =
+                        variableNamesIndex[key as keyof NameMapping]!
                     if (typeof variableName !== 'string') {
-                        throw new Error(`Failed to set value for key ${String(k)}: variable name is not a string`)
+                        throw new Error(
+                            `Failed to set value for key ${String(
+                                k
+                            )}: variable name is not a string`
+                        )
                     }
                     return Reflect.set(rawModule, variableName, value)
                 } else {
-                    throw new Error(`Key ${String(k)} is not defined in raw module`)
+                    throw new Error(
+                        `Key ${String(k)} is not defined in raw module`
+                    )
                 }
             },
-        }) as RawModuleWithMappingType
+        })
     } else {
         throw new Error(`Invalid name mapping`)
     }
 }
 
-type _VariableNamesIndex = { [key: string]: string | _VariableNamesIndex } | string | undefined
+export const applyVariableNamesIndexNameMapping = (
+    rawModule: object,
+    variableNamesIndex: VariableNamesIndex | EngineMetadata['compilation']['variableNamesIndex']
+) =>
+    RawModuleWithNameMapping(rawModule, {
+        globals: variableNamesIndex.globals,
+        // io: variableNamesIndex.io,
+    })
+
+type NameMapping = { [key: string]: string | NameMapping } | string | undefined

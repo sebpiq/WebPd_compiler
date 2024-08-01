@@ -21,24 +21,26 @@
 import { Bindings } from '../../run/types'
 import { mapArray } from '../../functional-helpers'
 import { VariableName } from '../../ast/types'
+import { Engine, EngineMetadata, FloatArray, Message } from '../../run/types'
 import {
-    Engine,
-    EngineMetadata,
-    FloatArray,
-    Message,
-    RawModule,
-} from '../../run/types'
-import { CoreRawModule, liftString, readTypedArray } from './core-bindings'
-import { liftMessage, lowerMessage, MsgRawModule } from './msg-bindings'
+    CoreRawModuleWithDependencies,
+    liftString,
+    readTypedArray,
+} from './core-bindings'
+import {
+    liftMessage,
+    lowerMessage,
+    MsgRawModuleWithDependencies,
+} from './msg-bindings'
 import {
     EngineData,
     MessagePointer,
     ForwardReferences,
-    EngineRawModule,
+    RawEngine,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
 
-export interface EngineLifecycleRawModule extends RawModule {
+export interface EngineLifecycleRawModule {
     initialize: (sampleRate: number, blockSize: number) => void
     dspLoop: () => void
 
@@ -46,9 +48,10 @@ export interface EngineLifecycleRawModule extends RawModule {
     metadata: WebAssembly.Global
 }
 
-export type EngineLifecycleWithDependenciesRawModule = CoreRawModule &
-    MsgRawModule &
-    EngineLifecycleRawModule
+export type EngineLifecycleWithDependenciesRawModule =
+    EngineLifecycleRawModule &
+        MsgRawModuleWithDependencies &
+        CoreRawModuleWithDependencies
 
 interface EngineLifecycleBindings {
     initialize: Engine['initialize']
@@ -66,12 +69,12 @@ export const updateWasmInOuts = (
     engineData.wasmOutput = readTypedArray(
         rawModule,
         engineData.arrayType,
-        rawModule.core.x_getOutput()
+        rawModule.globals.core.x_getOutput()
     ) as FloatArray
     engineData.wasmInput = readTypedArray(
         rawModule,
         engineData.arrayType,
-        rawModule.core.x_getInput()
+        rawModule.globals.core.x_getInput()
     ) as FloatArray
 }
 
@@ -210,8 +213,8 @@ export const readMetadata = async (
     })
 
     // Finally, once the module instantiated, we read the metadata
-    const wasmExports = wasmInstance.exports as unknown as EngineRawModule
-    const stringPointer = wasmExports.metadata.valueOf()
-    const metadataJSON = liftString(wasmExports, stringPointer)
+    const rawModule = wasmInstance.exports as unknown as RawEngine
+    const stringPointer = rawModule.metadata.valueOf()
+    const metadataJSON = liftString(rawModule, stringPointer)
     return JSON.parse(metadataJSON)
 }

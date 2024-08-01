@@ -155,10 +155,10 @@ describe('modules-helpers', () => {
                     o: 'bla',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping<
-                typeof variableNamesIndex
-            >(rawModule, variableNamesIndex)
-
+            const rawModuleWithMapping = RawModuleWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
             assert.strictEqual(rawModuleWithMapping.a.e, 'BLO')
             assert.strictEqual(rawModuleWithMapping.i.o, 'BLA')
         })
@@ -172,10 +172,10 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping<
-                typeof variableNamesIndex & typeof rawModule
-            >(rawModule, variableNamesIndex)
-
+            const rawModuleWithMapping = RawModuleWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
             assert.strictEqual(rawModuleWithMapping.blo, 'BLO')
         })
 
@@ -188,7 +188,10 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(rawModule, variableNamesIndex)
+            const rawModuleWithMapping = RawModuleWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
             assert.throws(() => (rawModuleWithMapping as any).UNKNOWN)
         })
 
@@ -201,7 +204,10 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(rawModule, variableNamesIndex)
+            const rawModuleWithMapping = RawModuleWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
             assert.throws(() => (rawModuleWithMapping as any).a.UNKNOWN)
         })
 
@@ -214,10 +220,10 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping<
-                typeof variableNamesIndex
-            >(rawModule, variableNamesIndex)
-
+            const rawModuleWithMapping = RawModuleWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
             assert.ok('a' in rawModuleWithMapping)
             assert.ok('e' in rawModuleWithMapping.a)
         })
@@ -227,9 +233,10 @@ describe('modules-helpers', () => {
                 blo: 'BLO',
             }
             const variableNamesIndex = {}
-            const rawModuleWithMapping = RawModuleWithNameMapping<
-                typeof variableNamesIndex
-            >(rawModule, variableNamesIndex)
+            const rawModuleWithMapping = RawModuleWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
 
             assert.ok('blo' in rawModuleWithMapping)
         })
@@ -243,9 +250,10 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping<
-                typeof variableNamesIndex
-            >(rawModule, variableNamesIndex)
+            const rawModuleWithMapping = RawModuleWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
 
             rawModuleWithMapping.a.e = 'new_blo'
             assert.strictEqual(rawModuleWithMapping.a.e, 'new_blo')

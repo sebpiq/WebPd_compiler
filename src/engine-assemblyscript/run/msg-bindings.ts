@@ -28,7 +28,11 @@
  * @module
  */
 
-import { CoreRawModule, liftString, lowerString } from './core-bindings'
+import {
+    CoreRawModuleWithDependencies,
+    liftString,
+    lowerString,
+} from './core-bindings'
 import { readTypedArray } from './core-bindings'
 import {
     ArrayBufferOfIntegersPointer,
@@ -36,81 +40,86 @@ import {
     MessagePointer,
     StringPointer,
 } from './types'
-import { Message, RawModule } from '../../run/types'
+import { Message } from '../../run/types'
 
-export interface MsgRawModule extends RawModule {
-    msg: {
-        FLOAT_TOKEN: WebAssembly.Global
-        STRING_TOKEN: WebAssembly.Global
-    
-        x_create: (
-            templatePointer: ArrayBufferOfIntegersPointer
-        ) => MessagePointer
-        x_getTokenTypes: (messagePointer: MessagePointer) => FloatArrayPointer
-        x_createTemplate: (length: number) => FloatArrayPointer
+export interface MsgRawModule {
+    globals: {
+        msg: {
+            FLOAT_TOKEN: WebAssembly.Global
+            STRING_TOKEN: WebAssembly.Global
 
-        writeStringToken: (
-            messagePointer: MessagePointer,
-            tokenIndex: number,
-            stringPointer: StringPointer
-        ) => void
-        writeFloatToken: (
-            messagePointer: MessagePointer,
-            tokenIndex: number,
-            value: number
-        ) => void
-        readStringToken: (
-            messagePointer: MessagePointer,
-            tokenIndex: number
-        ) => StringPointer
-        readFloatToken: (
-            messagePointer: MessagePointer,
-            tokenIndex: number
-        ) => number
+            x_create: (
+                templatePointer: ArrayBufferOfIntegersPointer
+            ) => MessagePointer
+            x_getTokenTypes: (
+                messagePointer: MessagePointer
+            ) => FloatArrayPointer
+            x_createTemplate: (length: number) => FloatArrayPointer
+
+            writeStringToken: (
+                messagePointer: MessagePointer,
+                tokenIndex: number,
+                stringPointer: StringPointer
+            ) => void
+            writeFloatToken: (
+                messagePointer: MessagePointer,
+                tokenIndex: number,
+                value: number
+            ) => void
+            readStringToken: (
+                messagePointer: MessagePointer,
+                tokenIndex: number
+            ) => StringPointer
+            readFloatToken: (
+                messagePointer: MessagePointer,
+                tokenIndex: number
+            ) => number
+        }
     }
 }
 
-export type MsgWithDependenciesRawModule = CoreRawModule & MsgRawModule
+export type MsgRawModuleWithDependencies = MsgRawModule &
+    CoreRawModuleWithDependencies
 
 export const INT_ARRAY_BYTES_PER_ELEMENT = Int32Array.BYTES_PER_ELEMENT
 
 export const liftMessage = (
-    wasmExports: MsgWithDependenciesRawModule,
+    rawModule: MsgRawModuleWithDependencies,
     messagePointer: MessagePointer
 ): Message => {
     const messageTokenTypesPointer =
-        wasmExports.msg.x_getTokenTypes(messagePointer)
+        rawModule.globals.msg.x_getTokenTypes(messagePointer)
     const messageTokenTypes = readTypedArray(
-        wasmExports,
+        rawModule,
         Int32Array,
         messageTokenTypesPointer
     )!
     const message: Message = []
     messageTokenTypes.forEach((tokenType, tokenIndex) => {
-        if (tokenType === wasmExports.msg.FLOAT_TOKEN.valueOf()) {
+        if (tokenType === rawModule.globals.msg.FLOAT_TOKEN.valueOf()) {
             message.push(
-                wasmExports.msg.readFloatToken(messagePointer, tokenIndex)
+                rawModule.globals.msg.readFloatToken(messagePointer, tokenIndex)
             )
-        } else if (tokenType === wasmExports.msg.STRING_TOKEN.valueOf()) {
-            const stringPointer = wasmExports.msg.readStringToken(
+        } else if (tokenType === rawModule.globals.msg.STRING_TOKEN.valueOf()) {
+            const stringPointer = rawModule.globals.msg.readStringToken(
                 messagePointer,
                 tokenIndex
             )
-            message.push(liftString(wasmExports, stringPointer)!)
+            message.push(liftString(rawModule, stringPointer)!)
         }
     })
     return message
 }
 
 export const lowerMessage = (
-    wasmExports: MsgWithDependenciesRawModule,
+    rawModule: MsgRawModuleWithDependencies,
     message: Message
 ): MessagePointer => {
     const template: Array<number> = message.reduce((template, value) => {
         if (typeof value === 'number') {
-            template.push(wasmExports.msg.FLOAT_TOKEN.valueOf())
+            template.push(rawModule.globals.msg.FLOAT_TOKEN.valueOf())
         } else if (typeof value === 'string') {
-            template.push(wasmExports.msg.STRING_TOKEN.valueOf())
+            template.push(rawModule.globals.msg.STRING_TOKEN.valueOf())
             template.push(value.length)
         } else {
             throw new Error(`invalid message value ${value}`)
@@ -120,23 +129,23 @@ export const lowerMessage = (
 
     // Here we should ideally pass an array of Int, but I am not sure how
     // to lower a typed array in a generic manner, so using the available bindings from `commons`.
-    const templateArrayPointer = wasmExports.msg.x_createTemplate(
+    const templateArrayPointer = rawModule.globals.msg.x_createTemplate(
         template.length
     )
     const loweredTemplateArray = readTypedArray(
-        wasmExports,
+        rawModule,
         Int32Array,
         templateArrayPointer
     )
     loweredTemplateArray.set(template)
-    const messagePointer = wasmExports.msg.x_create(templateArrayPointer)
+    const messagePointer = rawModule.globals.msg.x_create(templateArrayPointer)
 
     message.forEach((value, index) => {
         if (typeof value === 'number') {
-            wasmExports.msg.writeFloatToken(messagePointer, index, value)
+            rawModule.globals.msg.writeFloatToken(messagePointer, index, value)
         } else if (typeof value === 'string') {
-            const stringPointer = lowerString(wasmExports, value)
-            wasmExports.msg.writeStringToken(
+            const stringPointer = lowerString(rawModule, value)
+            rawModule.globals.msg.writeStringToken(
                 messagePointer,
                 index,
                 stringPointer

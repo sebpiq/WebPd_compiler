@@ -45,7 +45,7 @@ interface NodeTestSettings<NodeArguments> {
     arrays?: { [arrayName: string]: Array<number> }
 }
 
-type EngineFs = NonNullable<Engine['fs']>
+type EngineFs = NonNullable<Engine['globals']['fs']>
 type EngineFsKeys = keyof EngineFs
 
 type FrameNode = {
@@ -265,7 +265,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
-            engine.commons.setArray(arrayName, data)
+            engine.globals.commons.setArray(arrayName, data)
         })
     }
 
@@ -325,18 +325,18 @@ export const generateFramesForNode = async <NodeArguments>(
             }
         }
 
-        if (engine.fs) {
-            engine.fs.onCloseSoundStream = (...args) =>
+        if (engine.globals.fs) {
+            engine.globals.fs.onCloseSoundStream = (...args) =>
                 _fsCallback('onCloseSoundStream', args)
-            engine.fs.onOpenSoundReadStream = (...args) =>
+            engine.globals.fs.onOpenSoundReadStream = (...args) =>
                 _fsCallback('onOpenSoundReadStream', args)
-            engine.fs.onOpenSoundWriteStream = (...args) =>
+            engine.globals.fs.onOpenSoundWriteStream = (...args) =>
                 _fsCallback('onOpenSoundWriteStream', args)
-            engine.fs.onReadSoundFile = (...args) =>
+            engine.globals.fs.onReadSoundFile = (...args) =>
                 _fsCallback('onReadSoundFile', args)
-            engine.fs.onSoundStreamData = (...args) =>
+            engine.globals.fs.onSoundStreamData = (...args) =>
                 _fsCallback('onSoundStreamData', args)
-            engine.fs.onWriteSoundFile = (...args) =>
+            engine.globals.fs.onWriteSoundFile = (...args) =>
                 _fsCallback('onWriteSoundFile', args)
         }
 
@@ -369,9 +369,9 @@ export const generateFramesForNode = async <NodeArguments>(
         }
 
         // Send in fs commands
-        if (engine.fs && inputFrame.fs) {
+        if (engine.globals.fs && inputFrame.fs) {
             Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
-                ;(engine.fs![funcName as EngineFsKeys] as any).apply(null, args)
+                ;(engine.globals.fs![funcName as EngineFsKeys] as any).apply(null, args)
             })
         }
 
@@ -382,14 +382,14 @@ export const generateFramesForNode = async <NodeArguments>(
                 outputFrame.commons.getArray = {}
                 inputFrame.commons.getArray.forEach((arrayName) => {
                     outputFrame.commons!.getArray![arrayName] = Array.from(
-                        engine.commons.getArray(arrayName)
+                        engine.globals.commons.getArray(arrayName)
                     )
                 })
             }
             if (inputFrame.commons.setArray) {
                 Object.entries(inputFrame.commons.setArray).forEach(
                     ([arrayName, array]) => {
-                        engine.commons.setArray(arrayName, array)
+                        engine.globals.commons.setArray(arrayName, array)
                     }
                 )
             }

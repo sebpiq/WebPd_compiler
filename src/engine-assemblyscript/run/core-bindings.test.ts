@@ -19,7 +19,7 @@
  */
 import assert from 'assert'
 import {
-    CoreRawModule,
+    CoreRawModuleWithDependencies,
     lowerFloatArray,
     lowerListOfFloatArrays,
     readListOfFloatArrays,
@@ -28,11 +28,14 @@ import {
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import {
-    RawModuleWithNameMapping,
+    applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
-import { EngineRawModule, FloatArrayPointer, InternalPointer } from './types'
+import {
+    FloatArrayPointer,
+    InternalPointer,
+} from './types'
 import { Sequence } from '../../ast/declare'
 import macros from '../compile/macros'
 import render from '../../compile/render'
@@ -44,7 +47,7 @@ import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
 
 describe('core-bindings', () => {
-    interface CoreTestRawModule extends CoreRawModule {
+    interface CoreTestRawModule {
         testGetMyArray: () => FloatArrayPointer
         testCreateNewArray(size: number): FloatArrayPointer
         testReadArrayElem: (array: FloatArrayPointer, index: number) => number
@@ -72,15 +75,15 @@ describe('core-bindings', () => {
         })
         const assignerNs = precompilation.variableNamesAssigner.globals.core!
         const localContext = { ns: assignerNs }
-        const globalContext = makeGlobalCodePrecompilationContext(precompilation)
+        const globalContext =
+            makeGlobalCodePrecompilationContext(precompilation)
         return render(
             macros,
             Sequence([
                 core.code(localContext, globalContext),
-                core.exports!(
-                    localContext,
-                    globalContext
-                ).map((name) => `export { ${name} }`),
+                core.exports!(localContext, globalContext).map(
+                    (name) => `export { ${name} }`
+                ),
             ])
         )
     }
@@ -104,10 +107,10 @@ describe('core-bindings', () => {
             precompilation.variableNamesAssigner,
             makeGlobalCodePrecompilationContext(precompilation)
         )
-        return RawModuleWithNameMapping<EngineRawModule & CoreTestRawModule>(
+        return applyVariableNamesIndexNameMapping(
             rawModule,
-            precompilation.variableNamesIndex.globals
-        )
+            precompilation.variableNamesIndex
+        ) as CoreRawModuleWithDependencies & CoreTestRawModule
     }
 
     describe('readTypedArray', () => {

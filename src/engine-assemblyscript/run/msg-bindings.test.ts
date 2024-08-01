@@ -21,34 +21,32 @@
 import assert from 'assert'
 import {
     INT_ARRAY_BYTES_PER_ELEMENT,
-    MsgWithDependenciesRawModule,
+    MsgRawModuleWithDependencies,
     liftMessage,
     lowerMessage,
 } from './msg-bindings'
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
 import {
-    RawModuleWithNameMapping,
+    applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
 import { core } from '../../stdlib/core'
 import { sked } from '../../stdlib/sked'
 import { msg } from '../../stdlib/msg'
-import { EngineRawModule, MessagePointer } from './types'
+import { MessagePointer } from './types'
 import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
 import macros from '../compile/macros'
 import {
     makeGlobalCodePrecompilationContext,
     makePrecompilation,
-    makeSettings,
 } from '../../compile/test-helpers'
 import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
-import { settings } from 'cluster'
 
 describe('msg-bindings', () => {
-    interface MsgTestRawModule extends MsgWithDependenciesRawModule {
+    interface MsgTestRawModule {
         testReadMessageData: (message: MessagePointer, index: number) => number
         testCreateMessage: () => MessagePointer
     }
@@ -124,10 +122,10 @@ describe('msg-bindings', () => {
             precompilation.variableNamesAssigner,
             makeGlobalCodePrecompilationContext(precompilation)
         )
-        return RawModuleWithNameMapping<EngineRawModule & MsgTestRawModule>(
+        return applyVariableNamesIndexNameMapping(
             rawModule,
-            precompilation.variableNamesIndex.globals
-        )
+            precompilation.variableNamesIndex
+        ) as MsgTestRawModule & MsgRawModuleWithDependencies
     }
 
     describe('lowerMessage', () => {

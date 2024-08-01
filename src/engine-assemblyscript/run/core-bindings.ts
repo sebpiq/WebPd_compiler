@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { getFloatArrayType } from '../../run/run-helpers'
-import { FloatArrayPointer, InternalPointer } from './types'
+import { BaseRawEngine, FloatArrayPointer, InternalPointer } from './types'
 import { AudioSettings } from '../../compile/types'
 import { FloatArray } from '../../run/types'
 
@@ -34,32 +34,35 @@ export type TypedArrayConstructor =
     | typeof Float64Array
 
 export interface CoreRawModule {
-    core: {
-        createFloatArray: (length: number) => FloatArrayPointer
-        x_createListOfArrays: () => InternalPointer
-        x_pushToListOfArrays: (
-            arrays: InternalPointer,
-            array: FloatArrayPointer
-        ) => void
-        x_getListOfArraysLength: (
-            listOfArraysPointer: InternalPointer
-        ) => number
-        x_getListOfArraysElem: (
-            listOfArraysPointer: InternalPointer,
-            index: number
-        ) => number
-        // Pointers to input and output buffers
-        x_getOutput: () => FloatArrayPointer
-        x_getInput: () => FloatArrayPointer
+    globals: {
+        core: {
+            createFloatArray: (length: number) => FloatArrayPointer
+            x_createListOfArrays: () => InternalPointer
+            x_pushToListOfArrays: (
+                arrays: InternalPointer,
+                array: FloatArrayPointer
+            ) => void
+            x_getListOfArraysLength: (
+                listOfArraysPointer: InternalPointer
+            ) => number
+            x_getListOfArraysElem: (
+                listOfArraysPointer: InternalPointer,
+                index: number
+            ) => number
+            // Pointers to input and output buffers
+            x_getOutput: () => FloatArrayPointer
+            x_getInput: () => FloatArrayPointer
+        }
     }
-    // Signatures of internal methods that enable to access wasm memory.
-    // REF : https://www.assemblyscript.org/runtime.html#interface
-    __new: (length: number, classType: number) => InternalPointer
-    memory: WebAssembly.Memory
 }
 
+export type CoreRawModuleWithDependencies = CoreRawModule & BaseRawEngine
+
 /** @copyright Assemblyscript ESM bindings */
-export const liftString = (rawModule: CoreRawModule, pointer: number) => {
+export const liftString = (
+    rawModule: CoreRawModuleWithDependencies,
+    pointer: number
+) => {
     if (!pointer) {
         throw new Error('Cannot lift a null pointer')
     }
@@ -80,7 +83,10 @@ export const liftString = (rawModule: CoreRawModule, pointer: number) => {
 }
 
 /** @copyright Assemblyscript ESM bindings */
-export const lowerString = (rawModule: CoreRawModule, value: string) => {
+export const lowerString = (
+    rawModule: CoreRawModuleWithDependencies,
+    value: string
+) => {
     if (value == null) {
         throw new Error('Cannot lower a null string')
     }
@@ -93,7 +99,10 @@ export const lowerString = (rawModule: CoreRawModule, value: string) => {
 }
 
 /** @copyright Assemblyscript ESM bindings */
-export const lowerBuffer = (rawModule: CoreRawModule, value: ArrayBuffer) => {
+export const lowerBuffer = (
+    rawModule: CoreRawModuleWithDependencies,
+    value: ArrayBuffer
+) => {
     if (value == null) {
         throw new Error('Cannot lower a null buffer')
     }
@@ -111,7 +120,7 @@ export const lowerBuffer = (rawModule: CoreRawModule, value: ArrayBuffer) => {
 export const readTypedArray = <
     _TypedArrayConstructor extends TypedArrayConstructor
 >(
-    rawModule: CoreRawModule,
+    rawModule: CoreRawModuleWithDependencies,
     constructor: _TypedArrayConstructor,
     pointer: FloatArrayPointer
 ) => {
@@ -128,12 +137,12 @@ export const readTypedArray = <
 
 /** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const lowerFloatArray = (
-    rawModule: CoreRawModule,
+    rawModule: CoreRawModuleWithDependencies,
     bitDepth: AudioSettings['bitDepth'],
     data: Array<number> | FloatArray
 ) => {
     const arrayType = getFloatArrayType(bitDepth)
-    const arrayPointer = rawModule.core.createFloatArray(data.length)
+    const arrayPointer = rawModule.globals.core.createFloatArray(data.length)
     const array = readTypedArray(
         rawModule,
         arrayType,
@@ -145,30 +154,30 @@ export const lowerFloatArray = (
 
 /** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const lowerListOfFloatArrays = (
-    rawModule: CoreRawModule,
+    rawModule: CoreRawModuleWithDependencies,
     bitDepth: AudioSettings['bitDepth'],
     data: Array<Array<number> | FloatArray>
 ): InternalPointer => {
-    const arraysPointer = rawModule.core.x_createListOfArrays()
+    const arraysPointer = rawModule.globals.core.x_createListOfArrays()
     data.forEach((array) => {
         const { arrayPointer } = lowerFloatArray(rawModule, bitDepth, array)
-        rawModule.core.x_pushToListOfArrays(arraysPointer, arrayPointer)
+        rawModule.globals.core.x_pushToListOfArrays(arraysPointer, arrayPointer)
     })
     return arraysPointer
 }
 
 /** @param bitDepth : Must be the same value as what was used to compile the engine. */
 export const readListOfFloatArrays = (
-    rawModule: CoreRawModule,
+    rawModule: CoreRawModuleWithDependencies,
     bitDepth: AudioSettings['bitDepth'],
     listOfArraysPointer: InternalPointer
 ) => {
     const listLength =
-        rawModule.core.x_getListOfArraysLength(listOfArraysPointer)
+        rawModule.globals.core.x_getListOfArraysLength(listOfArraysPointer)
     const arrays: Array<InstanceType<TypedArrayConstructor>> = []
     const arrayType = getFloatArrayType(bitDepth)
     for (let i = 0; i < listLength; i++) {
-        const arrayPointer = rawModule.core.x_getListOfArraysElem(
+        const arrayPointer = rawModule.globals.core.x_getListOfArraysElem(
             listOfArraysPointer,
             i
         )

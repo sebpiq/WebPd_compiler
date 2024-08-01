@@ -33,7 +33,7 @@ export default (
         precompilation
     const dependencies = flattenDependencies([
         ...minimalDependencies,
-        ..._collectDependenciesFromTraversal(precompilation),
+        ..._collectDependenciesFromGraph(precompilation),
     ])
 
     const globalContext: GlobalPrecompilationContext = {
@@ -164,7 +164,7 @@ export const flattenDependencies = (
         }
     })
 
-const _collectDependenciesFromTraversal = ({
+const _collectDependenciesFromGraph = ({
     graph,
     precompiledCodeAssigner,
 }: Precompilation): Array<GlobalDefinitions> => {

@@ -19,7 +19,7 @@
  */
 
 import { liftString } from './core-bindings'
-import { StringPointer, EngineRawModule } from './types'
+import { StringPointer, RawEngine } from './types'
 
 // REF : Assemblyscript ESM bindings
 export const instantiateWasmModule = async (
@@ -55,6 +55,6 @@ export const instantiateWasmModule = async (
         ...wasmImports,
     })
     const wasmExports = instanceAndModule.instance
-        .exports as unknown as EngineRawModule
+        .exports as unknown as RawEngine
     return instanceAndModule.instance
 }

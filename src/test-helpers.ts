@@ -27,7 +27,7 @@ import {
 } from './compile/types'
 import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
-import { Engine, Module } from './run/types'
+import { Engine } from './run/types'
 import { writeFile } from 'fs/promises'
 import { getMacros } from './compile/compile-helpers'
 import { compileJavascript } from './engine-javascript/run/test-helpers'
@@ -43,10 +43,12 @@ import {
 } from './engine-assemblyscript/run'
 import {
     createEngineBindings as createJavaScriptEngineBindings,
-    applyNameMappingToRawModule,
     EngineLifecycleRawModule,
 } from './engine-javascript/run'
-import { attachBindings, RawModuleWithNameMapping } from './run/run-helpers'
+import {
+    applyVariableNamesIndexNameMapping,
+    attachBindings,
+} from './run/run-helpers'
 import render from './compile/render'
 import {
     collectAndDedupeExports,
@@ -57,12 +59,14 @@ import {
     makeGlobalCodePrecompilationContext,
     makePrecompilation,
 } from './compile/test-helpers'
-import { EngineRawModule } from './engine-assemblyscript/run/types'
+import { RawEngine } from './engine-assemblyscript/run/types'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
     target: CompilerTarget
 }
+
+type Module = object
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
@@ -91,12 +95,12 @@ interface CreateTestModuleApplyBindings {
 }
 
 /** Helper function to create a `Module` for running tests. */
-export const createTestModule = async <ModuleType extends Module>(
+export const createTestModule = async (
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
     applyBindings: CreateTestModuleApplyBindings = {}
-): Promise<ModuleType> => {
+) => {
     const applyBindingsNonNull: Required<CreateTestModuleApplyBindings> = {
         javascript: async (rawModule) => rawModule,
         assemblyscript: (buffer) => wasmBufferToRawModule(buffer),
@@ -112,21 +116,17 @@ export const createTestModule = async <ModuleType extends Module>(
         case 'javascript':
             const rawModule = await compileJavascript(code)
             const jsModule = await applyBindingsNonNull.javascript(rawModule)
-            return jsModule as ModuleType
+            return jsModule
         case 'assemblyscript':
             const buffer = await compileAssemblyscript(code, bitDepth)
             const ascModule = await applyBindingsNonNull.assemblyscript(buffer)
-            return ascModule as ModuleType
+            return ascModule
     }
 }
 
-type TestEngine<ExportsKeys> = Engine & {
-    [Property in keyof ExportsKeys]: any
-}
-
-type TestEngineExportsKeys = { [name: string]: any }
-
-export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
+// Set default type to 'UNKNOWN' otherwise default type is `string` which
+// is too permissive, showing any string key as available on the engine.
+export const createTestEngine = <ExportedKeys extends string = 'UNKNOWN'>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
@@ -138,46 +138,51 @@ export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
             audio: {
                 bitDepth,
                 channelCount: { in: 2, out: 2 },
-            }
-        }
+            },
+        },
     })
     const context = makeGlobalCodePrecompilationContext(precompilation)
     const exports = collectAndDedupeExports(
         flattenDependencies(dependencies),
         precompilation.variableNamesAssigner,
-        context,
+        context
     )
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
-    return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
+    return createTestModule(target, bitDepth, code, {
         javascript: async (rawModule: EngineLifecycleRawModule) => {
-            const rawModuleWithMapping = applyNameMappingToRawModule(rawModule)
+            const rawModuleWithMapping = applyVariableNamesIndexNameMapping(
+                rawModule,
+                rawModule.metadata.compilation.variableNamesIndex
+            )
             return attachBindings(rawModule, {
                 ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
-                ...createJavaScriptEngineBindings(
-                    rawModuleWithMapping
-                ),
+                ...createJavaScriptEngineBindings(rawModuleWithMapping),
             })
         },
         assemblyscript: async (buffer) => {
             const { rawModule, engineData, forwardReferences } =
                 await createAssemblyScriptWasmRawModule(buffer)
-            const rawModuleWithNameMapping = RawModuleWithNameMapping<EngineRawModule>(
+            const rawModuleWithNameMapping = applyVariableNamesIndexNameMapping(
                 rawModule,
-                engineData.metadata.compilation.variableNamesIndex.globals
-            )
+                engineData.metadata.compilation.variableNamesIndex
+            ) as RawEngine
             const engineBindings = await createAssemblyScriptWasmEngineBindings(
                 rawModuleWithNameMapping,
-                engineData,
+                engineData
             )
             const engine = attachBindings(rawModuleWithNameMapping, {
                 ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
                 ...engineBindings,
             })
-            assignReferences(forwardReferences, rawModuleWithNameMapping, engine)
+            assignReferences(
+                forwardReferences,
+                rawModuleWithNameMapping,
+                engine
+            )
             return engine
         },
-    })
+    }) as Promise<Engine & Record<ExportedKeys, any>>
 }
 
 export const runTestSuite = (
@@ -192,7 +197,7 @@ export const runTestSuite = (
         }) => AstFunc
     }>,
     dependencies: Array<GlobalDefinitions> = [],
-    settings: Partial<CompilationSettings> = {},
+    settings: Partial<CompilationSettings> = {}
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
     let testCounter = 1
@@ -213,25 +218,21 @@ export const runTestSuite = (
             })
             const context = makeGlobalCodePrecompilationContext(precompilation)
             const testsCodeDefinitions: Array<GlobalDefinitions> =
-                tests.map<GlobalDefinitions>(
-                    ({ testFunction }, i) => {
-                        const astTestFunc = testFunction({
-                            target,
-                            globals:
-                                precompilation.variableNamesAssigner.globals,
-                        })
-                        const codeGeneratorWithSettings: GlobalDefinitions =
-                            {
-                                namespace: 'tests',
-                                code: () => ({
-                                    ...astTestFunc,
-                                    name: testFunctionNames[i]!,
-                                }),
-                                exports: () => [testFunctionNames[i]!],
-                            }
-                        return codeGeneratorWithSettings
+                tests.map<GlobalDefinitions>(({ testFunction }, i) => {
+                    const astTestFunc = testFunction({
+                        target,
+                        globals: precompilation.variableNamesAssigner.globals,
+                    })
+                    const codeGeneratorWithSettings: GlobalDefinitions = {
+                        namespace: 'tests',
+                        code: () => ({
+                            ...astTestFunc,
+                            name: testFunctionNames[i]!,
+                        }),
+                        exports: () => [testFunctionNames[i]!],
                     }
-                )
+                    return codeGeneratorWithSettings
+                })
 
             const testsAndDependencies = Sequence([
                 Func('reportTestFailure', [Var('string', 'msg')], 'void')`
@@ -320,7 +321,7 @@ export const runTestSuite = (
                     collectAndDedupeExports(
                         [...dependencies, ...testsCodeDefinitions],
                         precompilation.variableNamesAssigner,
-                        context,
+                        context
                     )
                 ),
             ])

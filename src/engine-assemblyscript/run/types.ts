@@ -44,15 +44,23 @@ export type InternalPointer = number
  */
 export type ArrayBufferOfIntegersPointer = number
 
+export interface BaseRawEngine {
+    // Signatures of internal methods that enable to access wasm memory.
+    // REF : https://www.assemblyscript.org/runtime.html#interface
+    __new: (length: number, classType: number) => InternalPointer
+    memory: WebAssembly.Memory
+}
+
 /**
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
-export type EngineRawModule = CommonsRawModule &
+export type RawEngine = BaseRawEngine &
+    EngineLifecycleRawModule &
+    CommonsRawModule &
     CoreRawModule &
     MsgRawModule &
-    FsRawModule &
-    EngineLifecycleRawModule
+    FsRawModule
 
 export type AssemblyScriptWasmImports = FsImports
 
@@ -76,7 +84,7 @@ export interface ForwardReferences<RawModuleType> {
     rawModule?: RawModuleType
     engineData: EngineData
     modules: {
-        fs?: Engine['fs']
+        fs?: Engine['globals']['fs']
         io?: Engine['io']
     }
 }

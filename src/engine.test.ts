@@ -46,8 +46,6 @@ import { DspGraph } from './dsp-graph'
 import { makePrecompilation } from './compile/test-helpers'
 
 describe('Engine', () => {
-    type TestEngineExportsKeys = { [name: string]: any }
-
     interface EngineTestSettings {
         graph?: DspGraph.Graph
         nodeImplementations?: NodeImplementations
@@ -55,9 +53,7 @@ describe('Engine', () => {
         settings?: UserCompilationSettings
     }
 
-    const initializeEngineTest = async <
-        ExportsKeys extends TestEngineExportsKeys
-    >(
+    const initializeEngineTest = async <ExportedKeys extends string='UNKNOWN'>(
         target: CompilerTarget,
         bitDepth: AudioSettings['bitDepth'],
         {
@@ -106,7 +102,7 @@ describe('Engine', () => {
             throw new Error(`Unexpected, compilation failed.`)
         }
 
-        const engine = await createTestEngine<ExportsKeys>(
+        const engine = await createTestEngine<ExportedKeys>(
             target,
             bitDepth,
             compileResult.code,
@@ -129,29 +125,33 @@ describe('Engine', () => {
                 const floatArrayType = getFloatArrayType(bitDepth)
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        dsp: (_, {
-                            globals: { core },
-                            settings: {
-                                audio: { channelCount },
-                                target,
-                            },
-                        }) =>
+                        dsp: (
+                            _,
+                            {
+                                globals: { core },
+                                settings: {
+                                    audio: { channelCount },
+                                    target,
+                                },
+                            }
+                        ) =>
+                            // prettier-ignore
                             target === 'assemblyscript'
                                 ? ast`
-                        for (let channel: Int = 0; channel < ${
-                            channelCount.out
-                        }; channel++) {
-                            ${core!.OUTPUT!}[${core!.IT_FRAME!} + ${core!
-                                      .BLOCK_SIZE!} * channel] = 2.0
-                        }
-                    `
+                                    for (let channel: Int = 0; channel < ${
+                                        channelCount.out
+                                    }; channel++) {
+                                        ${core!.OUTPUT!}[${core!.IT_FRAME!} + ${core!
+                                                .BLOCK_SIZE!} * channel] = 2.0
+                                    }
+                                `
                                 : ast`
-                        for (let channel = 0; channel < ${
-                            channelCount.out
-                        }; channel++) {
-                            ${core!.OUTPUT!}[channel][${core!.IT_FRAME!}] = 2.0
-                        }
-                    `,
+                                    for (let channel = 0; channel < ${
+                                        channelCount.out
+                                    }; channel++) {
+                                        ${core!.OUTPUT!}[channel][${core!.IT_FRAME!}] = 2.0
+                                    }
+                                `,
                     },
                 }
 
@@ -167,16 +167,20 @@ describe('Engine', () => {
                     new floatArrayType(blockSize),
                 ]
 
-                const engine = await initializeEngineTest(target, bitDepth, {
-                    graph,
-                    nodeImplementations,
-                    settings: {
-                        audio: {
-                            bitDepth,
-                            channelCount: { in: 2, out: outputChannels },
+                const engine = await initializeEngineTest(
+                    target,
+                    bitDepth,
+                    {
+                        graph,
+                        nodeImplementations,
+                        settings: {
+                            audio: {
+                                bitDepth,
+                                channelCount: { in: 2, out: outputChannels },
+                            },
                         },
-                    },
-                })
+                    }
+                )
 
                 const output: Array<Float32Array | Float64Array> = []
                 for (let channel = 0; channel < outputChannels; channel++) {
@@ -199,32 +203,36 @@ describe('Engine', () => {
             async ({ target, bitDepth }) => {
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        dsp: (_, {
-                            globals: { core },
-                            settings: {
-                                target,
-                                audio: { channelCount },
-                            },
-                        }) =>
+                        dsp: (
+                            _,
+                            {
+                                globals: { core },
+                                settings: {
+                                    target,
+                                    audio: { channelCount },
+                                },
+                            }
+                        ) =>
+                            // prettier-ignore
                             target === 'assemblyscript'
                                 ? ast`
-                        for (let channel: Int = 0; channel < ${
-                            channelCount.in
-                        }; channel++) {
-                            ${core!.OUTPUT!}[${core!.IT_FRAME!} + ${core!
-                                      .BLOCK_SIZE!} * channel] 
-                                = ${core!.INPUT!}[${core!.IT_FRAME!} + ${core!
-                                      .BLOCK_SIZE!} * channel]
-                        }
-                    `
+                                    for (let channel: Int = 0; channel < ${
+                                        channelCount.in
+                                    }; channel++) {
+                                        ${core!.OUTPUT!}[${core!.IT_FRAME!} + ${core!
+                                                .BLOCK_SIZE!} * channel] 
+                                            = ${core!.INPUT!}[${core!.IT_FRAME!} + ${core!
+                                                .BLOCK_SIZE!} * channel]
+                                    }
+                                `
                                 : ast`
-                        for (let channel = 0; channel < ${
-                            channelCount.in
-                        }; channel++) {
-                            ${core!.OUTPUT!}[channel][${core!.IT_FRAME!}] 
-                                = ${core!.INPUT!}[channel][${core!.IT_FRAME!}]
-                        }
-                    `,
+                                    for (let channel = 0; channel < ${
+                                        channelCount.in
+                                    }; channel++) {
+                                        ${core!.OUTPUT!}[channel][${core!.IT_FRAME!}] 
+                                            = ${core!.INPUT!}[channel][${core!.IT_FRAME!}]
+                                    }
+                                `,
                     },
                 }
 
@@ -247,16 +255,20 @@ describe('Engine', () => {
                     new Float32Array(blockSize),
                 ]
 
-                const engine = await initializeEngineTest(target, bitDepth, {
-                    graph,
-                    nodeImplementations,
-                    settings: {
-                        audio: {
-                            bitDepth,
-                            channelCount: { in: 2, out: 3 },
+                const engine = await initializeEngineTest(
+                    target,
+                    bitDepth,
+                    {
+                        graph,
+                        nodeImplementations,
+                        settings: {
+                            audio: {
+                                bitDepth,
+                                channelCount: { in: 2, out: 3 },
+                            },
                         },
-                    },
-                })
+                    }
+                )
 
                 engine.initialize(44100, blockSize)
                 engine.dspLoop(input, output)
@@ -298,17 +310,25 @@ describe('Engine', () => {
                     channelCount: { in: 2, out: 3 },
                 }
 
-                const engine = await initializeEngineTest(target, bitDepth, {
-                    graph,
-                    nodeImplementations,
-                    settings: {
-                        audio: audioSettings,
-                        io: {
-                            messageReceivers: { bla: { portletIds: ['blo'] } },
-                            messageSenders: { bli: { portletIds: ['blu'] } },
+                const engine = await initializeEngineTest(
+                    target,
+                    bitDepth,
+                    {
+                        graph,
+                        nodeImplementations,
+                        settings: {
+                            audio: audioSettings,
+                            io: {
+                                messageReceivers: {
+                                    bla: { portletIds: ['blo'] },
+                                },
+                                messageSenders: {
+                                    bli: { portletIds: ['blu'] },
+                                },
+                            },
                         },
-                    },
-                })
+                    }
+                )
 
                 assert.deepStrictEqual<EngineMetadata>(engine.metadata, {
                     libVersion: packageInfo.version,
@@ -372,7 +392,7 @@ describe('Engine', () => {
                     )
 
                     assert.deepStrictEqual(
-                        engine.commons.getArray('array1'),
+                        engine.globals.commons.getArray('array1'),
                         new floatArrayType([123, 456, 789, 234])
                     )
                 }
@@ -425,23 +445,24 @@ describe('Engine', () => {
                         ],
                     }
 
-                    const engine = await initializeEngineTest(
-                        target,
-                        bitDepth,
-                        {
-                            injectedDependencies: [commonsArrays, testCode],
-                        }
-                    )
+                    const engine = await initializeEngineTest<
+                        | 'testReadArray1'
+                        | 'testReadArray2'
+                        | 'testReadArray3'
+                        | 'testIsFloatArray'
+                    >(target, bitDepth, {
+                        injectedDependencies: [commonsArrays, testCode],
+                    })
 
-                    engine.commons.setArray(
+                    engine.globals.commons.setArray(
                         'array1',
                         new Float32Array([11.1, 22.2, 33.3])
                     )
-                    engine.commons.setArray(
+                    engine.globals.commons.setArray(
                         'array2',
                         new Float64Array([44.4, 55.5])
                     )
-                    engine.commons.setArray('array3', [66.6, 77.7])
+                    engine.globals.commons.setArray('array3', [66.6, 77.7])
 
                     let actual: number
                     actual = engine.testReadArray1(1)
@@ -477,15 +498,15 @@ describe('Engine', () => {
                         }
                     )
                     assert.deepStrictEqual(
-                        engine.commons.getArray('array1'),
+                        engine.globals.commons.getArray('array1'),
                         new floatArrayType([1, 2, 3, 4])
                     )
                     assert.deepStrictEqual(
-                        engine.commons.getArray('array2'),
+                        engine.globals.commons.getArray('array2'),
                         new floatArrayType([11, 22, 33, 44, 55])
                     )
                     assert.deepStrictEqual(
-                        engine.commons.getArray('array3'),
+                        engine.globals.commons.getArray('array3'),
                         new floatArrayType([])
                     )
                 }
@@ -557,6 +578,12 @@ describe('Engine', () => {
                 ],
             }
 
+            type ReadSoundFileExportedKeys = 'testStartReadFile' |
+                        'testOperationId' |
+                        'testOperationStatus' |
+                        'testSoundLength' |
+                        'testOperationCleaned'
+
             it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
                 async ({ target, bitDepth }) => {
@@ -581,7 +608,9 @@ describe('Engine', () => {
                         exports: () => ['testReceivedSound'],
                     }
 
-                    const engine = await initializeEngineTest(
+                    const engine = await initializeEngineTest<
+                        ReadSoundFileExportedKeys | 'testReceivedSound'
+                    >(
                         target,
                         bitDepth,
                         {
@@ -596,9 +625,14 @@ describe('Engine', () => {
                     // 1. Some function in the engine requests a read file operation.
                     // Request is sent to host via callback
                     const called: Array<
-                        Parameters<NonNullable<Engine['fs']>['onReadSoundFile']>
+                        Parameters<
+                            NonNullable<
+                                Engine['globals']['fs']
+                            >['onReadSoundFile']
+                        >
                     > = []
-                    engine.fs!.onReadSoundFile = (...args) => called.push(args)
+                    engine.globals.fs!.onReadSoundFile = (...args) =>
+                        called.push(args)
 
                     const operationId = engine.testStartReadFile()
 
@@ -609,7 +643,7 @@ describe('Engine', () => {
                     ])
 
                     // 2. Hosts handles the operation. It then calls fs_sendReadSoundFileResponse when done.
-                    engine.fs!.sendReadSoundFileResponse!(
+                    engine.globals.fs!.sendReadSoundFileResponse!(
                         operationId,
                         FS_OPERATION_SUCCESS,
                         [
@@ -716,6 +750,12 @@ describe('Engine', () => {
                 ],
             }
 
+            type ReadSoundStreamExportedKeys = 'testStartReadStream'|
+'testOperationId'|
+'testOperationStatus'|
+'testOperationChannelCount'|
+'testOperationCleaned'
+
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
@@ -742,7 +782,7 @@ describe('Engine', () => {
                         exports: () => ['testReceivedSound'],
                     }
 
-                    const engine = await initializeEngineTest(
+                    const engine = await initializeEngineTest<ReadSoundStreamExportedKeys | 'testReceivedSound'>(
                         target,
                         bitDepth,
                         {
@@ -758,17 +798,21 @@ describe('Engine', () => {
                     // Request is sent to host via callback
                     const calledOpen: Array<
                         Parameters<
-                            NonNullable<Engine['fs']>['onOpenSoundReadStream']
+                            NonNullable<
+                                Engine['globals']['fs']
+                            >['onOpenSoundReadStream']
                         >
                     > = []
                     const calledClose: Array<
                         Parameters<
-                            NonNullable<Engine['fs']>['onCloseSoundStream']
+                            NonNullable<
+                                Engine['globals']['fs']
+                            >['onCloseSoundStream']
                         >
                     > = []
-                    engine.fs!.onOpenSoundReadStream = (...args) =>
+                    engine.globals.fs!.onOpenSoundReadStream = (...args) =>
                         calledOpen.push(args)
-                    engine.fs!.onCloseSoundStream = (...args) =>
+                    engine.globals.fs!.onCloseSoundStream = (...args) =>
                         calledClose.push(args)
 
                     const operationId = engine.testStartReadStream()
@@ -790,7 +834,7 @@ describe('Engine', () => {
                     )
 
                     // 2. Hosts handles the operation. It then calls ${globals.fs!.sendSoundStreamData!} to send in data.
-                    const writtenFrameCount = engine.fs!.sendSoundStreamData!(
+                    const writtenFrameCount = engine.globals.fs!.sendSoundStreamData!(
                         operationId,
                         [
                             new Float32Array([-1, -2, -3]),
@@ -802,7 +846,7 @@ describe('Engine', () => {
                     assert.ok(engine.testReceivedSound(operationId))
 
                     // 3. The stream is closed
-                    engine.fs!.closeSoundStream!(
+                    engine.globals.fs!.closeSoundStream!(
                         operationId,
                         FS_OPERATION_SUCCESS
                     )
@@ -910,12 +954,18 @@ describe('Engine', () => {
                 ],
             }
 
+            type WriteSoundStreamExportedKeys = 'testStartWriteStream'|
+'testSendSoundStreamData'|
+'testOperationId'|
+'testOperationStatus'|
+'testOperationCleaned'
+
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const engine = await initializeEngineTest(
+                    const engine = await initializeEngineTest<WriteSoundStreamExportedKeys>(
                         target,
                         bitDepth,
                         {
@@ -930,24 +980,30 @@ describe('Engine', () => {
                     // Request is sent to host via callback
                     const calledOpen: Array<
                         Parameters<
-                            NonNullable<Engine['fs']>['onOpenSoundWriteStream']
+                            NonNullable<
+                                Engine['globals']['fs']
+                            >['onOpenSoundWriteStream']
                         >
                     > = []
                     const calledClose: Array<
                         Parameters<
-                            NonNullable<Engine['fs']>['onCloseSoundStream']
+                            NonNullable<
+                                Engine['globals']['fs']
+                            >['onCloseSoundStream']
                         >
                     > = []
                     const calledSoundStreamData: Array<
                         Parameters<
-                            NonNullable<Engine['fs']>['onSoundStreamData']
+                            NonNullable<
+                                Engine['globals']['fs']
+                            >['onSoundStreamData']
                         >
                     > = []
-                    engine.fs!.onOpenSoundWriteStream = (...args) =>
+                    engine.globals.fs!.onOpenSoundWriteStream = (...args) =>
                         calledOpen.push(args)
-                    engine.fs!.onSoundStreamData = (...args) =>
+                    engine.globals.fs!.onSoundStreamData = (...args) =>
                         calledSoundStreamData.push(args)
-                    engine.fs!.onCloseSoundStream = (...args) =>
+                    engine.globals.fs!.onCloseSoundStream = (...args) =>
                         calledClose.push(args)
 
                     const operationId = engine.testStartWriteStream()
@@ -981,7 +1037,7 @@ describe('Engine', () => {
                     ])
 
                     // 3. The stream is closed
-                    engine.fs!.closeSoundStream!(
+                    engine.globals.fs!.closeSoundStream!(
                         operationId,
                         FS_OPERATION_SUCCESS
                     )
@@ -1086,12 +1142,17 @@ describe('Engine', () => {
                 ],
             }
 
+            type WriteSoundFileExportedKeys = 'testStartWriteFile' |
+                'testOperationId' |
+                'testOperationStatus' |
+                'testOperationCleaned'
+
             it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const engine = await initializeEngineTest(
+                    const engine = await initializeEngineTest<WriteSoundFileExportedKeys>(
                         target,
                         bitDepth,
                         {
@@ -1106,10 +1167,13 @@ describe('Engine', () => {
                     // Request is sent to host via callback
                     const called: Array<
                         Parameters<
-                            NonNullable<Engine['fs']>['onWriteSoundFile']
+                            NonNullable<
+                                Engine['globals']['fs']
+                            >['onWriteSoundFile']
                         >
                     > = []
-                    engine.fs!.onWriteSoundFile = (...args) => called.push(args)
+                    engine.globals.fs!.onWriteSoundFile = (...args) =>
+                        called.push(args)
 
                     const operationId = engine.testStartWriteFile()
 
@@ -1126,7 +1190,7 @@ describe('Engine', () => {
                     ])
 
                     // 2. Hosts handles the operation. It then calls fs_sendWriteSoundFileResponse when done.
-                    engine.fs!.sendWriteSoundFileResponse!(
+                    engine.globals.fs!.sendWriteSoundFileResponse!(
                         operationId,
                         FS_OPERATION_SUCCESS
                     )
@@ -1205,15 +1269,19 @@ describe('Engine', () => {
                     exports: () => ['testCallMessageSend'],
                 }
 
-                const engine = await initializeEngineTest(target, bitDepth, {
-                    injectedDependencies: [testCode],
-                    graph,
-                    settings: {
-                        io: {
-                            messageSenders,
+                const engine = await initializeEngineTest<'testCallMessageSend'>(
+                    target,
+                    bitDepth,
+                    {
+                        injectedDependencies: [testCode],
+                        graph,
+                        settings: {
+                            io: {
+                                messageSenders,
+                            },
                         },
-                    },
-                })
+                    }
+                )
 
                 const called11: Array<Message> = []
                 const called12: Array<Message> = []
@@ -1257,8 +1325,7 @@ describe('Engine', () => {
             'should create the specified inlet callers %s',
             async ({ target, bitDepth }) => {
                 const precompilation = makePrecompilation({})
-                const globals =
-                    precompilation.variableNamesAssigner.globals
+                const globals = precompilation.variableNamesAssigner.globals
 
                 const graph = makeGraph({
                     someNode1: {
@@ -1344,14 +1411,18 @@ describe('Engine', () => {
                     exports: () => ['testMessageReceived'],
                 }
 
-                const engine = await initializeEngineTest(target, bitDepth, {
-                    injectedDependencies: [testCode],
-                    graph,
-                    nodeImplementations,
-                    settings: {
-                        io: { messageReceivers },
-                    },
-                })
+                const engine = await initializeEngineTest<'testMessageReceived'>(
+                    target,
+                    bitDepth,
+                    {
+                        injectedDependencies: [testCode],
+                        graph,
+                        nodeImplementations,
+                        settings: {
+                            io: { messageReceivers },
+                        },
+                    }
+                )
 
                 assert.ok(
                     engine.io.messageReceivers.someNode1!.someInlet1 instanceof
@@ -1438,16 +1509,20 @@ describe('Engine', () => {
                     },
                 }
 
-                const engine = await initializeEngineTest(target, bitDepth, {
-                    settings: {
-                        io: {
-                            messageReceivers,
-                            messageSenders,
+                const engine = await initializeEngineTest(
+                    target,
+                    bitDepth,
+                    {
+                        settings: {
+                            io: {
+                                messageReceivers,
+                                messageSenders,
+                            },
                         },
-                    },
-                    graph,
-                    nodeImplementations,
-                })
+                        graph,
+                        nodeImplementations,
+                    }
+                )
 
                 const calledOutlet0: Array<Message> = []
                 const calledOutlet1: Array<Message> = []
@@ -1491,15 +1566,19 @@ describe('Engine', () => {
                     },
                 }
 
-                const engine = await initializeEngineTest(target, bitDepth, {
-                    graph,
-                    nodeImplementations,
-                    settings: {
-                        io: {
-                            messageReceivers,
+                const engine = await initializeEngineTest(
+                    target,
+                    bitDepth,
+                    {
+                        graph,
+                        nodeImplementations,
+                        settings: {
+                            io: {
+                                messageReceivers,
+                            },
                         },
-                    },
-                })
+                    }
+                )
 
                 await expect(() =>
                     engine.io.messageReceivers.someNode!.someInlet!([

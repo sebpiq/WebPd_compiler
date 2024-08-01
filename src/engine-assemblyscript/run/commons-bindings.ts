@@ -20,47 +20,45 @@
 
 import { EngineData, FloatArrayPointer, StringPointer } from './types'
 import {
-    CoreRawModule,
+    CoreRawModuleWithDependencies,
     lowerFloatArray,
     lowerString,
     readTypedArray,
 } from './core-bindings'
-import { Engine, FloatArray, RawModule } from '../../run/types'
+import { Engine, FloatArray } from '../../run/types'
 import { Bindings } from '../../run/types'
 import {
-    EngineLifecycleRawModule,
+    EngineLifecycleWithDependenciesRawModule,
     updateWasmInOuts,
 } from './engine-lifecycle-bindings'
-import { MsgRawModule } from './msg-bindings'
 
-export interface CommonsRawModule extends RawModule {
-    commons: {
-        getArray: (arrayName: StringPointer) => FloatArrayPointer
-        setArray: (arrayName: StringPointer, array: FloatArrayPointer) => void
+export interface CommonsRawModule {
+    globals: {
+        commons: {
+            getArray: (arrayName: StringPointer) => FloatArrayPointer
+            setArray: (
+                arrayName: StringPointer,
+                array: FloatArrayPointer
+            ) => void
+        }
     }
 }
 
-type CommonsDependencies = CoreRawModule &
-    MsgRawModule &
-    EngineLifecycleRawModule
-
-type CommonsWithDependencies = CommonsDependencies &
-    CommonsRawModule
+type CommonsRawModuleWithDependencies = CommonsRawModule &
+    CoreRawModuleWithDependencies &
+    EngineLifecycleWithDependenciesRawModule
 
 export const createCommonsBindings = (
-    rawModule: CommonsWithDependencies,
+    rawModule: CommonsRawModuleWithDependencies,
     engineData: EngineData
-): Bindings<Engine['commons']> => {
+): Bindings<Engine['globals']['commons']> => {
     return {
         getArray: {
             type: 'proxy',
             value: (arrayName) => {
-                const arrayNamePointer = lowerString(
-                    rawModule,
-                    arrayName
-                )
+                const arrayNamePointer = lowerString(rawModule, arrayName)
                 const arrayPointer =
-                    rawModule.commons.getArray(arrayNamePointer)
+                    rawModule.globals.commons.getArray(arrayNamePointer)
                 return readTypedArray(
                     rawModule,
                     engineData.arrayType,
@@ -71,19 +69,13 @@ export const createCommonsBindings = (
         setArray: {
             type: 'proxy',
             value: (arrayName, array) => {
-                const stringPointer = lowerString(
-                    rawModule,
-                    arrayName
-                )
+                const stringPointer = lowerString(rawModule, arrayName)
                 const { arrayPointer } = lowerFloatArray(
                     rawModule,
                     engineData.bitDepth,
                     array
                 )
-                rawModule.commons.setArray(
-                    stringPointer,
-                    arrayPointer
-                )
+                rawModule.globals.commons.setArray(stringPointer, arrayPointer)
                 updateWasmInOuts(rawModule, engineData)
             },
         },
