@@ -33,7 +33,7 @@ interface BindingSpecCallback<ValueType> {
     type: 'callback'
     value: ValueType
 }
-type BindingSpec<ValueType> =
+export type BindingSpec<ValueType> =
     | BindingSpecRaw
     | BindingSpecBinding<ValueType>
     | BindingSpecCallback<ValueType>
@@ -92,15 +92,13 @@ export interface Engine {
     io: {
         messageReceivers: {
             [nodeId: DspGraph.NodeId]: {
-                [inletId: DspGraph.PortletId]: (m: Message) => void
+                [inletId: DspGraph.PortletId]: (message: Message) => void
             }
         }
 
         messageSenders: {
             [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: {
-                    onMessage: (message: Message) => void
-                }
+                [outletId: DspGraph.PortletId]: (message: Message) => void
             }
         }
     }

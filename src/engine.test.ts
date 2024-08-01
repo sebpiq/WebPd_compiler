@@ -1289,26 +1289,26 @@ describe('Engine', () => {
 
                 assert.ok(
                     engine.io.messageSenders.someNode1!.someOutlet1!
-                        .onMessage instanceof Function
+                        instanceof Function
                 )
                 assert.ok(
                     engine.io.messageSenders.someNode1!.someOutlet2!
-                        .onMessage instanceof Function
+                        instanceof Function
                 )
                 assert.ok(
                     engine.io.messageSenders.someNode2!.someOutlet1!
-                        .onMessage instanceof Function
+                        instanceof Function
                 )
 
-                engine.io.messageSenders.someNode1!.someOutlet1!.onMessage = (
+                engine.io.messageSenders.someNode1!.someOutlet1! = (
                     message: Message
                 ) => called11.push(message)
 
-                engine.io.messageSenders.someNode1!.someOutlet2!.onMessage = (
+                engine.io.messageSenders.someNode1!.someOutlet2! = (
                     message: Message
                 ) => called12.push(message)
 
-                engine.io.messageSenders.someNode2!.someOutlet1!.onMessage = (
+                engine.io.messageSenders.someNode2!.someOutlet1! = (
                     message: Message
                 ) => called21.push(message)
 
@@ -1526,9 +1526,9 @@ describe('Engine', () => {
 
                 const calledOutlet0: Array<Message> = []
                 const calledOutlet1: Array<Message> = []
-                engine.io.messageSenders.node2!['0']!.onMessage = (m) =>
+                engine.io.messageSenders.node2!['0']! = (m) =>
                     calledOutlet0.push(m)
-                engine.io.messageSenders.node2!['1']!.onMessage = (m) =>
+                engine.io.messageSenders.node2!['1']! = (m) =>
                     calledOutlet1.push(m)
 
                 engine.io.messageReceivers.node1!['0']!([123, 'bla', 456])

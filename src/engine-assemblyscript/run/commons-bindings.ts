@@ -28,7 +28,7 @@ import {
 import { Engine, FloatArray } from '../../run/types'
 import { Bindings } from '../../run/types'
 import {
-    EngineLifecycleWithDependenciesRawModule,
+    EngineLifecycleRawModuleWithDependencies,
     updateWasmInOuts,
 } from './engine-lifecycle-bindings'
 
@@ -46,7 +46,7 @@ export interface CommonsRawModule {
 
 type CommonsRawModuleWithDependencies = CommonsRawModule &
     CoreRawModuleWithDependencies &
-    EngineLifecycleWithDependenciesRawModule
+    EngineLifecycleRawModuleWithDependencies
 
 export const createCommonsBindings = (
     rawModule: CommonsRawModuleWithDependencies,

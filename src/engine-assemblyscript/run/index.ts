@@ -42,7 +42,6 @@ import {
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
 import {
-    RawModuleWithNameMapping,
     applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
@@ -50,12 +49,15 @@ import { createCommonsBindings } from './commons-bindings'
 import { attachBindings } from '../../run/run-helpers'
 import {
     createEngineLifecycleBindings,
-    createIoMessageReceiversBindings,
-    createIoMessageSendersBindings,
-    EngineLifecycleWithDependenciesRawModule,
-    ioMsgSendersImports,
+    EngineLifecycleRawModuleWithDependencies,
     readMetadata,
 } from './engine-lifecycle-bindings'
+import {
+    createIoMessageReceiversBindings,
+    createIoMessageSendersBindings,
+    ioMsgSendersImports,
+    IoRawModuleWithDependencies,
+} from './io-bindings'
 import { Bindings } from '../../run/types'
 
 export const createEngine = async (
@@ -94,7 +96,9 @@ export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
     }
 
     const forwardReferences: ForwardReferences<
-        FsRawModuleWithDependencies & EngineLifecycleWithDependenciesRawModule
+        FsRawModuleWithDependencies &
+            EngineLifecycleRawModuleWithDependencies &
+            IoRawModuleWithDependencies
     > = { modules: {}, engineData }
 
     const wasmImports: AssemblyScriptWasmImports = {
@@ -160,10 +164,10 @@ export const createEngineBindings = (
 
 export const assignReferences = (
     forwardReferences: ForwardReferences<
-        FsRawModuleWithDependencies & EngineLifecycleWithDependenciesRawModule
+        FsRawModuleWithDependencies & EngineLifecycleRawModuleWithDependencies
     >,
     rawModuleWithNameMapping: FsRawModuleWithDependencies &
-        EngineLifecycleWithDependenciesRawModule,
+        EngineLifecycleRawModuleWithDependencies,
     engine: Engine
 ) => {
     // Update forward refs for use in Wasm imports

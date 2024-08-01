@@ -25,6 +25,7 @@ import { FsRawModule, FsImports } from './fs-bindings'
 import { MsgRawModule } from './msg-bindings'
 import { CommonsRawModule } from './commons-bindings'
 import { EngineLifecycleRawModule } from './engine-lifecycle-bindings'
+import { IoRawModule } from './io-bindings'
 
 export type StringPointer = number
 
@@ -57,6 +58,7 @@ export interface BaseRawEngine {
  */
 export type RawEngine = BaseRawEngine &
     EngineLifecycleRawModule &
+    IoRawModule &
     CommonsRawModule &
     CoreRawModule &
     MsgRawModule &

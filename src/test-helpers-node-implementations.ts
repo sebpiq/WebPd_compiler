@@ -50,7 +50,9 @@ type EngineFsKeys = keyof EngineFs
 
 type FrameNode = {
     fs?: {
-        [FsFuncName in keyof EngineFs]?: Parameters<NonNullable<EngineFs[FsFuncName]>>
+        [FsFuncName in keyof EngineFs]?: Parameters<
+            NonNullable<EngineFs[FsFuncName]>
+        >
     }
 }
 export type FrameNodeIn = FrameNode & {
@@ -165,7 +167,9 @@ export const generateFramesForNode = async <NodeArguments>(
                         if (outlet.type === 'message') {
                             return {
                                 ...messageReceivers,
-                                [outletId]: AnonFunc([Var(globals.msg!.Message!, 'm')])`
+                                [outletId]: AnonFunc([
+                                    Var(globals.msg!.Message!, 'm'),
+                                ])`
                                 ${snds[outletId]!}(m)
                                 return
                             `,
@@ -175,8 +179,11 @@ export const generateFramesForNode = async <NodeArguments>(
                         } else {
                             return {
                                 ...messageReceivers,
-                                [outletId]: AnonFunc([Var(globals.msg!.Message!, 'm')])`
-                                ${state}.VALUE_${outletId} = ${globals.msg!.readFloatToken!}(m, 0)
+                                [outletId]: AnonFunc([
+                                    Var(globals.msg!.Message!, 'm'),
+                                ])`
+                                ${state}.VALUE_${outletId} = ${globals.msg!
+                                    .readFloatToken!}(m, 0)
                                 return
                             `,
                             }
@@ -343,20 +350,18 @@ export const generateFramesForNode = async <NodeArguments>(
         // Set up engine outs to receive sent messages
         Object.keys(engine.io.messageSenders['fakeSinkNode']!).forEach(
             (outletId) => {
-                engine.io.messageSenders['fakeSinkNode']![outletId] = {
-                    onMessage: (m) => {
-                        if (testNode.outlets[outletId]!.type === 'message') {
-                            outputFrame.sequence!.push(outletId)
-                            outputFrame.outs[outletId] =
-                                outputFrame.outs[outletId] || []
-                            const output = outputFrame.outs[
-                                outletId
-                            ] as Array<Message>
-                            output.push(m)
-                        } else {
-                            outputFrame.outs[outletId] = m[0] as number
-                        }
-                    },
+                engine.io.messageSenders['fakeSinkNode']![outletId] = (m) => {
+                    if (testNode.outlets[outletId]!.type === 'message') {
+                        outputFrame.sequence!.push(outletId)
+                        outputFrame.outs[outletId] =
+                            outputFrame.outs[outletId] || []
+                        const output = outputFrame.outs[
+                            outletId
+                        ] as Array<Message>
+                        output.push(m)
+                    } else {
+                        outputFrame.outs[outletId] = m[0] as number
+                    }
                 }
             }
         )
@@ -371,7 +376,10 @@ export const generateFramesForNode = async <NodeArguments>(
         // Send in fs commands
         if (engine.globals.fs && inputFrame.fs) {
             Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
-                ;(engine.globals.fs![funcName as EngineFsKeys] as any).apply(null, args)
+                ;(engine.globals.fs![funcName as EngineFsKeys] as any).apply(
+                    null,
+                    args
+                )
             })
         }
 

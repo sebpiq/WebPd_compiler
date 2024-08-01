@@ -19,23 +19,18 @@
  */
 
 import { Bindings } from '../../run/types'
-import { mapArray } from '../../functional-helpers'
 import { VariableName } from '../../ast/types'
-import { Engine, EngineMetadata, FloatArray, Message } from '../../run/types'
+import { Engine, EngineMetadata, FloatArray } from '../../run/types'
 import {
     CoreRawModuleWithDependencies,
     liftString,
     readTypedArray,
 } from './core-bindings'
 import {
-    liftMessage,
-    lowerMessage,
     MsgRawModuleWithDependencies,
 } from './msg-bindings'
 import {
     EngineData,
-    MessagePointer,
-    ForwardReferences,
     RawEngine,
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
@@ -48,7 +43,7 @@ export interface EngineLifecycleRawModule {
     metadata: WebAssembly.Global
 }
 
-export type EngineLifecycleWithDependenciesRawModule =
+export type EngineLifecycleRawModuleWithDependencies =
     EngineLifecycleRawModule &
         MsgRawModuleWithDependencies &
         CoreRawModuleWithDependencies
@@ -63,7 +58,7 @@ interface EngineLifecycleBindings {
 //      lowerBuffer, lowerMessage) :
 // https://github.com/emscripten-core/emscripten/issues/6747
 export const updateWasmInOuts = (
-    rawModule: EngineLifecycleWithDependenciesRawModule,
+    rawModule: EngineLifecycleRawModuleWithDependencies,
     engineData: EngineData
 ) => {
     engineData.wasmOutput = readTypedArray(
@@ -79,7 +74,7 @@ export const updateWasmInOuts = (
 }
 
 export const createEngineLifecycleBindings = (
-    rawModule: EngineLifecycleWithDependenciesRawModule,
+    rawModule: EngineLifecycleRawModuleWithDependencies,
     engineData: EngineData
 ): Bindings<EngineLifecycleBindings> => {
     return {
@@ -117,78 +112,6 @@ export const createEngineLifecycleBindings = (
             },
         },
     }
-}
-
-export const createIoMessageReceiversBindings = (
-    rawModule: EngineLifecycleWithDependenciesRawModule,
-    engineData: EngineData
-): Bindings<Engine['io']['messageReceivers']> =>
-    Object.entries(engineData.metadata.compilation.io.messageReceivers).reduce(
-        (bindings, [nodeId, spec]) => ({
-            ...bindings,
-            [nodeId]: {
-                type: 'proxy',
-                value: mapArray(spec.portletIds, (inletId) => [
-                    inletId,
-                    (message: Message) => {
-                        const messagePointer = lowerMessage(rawModule, message)
-                        ;(rawModule as any)[
-                            engineData.metadata.compilation.variableNamesIndex
-                                .io.messageReceivers[nodeId]![inletId]!
-                        ](messagePointer)
-                    },
-                ]),
-            },
-        }),
-        {}
-    )
-
-export const createIoMessageSendersBindings = (
-    _: EngineLifecycleWithDependenciesRawModule,
-    engineData: EngineData
-): Bindings<Engine['io']['messageSenders']> =>
-    Object.entries(engineData.metadata.compilation.io.messageSenders).reduce(
-        (bindings, [nodeId, spec]) => ({
-            ...bindings,
-            [nodeId]: {
-                type: 'proxy',
-                value: mapArray(spec.portletIds, (outletId) => [
-                    outletId,
-                    {
-                        onMessage: () => undefined,
-                    },
-                ]),
-            },
-        }),
-        {}
-    )
-
-export const ioMsgSendersImports = (
-    forwardReferences: ForwardReferences<EngineLifecycleWithDependenciesRawModule>,
-    metadata: EngineMetadata
-) => {
-    const wasmImports: {
-        [listenerName: VariableName]: (messagePointer: MessagePointer) => void
-    } = {}
-    const { variableNamesIndex } = metadata.compilation
-    Object.entries(metadata.compilation.io.messageSenders).forEach(
-        ([nodeId, spec]) => {
-            spec.portletIds.forEach((outletId) => {
-                const listenerName =
-                    variableNamesIndex.io.messageSenders[nodeId]![outletId]!
-                wasmImports[listenerName] = (messagePointer) => {
-                    const message = liftMessage(
-                        forwardReferences.rawModule!,
-                        messagePointer
-                    )
-                    forwardReferences.modules.io!.messageSenders[nodeId]![
-                        outletId
-                    ]!.onMessage(message)
-                }
-            })
-        }
-    )
-    return wasmImports
 }
 
 export const readMetadata = async (

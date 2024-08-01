@@ -147,7 +147,7 @@ export const applyVariableNamesIndexNameMapping = (
 ) =>
     RawModuleWithNameMapping(rawModule, {
         globals: variableNamesIndex.globals,
-        // io: variableNamesIndex.io,
+        io: variableNamesIndex.io,
     })
 
 type NameMapping = { [key: string]: string | NameMapping } | string | undefined

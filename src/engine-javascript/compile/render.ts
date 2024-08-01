@@ -54,7 +54,7 @@ export default (
             variableName, 
             nodeId, 
             outletId
-        ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'].onMessage(m)}`)}
+        ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'](m)}`)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
@@ -83,7 +83,7 @@ export default (
                     ${Object.entries(settings.io.messageSenders).map(([nodeId, spec]) =>
                         ast`${nodeId}: {
                             ${spec.portletIds.map(outletId => 
-                                `"${outletId}": {onMessage: () => undefined},`)}
+                                `"${outletId}": () => undefined,`)}
                         },`
                     )}
                 },
