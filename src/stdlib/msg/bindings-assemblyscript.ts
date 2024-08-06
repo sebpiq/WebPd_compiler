@@ -32,49 +32,15 @@ import {
     CoreRawModuleWithDependencies,
     liftString,
     lowerString,
-} from './core-bindings'
-import { readTypedArray } from './core-bindings'
-import {
-    ArrayBufferOfIntegersPointer,
-    FloatArrayPointer,
-    MessagePointer,
-    StringPointer,
-} from './types'
+} from '../core/bindings-assemblyscript'
+import { readTypedArray } from '../core/bindings-assemblyscript'
+import { MessagePointer } from '../../engine-assemblyscript/run/types'
 import { Message } from '../../run/types'
+import { MsgExportsAssemblyScript } from './types'
 
 export interface MsgRawModule {
     globals: {
-        msg: {
-            FLOAT_TOKEN: WebAssembly.Global
-            STRING_TOKEN: WebAssembly.Global
-
-            x_create: (
-                templatePointer: ArrayBufferOfIntegersPointer
-            ) => MessagePointer
-            x_getTokenTypes: (
-                messagePointer: MessagePointer
-            ) => FloatArrayPointer
-            x_createTemplate: (length: number) => FloatArrayPointer
-
-            writeStringToken: (
-                messagePointer: MessagePointer,
-                tokenIndex: number,
-                stringPointer: StringPointer
-            ) => void
-            writeFloatToken: (
-                messagePointer: MessagePointer,
-                tokenIndex: number,
-                value: number
-            ) => void
-            readStringToken: (
-                messagePointer: MessagePointer,
-                tokenIndex: number
-            ) => StringPointer
-            readFloatToken: (
-                messagePointer: MessagePointer,
-                tokenIndex: number
-            ) => number
-        }
+        msg: MsgExportsAssemblyScript
     }
 }
 

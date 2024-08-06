@@ -18,12 +18,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { GlobalDefinitions } from '../compile/types'
-import { Sequence, Func, Var } from '../ast/declare'
+import { GlobalDefinitions } from '../../compile/types'
+import { Sequence, Func, Var } from '../../ast/declare'
+import { CoreExportsAssemblyScript, CoreNamespaceAll } from './types'
 
 const NAMESPACE = 'core'
 
-export const core: GlobalDefinitions = {
+export const core: GlobalDefinitions<
+    keyof CoreNamespaceAll,
+    keyof CoreExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
 
     // prettier-ignore
@@ -34,28 +38,28 @@ export const core: GlobalDefinitions = {
         const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
         const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
         const declareFuncs = {
-            toInt: Func(core.toInt!, [Var('Float', 'v')], 'Int'),
-            toFloat: Func(core.toFloat!, [Var('Int', 'v')], 'Float'),
-            createFloatArray: Func(core.createFloatArray!, [Var('Int', 'length')], 'FloatArray'),
-            setFloatDataView: Func(core.setFloatDataView!, [
+            toInt: Func(core.toInt, [Var('Float', 'v')], 'Int'),
+            toFloat: Func(core.toFloat, [Var('Int', 'v')], 'Float'),
+            createFloatArray: Func(core.createFloatArray, [Var('Int', 'length')], 'FloatArray'),
+            setFloatDataView: Func(core.setFloatDataView, [
                 Var('DataView', 'dataView'), 
                 Var('Int', 'position'), 
                 Var('Float', 'value'), 
             ], 'void'),
-            getFloatDataView: Func(core.getFloatDataView!, [
+            getFloatDataView: Func(core.getFloatDataView, [
                 Var('DataView', 'dataView'), 
                 Var('Int', 'position'), 
             ], 'Float')
         }
 
         const shared = [
-            Var('Int', core.IT_FRAME!, '0'),
-            Var('Int', core.FRAME!, '0'),
-            Var('Int', core.BLOCK_SIZE!, '0'),
-            Var('Float', core.SAMPLE_RATE!, '0'),
-            Var('Float', core.NULL_SIGNAL!, '0'),
-            Var('FloatArray', core.INPUT!, 'createFloatArray(0)'),
-            Var('FloatArray', core.OUTPUT!, 'createFloatArray(0)'),
+            Var('Int', core.IT_FRAME, '0'),
+            Var('Int', core.FRAME, '0'),
+            Var('Int', core.BLOCK_SIZE, '0'),
+            Var('Float', core.SAMPLE_RATE, '0'),
+            Var('Float', core.NULL_SIGNAL, '0'),
+            Var('FloatArray', core.INPUT, 'createFloatArray(0)'),
+            Var('FloatArray', core.OUTPUT, 'createFloatArray(0)'),
         ]
 
         if (target === 'assemblyscript') {
@@ -82,36 +86,36 @@ export const core: GlobalDefinitions = {
                 `,
 
                 // =========================== EXPORTED API
-                Func(core.x_createListOfArrays!, [], 'FloatArray[]')`
+                Func(core.x_createListOfArrays, [], 'FloatArray[]')`
                     const arrays: FloatArray[] = []
                     return arrays
                 `,
 
-                Func(core.x_pushToListOfArrays!, [
+                Func(core.x_pushToListOfArrays, [
                     Var('FloatArray[]', 'arrays'), 
                     Var('FloatArray', 'array')
                 ], 'void')`
                     arrays.push(array)
                 `,
 
-                Func(core.x_getListOfArraysLength!, [
+                Func(core.x_getListOfArraysLength, [
                     Var('FloatArray[]', 'arrays')
                 ], 'Int')`
                     return arrays.length
                 `,
 
-                Func(core.x_getListOfArraysElem!, [
+                Func(core.x_getListOfArraysElem, [
                     Var('FloatArray[]', 'arrays'), 
                     Var('Int', 'index')
                 ], 'FloatArray')`
                     return arrays[index]
                 `,
                 
-                Func(core.x_getInput!,[], 'FloatArray')`
-                    return ${core.INPUT!}
+                Func(core.x_getInput,[], 'FloatArray')`
+                    return ${core.INPUT}
                 `,
-                Func(core.x_getOutput!,[], 'FloatArray')`
-                    return ${core.OUTPUT!}
+                Func(core.x_getOutput,[], 'FloatArray')`
+                    return ${core.OUTPUT}
                 `,
 
                 ...shared,
@@ -146,13 +150,16 @@ export const core: GlobalDefinitions = {
         }
     },
 
-    exports: ({ ns: core }, { settings }) => settings.target === 'assemblyscript' ? [
-        core.x_createListOfArrays!,
-        core.x_pushToListOfArrays!,
-        core.x_getListOfArraysLength!,
-        core.x_getListOfArraysElem!,
-        core.x_getInput!,
-        core.x_getOutput!,
-        core.createFloatArray!,
-    ]: [],
+    exports: ({ ns: core }, { settings }) =>
+        settings.target === 'assemblyscript'
+            ? [
+                  core.x_createListOfArrays,
+                  core.x_pushToListOfArrays,
+                  core.x_getListOfArraysLength,
+                  core.x_getListOfArraysElem,
+                  core.x_getInput,
+                  core.x_getOutput,
+                  core.createFloatArray,
+              ]
+            : [],
 }

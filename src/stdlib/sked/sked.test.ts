@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { Sequence, ConstVar, Func, Var, AnonFunc } from '../ast/declare'
-import { runTestSuite } from '../test-helpers'
-import { core } from './core'
+import { Sequence, ConstVar, Func, Var, AnonFunc } from '../../ast/declare'
+import { runTestSuite } from '../../test-helpers'
+import { core } from '../core/core'
 import { sked } from './sked'
 
 describe('sked', () => {
@@ -28,18 +28,18 @@ describe('sked', () => {
             {
                 description:
                     'wait / emit > should not have to wait if event already resolved %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(true)
+                    const skeduler = ${sked.create}(true)
 
                     // Resolve the event before scheduling anything
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_booleansEqual(skeduler.events.has('some_event'), false)
                     assert_booleansEqual(skeduler.eventLog.has('some_event'), true)
 
                     // Schedule a wait which should be resolved imediately
-                    const skedId = ${globals.sked!.wait!}(skeduler, 'some_event', () => received.push(1234))
-                    assert_integersEqual(skedId, ${globals.sked!.ID_NULL!})
+                    const skedId = ${sked.wait}(skeduler, 'some_event', () => received.push(1234))
+                    assert_integersEqual(skedId, ${sked.ID_NULL})
                     assert_integersEqual(received.length, 1)
                     assert_integersEqual(received[0], 1234)
                 `,
@@ -48,23 +48,23 @@ describe('sked', () => {
             {
                 description:
                     'wait / emit > should call waits callbacks when resolving %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(true)
+                    const skeduler = ${sked.create}(true)
 
                     // Schedule a few waits
-                    ${globals.sked!.wait!}(skeduler, 'some_event', () => received.push(123))
-                    ${globals.sked!.wait!}(skeduler, 'some_event', () => received.push(456))
-                    ${globals.sked!.wait!}(skeduler, 'some_other_event', () => received.push(789))
+                    ${sked.wait}(skeduler, 'some_event', () => received.push(123))
+                    ${sked.wait}(skeduler, 'some_event', () => received.push(456))
+                    ${sked.wait}(skeduler, 'some_other_event', () => received.push(789))
                     assert_integersEqual(received.length, 0)
 
                     // Resolve the waits
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 2)
                     assert_integersEqual(received[0], 123)
                     assert_integersEqual(received[1], 456)
 
-                    ${globals.sked!.emit!}(skeduler, 'some_other_event')
+                    ${sked.emit}(skeduler, 'some_other_event')
                     assert_integersEqual(received.length, 3)
                     assert_integersEqual(received[2], 789)
                 `,
@@ -73,41 +73,41 @@ describe('sked', () => {
             {
                 description:
                     'wait / emit > should not call callbacks again when resolving several times %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(true)
-                    ${Var(globals.sked!.Id!, 'skedId', globals.sked!.ID_NULL!)}
+                    const skeduler = ${sked.create}(true)
+                    ${Var(sked.Id, 'skedId', sked.ID_NULL)}
 
                     // Schedule and resolve a few events
-                    ${globals.sked!.wait!}(skeduler, 'some_event', () => received.push(123))
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.wait}(skeduler, 'some_event', () => received.push(123))
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 1)
                     assert_integersEqual(received[0], 123)
                     
                     // Wait is instantly resolved
-                    skedId = ${globals.sked!.wait!}(skeduler, 'some_event', () => received.push(456))
-                    assert_integersEqual(skedId, ${globals.sked!.ID_NULL!})
+                    skedId = ${sked.wait}(skeduler, 'some_event', () => received.push(456))
+                    assert_integersEqual(skedId, ${sked.ID_NULL})
                     assert_integersEqual(received.length, 2)
                     assert_integersEqual(received[1], 456)
 
                     // Resolve again, callback not called
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 2)
                 `,
             },
 
             {
                 description: 'wait / emit > should cancel wait %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(true)
+                    const skeduler = ${sked.create}(true)
                     ${ConstVar(
-                        globals.sked!.Id!,
+                        sked.Id,
                         'skedId',
-                        `${globals.sked!.wait!}(skeduler, 'some_event', () => received.push(123))`,
+                        `${sked.wait}(skeduler, 'some_event', () => received.push(123))`,
                     )}
-                    ${globals.sked!.cancel!}(skeduler, skedId)
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.cancel}(skeduler, skedId)
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 0)
                 `,
             },
@@ -115,22 +115,22 @@ describe('sked', () => {
             {
                 description:
                     'wait future / emit > should call waits callbacks when resolving %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(false)
+                    const skeduler = ${sked.create}(false)
 
                     // Schedule a few waits
-                    ${globals.sked!.waitFuture!}(skeduler, 'some_event', () => received.push(123))
-                    ${globals.sked!.waitFuture!}(skeduler, 'some_event', () => received.push(456))
-                    ${globals.sked!.waitFuture!}(skeduler, 'some_other_event', () => received.push(789))
+                    ${sked.waitFuture}(skeduler, 'some_event', () => received.push(123))
+                    ${sked.waitFuture}(skeduler, 'some_event', () => received.push(456))
+                    ${sked.waitFuture}(skeduler, 'some_other_event', () => received.push(789))
                     assert_integersEqual(received.length, 0)
 
                     // Resolve the waits
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 2)
                     assert_integersEqual(received[0], 123)
                     assert_integersEqual(received[1], 456)
-                    ${globals.sked!.emit!}(skeduler, 'some_other_event')
+                    ${sked.emit}(skeduler, 'some_other_event')
                     assert_integersEqual(received.length, 3)
                     assert_integersEqual(received[2], 789)
                 `,
@@ -139,18 +139,18 @@ describe('sked', () => {
             {
                 description:
                     'wait future / emit > should not call callbacks again when resolving several times %s',
-                testFunction: ({ globals }) => AnonFunc()`            
+                testFunction: ({ globals: { sked } }) => AnonFunc()`            
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(false)
+                    const skeduler = ${sked.create}(false)
 
                     // Schedule and resolve a few events
-                    ${globals.sked!.waitFuture!}(skeduler, 'some_event', () => received.push(123))
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.waitFuture}(skeduler, 'some_event', () => received.push(123))
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 1)
                     assert_integersEqual(received[0], 123)
 
                     // Resolve again
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 1)
                     assert_integersEqual(received[0], 123)
                 `,
@@ -158,16 +158,16 @@ describe('sked', () => {
 
             {
                 description: 'wait future / emit > should cancel wait %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(false)
-                    ${Var(globals.sked!.Id!, 'skedId', `${globals.sked!.waitFuture!}(
+                    const skeduler = ${sked.create}(false)
+                    ${Var(sked.Id, 'skedId', `${sked.waitFuture}(
                         skeduler, 
                         'some_event', 
                         () => received.push(123)
                     )`)}
-                    ${globals.sked!.cancel!}(skeduler, skedId)
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.cancel}(skeduler, skedId)
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 0)
                 `,
             },
@@ -175,25 +175,25 @@ describe('sked', () => {
             {
                 description:
                     'subscribe / emit > emit should trigger existing listeners %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(false)
+                    const skeduler = ${sked.create}(false)
 
                     // Trigger an event with no listeners
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 0)
 
                     // Register a listener and emit event
-                    ${globals.sked!.subscribe!}(skeduler, 'some_event', () => received.push(123))
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.subscribe}(skeduler, 'some_event', () => received.push(123))
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 1)
                     assert_integersEqual(received[0], 123)
 
                     // Register more listeners and emit event
-                    ${globals.sked!.subscribe!}(skeduler, 'some_event', () => received.push(456))
-                    ${globals.sked!.subscribe!}(skeduler, 'some_event', () => received.push(789))
-                    ${globals.sked!.subscribe!}(skeduler, 'some_event', () => received.push(666))
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.subscribe}(skeduler, 'some_event', () => received.push(456))
+                    ${sked.subscribe}(skeduler, 'some_event', () => received.push(789))
+                    ${sked.subscribe}(skeduler, 'some_event', () => received.push(666))
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 5)
                     assert_integersEqual(received[1], 123)
                     assert_integersEqual(received[2], 456)
@@ -204,25 +204,25 @@ describe('sked', () => {
 
             {
                 description: 'subscribe / emit > should cancel listeners %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(false)
+                    const skeduler = ${sked.create}(false)
 
                     // Register a couple of listeners and emit
-                    ${ConstVar(globals.sked!.Id!, 'skedId', `${globals.sked!.subscribe!}(
+                    ${ConstVar(sked.Id, 'skedId', `${sked.subscribe}(
                         skeduler, 
                         'some_event', 
                         () => received.push(123)
                     )`)}
-                    ${globals.sked!.subscribe!}(skeduler, 'some_event', () => received.push(456))
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.subscribe}(skeduler, 'some_event', () => received.push(456))
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 2)
                     assert_integersEqual(received[0], 123)
                     assert_integersEqual(received[1], 456)
 
                     // Cancel a listener and emit again
-                    ${globals.sked!.cancel!}(skeduler, skedId)
-                    ${globals.sked!.emit!}(skeduler, 'some_event')
+                    ${sked.cancel}(skeduler, skedId)
+                    ${sked.emit}(skeduler, 'some_event')
                     assert_integersEqual(received.length, 3)
                     assert_integersEqual(received[2], 456)
                 `,
@@ -231,27 +231,27 @@ describe('sked', () => {
             {
                 description:
                     'cancel > should not throw when cancelling an listener that is already cancelled %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(false)
-                    ${ConstVar(globals.sked!.Id!, 'skedId', `${globals.sked!.subscribe!}(
+                    const skeduler = ${sked.create}(false)
+                    ${ConstVar(sked.Id, 'skedId', `${sked.subscribe}(
                         skeduler, 
                         'some_event', 
                         () => received.push(123)
                     )`)}
-                    ${globals.sked!.cancel!}(skeduler, skedId)
-                    ${globals.sked!.cancel!}(skeduler, skedId)
-                    ${globals.sked!.cancel!}(skeduler, skedId)
+                    ${sked.cancel}(skeduler, skedId)
+                    ${sked.cancel}(skeduler, skedId)
+                    ${sked.cancel}(skeduler, skedId)
                 `,
             },
 
             {
                 description:
                     'cancel > should not throw when cancelling an listener with id NULL %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
-                    const skeduler = ${globals.sked!.create!}(false)
-                    ${globals.sked!.cancel!}(skeduler, ${globals.sked!.ID_NULL!})
+                    const skeduler = ${sked.create}(false)
+                    ${sked.cancel}(skeduler, ${sked.ID_NULL})
                 `,
             },
         ],

@@ -200,9 +200,9 @@ describe('precompile.dependencies', () => {
                 precompilation.precompiledCode.dependencies,
                 {
                     ast: Sequence([
-                        Func('C_module1_func1')``,
-                        Class('C_module1_Class1', []),
-                        Func('C_module2_func2')``,
+                        Func('G_module1_func1')``,
+                        Class('G_module1_Class1', []),
+                        Func('G_module2_func2')``,
                     ]),
                     exports: [],
                     imports: [],

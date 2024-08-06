@@ -18,51 +18,51 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AnonFunc, ConstVar, Var } from '../ast/declare'
-import { runTestSuite } from '../test-helpers'
+import { AnonFunc, ConstVar, Var } from '../../ast/declare'
+import { runTestSuite } from '../../test-helpers'
 import { bufCore, bufPushPull, bufWriteRead } from './buf'
-import { core } from './core'
+import { core } from '../core/core'
 
 describe('buf', () => {
     runTestSuite(
         [
             {
                 description:
-                    'common > should clear content when calling buf.clear %s',
-                testFunction: ({ globals }) => AnonFunc()`
-                    ${ConstVar(globals.buf!.SoundBuffer!, 'soundBuffer', `${globals.buf!.create!}(5)`)}
+                    'common > should clear content when calling buf!.clear %s',
+                testFunction: ({ globals: { buf } }) => AnonFunc()`
+                    ${ConstVar(buf!.SoundBuffer, 'soundBuffer', `${buf!.create}(5)`)}
                     ${ConstVar('FloatArray', 'data', 'createFloatArray(4)')}
                     data.set([11, 22, 33, 44])
 
-                    ${globals.buf!.pushBlock!}(
+                    ${buf!.pushBlock}(
                         soundBuffer,
                         data,
                     )
-                    ${globals.buf!.clear!}(soundBuffer)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 0)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 0)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 0)
+                    ${buf!.clear}(soundBuffer)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 0)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 0)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 0)
                 `,
             },
 
             {
                 description:
                     'push / pull mode > should be able to push and pull from SoundBuffer %s',
-                testFunction: ({ globals }) => AnonFunc()`
-                    const soundBuffer = ${globals.buf!.create!}(5)
+                testFunction: ({ globals: { buf } }) => AnonFunc()`
+                    const soundBuffer = ${buf!.create}(5)
                     ${Var('Int', 'availableLength', '-1')}
                     let data3 = createFloatArray(3)
                     let data4 = createFloatArray(4)
                     data3.set([55, 66, 77])
                     data4.set([11, 22, 33, 44])
 
-                    availableLength = ${globals.buf!.pushBlock!}(
+                    availableLength = ${buf!.pushBlock}(
                         soundBuffer,
                         data4
                     )
                     assert_integersEqual(availableLength, 4)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 11)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 22)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 11)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 22)
                     assert_integersEqual(
                         soundBuffer.pullAvailableLength,
                         2
@@ -70,16 +70,16 @@ describe('buf', () => {
 
                     // Push another block that will span over the end, and wrap
                     // back to the beginning of the buffer
-                    availableLength = ${globals.buf!.pushBlock!}(
+                    availableLength = ${buf!.pushBlock}(
                         soundBuffer,
                         data3,
                     )
                     assert_integersEqual(availableLength, 5)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 33)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 44)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 55)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 66)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 77)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 33)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 44)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 55)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 66)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 77)
                     assert_integersEqual(
                         soundBuffer.pullAvailableLength,
                         0
@@ -90,50 +90,50 @@ describe('buf', () => {
             {
                 description:
                     'push / pull mode > should return 0 when pulling from empty buffer %s',
-                testFunction: ({ globals }) => AnonFunc()`
-                    const soundBuffer = ${globals.buf!.create!}(5)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 0)
-                    assert_floatsEqual(${globals.buf!.pullSample!}(soundBuffer), 0)
+                testFunction: ({ globals: { buf } }) => AnonFunc()`
+                    const soundBuffer = ${buf!.create}(5)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 0)
+                    assert_floatsEqual(${buf!.pullSample}(soundBuffer), 0)
                 `,
             },
 
             {
                 description:
                     'read / write mode > should return 0 when reading from an empty buffer %s',
-                testFunction: ({ globals }) => AnonFunc()`
-                    const soundBuffer = ${globals.buf!.create!}(5)
-                    assert_floatsEqual(${globals.buf!.readSample!}(soundBuffer, 0), 0)
+                testFunction: ({ globals: { buf } }) => AnonFunc()`
+                    const soundBuffer = ${buf!.create}(5)
+                    assert_floatsEqual(${buf!.readSample}(soundBuffer, 0), 0)
                 `,
             },
 
             {
                 description:
                     'read / write mode > should write a sample to the buffer %s',
-                testFunction: ({ globals }) => AnonFunc()`
-                    const soundBuffer = ${globals.buf!.create!}(3)
-                    ${globals.buf!.writeSample!}(soundBuffer, 11)
-                    ${globals.buf!.writeSample!}(soundBuffer, 22)
-                    ${globals.buf!.writeSample!}(soundBuffer, 33)
-                    assert_floatsEqual(${globals.buf!.readSample!}(soundBuffer, 0), 33)
-                    assert_floatsEqual(${globals.buf!.readSample!}(soundBuffer, 1), 22)
-                    assert_floatsEqual(${globals.buf!.readSample!}(soundBuffer, 2), 11)
+                testFunction: ({ globals: { buf } }) => AnonFunc()`
+                    const soundBuffer = ${buf!.create}(3)
+                    ${buf!.writeSample}(soundBuffer, 11)
+                    ${buf!.writeSample}(soundBuffer, 22)
+                    ${buf!.writeSample}(soundBuffer, 33)
+                    assert_floatsEqual(${buf!.readSample}(soundBuffer, 0), 33)
+                    assert_floatsEqual(${buf!.readSample}(soundBuffer, 1), 22)
+                    assert_floatsEqual(${buf!.readSample}(soundBuffer, 2), 11)
                 `,
             },
 
             {
                 description:
                     'read / write mode > should not throw an error with wrong values for read offset %s',
-                testFunction: ({ globals }) => AnonFunc()`
-                    const soundBuffer = ${globals.buf!.create!}(3)
-                    ${globals.buf!.writeSample!}(soundBuffer, 11)
-                    ${globals.buf!.writeSample!}(soundBuffer, 22)
-                    ${globals.buf!.writeSample!}(soundBuffer, 33)
+                testFunction: ({ globals: { buf } }) => AnonFunc()`
+                    const soundBuffer = ${buf!.create}(3)
+                    ${buf!.writeSample}(soundBuffer, 11)
+                    ${buf!.writeSample}(soundBuffer, 22)
+                    ${buf!.writeSample}(soundBuffer, 33)
                     // Should not throw :
-                    ${globals.buf!.readSample!}(soundBuffer, 4)
+                    ${buf!.readSample}(soundBuffer, 4)
                     // Should not throw :
-                    ${globals.buf!.readSample!}(soundBuffer, 1000)
+                    ${buf!.readSample}(soundBuffer, 1000)
                     // Should not throw :
-                    ${globals.buf!.readSample!}(soundBuffer, -1345)
+                    ${buf!.readSample}(soundBuffer, -1345)
                 `,
             },
         ],

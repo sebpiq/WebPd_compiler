@@ -20,12 +20,13 @@
 
 import { AudioSettings } from '../../compile/types'
 import { Engine, EngineMetadata, FloatArray } from '../../run/types'
-import { CoreRawModule } from './core-bindings'
-import { FsRawModule, FsImports } from './fs-bindings'
-import { MsgRawModule } from './msg-bindings'
-import { CommonsRawModule } from './commons-bindings'
+import { CoreRawModule } from '../../stdlib/core/bindings-assemblyscript'
+import { MsgRawModule } from '../../stdlib/msg/bindings-assemblyscript'
+import { CommonsRawModule } from '../../stdlib/commons/bindings-assemblyscript'
 import { EngineLifecycleRawModule } from './engine-lifecycle-bindings'
 import { IoRawModule } from './io-bindings'
+import { FsRawModule } from '../../stdlib/fs/bindings-assemblyscript'
+import { FsImportsAssemblyScript } from '../../stdlib/fs/types'
 
 export type StringPointer = number
 
@@ -64,7 +65,7 @@ export type RawEngine = BaseRawEngine &
     MsgRawModule &
     FsRawModule
 
-export type AssemblyScriptWasmImports = FsImports
+export type AssemblyScriptWasmImports = FsImportsAssemblyScript
 
 export interface EngineData {
     metadata: Engine['metadata']

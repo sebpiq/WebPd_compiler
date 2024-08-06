@@ -29,10 +29,9 @@ import {
 import { Sequence, ast } from '../../ast/declare'
 
 const NS = {
-    GLOBS: 'G',
+    GLOBALS: 'G',
     NODES: 'N',
     NODE_TYPES: 'NT',
-    GLOBAL_CODE: 'C',
     IO: 'IO',
     COLD: 'COLD',
     // Reserved namespace for variables exported by the engine.
@@ -97,13 +96,18 @@ const _VariableNamesAssignerSpec: AssignerSpec<
     }),
 
     globals: Assigner.Index((ns) =>
-        Assigner.Index((name) =>
-            ns === 'core'
+        Assigner.Index((name) => {
+            if (['fs'].includes(ns)) {
+                return Assigner.Literal(() => _name(NS.GLOBALS, ns, name)) as any
+            
             // We don't prefix stdlib core module, because these are super 
             // basic functions that are always included in the global scope.
-                ? Assigner.Literal(() => name)
-                : Assigner.Literal(() => _name(NS.GLOBAL_CODE, ns, name))
-        )
+            } else if (ns === 'core') {
+                return Assigner.Literal(() => name)
+            } else {
+                return Assigner.Literal(() => _name(NS.GLOBALS, ns, name))
+            }
+        })
     ),
 
     io: Assigner.Interface({

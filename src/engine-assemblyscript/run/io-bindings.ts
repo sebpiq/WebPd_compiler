@@ -3,7 +3,7 @@ import { DspGraph } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { Bindings, Engine, Message, EngineMetadata } from '../../run/types'
 import { EngineLifecycleRawModuleWithDependencies } from './engine-lifecycle-bindings'
-import { lowerMessage, liftMessage } from './msg-bindings'
+import { lowerMessage, liftMessage } from '../../stdlib/msg/bindings-assemblyscript'
 import { EngineData, ForwardReferences, MessagePointer } from './types'
 
 export interface IoRawModule {

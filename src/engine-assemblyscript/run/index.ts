@@ -30,11 +30,6 @@
 
 import { Engine } from '../../run/types'
 import {
-    createFsBindings,
-    createFsImports,
-    FsRawModuleWithDependencies,
-} from './fs-bindings'
-import {
     RawEngine,
     AssemblyScriptWasmImports,
     EngineData,
@@ -45,7 +40,7 @@ import {
     applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
-import { createCommonsBindings } from './commons-bindings'
+import { createCommonsBindings } from '../../stdlib/commons/bindings-assemblyscript'
 import { attachBindings } from '../../run/run-helpers'
 import {
     createEngineLifecycleBindings,
@@ -59,6 +54,7 @@ import {
     IoRawModuleWithDependencies,
 } from './io-bindings'
 import { Bindings } from '../../run/types'
+import { createFsBindings, createFsImports, FsRawModuleWithDependencies } from '../../stdlib/fs/bindings-assemblyscript'
 
 export const createEngine = async (
     wasmBuffer: ArrayBuffer

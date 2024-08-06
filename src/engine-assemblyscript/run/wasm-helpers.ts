@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { liftString } from './core-bindings'
+import { liftString } from '../../stdlib/core/bindings-assemblyscript'
 import { StringPointer, RawEngine } from './types'
 
 // REF : Assemblyscript ESM bindings

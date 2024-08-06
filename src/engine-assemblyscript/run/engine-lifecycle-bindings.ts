@@ -25,10 +25,10 @@ import {
     CoreRawModuleWithDependencies,
     liftString,
     readTypedArray,
-} from './core-bindings'
+} from '../../stdlib/core/bindings-assemblyscript'
 import {
     MsgRawModuleWithDependencies,
-} from './msg-bindings'
+} from '../../stdlib/msg/bindings-assemblyscript'
 import {
     EngineData,
     RawEngine,

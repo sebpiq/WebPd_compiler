@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { commonsArrays } from './stdlib/commons'
-import { fsReadSoundFile } from './stdlib/fs'
+import { commonsArrays } from './stdlib/commons/commons'
+import { fsReadSoundFile } from './stdlib/fs/fs'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/graph-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'

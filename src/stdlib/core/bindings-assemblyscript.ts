@@ -18,9 +18,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { getFloatArrayType } from '../../run/run-helpers'
-import { BaseRawEngine, FloatArrayPointer, InternalPointer } from './types'
+import { BaseRawEngine, FloatArrayPointer, InternalPointer } from '../../engine-assemblyscript/run/types'
 import { AudioSettings } from '../../compile/types'
 import { FloatArray } from '../../run/types'
+import { CoreExportsAssemblyScript } from './types'
 
 export type TypedArrayConstructor =
     | typeof Int8Array
@@ -35,24 +36,7 @@ export type TypedArrayConstructor =
 
 export interface CoreRawModule {
     globals: {
-        core: {
-            createFloatArray: (length: number) => FloatArrayPointer
-            x_createListOfArrays: () => InternalPointer
-            x_pushToListOfArrays: (
-                arrays: InternalPointer,
-                array: FloatArrayPointer
-            ) => void
-            x_getListOfArraysLength: (
-                listOfArraysPointer: InternalPointer
-            ) => number
-            x_getListOfArraysElem: (
-                listOfArraysPointer: InternalPointer,
-                index: number
-            ) => number
-            // Pointers to input and output buffers
-            x_getOutput: () => FloatArrayPointer
-            x_getInput: () => FloatArrayPointer
-        }
+        core: CoreExportsAssemblyScript
     }
 }
 

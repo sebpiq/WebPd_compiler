@@ -18,29 +18,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { EngineData, FloatArrayPointer, StringPointer } from './types'
+import { EngineData } from '../../engine-assemblyscript/run/types'
 import {
     CoreRawModuleWithDependencies,
     lowerFloatArray,
     lowerString,
     readTypedArray,
-} from './core-bindings'
-import { Engine, FloatArray } from '../../run/types'
+} from '../core/bindings-assemblyscript'
+import { FloatArray } from '../../run/types'
 import { Bindings } from '../../run/types'
 import {
     EngineLifecycleRawModuleWithDependencies,
     updateWasmInOuts,
-} from './engine-lifecycle-bindings'
+} from '../../engine-assemblyscript/run/engine-lifecycle-bindings'
+import { CommonsApi, CommonsExportsAssemblyScript } from './types'
 
 export interface CommonsRawModule {
     globals: {
-        commons: {
-            getArray: (arrayName: StringPointer) => FloatArrayPointer
-            setArray: (
-                arrayName: StringPointer,
-                array: FloatArrayPointer
-            ) => void
-        }
+        commons: CommonsExportsAssemblyScript
     }
 }
 
@@ -51,7 +46,7 @@ type CommonsRawModuleWithDependencies = CommonsRawModule &
 export const createCommonsBindings = (
     rawModule: CommonsRawModuleWithDependencies,
     engineData: EngineData
-): Bindings<Engine['globals']['commons']> => {
+): Bindings<CommonsApi> => {
     return {
         getArray: {
             type: 'proxy',

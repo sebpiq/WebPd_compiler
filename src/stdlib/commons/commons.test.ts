@@ -17,14 +17,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { AnonFunc, ast, ConstVar, Func, Var } from '../ast/declare'
-import { runTestSuite } from '../test-helpers'
+import { AnonFunc, ast, ConstVar, Func, Var } from '../../ast/declare'
+import { runTestSuite } from '../../test-helpers'
 import {
     commonsArrays,
     commonsWaitFrame,
 } from './commons'
-import { core } from './core'
-import { sked } from './sked'
+import { core } from '../core/core'
+import { sked } from '../sked/sked'
 
 describe('commons', () => {
     runTestSuite(
@@ -32,13 +32,13 @@ describe('commons', () => {
             {
                 description:
                     'setArray > should set the array and notifiy the subscribers hooks %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { sked, commons } }) => AnonFunc()`
                     callbackCallCounter = 0
 
                     ${ConstVar(
-                        globals.sked!.Id!,
+                        sked.Id!,
                         'subscription',
-                        ast`${globals.commons!.subscribeArrayChanges!}(
+                        ast`${commons.subscribeArrayChanges}(
                             'array1', 
                             ${Func('callback')`
                                 callbackCallCounter++
@@ -47,25 +47,25 @@ describe('commons', () => {
                     )}
 
                     // First time array is set, subscriber is notified
-                    ${globals.commons!.setArray!}('array1', createFloatArray(5))
+                    ${commons.setArray}('array1', createFloatArray(5))
                     assert_integersEqual(callbackCallCounter, 1)
 
                     // Second time too
-                    ${globals.commons!.setArray!}('array1', createFloatArray(4))
+                    ${commons.setArray}('array1', createFloatArray(4))
                     assert_integersEqual(callbackCallCounter, 2)
                     
                     // But after unsubscribe, it isn't
-                    ${globals.commons!.cancelArrayChangesSubscription!}(subscription)
+                    ${commons.cancelArrayChangesSubscription}(subscription)
                     const someArray = createFloatArray(3)
                     someArray[0] = 1.1
                     someArray[1] = 1.2
                     someArray[2] = 1.3
-                    ${globals.commons!.setArray!}('array1', someArray)
+                    ${commons.setArray}('array1', someArray)
                     assert_integersEqual(callbackCallCounter, 2)
 
                     // But array is still what was set last
                     assert_floatArraysEqual(
-                        ${globals.commons!.getArray!}('array1'),
+                        ${commons.getArray}('array1'),
                         someArray
                     )
                 `,
@@ -73,9 +73,9 @@ describe('commons', () => {
             {
                 description:
                     'arrays > should embed arrays passed in settings %s',
-                testFunction: ({ globals }) => AnonFunc()`
+                testFunction: ({ globals: { commons } }) => AnonFunc()`
                     ${ConstVar(
-                        globals.core!.FloatArray!,
+                        'FloatArray',
                         'expected',
                         `createFloatArray(3)`
                     )}
@@ -84,7 +84,7 @@ describe('commons', () => {
                     expected[2] = 666
 
                     assert_floatArraysEqual(
-                        ${globals.commons!.getArray!}('embeddedArray'),
+                        ${commons.getArray}('embeddedArray'),
                         expected,
                     )
                 `,

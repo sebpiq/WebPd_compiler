@@ -24,20 +24,20 @@ import {
     lowerListOfFloatArrays,
     readListOfFloatArrays,
     readTypedArray,
-} from './core-bindings'
-import { AudioSettings } from '../../compile/types'
-import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
+} from './bindings-assemblyscript'
+import { AudioSettings, Namespace } from '../../compile/types'
+import { TEST_PARAMETERS, ascCodeToRawModule } from '../../engine-assemblyscript/run/test-helpers'
 import {
     applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
-import { core } from '../../stdlib/core'
+import { core } from './core'
 import {
     FloatArrayPointer,
     InternalPointer,
-} from './types'
+} from '../../engine-assemblyscript/run/types'
 import { Sequence } from '../../ast/declare'
-import macros from '../compile/macros'
+import macros from '../../engine-assemblyscript/compile/macros'
 import render from '../../compile/render'
 import {
     makeGlobalCodePrecompilationContext,
@@ -45,6 +45,7 @@ import {
 } from '../../compile/test-helpers'
 import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
+import { CoreNamespaceAll } from './types'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule {
@@ -73,7 +74,7 @@ describe('core-bindings', () => {
                 audio: { bitDepth, channelCount: { in: 2, out: 2 } },
             },
         })
-        const assignerNs = precompilation.variableNamesAssigner.globals.core!
+        const assignerNs = precompilation.variableNamesAssigner.globals.core as CoreNamespaceAll
         const localContext = { ns: assignerNs }
         const globalContext =
             makeGlobalCodePrecompilationContext(precompilation)

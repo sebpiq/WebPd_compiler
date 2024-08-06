@@ -27,6 +27,7 @@ import { Sequence, Func, Var, ast, ConstVar } from '../../ast/declare'
 import { DspGraph } from '../../dsp-graph'
 import { findColdDspGroupFromSink } from '../precompile/dsp-groups'
 import { RenderTemplateInput } from './types'
+import { CommonsNamespaceAll } from '../../stdlib/commons/types'
 
 const dependencies = ({ precompiledCode }: RenderTemplateInput) =>
     precompiledCode.dependencies.ast
@@ -84,7 +85,7 @@ const nodeInitializations = ({
     ])
 
 const ioMessageReceivers = ({
-    globals,
+    globals: { msg },
     precompiledCode: { io },
 }: RenderTemplateInput): AstSequence =>
     Sequence(
@@ -93,7 +94,7 @@ const ioMessageReceivers = ({
                 (precompiledIoMessageReceiver) => {
                     // prettier-ignore
                     return Func(precompiledIoMessageReceiver.functionName, [
-                    Var(globals.msg!.Message!, 'm')
+                    Var(msg.Message, 'm')
                 ], 'void')`
                     ${precompiledIoMessageReceiver.getSinkFunctionName()}(m)
                 `
@@ -126,7 +127,7 @@ const ioMessageSenders = (
     )
 
 const portletsDeclarations = ({
-    globals,
+    globals: { msg },
     precompiledCode: { graph, nodes },
     settings: { debug },
 }: RenderTemplateInput): AstSequence =>
@@ -145,8 +146,7 @@ const portletsDeclarations = ({
                         // prettier-ignore
                         return Func(astFunc.name!, astFunc.args, astFunc.returnType)`
                             ${astFunc.body}
-                            throw new Error('Node "${nodeId}", inlet "${inletId}", unsupported message : ' + ${globals.msg!.display!}(${astFunc.args[0]!.name})${
-                                debug
+                            throw new Error('Node "${nodeId}", inlet "${inletId}", unsupported message : ' + ${msg.display}(${astFunc.args[0]!.name})${debug
                                     ? " + '\\nDEBUG : remember, you must return from message receiver'"
                                     : ''})
                         `
@@ -166,7 +166,7 @@ const portletsDeclarations = ({
                 ({ messageSenderName, sinkFunctionNames }) =>
                     // prettier-ignore
                     Func(messageSenderName, [
-                        Var(globals.msg!.Message!, 'm')
+                        Var(msg.Message, 'm')
                     ], 'void')`
                         ${sinkFunctionNames.map(functionName => 
                             `${functionName}(m)`)}
@@ -175,7 +175,7 @@ const portletsDeclarations = ({
     ])
 
 const dspLoop = ({
-    globals,
+    globals: { core, commons },
     precompiledCode: {
         nodes,
         graph: { hotDspGroup, coldDspGroups },
@@ -183,8 +183,8 @@ const dspLoop = ({
 }: RenderTemplateInput) =>
     // prettier-ignore
     ast`
-        for (${globals.core!.IT_FRAME!} = 0; ${globals.core!.IT_FRAME!} < ${globals.core!.BLOCK_SIZE!}; ${globals.core!.IT_FRAME!}++) {
-            ${globals.commons!._emitFrame!}(${globals.core!.FRAME!})
+        for (${core.IT_FRAME} = 0; ${core.IT_FRAME} < ${core.BLOCK_SIZE}; ${core.IT_FRAME}++) {
+            ${(commons as CommonsNamespaceAll)._emitFrame}(${core.FRAME})
             ${hotDspGroup.traversal.map((nodeId) => [
                 // For all inlets dsp functions, we render those that are not
                 // the sink of a cold dsp group.
@@ -201,22 +201,22 @@ const dspLoop = ({
                     ),
                 nodes[nodeId]!.dsp.loop
             ])}
-            ${globals.core!.FRAME!}++
+            ${core.FRAME}++
         }
     `
 
 const coldDspInitialization = ({
-    globals,
+    globals: { msg },
     precompiledCode: { graph },
 }: RenderTemplateInput) =>
     Sequence(
         Object.values(graph.coldDspGroups).map(
-            ({ functionName }) => `${functionName}(${globals.msg!.emptyMessage!})`
+            ({ functionName }) => `${functionName}(${msg.emptyMessage})`
         )
     )
 
 const coldDspFunctions = ({
-    globals,
+    globals: { msg },
     precompiledCode: {
         graph: { coldDspGroups },
         nodes,
@@ -231,7 +231,7 @@ const coldDspFunctions = ({
             }) =>
                 // prettier-ignore
                 Func(functionName, [
-                    Var(globals.msg!.Message!, 'm')
+                    Var(msg.Message, 'm')
                 ], 'void')`
                     ${dspGroup.traversal.map((nodeId) => 
                         nodes[nodeId]!.dsp.loop

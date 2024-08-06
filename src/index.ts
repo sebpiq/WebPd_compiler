@@ -25,7 +25,7 @@ export {
     AudioSettings,
 } from './compile/types'
 export { Code } from './ast/types'
-export { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './stdlib/fs'
+export { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './stdlib/fs/constants'
 export { Engine, Message, FloatArray } from './run/types'
 export { createEngine as createAssemblyScriptWasmEngine } from './engine-assemblyscript/run'
 export { createEngine as createJavaScriptEngine } from './engine-javascript/run'

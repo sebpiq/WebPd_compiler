@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { NodeImplementation, GlobalDefinitions } from '../types'
+import { NodeImplementation, GlobalDefinitions, Namespace } from '../types'
 import {
     AstClass,
     AstElement,
@@ -29,6 +29,12 @@ import {
 } from '../../ast/types'
 import { DspGraph } from '../../dsp-graph'
 import { NodeImplementations, CompilationSettings } from '../types'
+import { FsNamespacePublic } from '../../stdlib/fs/types'
+import { BufNamespacePublic } from '../../stdlib/buf/types'
+import { CommonsNamespacePublic } from '../../stdlib/commons/types'
+import { CoreNamespacePublic } from '../../stdlib/core/types'
+import { MsgNamespacePublic } from '../../stdlib/msg/types'
+import { SkedNamespacePublic } from '../../stdlib/sked/types'
 
 export interface Precompilation {
     graph: Readonly<DspGraph.Graph>
@@ -145,11 +151,17 @@ export interface VariableNamesIndex {
     readonly nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
 
     readonly nodeImplementations: {
-        [nodeType: DspGraph.NodeType]: { [name: string]: VariableName }
+        [nodeType: DspGraph.NodeType]: Namespace
     }
 
     readonly globals: {
-        [ns: DspGraph.NodeType]: { [name: string]: VariableName }
+        fs?: Record<keyof FsNamespacePublic, VariableName>
+        buf?: Record<keyof BufNamespacePublic, VariableName>
+        commons: Record<keyof CommonsNamespacePublic, VariableName>
+        core: Record<keyof CoreNamespacePublic, VariableName>
+        msg: Record<keyof MsgNamespacePublic, VariableName>
+        sked: Record<keyof SkedNamespacePublic, VariableName>
+        [ns: DspGraph.NodeType]: Namespace | undefined
     }
 
     readonly io: {

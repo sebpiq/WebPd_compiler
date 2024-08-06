@@ -24,26 +24,29 @@ import {
     MsgRawModuleWithDependencies,
     liftMessage,
     lowerMessage,
-} from './msg-bindings'
+} from './bindings-assemblyscript'
 import { AudioSettings } from '../../compile/types'
-import { TEST_PARAMETERS, ascCodeToRawModule } from './test-helpers'
+import { TEST_PARAMETERS, ascCodeToRawModule } from '../../engine-assemblyscript/run/test-helpers'
 import {
     applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
-import { core } from '../../stdlib/core'
-import { sked } from '../../stdlib/sked'
-import { msg } from '../../stdlib/msg'
-import { MessagePointer } from './types'
+import { core } from '../core/core'
+import { sked } from '../sked/sked'
+import { msg } from './msg'
+import { MessagePointer } from '../../engine-assemblyscript/run/types'
 import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
-import macros from '../compile/macros'
+import macros from '../../engine-assemblyscript/compile/macros'
 import {
     makeGlobalCodePrecompilationContext,
     makePrecompilation,
 } from '../../compile/test-helpers'
 import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
+import { CoreNamespaceAll } from '../core/types'
+import { MsgNamespaceAll } from './types'
+import { SkedNamespaceAll } from '../sked/types'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule {
@@ -84,19 +87,19 @@ describe('msg-bindings', () => {
         return render(
             macros,
             Sequence([
-                core.code({ ns: globals.core! }, globalContext),
-                sked.code({ ns: globals.sked! }, globalContext),
-                msg.code({ ns: globals.msg! }, globalContext),
-                `export function testReadMessageData(message: ${globals.msg!
-                    .Message!}, index: Int): Int {
+                core.code({ ns: globals.core as CoreNamespaceAll }, globalContext),
+                sked.code({ ns: globals.sked as SkedNamespaceAll }, globalContext),
+                msg.code({ ns: globals.msg as MsgNamespaceAll }, globalContext),
+                `export function testReadMessageData(message: ${globals.msg
+                    .Message}, index: Int): Int {
                     return message.dataView.getInt32(index * sizeof<Int>())
                 }`,
                 core.exports!(
-                    { ns: precompilation.variableNamesAssigner.globals.core! },
+                    { ns: precompilation.variableNamesAssigner.globals.core as CoreNamespaceAll },
                     globalContext,
                 ).map((name) => `export { ${name} }`),
                 msg.exports!(
-                    { ns: precompilation.variableNamesAssigner.globals.msg! },
+                    { ns: precompilation.variableNamesAssigner.globals.msg as MsgNamespaceAll },
                     globalContext,
                 ).map((name) => `export { ${name} }`),
             ])
@@ -216,13 +219,13 @@ describe('msg-bindings', () => {
 
                 // prettier-ignore
                 const code = getBaseTestCode(bitDepth) + `
-                    export function testCreateMessage(): ${globals.msg!.Message!} {
-                        const message: ${globals.msg!.Message!} = ${globals.msg!.create!}([
-                            ${globals.msg!.STRING_TOKEN!}, 5,
-                            ${globals.msg!.FLOAT_TOKEN!},
+                    export function testCreateMessage(): ${globals.msg.Message} {
+                        const message: ${globals.msg.Message} = ${globals.msg.create}([
+                            ${globals.msg.STRING_TOKEN}, 5,
+                            ${globals.msg.FLOAT_TOKEN},
                         ])
-                        ${globals.msg!.writeStringToken!}(message, 0, "hello")
-                        ${globals.msg!.writeFloatToken!}(message, 1, 666)
+                        ${globals.msg.writeStringToken}(message, 0, "hello")
+                        ${globals.msg.writeFloatToken}(message, 1, 666)
                         return message
                     }
                 `

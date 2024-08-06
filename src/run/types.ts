@@ -17,10 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../stdlib/fs'
 import { DspGraph } from '../dsp-graph'
 import { CompilationSettings } from '../compile/types'
 import { VariableNamesIndex } from '../compile/precompile/types'
+import { FsApi } from '../stdlib/fs/types'
+import { FS_OPERATION_FAILURE, FS_OPERATION_SUCCESS } from '../stdlib/fs/constants'
+import { CommonsApi } from '../stdlib/commons/types'
 
 interface BindingSpecRaw {
     type: 'raw'
@@ -105,87 +107,9 @@ export interface Engine {
     
     globals: {
         /** API for all shared resources, global events, etc ... */
-        commons: {
-            getArray: (arrayName: string) => FloatArray
-            setArray: (arrayName: string, array: FloatArray | Array<number>) => void
-        }
+        commons: CommonsApi
 
         /** Filesystem API for the engine */
-        fs?: {
-            /** Callback which the host environment must set to receive "read sound file" requests. */
-            onReadSoundFile: (
-                operationId: number,
-                url: string,
-                info: SoundFileInfo
-            ) => void
-
-            /**
-             * Callback which the host environment must set to receive "write sound file" requests.
-             *
-             * @param sound - this data needs to be copied or handled immediately,
-             * as the engine might reuse or garbage collect the original array.
-             */
-            onWriteSoundFile: (
-                operationId: number,
-                sound: Array<FloatArray>,
-                url: string,
-                info: SoundFileInfo
-            ) => void
-
-            /** Callback which the host environment must set to receive "read sound stream" requests. */
-            onOpenSoundReadStream: (
-                operationId: number,
-                url: string,
-                info: SoundFileInfo
-            ) => void
-
-            /** Callback which the host environment must set to receive "write sound stream" requests. */
-            onOpenSoundWriteStream: (
-                operationId: number,
-                url: string,
-                info: SoundFileInfo
-            ) => void
-
-            /**
-             * Callback which the host environment must set to receive sound stream data for an ongoing write stream.
-             *
-             * @param sound - this data needs to be copied or handled immediately,
-             * as the engine might reuse or garbage collect the original array.
-             */
-            onSoundStreamData: (
-                operationId: number,
-                sound: Array<FloatArray>
-            ) => void
-
-            /** Callback which the host environment must set to receive "close sound stream" requests. */
-            onCloseSoundStream: (operationId: number, status: number) => void
-
-            /**
-             * Function for the host environment to send back the response to an engine's
-             * "read sound file" request.
-             *
-             * @param sound Empty array if the operation has failed.
-             */
-            sendReadSoundFileResponse?: (
-                operationId: number,
-                status: fs_OperationStatus,
-                sound: Array<FloatArray>
-            ) => void
-
-            sendWriteSoundFileResponse?: (
-                operationId: number,
-                status: fs_OperationStatus
-            ) => void
-
-            sendSoundStreamData?: (
-                operationId: number,
-                sound: Array<FloatArray>
-            ) => number
-
-            closeSoundStream?: (
-                operationId: number,
-                status: fs_OperationStatus
-            ) => void
-        }
+        fs?: FsApi
     }
 }

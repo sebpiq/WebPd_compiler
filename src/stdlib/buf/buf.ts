@@ -18,20 +18,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
-import {
-    GlobalDefinitions,
-} from '../compile/types'
+import { Sequence, Class, ConstVar, Func, Var } from '../../ast/declare'
+import { GlobalDefinitions } from '../../compile/types'
+import { BufNamespaceAll } from './types'
 
 const NAMESPACE = 'buf'
 
-export const bufCore: GlobalDefinitions = {
+export const bufCore: GlobalDefinitions<keyof BufNamespaceAll> = {
     namespace: NAMESPACE,
+    // prettier-ignore
     code: ({ ns: buf }) => Sequence([
         /**
          * Ring buffer 
          */
-        Class(buf.SoundBuffer!, [
+        Class(buf.SoundBuffer, [
             Var('FloatArray', 'data'),
             Var('Int', 'length'),
             Var('Int', 'writeCursor'),
@@ -39,16 +39,16 @@ export const bufCore: GlobalDefinitions = {
         ]),
 
         /** Erases all the content from the buffer */
-        Func(buf.clear!, [
-            Var(buf.SoundBuffer!, 'buffer')
+        Func(buf.clear, [
+            Var(buf.SoundBuffer, 'buffer')
         ], 'void')`
             buffer.data.fill(0)
         `,
 
         /** Erases all the content from the buffer */
-        Func(buf.create!, [
+        Func(buf.create, [
             Var('Int', 'length')
-        ], buf.SoundBuffer!)`
+        ], buf.SoundBuffer)`
             return {
                 data: createFloatArray(length),
                 length: length,
@@ -56,11 +56,12 @@ export const bufCore: GlobalDefinitions = {
                 pullAvailableLength: 0,
             }
         `
-    ])
+    ]),
 }
 
-export const bufPushPull: GlobalDefinitions = {
+export const bufPushPull: GlobalDefinitions<keyof BufNamespaceAll> = {
     namespace: NAMESPACE,
+    // prettier-ignore
     code: ({ ns: buf }) => Sequence([
         /**
          * Pushes a block to the buffer, throwing an error if the buffer is full. 
@@ -69,8 +70,8 @@ export const bufPushPull: GlobalDefinitions = {
          * 
          * @todo : Optimize by allowing to read/write directly from host
          */
-        Func(buf.pushBlock!, [
-            Var(buf.SoundBuffer!, 'buffer'), 
+        Func(buf.pushBlock, [
+            Var(buf.SoundBuffer, 'buffer'), 
             Var('FloatArray', 'block')
         ], 'Int')`
             if (buffer.pullAvailableLength + block.length > buffer.length) {
@@ -102,8 +103,8 @@ export const bufPushPull: GlobalDefinitions = {
          * This is a destructive operation, and the sample will be 
          * unavailable for subsequent readers with the same operation.
          */
-        Func(buf.pullSample!, [
-            Var(buf.SoundBuffer!, 'buffer')
+        Func(buf.pullSample, [
+            Var(buf.SoundBuffer, 'buffer')
         ], 'Float')`
             if (buffer.pullAvailableLength <= 0) {
                 return 0
@@ -116,14 +117,15 @@ export const bufPushPull: GlobalDefinitions = {
     dependencies: [bufCore],
 }
 
-export const bufWriteRead: GlobalDefinitions = {
+export const bufWriteRead: GlobalDefinitions<keyof BufNamespaceAll> = {
     namespace: NAMESPACE,
+    // prettier-ignore
     code: ({ ns: buf }) => Sequence([
         /**
          * Writes a sample at \`@link writeCursor\` and increments \`writeCursor\` by one.
          */
-        Func(buf.writeSample!, [
-            Var(buf.SoundBuffer!, 'buffer'), 
+        Func(buf.writeSample, [
+            Var(buf.SoundBuffer, 'buffer'), 
             Var('Float', 'value')
         ], 'void')`
             buffer.data[buffer.writeCursor] = value
@@ -136,8 +138,8 @@ export const bufWriteRead: GlobalDefinitions = {
          *  and {@link buf.SoundBuffer#length} - 1. A value outside these bounds will not cause 
          *  an error, but might cause unexpected results.
          */
-        Func(buf.readSample!, [
-            Var(buf.SoundBuffer!, 'buffer'), 
+        Func(buf.readSample, [
+            Var(buf.SoundBuffer, 'buffer'), 
             Var('Int', 'offset')
         ], 'Float')`
             // R = (buffer.writeCursor - 1 - offset) -> ideal read position

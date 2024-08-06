@@ -21,6 +21,7 @@
 import { AstClass, AstElement, AstFunc, AstSequence } from '../ast/types'
 import { VariableName } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
+import { VariableNamesIndex } from './precompile/types'
 
 type PortletsSpecMetadataBasicValue = boolean | string | number
 
@@ -68,27 +69,30 @@ export interface CompilationSettings {
 }
 
 export interface GlobalPrecompilationContext {
-    readonly globals: { readonly [nsName: string]: ReadOnlyNamespace }
+    readonly globals: VariableNamesIndex['globals']
     readonly settings: CompilationSettings
 }
 
-interface GlobalDefinitionsLocalContext {
-    readonly ns: AssignerNamespace
+interface GlobalDefinitionsLocalContext<Keys extends string> {
+    readonly ns: { [name in Keys]: VariableName }
 }
 
 /** Generator for global code that specifies also extra settings */
-export type GlobalDefinitions = {
+export type GlobalDefinitions<
+    AllKeys extends string = string, 
+    ExportsKeys extends string = string,
+> = {
     code: (
-        localContext: GlobalDefinitionsLocalContext,
+        localContext: GlobalDefinitionsLocalContext<AllKeys>,
         globalContext: GlobalPrecompilationContext
     ) => AstElement
     namespace: string
     exports?: (
-        localContext: GlobalDefinitionsLocalContext,
+        localContext: GlobalDefinitionsLocalContext<ExportsKeys>,
         globalContext: GlobalPrecompilationContext
     ) => Array<VariableName>
     imports?: (
-        localContext: GlobalDefinitionsLocalContext,
+        localContext: GlobalDefinitionsLocalContext<AllKeys>,
         globalContext: GlobalPrecompilationContext
     ) => Array<AstFunc>
     dependencies?: Array<GlobalDefinitions>
@@ -183,6 +187,8 @@ export type NodeImplementations = {
     [nodeType: string]: NodeImplementation<any>
 }
 
+export type Namespace = { [name: string]: VariableName }
+
 /**
  * Namespace handled by a proxy that only allows reading, and throws
  * an error for unknown keys.
@@ -193,4 +199,4 @@ type ReadOnlyNamespace = { readonly [name: string]: VariableName }
  * Namespace handled by a proxy that auto assigns a variable name
  * when the key is accessed.
  */
-type AssignerNamespace = { [name: string]: VariableName }
+type AssignerNamespace = Namespace

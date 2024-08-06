@@ -34,16 +34,21 @@ import { makeGraph } from './dsp-graph/test-helpers'
 import { nodeDefaults } from './dsp-graph/graph-helpers'
 import { getFloatArrayType } from './run/run-helpers'
 import {
-    FS_OPERATION_SUCCESS,
     fsReadSoundFile,
     fsReadSoundStream,
     fsWriteSoundFile,
     fsWriteSoundStream,
-} from './stdlib/fs'
-import { commonsArrays } from './stdlib/commons'
+} from './stdlib/fs/fs'
+import { commonsArrays } from './stdlib/commons/commons'
 import { ast, Sequence, ConstVar, Func, Var, AnonFunc } from './ast/declare'
 import { DspGraph } from './dsp-graph'
 import { makePrecompilation } from './compile/test-helpers'
+import { FS_OPERATION_SUCCESS } from '.'
+import { FsNamespaceAll } from './stdlib/fs/types'
+import {
+    CommonsNamespaceAll,
+    CommonsNamespacePrivate,
+} from './stdlib/commons/types'
 
 describe('Engine', () => {
     interface EngineTestSettings {
@@ -53,7 +58,9 @@ describe('Engine', () => {
         settings?: UserCompilationSettings
     }
 
-    const initializeEngineTest = async <ExportedKeys extends string='UNKNOWN'>(
+    const initializeEngineTest = async <
+        ExportedKeys extends string = 'UNKNOWN'
+    >(
         target: CompilerTarget,
         bitDepth: AudioSettings['bitDepth'],
         {
@@ -138,18 +145,15 @@ describe('Engine', () => {
                             // prettier-ignore
                             target === 'assemblyscript'
                                 ? ast`
-                                    for (let channel: Int = 0; channel < ${
-                                        channelCount.out
-                                    }; channel++) {
-                                        ${core!.OUTPUT!}[${core!.IT_FRAME!} + ${core!
-                                                .BLOCK_SIZE!} * channel] = 2.0
+                                    for (let channel: Int = 0; channel < ${channelCount.out}; channel++) {
+                                        ${core.OUTPUT}[${core.IT_FRAME} + ${core.BLOCK_SIZE} * channel] = 2.0
                                     }
                                 `
                                 : ast`
                                     for (let channel = 0; channel < ${
                                         channelCount.out
                                     }; channel++) {
-                                        ${core!.OUTPUT!}[channel][${core!.IT_FRAME!}] = 2.0
+                                        ${core.OUTPUT}[channel][${core.IT_FRAME}] = 2.0
                                     }
                                 `,
                     },
@@ -167,20 +171,16 @@ describe('Engine', () => {
                     new floatArrayType(blockSize),
                 ]
 
-                const engine = await initializeEngineTest(
-                    target,
-                    bitDepth,
-                    {
-                        graph,
-                        nodeImplementations,
-                        settings: {
-                            audio: {
-                                bitDepth,
-                                channelCount: { in: 2, out: outputChannels },
-                            },
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
+                        audio: {
+                            bitDepth,
+                            channelCount: { in: 2, out: outputChannels },
                         },
-                    }
-                )
+                    },
+                })
 
                 const output: Array<Float32Array | Float64Array> = []
                 for (let channel = 0; channel < outputChannels; channel++) {
@@ -219,18 +219,16 @@ describe('Engine', () => {
                                     for (let channel: Int = 0; channel < ${
                                         channelCount.in
                                     }; channel++) {
-                                        ${core!.OUTPUT!}[${core!.IT_FRAME!} + ${core!
-                                                .BLOCK_SIZE!} * channel] 
-                                            = ${core!.INPUT!}[${core!.IT_FRAME!} + ${core!
-                                                .BLOCK_SIZE!} * channel]
+                                        ${core.OUTPUT}[${core.IT_FRAME} + ${core.BLOCK_SIZE} * channel] 
+                                            = ${core.INPUT}[${core.IT_FRAME} + ${core.BLOCK_SIZE} * channel]
                                     }
                                 `
                                 : ast`
                                     for (let channel = 0; channel < ${
                                         channelCount.in
                                     }; channel++) {
-                                        ${core!.OUTPUT!}[channel][${core!.IT_FRAME!}] 
-                                            = ${core!.INPUT!}[channel][${core!.IT_FRAME!}]
+                                        ${core.OUTPUT}[channel][${core.IT_FRAME}] 
+                                            = ${core.INPUT}[channel][${core.IT_FRAME}]
                                     }
                                 `,
                     },
@@ -255,20 +253,16 @@ describe('Engine', () => {
                     new Float32Array(blockSize),
                 ]
 
-                const engine = await initializeEngineTest(
-                    target,
-                    bitDepth,
-                    {
-                        graph,
-                        nodeImplementations,
-                        settings: {
-                            audio: {
-                                bitDepth,
-                                channelCount: { in: 2, out: 3 },
-                            },
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
+                        audio: {
+                            bitDepth,
+                            channelCount: { in: 2, out: 3 },
                         },
-                    }
-                )
+                    },
+                })
 
                 engine.initialize(44100, blockSize)
                 engine.dspLoop(input, output)
@@ -296,9 +290,9 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        messageReceivers: (_, { globals }) => ({
+                        messageReceivers: (_, { globals: { msg } }) => ({
                             blo: AnonFunc(
-                                [Var(globals.msg!.Message!, 'm')],
+                                [Var(msg.Message, 'm')],
                                 'void'
                             )`return`,
                         }),
@@ -310,25 +304,21 @@ describe('Engine', () => {
                     channelCount: { in: 2, out: 3 },
                 }
 
-                const engine = await initializeEngineTest(
-                    target,
-                    bitDepth,
-                    {
-                        graph,
-                        nodeImplementations,
-                        settings: {
-                            audio: audioSettings,
-                            io: {
-                                messageReceivers: {
-                                    bla: { portletIds: ['blo'] },
-                                },
-                                messageSenders: {
-                                    bli: { portletIds: ['blu'] },
-                                },
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
+                        audio: audioSettings,
+                        io: {
+                            messageReceivers: {
+                                bla: { portletIds: ['blo'] },
+                            },
+                            messageSenders: {
+                                bli: { portletIds: ['blu'] },
                             },
                         },
-                    }
-                )
+                    },
+                })
 
                 assert.deepStrictEqual<EngineMetadata>(engine.metadata, {
                     libVersion: packageInfo.version,
@@ -373,13 +363,13 @@ describe('Engine', () => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const testCode: GlobalDefinitions = {
                         namespace: '_',
-                        code: (_, { globals }) => ast`
+                        code: (_, { globals: { commons } }) => ast`
                             const array = createFloatArray(4)
                             array[0] = 123
                             array[1] = 456
                             array[2] = 789
                             array[3] = 234
-                            ${globals.commons!._ARRAYS!}.set('array1', array)
+                            ${(commons as CommonsNamespaceAll)._ARRAYS}.set('array1', array)
                         `,
                     }
 
@@ -406,35 +396,35 @@ describe('Engine', () => {
                     const testCode: GlobalDefinitions = {
                         namespace: 'tests',
                         // prettier-ignore
-                        code: (_, { globals }) =>
+                        code: (_, { globals: { commons } }) =>
                             Sequence([
                                 Func(
                                     'testReadArray1',
                                     [Var('Int', 'index')],
                                     'Float'
                                 )`
-                                    return ${globals.commons!._ARRAYS!}.get('array1')[index]
+                                    return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array1')[index]
                                 `,
                                 Func(
                                     'testReadArray2',
                                     [Var('Int', 'index')],
                                     'Float'
                                 )`
-                                    return ${globals.commons!._ARRAYS!}.get('array2')[index]
+                                    return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array2')[index]
                                 `,
                                 Func(
                                     'testReadArray3',
                                     [Var('Int', 'index')],
                                     'Float'
                                 )`
-                                    return ${globals.commons!._ARRAYS!}.get('array3')[index]
+                                    return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array3')[index]
                                 `,
                                 Func(
                                     'testIsFloatArray',
                                     [Var('Int', 'index')],
                                     'void'
                                 )`
-                                    return ${globals.commons!._ARRAYS!}.get('array3').set([111, 222])
+                                    return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array3').set([111, 222])
                                 `,
                             ]),
                         exports: () => [
@@ -519,14 +509,14 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals }) =>
+                code: (_, { globals: { fs } }) =>
                     Sequence([
-                        Var(globals.fs!.OperationId!, 'receivedId', '-1'),
-                        Var(globals.fs!.OperationStatus!, 'receivedStatus', '-1'),
+                        Var(fs!.OperationId, 'receivedId', '-1'),
+                        Var(fs!.OperationStatus, 'receivedStatus', '-1'),
                         Var('FloatArray[]', 'receivedSound', '[]'),
 
                         Func('testStartReadFile', [], 'Int')`
-                            return ${globals.fs!.readSoundFile!}(
+                            return ${fs!.readSoundFile}(
                                 '/some/url', 
                                 {
                                     channelCount: 3,
@@ -538,8 +528,8 @@ describe('Engine', () => {
                                 }, ${Func(
                                     'readSoundFileComplete',
                                     [
-                                        Var(globals.fs!.OperationId!, 'id'),
-                                        Var(globals.fs!.OperationStatus!, 'status'),
+                                        Var(fs!.OperationId, 'id'),
+                                        Var(fs!.OperationStatus, 'status'),
                                         Var('FloatArray[]', 'sound'),
                                     ],
                                     'void'
@@ -561,12 +551,12 @@ describe('Engine', () => {
                         `,
                         Func(
                             'testOperationCleaned',
-                            [Var(globals.fs!.OperationId!, 'id')],
+                            [Var(fs!.OperationId, 'id')],
                             'boolean'
                         )`
-                            return !${globals.fs!._OPERATIONS_IDS!}.has(id)
-                                && !${globals.fs!._OPERATIONS_CALLBACKS!}.has(id)
-                                && !${globals.fs!._OPERATIONS_SOUND_CALLBACKS!}.has(id)
+                            return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
+                                && !${(fs as FsNamespaceAll)._OPERATIONS_CALLBACKS}.has(id)
+                                && !${(fs as FsNamespaceAll)._OPERATIONS_SOUND_CALLBACKS}.has(id)
                         `,
                     ]),
                 exports: () => [
@@ -578,11 +568,12 @@ describe('Engine', () => {
                 ],
             }
 
-            type ReadSoundFileExportedKeys = 'testStartReadFile' |
-                        'testOperationId' |
-                        'testOperationStatus' |
-                        'testSoundLength' |
-                        'testOperationCleaned'
+            type ReadSoundFileExportedKeys =
+                | 'testStartReadFile'
+                | 'testOperationId'
+                | 'testOperationStatus'
+                | 'testSoundLength'
+                | 'testOperationCleaned'
 
             it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
@@ -610,17 +601,13 @@ describe('Engine', () => {
 
                     const engine = await initializeEngineTest<
                         ReadSoundFileExportedKeys | 'testReceivedSound'
-                    >(
-                        target,
-                        bitDepth,
-                        {
-                            injectedDependencies: [
-                                fsReadSoundFile,
-                                sharedTestingCode,
-                                testCode,
-                            ],
-                        }
-                    )
+                    >(target, bitDepth, {
+                        injectedDependencies: [
+                            fsReadSoundFile,
+                            sharedTestingCode,
+                            testCode,
+                        ],
+                    })
 
                     // 1. Some function in the engine requests a read file operation.
                     // Request is sent to host via callback
@@ -670,11 +657,11 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals }) =>
+                code: (_, { globals: { fs } }) =>
                     Sequence([
-                        Var(globals.fs!.OperationId!, 'receivedId', '-1'),
+                        Var(fs!.OperationId, 'receivedId', '-1'),
                         Var(
-                            globals.fs!.OperationStatus!,
+                            fs!.OperationStatus,
                             'receivedStatus',
                             '-1'
                         ),
@@ -685,7 +672,7 @@ describe('Engine', () => {
                             [Var('FloatArray', 'array')],
                             'Int'
                         )`
-                            return ${globals.fs!.openSoundReadStream!}(
+                            return ${fs!.openSoundReadStream}(
                                 '/some/url', 
                                 {
                                     channelCount: channelCount,
@@ -698,9 +685,9 @@ describe('Engine', () => {
                                 ${Func(
                                     'fs_openSoundReadStreamComplete',
                                     [
-                                        Var(globals.fs!.OperationId!, 'id'),
+                                        Var(fs!.OperationId, 'id'),
                                         Var(
-                                            globals.fs!.OperationStatus!,
+                                            fs!.OperationStatus,
                                             'status'
                                         ),
                                     ],
@@ -722,23 +709,23 @@ describe('Engine', () => {
 
                         Func(
                             'testOperationChannelCount',
-                            [Var(globals.fs!.OperationId!, 'id')],
+                            [Var(fs!.OperationId, 'id')],
                             'Int'
                         )`
-                            return ${globals.fs!
-                                ._SOUND_STREAM_BUFFERS!}.get(id).length
+                            return ${(fs as FsNamespaceAll)
+                                ._SOUND_STREAM_BUFFERS}.get(id).length
                         `,
 
                         Func(
                             'testOperationCleaned',
-                            [Var(globals.fs!.OperationId!, 'id')],
+                            [Var(fs!.OperationId, 'id')],
                             'boolean'
                         )`
-                            return !${globals.fs!._OPERATIONS_IDS!}.has(id)
-                                && !${globals.fs!._OPERATIONS_CALLBACKS!}.has(id)
-                                && !${globals.fs!
-                                    ._OPERATIONS_SOUND_CALLBACKS!}.has(id)
-                                && !${globals.fs!._SOUND_STREAM_BUFFERS!}.has(id)
+                            return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
+                                && !${(fs as FsNamespaceAll)._OPERATIONS_CALLBACKS}.has(id)
+                                && !${(fs as FsNamespaceAll)
+                                    ._OPERATIONS_SOUND_CALLBACKS}.has(id)
+                                && !${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.has(id)
                         `,
                     ]),
                 exports: () => [
@@ -750,11 +737,12 @@ describe('Engine', () => {
                 ],
             }
 
-            type ReadSoundStreamExportedKeys = 'testStartReadStream'|
-'testOperationId'|
-'testOperationStatus'|
-'testOperationChannelCount'|
-'testOperationCleaned'
+            type ReadSoundStreamExportedKeys =
+                | 'testStartReadStream'
+                | 'testOperationId'
+                | 'testOperationStatus'
+                | 'testOperationChannelCount'
+                | 'testOperationCleaned'
 
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
@@ -762,37 +750,31 @@ describe('Engine', () => {
                     const testCode: GlobalDefinitions = {
                         namespace: 'tests',
                         // prettier-ignore
-                        code: (_, { globals }) =>
+                        code: (_, { globals: { fs, buf } }) =>
                             Sequence([
                                 Func(
                                     'testReceivedSound',
-                                    [Var(globals.fs!.OperationId!, 'id')],
+                                    [Var(fs!.OperationId, 'id')],
                                     'boolean'
                                 )`
-                                    const buffers = ${globals.fs!
-                                        ._SOUND_STREAM_BUFFERS!}.get(id)
-                                    return ${globals.buf!
-                                        .pullSample!}(buffers[0]) === -1
-                                        && ${globals.buf!
-                                            .pullSample!}(buffers[0]) === -2
-                                        && ${globals.buf!
-                                            .pullSample!}(buffers[0]) === -3
+                                    const buffers = ${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.get(id)
+                                    return ${buf!.pullSample}(buffers[0]) === -1
+                                        && ${buf!.pullSample}(buffers[0]) === -2
+                                        && ${buf!.pullSample}(buffers[0]) === -3
                                 `,
                             ]),
                         exports: () => ['testReceivedSound'],
                     }
 
-                    const engine = await initializeEngineTest<ReadSoundStreamExportedKeys | 'testReceivedSound'>(
-                        target,
-                        bitDepth,
-                        {
-                            injectedDependencies: [
-                                fsReadSoundStream,
-                                sharedTestingCode,
-                                testCode,
-                            ],
-                        }
-                    )
+                    const engine = await initializeEngineTest<
+                        ReadSoundStreamExportedKeys | 'testReceivedSound'
+                    >(target, bitDepth, {
+                        injectedDependencies: [
+                            fsReadSoundStream,
+                            sharedTestingCode,
+                            testCode,
+                        ],
+                    })
 
                     // 1. Some function in the engine requests a read stream operation.
                     // Request is sent to host via callback
@@ -833,7 +815,7 @@ describe('Engine', () => {
                         3
                     )
 
-                    // 2. Hosts handles the operation. It then calls ${globals.fs!.sendSoundStreamData!} to send in data.
+                    // 2. Hosts handles the operation. It then calls ${fs!.sendSoundStreamData} to send in data.
                     const writtenFrameCount = engine.globals.fs!.sendSoundStreamData!(
                         operationId,
                         [
@@ -870,16 +852,16 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals }) =>
+                code: (_, { globals: { fs } }) =>
                     Sequence([
-                        Var(globals.fs!.OperationId!, 'receivedId', '-1'),
-                        Var(globals.fs!.OperationStatus!, 'receivedStatus', '-1'),
+                        Var(fs!.OperationId, 'receivedId', '-1'),
+                        Var(fs!.OperationStatus, 'receivedStatus', '-1'),
                         ConstVar('Int', 'channelCount', '3'),
                         ConstVar('Int', 'fsBlockSize', '2'),
                         Var('Int', 'counter', '0'),
 
                         Func('testStartWriteStream', [], 'Int')`
-                            return ${globals.fs!.openSoundWriteStream!}(
+                            return ${fs!.openSoundWriteStream}(
                                 '/some/url', 
                                 {
                                     channelCount: channelCount,
@@ -892,8 +874,8 @@ describe('Engine', () => {
                                 ${Func(
                                     'fs_openSoundWriteStreamComplete',
                                     [
-                                        Var(globals.fs!.OperationId!, 'id'),
-                                        Var(globals.fs!.OperationStatus!, 'status'),
+                                        Var(fs!.OperationId, 'id'),
+                                        Var(fs!.OperationStatus, 'status'),
                                     ],
                                     'void'
                                 )`
@@ -904,7 +886,7 @@ describe('Engine', () => {
                         `, 
                         Func(
                             'testSendSoundStreamData',
-                            [Var(globals.fs!.OperationId!, 'id')],
+                            [Var(fs!.OperationId, 'id')],
                             'void'
                         )`
                             ${ConstVar(
@@ -926,7 +908,7 @@ describe('Engine', () => {
                             block[2][1] = toFloat(31 + fsBlockSize * counter)
 
                             counter++
-                            ${globals.fs!.sendSoundStreamData!}(id, block)
+                            ${fs!.sendSoundStreamData}(id, block)
                         `,
                         Func('testOperationId', [], 'Int')`
                             return receivedId
@@ -936,13 +918,13 @@ describe('Engine', () => {
                         `,
                         Func(
                             'testOperationCleaned',
-                            [Var(globals.fs!.OperationId!, 'id')],
+                            [Var(fs!.OperationId, 'id')],
                             'boolean'
                         )`
-                            return !${globals.fs!._OPERATIONS_IDS!}.has(id)
-                                && !${globals.fs!._OPERATIONS_CALLBACKS!}.has(id)
-                                && !${globals.fs!._OPERATIONS_SOUND_CALLBACKS!}.has(id)
-                                && !${globals.fs!._SOUND_STREAM_BUFFERS!}.has(id)
+                            return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
+                                && !${(fs as FsNamespaceAll)._OPERATIONS_CALLBACKS}.has(id)
+                                && !${(fs as FsNamespaceAll)._OPERATIONS_SOUND_CALLBACKS}.has(id)
+                                && !${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.has(id)
                         `,
                     ]),
                 exports: () => [
@@ -954,27 +936,29 @@ describe('Engine', () => {
                 ],
             }
 
-            type WriteSoundStreamExportedKeys = 'testStartWriteStream'|
-'testSendSoundStreamData'|
-'testOperationId'|
-'testOperationStatus'|
-'testOperationCleaned'
+            type WriteSoundStreamExportedKeys =
+                | 'testStartWriteStream'
+                | 'testSendSoundStreamData'
+                | 'testOperationId'
+                | 'testOperationStatus'
+                | 'testOperationCleaned'
 
             it.each(TEST_PARAMETERS)(
                 'should stream data in %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const engine = await initializeEngineTest<WriteSoundStreamExportedKeys>(
-                        target,
-                        bitDepth,
-                        {
-                            injectedDependencies: [
-                                fsWriteSoundStream,
-                                sharedTestingCode,
-                            ],
-                        }
-                    )
+                    const engine =
+                        await initializeEngineTest<WriteSoundStreamExportedKeys>(
+                            target,
+                            bitDepth,
+                            {
+                                injectedDependencies: [
+                                    fsWriteSoundStream,
+                                    sharedTestingCode,
+                                ],
+                            }
+                        )
 
                     // 1. Some function in the engine requests a write stream operation.
                     // Request is sent to host via callback
@@ -1061,11 +1045,11 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals }) =>
+                code: (_, { globals: { fs } }) =>
                     Sequence([
-                        Var(globals.fs!.OperationId!, 'receivedId', '-1'),
+                        Var(fs!.OperationId, 'receivedId', '-1'),
                         Var(
-                            globals.fs!.OperationStatus!,
+                            fs!.OperationStatus,
                             'receivedStatus',
                             '-1'
                         ),
@@ -1091,7 +1075,7 @@ describe('Engine', () => {
                         `,
 
                         Func('testStartWriteFile', [], 'Int')`
-                            return ${globals.fs!.writeSoundFile!}(
+                            return ${fs!.writeSoundFile}(
                                 sound, 
                                 '/some/url', 
                                 {
@@ -1104,9 +1088,9 @@ describe('Engine', () => {
                                 }, ${Func(
                                     'fs_writeSoundFileComplete',
                                     [
-                                        Var(globals.fs!.OperationId!, 'id'),
+                                        Var(fs!.OperationId, 'id'),
                                         Var(
-                                            globals.fs!.OperationStatus!,
+                                            fs!.OperationStatus,
                                             'status'
                                         ),
                                     ],
@@ -1125,13 +1109,12 @@ describe('Engine', () => {
                         `,
                         Func(
                             'testOperationCleaned',
-                            [Var(globals.fs!.OperationId!, 'id')],
+                            [Var(fs!.OperationId, 'id')],
                             'boolean'
                         )`
-                            return !${globals.fs!._OPERATIONS_IDS!}.has(id)
-                                && !${globals.fs!._OPERATIONS_CALLBACKS!}.has(id)
-                                && !${globals.fs!
-                                    ._OPERATIONS_SOUND_CALLBACKS!}.has(id)
+                            return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
+                                && !${(fs as FsNamespaceAll)._OPERATIONS_CALLBACKS}.has(id)
+                                && !${(fs as FsNamespaceAll)._OPERATIONS_SOUND_CALLBACKS}.has(id)
                         `,
                     ]),
                 exports: () => [
@@ -1142,26 +1125,28 @@ describe('Engine', () => {
                 ],
             }
 
-            type WriteSoundFileExportedKeys = 'testStartWriteFile' |
-                'testOperationId' |
-                'testOperationStatus' |
-                'testOperationCleaned'
+            type WriteSoundFileExportedKeys =
+                | 'testStartWriteFile'
+                | 'testOperationId'
+                | 'testOperationStatus'
+                | 'testOperationCleaned'
 
             it.each(TEST_PARAMETERS)(
                 'should register the operation success %s',
                 async ({ target, bitDepth }) => {
                     const floatArrayType = getFloatArrayType(bitDepth)
 
-                    const engine = await initializeEngineTest<WriteSoundFileExportedKeys>(
-                        target,
-                        bitDepth,
-                        {
-                            injectedDependencies: [
-                                fsWriteSoundFile,
-                                sharedTestingCode,
-                            ],
-                        }
-                    )
+                    const engine =
+                        await initializeEngineTest<WriteSoundFileExportedKeys>(
+                            target,
+                            bitDepth,
+                            {
+                                injectedDependencies: [
+                                    fsWriteSoundFile,
+                                    sharedTestingCode,
+                                ],
+                            }
+                        )
 
                     // 1. Some function in the engine requests a write file operation.
                     // Request is sent to host via callback
@@ -1172,8 +1157,7 @@ describe('Engine', () => {
                             >['onWriteSoundFile']
                         >
                     > = []
-                    engine.globals.fs!.onWriteSoundFile = (...args) =>
-                        called.push(args)
+                    engine.globals.fs!.onWriteSoundFile = (...args) => called.push(args)
 
                     const operationId = engine.testStartWriteFile()
 
@@ -1239,26 +1223,25 @@ describe('Engine', () => {
                 const testCode: GlobalDefinitions = {
                     namespace: 'tests',
                     // prettier-ignore
-                    code: (_, { globals }) =>
+                    code: (_, { globals: { msg } }) =>
                         Sequence([
                             ConstVar(
-                                globals.msg!.Message!,
+                                msg.Message,
                                 'm1',
-                                `${globals.msg!.create!}([
-                                    ${globals.msg!.FLOAT_TOKEN!}, 
-                                    ${globals.msg!.FLOAT_TOKEN!}
+                                `${msg.create}([
+                                    ${msg.FLOAT_TOKEN}, 
+                                    ${msg.FLOAT_TOKEN}
                                 ])`
                             ),
                             ConstVar(
-                                globals.msg!.Message!,
+                                msg.Message,
                                 'm2',
-                                `${globals.msg!.create!}([${globals.msg!
-                                    .STRING_TOKEN!}, 3])`
+                                `${msg.create}([${msg.STRING_TOKEN}, 3])`
                             ),
                             `
-                            ${globals.msg!.writeFloatToken!}(m1, 0, 11)
-                            ${globals.msg!.writeFloatToken!}(m1, 1, 22)
-                            ${globals.msg!.writeStringToken!}(m2, 0, 'bla')
+                            ${msg.writeFloatToken}(m1, 0, 11)
+                            ${msg.writeFloatToken}(m1, 1, 22)
+                            ${msg.writeStringToken}(m2, 0, 'bla')
                             `,
                             Func('testCallMessageSend')`
                                 IO_snd_someNode1_someOutlet1(m1)
@@ -1269,35 +1252,36 @@ describe('Engine', () => {
                     exports: () => ['testCallMessageSend'],
                 }
 
-                const engine = await initializeEngineTest<'testCallMessageSend'>(
-                    target,
-                    bitDepth,
-                    {
-                        injectedDependencies: [testCode],
-                        graph,
-                        settings: {
-                            io: {
-                                messageSenders,
+                const engine =
+                    await initializeEngineTest<'testCallMessageSend'>(
+                        target,
+                        bitDepth,
+                        {
+                            injectedDependencies: [testCode],
+                            graph,
+                            settings: {
+                                io: {
+                                    messageSenders,
+                                },
                             },
-                        },
-                    }
-                )
+                        }
+                    )
 
                 const called11: Array<Message> = []
                 const called12: Array<Message> = []
                 const called21: Array<Message> = []
 
                 assert.ok(
-                    engine.io.messageSenders.someNode1!.someOutlet1!
-                        instanceof Function
+                    engine.io.messageSenders.someNode1!.someOutlet1! instanceof
+                        Function
                 )
                 assert.ok(
-                    engine.io.messageSenders.someNode1!.someOutlet2!
-                        instanceof Function
+                    engine.io.messageSenders.someNode1!.someOutlet2! instanceof
+                        Function
                 )
                 assert.ok(
-                    engine.io.messageSenders.someNode2!.someOutlet1!
-                        instanceof Function
+                    engine.io.messageSenders.someNode2!.someOutlet1! instanceof
+                        Function
                 )
 
                 engine.io.messageSenders.someNode1!.someOutlet1! = (
@@ -1324,9 +1308,6 @@ describe('Engine', () => {
         it.each(TEST_PARAMETERS)(
             'should create the specified inlet callers %s',
             async ({ target, bitDepth }) => {
-                const precompilation = makePrecompilation({})
-                const globals = precompilation.variableNamesAssigner.globals
-
                 const graph = makeGraph({
                     someNode1: {
                         type: 'someNodeType',
@@ -1352,13 +1333,13 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: ({ node: { id } }) => ({
+                        messageReceivers: ({ node: { id } }, { globals: { msg } }) => ({
                             someInlet1: AnonFunc(
-                                [Var(globals.msg!.Message!, 'm')],
+                                [Var(msg.Message, 'm')],
                                 'void'
                             )`received.get('${id}:1').push(m);return`,
                             someInlet2: AnonFunc(
-                                [Var(globals.msg!.Message!, 'm')],
+                                [Var(msg.Message, 'm')],
                                 'void'
                             )`received.get('${id}:2').push(m);return`,
                         }),
@@ -1368,11 +1349,10 @@ describe('Engine', () => {
                 const testCode: GlobalDefinitions = {
                     namespace: 'tests',
                     // prettier-ignore
-                    code: () =>
+                    code: (_, { globals: { msg } }) =>
                         Sequence([
                             ConstVar(
-                                `Map<string, Array<${globals.msg!
-                                    .Message!}>>`,
+                                `Map<string, Array<${msg.Message}>>`,
                                 'received',
                                 'new Map()'
                             ),
@@ -1384,19 +1364,14 @@ describe('Engine', () => {
 
                             Func(
                                 'messageIsCorrect',
-                                [Var(globals.msg!.Message!, 'message')],
+                                [Var(msg.Message, 'message')],
                                 'boolean'
                             )`
-                                return ${globals.msg!
-                                    .getLength!}(message) === 2
-                                    && ${globals.msg!
-                                        .isFloatToken!}(message, 0)
-                                    && ${globals.msg!
-                                        .isStringToken!}(message, 1)
-                                    && ${globals.msg!
-                                        .readFloatToken!}(message, 0) === 666
-                                    && ${globals.msg!
-                                        .readStringToken!}(message, 1) === 'n4t4s'
+                                return ${msg.getLength}(message) === 2
+                                    && ${msg.isFloatToken}(message, 0)
+                                    && ${msg.isStringToken}(message, 1)
+                                    && ${msg.readFloatToken}(message, 0) === 666
+                                    && ${msg.readStringToken}(message, 1) === 'n4t4s'
                             `,
 
                             Func('testMessageReceived', [], 'boolean')`
@@ -1411,18 +1386,19 @@ describe('Engine', () => {
                     exports: () => ['testMessageReceived'],
                 }
 
-                const engine = await initializeEngineTest<'testMessageReceived'>(
-                    target,
-                    bitDepth,
-                    {
-                        injectedDependencies: [testCode],
-                        graph,
-                        nodeImplementations,
-                        settings: {
-                            io: { messageReceivers },
-                        },
-                    }
-                )
+                const engine =
+                    await initializeEngineTest<'testMessageReceived'>(
+                        target,
+                        bitDepth,
+                        {
+                            injectedDependencies: [testCode],
+                            graph,
+                            nodeImplementations,
+                            settings: {
+                                io: { messageReceivers },
+                            },
+                        }
+                    )
 
                 assert.ok(
                     engine.io.messageReceivers.someNode1!.someInlet1 instanceof
@@ -1496,33 +1472,29 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: ({ snds }, { globals }) => ({
+                        messageReceivers: ({ snds }, { globals: { msg } }) => ({
                             '0': AnonFunc(
-                                [Var(globals.msg!.Message!, 'm')],
+                                [Var(msg.Message, 'm')],
                                 'void'
                             )`${snds['0']!}(m);return`,
                             '1': AnonFunc(
-                                [Var(globals.msg!.Message!, 'm')],
+                                [Var(msg.Message, 'm')],
                                 'void'
                             )`${snds['1']!}(m);return`,
                         }),
                     },
                 }
 
-                const engine = await initializeEngineTest(
-                    target,
-                    bitDepth,
-                    {
-                        settings: {
-                            io: {
-                                messageReceivers,
-                                messageSenders,
-                            },
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    settings: {
+                        io: {
+                            messageReceivers,
+                            messageSenders,
                         },
-                        graph,
-                        nodeImplementations,
-                    }
-                )
+                    },
+                    graph,
+                    nodeImplementations,
+                })
 
                 const calledOutlet0: Array<Message> = []
                 const calledOutlet1: Array<Message> = []
@@ -1556,29 +1528,25 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: (_, { globals }) => ({
+                        messageReceivers: (_, { globals: { msg } }) => ({
                             // No return so an error will be thrown
                             someInlet: AnonFunc(
-                                [Var(globals.msg!.Message!, 'm')],
+                                [Var(msg.Message, 'm')],
                                 'void'
                             )``,
                         }),
                     },
                 }
 
-                const engine = await initializeEngineTest(
-                    target,
-                    bitDepth,
-                    {
-                        graph,
-                        nodeImplementations,
-                        settings: {
-                            io: {
-                                messageReceivers,
-                            },
+                const engine = await initializeEngineTest(target, bitDepth, {
+                    graph,
+                    nodeImplementations,
+                    settings: {
+                        io: {
+                            messageReceivers,
                         },
-                    }
-                )
+                    },
+                })
 
                 await expect(() =>
                     engine.io.messageReceivers.someNode!.someInlet!([

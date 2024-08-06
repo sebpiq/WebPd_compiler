@@ -19,14 +19,6 @@
  */
 
 import {
-    InternalPointer,
-    StringPointer,
-    MessagePointer,
-    EngineData,
-    ForwardReferences,
-} from './types'
-import {
-    Engine,
     EngineMetadata,
     FloatArray,
     SoundFileInfo,
@@ -36,27 +28,20 @@ import {
     liftString,
     lowerListOfFloatArrays,
     readListOfFloatArrays,
-} from './core-bindings'
-import { liftMessage, MsgRawModule } from './msg-bindings'
+} from '../core/bindings-assemblyscript'
+import { liftMessage, MsgRawModule } from '../msg/bindings-assemblyscript'
 import { Bindings } from '../../run/types'
 import {
     EngineLifecycleRawModule,
     updateWasmInOuts,
-} from './engine-lifecycle-bindings'
+} from '../../engine-assemblyscript/run/engine-lifecycle-bindings'
 import { RawModuleWithNameMapping } from '../../run/run-helpers'
+import { EngineData, ForwardReferences } from '../../engine-assemblyscript/run/types'
+import { FsApi, FsExportsAssemblyScript, FsImportsAssemblyScript } from './types'
 
 export interface FsRawModule {
     globals: {
-        fs: {
-            x_onReadSoundFileResponse: (
-                id: number,
-                status: number,
-                sound: InternalPointer
-            ) => void
-            x_onWriteSoundFileResponse: (id: number, status: number) => void
-            x_onSoundStreamData: (id: number, block: InternalPointer) => number
-            x_onCloseSoundStream: (id: number, status: number) => void
-        }
+        fs: FsExportsAssemblyScript
     }
 }
 
@@ -65,39 +50,10 @@ export type FsRawModuleWithDependencies = FsRawModule &
     EngineLifecycleRawModule &
     MsgRawModule
 
-export interface FsImports {
-    i_readSoundFile?: (
-        operationId: number,
-        url: StringPointer,
-        info: any
-    ) => void
-    i_writeSoundFile?: (
-        operationId: number,
-        sound: InternalPointer,
-        url: StringPointer,
-        info: any
-    ) => void
-    i_openSoundReadStream?: (
-        operationId: number,
-        url: StringPointer,
-        info: MessagePointer
-    ) => void
-    i_openSoundWriteStream?: (
-        operationId: number,
-        url: StringPointer,
-        info: MessagePointer
-    ) => void
-    i_sendSoundStreamData?: (
-        operationId: number,
-        block: InternalPointer
-    ) => void
-    i_closeSoundStream?: (operationId: number, operationStatus: number) => void
-}
-
 export const createFsBindings = (
     rawModule: FsRawModuleWithDependencies,
     engineData: EngineData
-): Bindings<NonNullable<Engine['globals']['fs']>> => {
+): Bindings<FsApi> => {
     const fsExportedNames =
         engineData.metadata.compilation.variableNamesIndex.globals.fs!
     return {
@@ -173,14 +129,14 @@ export const createFsBindings = (
 export const createFsImports = (
     forwardReferences: ForwardReferences<FsRawModuleWithDependencies>,
     metadata: EngineMetadata
-): FsImports => {
-    const wasmImports: FsImports = {}
+): FsImportsAssemblyScript => {
+    const wasmImports: FsImportsAssemblyScript = {}
     const exportedNames = metadata.compilation.variableNamesIndex.globals
     if ('fs' in exportedNames) {
         const nameMapping = RawModuleWithNameMapping(
             wasmImports!,
             exportedNames!.fs!
-        ) as FsImports
+        ) as FsImportsAssemblyScript
         if ('i_readSoundFile' in exportedNames.fs!) {
             nameMapping!.i_readSoundFile = (
                 operationId,
