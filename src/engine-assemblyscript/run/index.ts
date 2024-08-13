@@ -80,7 +80,7 @@ export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
     // We need to read metadata before everything, because it is used by other initialization functions
     const metadata = await readMetadata(wasmBuffer)
 
-    const bitDepth = metadata.audioSettings.bitDepth
+    const bitDepth = metadata.settings.audio.bitDepth
     const arrayType = getFloatArrayType(bitDepth)
     const engineData: EngineData = {
         metadata,

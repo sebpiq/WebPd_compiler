@@ -59,8 +59,8 @@ export default (
         const exports = {
             metadata: ${JSON.stringify(metadata)},
             initialize: (sampleRate, blockSize) => {
-                exports.metadata.audioSettings.sampleRate = sampleRate
-                exports.metadata.audioSettings.blockSize = blockSize
+                exports.metadata.settings.audio.sampleRate = sampleRate
+                exports.metadata.settings.audio.blockSize = blockSize
                 ${globals.core!.SAMPLE_RATE!} = sampleRate
                 ${globals.core!.BLOCK_SIZE!} = blockSize
 

@@ -28,7 +28,7 @@ export const buildMetadata = ({
     precompiledCode: { dependencies },
     settings: { audio: audioSettings, io },
 }: RenderInput): EngineMetadata => {
-    const filteredGlobalCode: Partial<VariableNamesIndex['globals']> = {}
+    const filteredGlobals: Partial<VariableNamesIndex['globals']> = {}
     const exportsAndImportsNames = [
         ...dependencies.exports,
         ...dependencies.imports.map((astFunc) => astFunc.name),
@@ -36,27 +36,29 @@ export const buildMetadata = ({
     Object.entries(variableNamesReadOnly.globals).forEach(([ns, names]) =>
         Object.entries(names || {}).forEach(([name, variableName]) => {
             if (exportsAndImportsNames.includes(variableName)) {
-                if (!filteredGlobalCode[ns]) {
-                    filteredGlobalCode[ns] = {}
+                if (!filteredGlobals[ns]) {
+                    filteredGlobals[ns] = {}
                 }
-                filteredGlobalCode[ns]![name] = variableName
+                filteredGlobals[ns]![name] = variableName
             }
         })
     )
 
     return {
         libVersion: packageInfo.version,
-        audioSettings: {
-            ...audioSettings,
-            // Determined at initialize
-            sampleRate: 0,
-            blockSize: 0,
+        settings: {
+            audio: {
+                ...audioSettings,
+                // Determined at initialize
+                sampleRate: 0,
+                blockSize: 0,
+            },
+            io,
         },
         compilation: {
-            io,
             variableNamesIndex: {
                 io: variableNamesReadOnly.io,
-                globals: filteredGlobalCode as VariableNamesIndex['globals'],
+                globals: filteredGlobals as VariableNamesIndex['globals'],
             },
         },
     }

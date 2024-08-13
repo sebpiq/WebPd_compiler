@@ -55,18 +55,18 @@ describe('readMetadata', () => {
     }
 
     const assertMetadataIsCorrect = (actual: EngineMetadata) => {
-        assert.deepStrictEqual(actual, {
+        assert.deepStrictEqual<EngineMetadata>(actual, {
         libVersion: packageInfo.version,
-        audioSettings: {
-            blockSize: 0,
-            sampleRate: 0,
-            bitDepth: 64,
-            channelCount: {
-                in: 2,
-                out: 2,
+        settings: {
+            audio: {
+                blockSize: 0,
+                sampleRate: 0,
+                bitDepth: 64,
+                channelCount: {
+                    in: 2,
+                    out: 2,
+                },
             },
-        },
-        compilation: {
             io: {
                 messageReceivers: {
                     node1: {
@@ -75,6 +75,8 @@ describe('readMetadata', () => {
                 },
                 messageSenders: {},
             },
+        },
+        compilation: {
             variableNamesIndex: {
                 io: {
                     messageReceivers: {

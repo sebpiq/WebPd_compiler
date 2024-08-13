@@ -74,7 +74,7 @@ export interface EngineData {
     arrayType: typeof Float32Array | typeof Float64Array
     // We use these two values only for caching, to avoid frequent nested access
     bitDepth: AudioSettings['bitDepth']
-    blockSize: EngineMetadata['audioSettings']['blockSize']
+    blockSize: EngineMetadata['settings']['audio']['blockSize']
 }
 
 /**

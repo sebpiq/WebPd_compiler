@@ -13,7 +13,7 @@ export const createCommonsModule = (
     rawModule: CommonsRawModule,
     metadata: EngineMetadata
 ): CommonsApi => {
-    const floatArrayType = getFloatArrayType(metadata.audioSettings.bitDepth)
+    const floatArrayType = getFloatArrayType(metadata.settings.audio.bitDepth)
     return attachBindings<Engine['globals']['commons']>(rawModule, {
         getArray: {
             type: 'proxy',

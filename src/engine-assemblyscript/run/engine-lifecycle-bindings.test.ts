@@ -86,10 +86,17 @@ describe('engine-lifecycle-bindings', () => {
             // ASSERT
             assert.deepStrictEqual<EngineMetadata>(metadata, {
                 libVersion: packageInfo.version,
-                audioSettings: {
-                    ...compilationSettings.audio,
-                    blockSize: 0,
-                    sampleRate: 0,
+                settings: {
+                    audio: {
+                        ...compilationSettings.audio,
+                        blockSize: 0,
+                        sampleRate: 0,
+                    },
+                    io: {
+                        messageReceivers:
+                            compilationSettings.io.messageReceivers,
+                        messageSenders: compilationSettings.io.messageSenders,
+                    },
                 },
                 compilation: {
                     variableNamesIndex: {
@@ -108,11 +115,6 @@ describe('engine-lifecycle-bindings', () => {
                         // We don't test the details of the variable names generated
                         // for global code, as they are generated dynamically.
                         globals: metadata.compilation.variableNamesIndex.globals,
-                    },
-                    io: {
-                        messageReceivers:
-                            compilationSettings.io.messageReceivers,
-                        messageSenders: compilationSettings.io.messageSenders,
                     },
                 },
             })

@@ -42,12 +42,10 @@ import {
 import { commonsArrays } from './stdlib/commons/commons'
 import { ast, Sequence, ConstVar, Func, Var, AnonFunc } from './ast/declare'
 import { DspGraph } from './dsp-graph'
-import { makePrecompilation } from './compile/test-helpers'
 import { FS_OPERATION_SUCCESS } from '.'
 import { FsNamespaceAll } from './stdlib/fs/types'
 import {
     CommonsNamespaceAll,
-    CommonsNamespacePrivate,
 } from './stdlib/commons/types'
 
 describe('Engine', () => {
@@ -322,16 +320,18 @@ describe('Engine', () => {
 
                 assert.deepStrictEqual<EngineMetadata>(engine.metadata, {
                     libVersion: packageInfo.version,
-                    audioSettings: {
-                        ...audioSettings,
-                        blockSize: 0,
-                        sampleRate: 0,
-                    },
-                    compilation: {
+                    settings: {
+                        audio: {
+                            ...audioSettings,
+                            blockSize: 0,
+                            sampleRate: 0,
+                        },
                         io: {
                             messageReceivers: { bla: { portletIds: ['blo'] } },
                             messageSenders: { bli: { portletIds: ['blu'] } },
                         },
+                    },
+                    compilation: {
                         variableNamesIndex:
                             engine.metadata.compilation.variableNamesIndex,
                     },
@@ -344,11 +344,11 @@ describe('Engine', () => {
                 engine.initialize(44100, 1024)
 
                 assert.strictEqual(
-                    engine.metadata.audioSettings.blockSize,
+                    engine.metadata.settings.audio.blockSize,
                     1024
                 )
                 assert.strictEqual(
-                    engine.metadata.audioSettings.sampleRate,
+                    engine.metadata.settings.audio.sampleRate,
                     44100
                 )
             }

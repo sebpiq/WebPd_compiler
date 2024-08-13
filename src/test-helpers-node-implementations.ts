@@ -483,14 +483,14 @@ export const generateFrames = (
     engineInput =
         engineInput ||
         buildEngineBlock(
-            engine.metadata.audioSettings.bitDepth,
-            engine.metadata.audioSettings.channelCount.in,
+            engine.metadata.settings.audio.bitDepth,
+            engine.metadata.settings.audio.channelCount.in,
             blockSize
         )
 
     const engineOutput = buildEngineBlock(
-        engine.metadata.audioSettings.bitDepth,
-        engine.metadata.audioSettings.channelCount.out,
+        engine.metadata.settings.audio.bitDepth,
+        engine.metadata.settings.audio.channelCount.out,
         blockSize
     )
 

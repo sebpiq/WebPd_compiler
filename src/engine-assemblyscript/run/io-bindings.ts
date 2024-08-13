@@ -29,7 +29,7 @@ export const createIoMessageReceiversBindings = (
     rawModule: IoRawModuleWithDependencies,
     engineData: EngineData
 ) =>
-    Object.entries(engineData.metadata.compilation.io.messageReceivers).reduce(
+    Object.entries(engineData.metadata.settings.io.messageReceivers).reduce(
         (bindings, [nodeId, spec]) => ({
             ...bindings,
             [nodeId]: {
@@ -52,7 +52,7 @@ export const createIoMessageSendersBindings = (
     _: IoRawModuleWithDependencies,
     engineData: EngineData
 ) =>
-    Object.entries(engineData.metadata.compilation.io.messageSenders).reduce(
+    Object.entries(engineData.metadata.settings.io.messageSenders).reduce(
         (bindings, [nodeId, spec]) => ({
             ...bindings,
             [nodeId]: {
@@ -72,7 +72,7 @@ export const ioMsgSendersImports = (
 ) => {
     const wasmImports: IoImports = {}
     const { variableNamesIndex } = metadata.compilation
-    Object.entries(metadata.compilation.io.messageSenders).forEach(
+    Object.entries(metadata.settings.io.messageSenders).forEach(
         ([nodeId, spec]) => {
             spec.portletIds.forEach((outletId) => {
                 const listenerName =

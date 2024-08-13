@@ -70,12 +70,15 @@ export type Signal = number
 
 export interface EngineMetadata {
     readonly libVersion: string
-    readonly audioSettings: CompilationSettings['audio'] & {
-        sampleRate: number
-        blockSize: number
-    }
-    readonly compilation: {
+    readonly settings: {
+        readonly audio: CompilationSettings['audio'] & {
+            // Assigned at run time through `initialize`
+            sampleRate: number
+            blockSize: number
+        }
         readonly io: CompilationSettings['io']
+    } 
+    readonly compilation: {
         readonly variableNamesIndex: {
             readonly io: VariableNamesIndex['io']
             readonly globals: VariableNamesIndex['globals']

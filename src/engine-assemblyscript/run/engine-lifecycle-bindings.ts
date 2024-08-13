@@ -81,8 +81,8 @@ export const createEngineLifecycleBindings = (
         initialize: {
             type: 'proxy',
             value: (sampleRate: number, blockSize: number): void => {
-                engineData.metadata.audioSettings.blockSize = blockSize
-                engineData.metadata.audioSettings.sampleRate = sampleRate
+                engineData.metadata.settings.audio.blockSize = blockSize
+                engineData.metadata.settings.audio.sampleRate = sampleRate
                 engineData.blockSize = blockSize
                 rawModule.initialize(sampleRate, blockSize)
                 updateWasmInOuts(rawModule, engineData)
