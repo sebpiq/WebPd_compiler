@@ -18,10 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { VariableNamesIndex } from '../compile/precompile/types'
 import { _proxyGetHandlerThrowIfKeyUnknown } from '../compile/proxies'
 import { AudioSettings } from '../compile/types'
-import { Bindings, EngineMetadata } from './types'
+import { Bindings } from './types'
 
 // NOTE : not necessarily the most logical place to put this function, but we need it here
 // cause it's imported by the bindings.
@@ -140,14 +139,5 @@ export const RawModuleWithNameMapping = (
         throw new Error(`Invalid name mapping`)
     }
 }
-
-export const applyVariableNamesIndexNameMapping = (
-    rawModule: object,
-    variableNamesIndex: VariableNamesIndex | EngineMetadata['compilation']['variableNamesIndex']
-) =>
-    RawModuleWithNameMapping(rawModule, {
-        globals: variableNamesIndex.globals,
-        io: variableNamesIndex.io,
-    })
 
 type NameMapping = { [key: string]: string | NameMapping } | string | undefined

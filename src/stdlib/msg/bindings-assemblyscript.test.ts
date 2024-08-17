@@ -28,7 +28,6 @@ import {
 import { AudioSettings } from '../../compile/types'
 import { TEST_PARAMETERS, ascCodeToRawModule } from '../../engine-assemblyscript/run/test-helpers'
 import {
-    applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
 import { core } from '../core/core'
@@ -47,6 +46,7 @@ import { instantiateAndDedupeDependencies } from '../../compile/precompile/depen
 import { CoreNamespaceAll } from '../core/types'
 import { MsgNamespaceAll } from './types'
 import { SkedNamespaceAll } from '../sked/types'
+import { applyEngineNameMapping } from '../../run'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule {
@@ -125,7 +125,7 @@ describe('msg-bindings', () => {
             precompilation.variableNamesAssigner,
             makeGlobalCodePrecompilationContext(precompilation)
         )
-        return applyVariableNamesIndexNameMapping(
+        return applyEngineNameMapping(
             rawModule,
             precompilation.variableNamesIndex
         ) as MsgTestRawModule & MsgRawModuleWithDependencies

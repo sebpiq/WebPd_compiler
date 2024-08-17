@@ -28,15 +28,19 @@
  * @module
  */
 
-import {
-    applyVariableNamesIndexNameMapping,
-} from '../../run/run-helpers'
 import { attachBindings } from '../../run/run-helpers'
 import { Bindings } from '../../run/types'
 import { Code } from '../../ast/types'
 import { Engine } from '../../run/types'
-import { createFsModule, FsRawModule } from '../../stdlib/fs/bindings-javascript'
-import { CommonsRawModule, createCommonsModule } from '../../stdlib/commons/bindings-javascript'
+import {
+    createFsModule,
+    FsRawModule,
+} from '../../stdlib/fs/bindings-javascript'
+import {
+    CommonsRawModule,
+    createCommonsModule,
+} from '../../stdlib/commons/bindings-javascript'
+import { applyEngineNameMapping } from '../../run'
 
 export interface EngineLifecycleRawModule {
     metadata: Engine['metadata']
@@ -83,14 +87,17 @@ export const createEngineBindings = (
     }
 }
 
-export const createEngine = (code: Code): Engine => {
+export const createEngine = <AdditionalExports>(
+    code: Code,
+    additionalBindings?: Bindings<AdditionalExports>
+): Engine => {
     const rawModule = compileRawModule(code)
-    const rawModuleWithNameMapping = applyVariableNamesIndexNameMapping(
+    const rawModuleWithNameMapping = applyEngineNameMapping(
         rawModule,
         rawModule.metadata.compilation.variableNamesIndex
     )
-    return attachBindings(
-        rawModule,
-        createEngineBindings(rawModuleWithNameMapping)
-    )
+    return attachBindings(rawModule, {
+        ...createEngineBindings(rawModuleWithNameMapping),
+        ...(additionalBindings || {}),
+    })
 }

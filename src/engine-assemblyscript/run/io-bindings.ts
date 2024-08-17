@@ -68,11 +68,11 @@ export const createIoMessageSendersBindings = (
 
 export const ioMsgSendersImports = (
     forwardReferences: ForwardReferences<IoRawModuleWithDependencies>,
-    metadata: EngineMetadata
+    engineData: EngineData
 ) => {
     const wasmImports: IoImports = {}
-    const { variableNamesIndex } = metadata.compilation
-    Object.entries(metadata.settings.io.messageSenders).forEach(
+    const { variableNamesIndex } = engineData.metadata.compilation
+    Object.entries(engineData.metadata.settings.io.messageSenders).forEach(
         ([nodeId, spec]) => {
             spec.portletIds.forEach((outletId) => {
                 const listenerName =
@@ -82,7 +82,7 @@ export const ioMsgSendersImports = (
                         forwardReferences.rawModule!,
                         messagePointer
                     )
-                    forwardReferences.modules.io!.messageSenders[nodeId]![
+                    forwardReferences.engine!.io!.messageSenders[nodeId]![
                         outletId
                     ]!(message)
                 }

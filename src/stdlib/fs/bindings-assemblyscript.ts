@@ -18,11 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {
-    EngineMetadata,
-    FloatArray,
-    SoundFileInfo,
-} from '../../run/types'
+import { FloatArray, SoundFileInfo } from '../../run/types'
 import {
     CoreRawModuleWithDependencies,
     liftString,
@@ -36,8 +32,15 @@ import {
     updateWasmInOuts,
 } from '../../engine-assemblyscript/run/engine-lifecycle-bindings'
 import { RawModuleWithNameMapping } from '../../run/run-helpers'
-import { EngineData, ForwardReferences } from '../../engine-assemblyscript/run/types'
-import { FsApi, FsExportsAssemblyScript, FsImportsAssemblyScript } from './types'
+import {
+    EngineData,
+    ForwardReferences,
+} from '../../engine-assemblyscript/run/types'
+import {
+    FsApi,
+    FsExportsAssemblyScript,
+    FsImportsAssemblyScript,
+} from './types'
 
 export interface FsRawModule {
     globals: {
@@ -128,10 +131,11 @@ export const createFsBindings = (
 
 export const createFsImports = (
     forwardReferences: ForwardReferences<FsRawModuleWithDependencies>,
-    metadata: EngineMetadata
+    engineData: EngineData
 ): FsImportsAssemblyScript => {
     const wasmImports: FsImportsAssemblyScript = {}
-    const exportedNames = metadata.compilation.variableNamesIndex.globals
+    const exportedNames =
+        engineData.metadata.compilation.variableNamesIndex.globals
     if ('fs' in exportedNames) {
         const nameMapping = RawModuleWithNameMapping(
             wasmImports!,
@@ -148,7 +152,7 @@ export const createFsImports = (
                     forwardReferences.rawModule!,
                     infoPointer
                 ) as SoundFileInfo
-                forwardReferences.modules.fs!.onReadSoundFile(
+                forwardReferences.engine!.globals.fs!.onReadSoundFile(
                     operationId,
                     url,
                     info
@@ -165,7 +169,7 @@ export const createFsImports = (
             ) => {
                 const sound = readListOfFloatArrays(
                     forwardReferences.rawModule!,
-                    forwardReferences.engineData!.bitDepth,
+                    engineData.bitDepth,
                     soundPointer
                 ) as Array<FloatArray>
                 const url = liftString(forwardReferences.rawModule!, urlPointer)
@@ -173,7 +177,7 @@ export const createFsImports = (
                     forwardReferences.rawModule!,
                     infoPointer
                 ) as SoundFileInfo
-                forwardReferences.modules.fs!.onWriteSoundFile(
+                forwardReferences.engine!.globals.fs!.onWriteSoundFile(
                     operationId,
                     sound,
                     url!,
@@ -195,11 +199,8 @@ export const createFsImports = (
                 ) as SoundFileInfo
                 // Called here because this call means that some sound buffers were allocated
                 // inside the wasm module.
-                updateWasmInOuts(
-                    forwardReferences.rawModule!,
-                    forwardReferences.engineData!
-                )
-                forwardReferences.modules.fs!.onOpenSoundReadStream(
+                updateWasmInOuts(forwardReferences.rawModule!, engineData)
+                forwardReferences.engine!.globals.fs!.onOpenSoundReadStream(
                     operationId,
                     url!,
                     info
@@ -218,7 +219,7 @@ export const createFsImports = (
                     forwardReferences.rawModule!,
                     infoPointer
                 ) as SoundFileInfo
-                forwardReferences.modules.fs!.onOpenSoundWriteStream(
+                forwardReferences.engine!.globals.fs!.onOpenSoundWriteStream(
                     operationId,
                     url!,
                     info
@@ -233,10 +234,10 @@ export const createFsImports = (
             ) => {
                 const block = readListOfFloatArrays(
                     forwardReferences.rawModule!,
-                    forwardReferences.engineData!.bitDepth,
+                    engineData.bitDepth,
                     blockPointer
                 ) as Array<FloatArray>
-                forwardReferences.modules.fs!.onSoundStreamData(
+                forwardReferences.engine!.globals.fs!.onSoundStreamData(
                     operationId,
                     block
                 )
@@ -245,7 +246,9 @@ export const createFsImports = (
 
         if ('i_closeSoundStream' in exportedNames.fs!) {
             nameMapping!.i_closeSoundStream = (...args) =>
-                forwardReferences.modules.fs!.onCloseSoundStream(...args)
+                forwardReferences.engine!.globals.fs!.onCloseSoundStream(
+                    ...args
+                )
         }
     }
     return wasmImports

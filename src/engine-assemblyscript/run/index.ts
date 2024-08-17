@@ -37,7 +37,6 @@ import {
 } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
 import {
-    applyVariableNamesIndexNameMapping,
     getFloatArrayType,
 } from '../../run/run-helpers'
 import { createCommonsBindings } from '../../stdlib/commons/bindings-assemblyscript'
@@ -54,15 +53,21 @@ import {
     IoRawModuleWithDependencies,
 } from './io-bindings'
 import { Bindings } from '../../run/types'
-import { createFsBindings, createFsImports, FsRawModuleWithDependencies } from '../../stdlib/fs/bindings-assemblyscript'
+import {
+    createFsBindings,
+    createFsImports,
+    FsRawModuleWithDependencies,
+} from '../../stdlib/fs/bindings-assemblyscript'
+import { applyEngineNameMapping } from '../../run'
 
-export const createEngine = async (
-    wasmBuffer: ArrayBuffer
+export const createEngine = async <AdditionalExports>(
+    wasmBuffer: ArrayBuffer,
+    additionalBindings?: Bindings<AdditionalExports>,
 ): Promise<Engine> => {
     const { rawModule, engineData, forwardReferences } = await createRawModule(
         wasmBuffer
     )
-    const rawModuleWithNameMapping = applyVariableNamesIndexNameMapping(
+    const rawModuleWithNameMapping = applyEngineNameMapping(
         rawModule,
         engineData.metadata.compilation.variableNamesIndex
     ) as RawEngine
@@ -70,9 +75,13 @@ export const createEngine = async (
         rawModuleWithNameMapping,
         engineData
     )
-    const engine = attachBindings(rawModuleWithNameMapping, engineBindings)
+    const engine = attachBindings(rawModuleWithNameMapping, {
+        ...engineBindings,
+        ...(additionalBindings || {}),
+    })
 
-    assignReferences(forwardReferences, rawModuleWithNameMapping, engine)
+    forwardReferences.engine = engine
+    forwardReferences.rawModule = rawModuleWithNameMapping
     return engine
 }
 
@@ -95,11 +104,11 @@ export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
         FsRawModuleWithDependencies &
             EngineLifecycleRawModuleWithDependencies &
             IoRawModuleWithDependencies
-    > = { modules: {}, engineData }
+    > = { rawModule: null, engine: null }
 
     const wasmImports: AssemblyScriptWasmImports = {
-        ...createFsImports(forwardReferences, metadata),
-        ...ioMsgSendersImports(forwardReferences, metadata),
+        ...createFsImports(forwardReferences, engineData),
+        ...ioMsgSendersImports(forwardReferences, engineData),
     }
 
     const wasmInstance = await instantiateWasmModule(wasmBuffer, {
@@ -155,21 +164,5 @@ export const createEngineBindings = (
             value: attachBindings(rawModule, globalsBindings),
         },
         io: { type: 'proxy', value: io },
-    }
-}
-
-export const assignReferences = (
-    forwardReferences: ForwardReferences<
-        FsRawModuleWithDependencies & EngineLifecycleRawModuleWithDependencies
-    >,
-    rawModuleWithNameMapping: FsRawModuleWithDependencies &
-        EngineLifecycleRawModuleWithDependencies,
-    engine: Engine
-) => {
-    // Update forward refs for use in Wasm imports
-    forwardReferences.modules.io = engine.io
-    forwardReferences.rawModule = rawModuleWithNameMapping
-    if (engine.globals.fs) {
-        forwardReferences.modules.fs = engine.globals.fs
     }
 }

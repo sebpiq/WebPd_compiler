@@ -79,15 +79,11 @@ export interface EngineData {
 
 /**
  * When declaring imported functions, we use objects that will be only available
- * once compilation done.
+ * once compilation is done.
  * Therefore we use these forward references in imported functions, and fill them up
  * once compilation is done.
  */
 export interface ForwardReferences<RawModuleType> {
-    rawModule?: RawModuleType
-    engineData: EngineData
-    modules: {
-        fs?: Engine['globals']['fs']
-        io?: Engine['io']
-    }
+    rawModule: RawModuleType | null
+    engine: Engine | null
 }

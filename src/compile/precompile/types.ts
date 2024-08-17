@@ -144,7 +144,27 @@ export interface DspGroup {
 }
 
 /**
- * Map of all global variable names used for compilation.
+ * Map of all variable names used for compilation. This map allows to : 
+ *  - ensure name unicity through the use of namespaces
+ *  - give all variable names a stable path 
+ * 
+ * For example we might have :
+ * 
+ * ```
+ * const variableNamesIndex = {
+ *     globals: {
+ *         // ...
+ *         fs: {
+ *             // ...
+ *             counter: 'g_fs_counter_auto_generated_12345'
+ *         },
+ *         buf: {
+ *             // ...
+ *             counter: 'g_buf_counter'
+ *         } 
+ *     }
+ * }
+ * ```
  */
 export interface VariableNamesIndex {
     /** Namespace for individual nodes */

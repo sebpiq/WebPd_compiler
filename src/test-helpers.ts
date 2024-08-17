@@ -27,28 +27,15 @@ import {
 } from './compile/types'
 import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
-import { Engine } from './run/types'
+import { BindingSpec, Engine } from './run/types'
 import { writeFile } from 'fs/promises'
 import { getMacros } from './compile/compile-helpers'
-import { compileJavascript } from './engine-javascript/run/test-helpers'
 import {
     compileAssemblyscript,
     wasmBufferToRawModule,
 } from './engine-assemblyscript/run/test-helpers'
 import { mapArray, renderSwitch } from './functional-helpers'
-import {
-    createRawModule as createAssemblyScriptWasmRawModule,
-    createEngineBindings as createAssemblyScriptWasmEngineBindings,
-    assignReferences,
-} from './engine-assemblyscript/run'
-import {
-    createEngineBindings as createJavaScriptEngineBindings,
-    EngineLifecycleRawModule,
-} from './engine-javascript/run'
-import {
-    applyVariableNamesIndexNameMapping,
-    attachBindings,
-} from './run/run-helpers'
+import { compileRawModule } from './engine-javascript/run'
 import render from './compile/render'
 import {
     collectAndDedupeExports,
@@ -59,7 +46,7 @@ import {
     makeGlobalCodePrecompilationContext,
     makePrecompilation,
 } from './compile/test-helpers'
-import { RawEngine } from './engine-assemblyscript/run/types'
+import { createAssemblyScriptWasmEngine, createJavaScriptEngine } from '.'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
@@ -90,8 +77,8 @@ export const round = (v: number, decimals: number = 4) => {
 }
 
 interface CreateTestModuleApplyBindings {
-    assemblyscript?: (buffer: ArrayBuffer) => Promise<Module>
-    javascript?: (rawModule: EngineLifecycleRawModule) => Promise<Module>
+    assemblyscript: (buffer: ArrayBuffer) => Promise<Module>
+    javascript: (code: Code) => Promise<Module>
 }
 
 /** Helper function to create a `Module` for running tests. */
@@ -99,14 +86,8 @@ export const createTestModule = async (
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    applyBindings: CreateTestModuleApplyBindings = {}
+    applyBindings: CreateTestModuleApplyBindings
 ) => {
-    const applyBindingsNonNull: Required<CreateTestModuleApplyBindings> = {
-        javascript: async (rawModule) => rawModule,
-        assemblyscript: (buffer) => wasmBufferToRawModule(buffer),
-        ...applyBindings,
-    }
-
     // Always save latest compilation for easy inspection
     await writeFile(
         `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'as'}`,
@@ -114,12 +95,11 @@ export const createTestModule = async (
     )
     switch (target) {
         case 'javascript':
-            const rawModule = await compileJavascript(code)
-            const jsModule = await applyBindingsNonNull.javascript(rawModule)
+            const jsModule = await applyBindings.javascript(code)
             return jsModule
         case 'assemblyscript':
             const buffer = await compileAssemblyscript(code, bitDepth)
-            const ascModule = await applyBindingsNonNull.assemblyscript(buffer)
+            const ascModule = await applyBindings.assemblyscript(buffer)
             return ascModule
     }
 }
@@ -150,38 +130,22 @@ export const createTestEngine = <ExportedKeys extends string = 'UNKNOWN'>(
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
     return createTestModule(target, bitDepth, code, {
-        javascript: async (rawModule: EngineLifecycleRawModule) => {
-            const rawModuleWithMapping = applyVariableNamesIndexNameMapping(
-                rawModule,
-                rawModule.metadata.compilation.variableNamesIndex
-            )
-            return attachBindings(rawModule, {
-                ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
-                ...createJavaScriptEngineBindings(rawModuleWithMapping),
-            })
-        },
-        assemblyscript: async (buffer) => {
-            const { rawModule, engineData, forwardReferences } =
-                await createAssemblyScriptWasmRawModule(buffer)
-            const rawModuleWithNameMapping = applyVariableNamesIndexNameMapping(
-                rawModule,
-                engineData.metadata.compilation.variableNamesIndex
-            ) as RawEngine
-            const engineBindings = await createAssemblyScriptWasmEngineBindings(
-                rawModuleWithNameMapping,
-                engineData
-            )
-            const engine = attachBindings(rawModuleWithNameMapping, {
-                ...mapArray(exports, (name) => [String(name), { type: 'raw' }]),
-                ...engineBindings,
-            })
-            assignReferences(
-                forwardReferences,
-                rawModuleWithNameMapping,
-                engine
-            )
-            return engine
-        },
+        javascript: async (code: Code) =>
+            createJavaScriptEngine(
+                code,
+                mapArray(exports, (name) => [
+                    String(name),
+                    { type: 'raw' } as BindingSpec<any>,
+                ])
+            ),
+        assemblyscript: async (buffer) =>
+            createAssemblyScriptWasmEngine(
+                buffer,
+                mapArray(exports, (name) => [
+                    String(name),
+                    { type: 'raw' } as BindingSpec<any>,
+                ])
+            ),
     }) as Promise<Engine & Record<ExportedKeys, any>>
 }
 
@@ -234,6 +198,7 @@ export const runTestSuite = (
                     return codeGeneratorWithSettings
                 })
 
+            // prettier-ignore
             const testsAndDependencies = Sequence([
                 Func('reportTestFailure', [Var('string', 'msg')], 'void')`
                     console.log(msg)
@@ -331,7 +296,12 @@ export const runTestSuite = (
                 await createTestModule(
                     target,
                     bitDepth,
-                    render(getMacros(target), testsAndDependencies)
+                    render(getMacros(target), testsAndDependencies),
+                    {
+                        javascript: async (code) => compileRawModule(code),
+                        assemblyscript: (buffer) =>
+                            wasmBufferToRawModule(buffer),
+                    }
                 ),
             ])
         }

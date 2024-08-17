@@ -32,7 +32,7 @@ export const createFsModule = (rawModule: FsRawModule): FsApi => {
                     ? rawModule.globals.fs.x_onWriteSoundFileResponse
                     : undefined,
         },
-        //should register the operation success { bitDepth: 32, target: 'javascript' }
+        // should register the operation success { bitDepth: 32, target: 'javascript' }
         sendSoundStreamData: {
             type: 'proxy',
             value:
