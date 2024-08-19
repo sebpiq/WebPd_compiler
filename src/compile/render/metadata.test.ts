@@ -27,9 +27,7 @@ describe('metadata', () => {
                 Func('bla_blah')``,
                 Func('blo_blurg')``,
             ]
-            const renderInput = precompilationToRenderInput(
-                precompilation
-            )
+            const renderInput = precompilationToRenderInput(precompilation)
             const metadata = buildMetadata(renderInput)
 
             assert.deepStrictEqual(

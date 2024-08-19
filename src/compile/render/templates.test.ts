@@ -130,6 +130,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 sequence,
+                // prettier-ignore
                 Sequence([
                     Func('N_n1_rcvs_0', [
                         Var(globals.msg.Message, 'm'),
@@ -175,6 +176,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 sequence,
+                // prettier-ignore
                 Sequence([
                     Func('N_n1_rcvs_0', [
                         Var(globals.msg.Message, 'm'),
@@ -428,7 +430,9 @@ describe('templates', () => {
     })
 
     describe('templates.dspLoop', () => {
-        const _ensureVariableNames = (globals: VariableNamesIndex['globals']) => {
+        const _ensureVariableNames = (
+            globals: VariableNamesIndex['globals']
+        ) => {
             ;(globals.commons as CommonsNamespaceAll)._emitFrame
             globals.core.IT_FRAME
             globals.core.BLOCK_SIZE
@@ -557,7 +561,9 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([`COLD_0(G_msg_emptyMessage)\nCOLD_1(G_msg_emptyMessage)`])
+                Sequence([
+                    `COLD_0(G_msg_emptyMessage)\nCOLD_1(G_msg_emptyMessage)`,
+                ])
             )
         })
     })
@@ -613,6 +619,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
+                // prettier-ignore
                 Sequence([
                     Func('COLD_0', [Var(globals.msg.Message, 'm')])`// n1\n// n2`,
                     Func('COLD_1', [Var(globals.msg.Message, 'm')])`// n3`,
@@ -715,7 +722,9 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
-                Sequence([Func('COLD_0', [Var(globals.msg.Message, 'm')])`// n1`])
+                Sequence([
+                    Func('COLD_0', [Var(globals.msg.Message, 'm')])`// n1`,
+                ])
             )
         })
     })

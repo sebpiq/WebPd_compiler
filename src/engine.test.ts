@@ -44,9 +44,7 @@ import { ast, Sequence, ConstVar, Func, Var, AnonFunc } from './ast/declare'
 import { DspGraph } from './dsp-graph'
 import { FS_OPERATION_SUCCESS } from '.'
 import { FsNamespaceAll } from './stdlib/fs/types'
-import {
-    CommonsNamespaceAll,
-} from './stdlib/commons/types'
+import { CommonsNamespaceAll } from './stdlib/commons/types'
 
 describe('Engine', () => {
     interface EngineTestSettings {
@@ -363,6 +361,7 @@ describe('Engine', () => {
                     const floatArrayType = getFloatArrayType(bitDepth)
                     const testCode: GlobalDefinitions = {
                         namespace: '_',
+                        // prettier-ignore
                         code: (_, { globals: { commons } }) => ast`
                             const array = createFloatArray(4)
                             array[0] = 123
@@ -816,14 +815,12 @@ describe('Engine', () => {
                     )
 
                     // 2. Hosts handles the operation. It then calls ${fs!.sendSoundStreamData} to send in data.
-                    const writtenFrameCount = engine.globals.fs!.sendSoundStreamData!(
-                        operationId,
-                        [
-                            new Float32Array([-1, -2, -3]),
-                            new Float32Array([4, 5, 6]),
-                            new Float32Array([-7, -8, -9]),
-                        ]
-                    )
+                    const writtenFrameCount = engine.globals.fs!
+                        .sendSoundStreamData!(operationId, [
+                        new Float32Array([-1, -2, -3]),
+                        new Float32Array([4, 5, 6]),
+                        new Float32Array([-7, -8, -9]),
+                    ])
                     assert.strictEqual(writtenFrameCount, 3)
                     assert.ok(engine.testReceivedSound(operationId))
 
@@ -1157,7 +1154,8 @@ describe('Engine', () => {
                             >['onWriteSoundFile']
                         >
                     > = []
-                    engine.globals.fs!.onWriteSoundFile = (...args) => called.push(args)
+                    engine.globals.fs!.onWriteSoundFile = (...args) =>
+                        called.push(args)
 
                     const operationId = engine.testStartWriteFile()
 
@@ -1333,7 +1331,10 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: ({ node: { id } }, { globals: { msg } }) => ({
+                        messageReceivers: (
+                            { node: { id } },
+                            { globals: { msg } }
+                        ) => ({
                             someInlet1: AnonFunc(
                                 [Var(msg.Message, 'm')],
                                 'void'

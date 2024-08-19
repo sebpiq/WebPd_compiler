@@ -33,7 +33,7 @@ describe('graph-helpers', () => {
                     },
                     inlets: {
                         0: { id: '0', type: 'message' },
-                    }
+                    },
                 },
                 n2: {
                     ...nodeDefaults('n2', 'blo'),
@@ -45,7 +45,7 @@ describe('graph-helpers', () => {
                     },
                     outlets: {
                         2: { id: '2', type: 'message' },
-                    }
+                    },
                 },
                 n3: {
                     ...nodeDefaults('n3', 'blu'),
@@ -54,7 +54,7 @@ describe('graph-helpers', () => {
                     },
                     inlets: {
                         22: { id: '22', type: 'message' },
-                    }
+                    },
                 },
             })
             assert.strictEqual(graphIntegrity, null)
@@ -69,13 +69,13 @@ describe('graph-helpers', () => {
                     },
                     inlets: {
                         0: { id: '0', type: 'message' },
-                    }
+                    },
                 },
                 n2: {
                     ...nodeDefaults('n2', 'blo'),
                     outlets: {
                         2: { id: '2', type: 'message' },
-                    }
+                    },
                 },
             })
             assert.deepStrictEqual(graphIntegrity, {

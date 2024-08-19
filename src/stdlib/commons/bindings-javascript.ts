@@ -1,7 +1,7 @@
-import { EngineLifecycleRawModule } from "../../engine-javascript/run"
-import { getFloatArrayType, attachBindings } from "../../run/run-helpers"
-import { EngineMetadata, Engine, FloatArray } from "../../run/types"
-import { CommonsApi, CommonsExportsJavaScript } from "./types"
+import { EngineLifecycleRawModule } from '../../engine-javascript/run'
+import { getFloatArrayType, attachBindings } from '../../run/run-helpers'
+import { EngineMetadata, Engine, FloatArray } from '../../run/types'
+import { CommonsApi, CommonsExportsJavaScript } from './types'
 
 export interface CommonsRawModule extends EngineLifecycleRawModule {
     globals: {

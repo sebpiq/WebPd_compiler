@@ -24,7 +24,10 @@ import { MsgExportsAssemblyScript, MsgNamespaceAll } from './types'
 
 const NAMESPACE = 'msg'
 
-export const msg: GlobalDefinitions<keyof MsgNamespaceAll, keyof MsgExportsAssemblyScript> = {
+export const msg: GlobalDefinitions<
+    keyof MsgNamespaceAll,
+    keyof MsgExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
     code: ({ ns: msg }, { settings: { target } }) => {
         // prettier-ignore
@@ -79,9 +82,7 @@ export const msg: GlobalDefinitions<keyof MsgNamespaceAll, keyof MsgExportsAssem
         }
 
         const shared = [
-            Func(msg.nullMessageReceiver, [
-                Var(msg.Message, 'm')
-            ], 'void')``,
+            Func(msg.nullMessageReceiver, [Var(msg.Message, 'm')], 'void')``,
             Var(msg.Message, msg.emptyMessage, `${msg.create}([])`),
         ]
 
@@ -401,15 +402,18 @@ export const msg: GlobalDefinitions<keyof MsgNamespaceAll, keyof MsgExportsAssem
         }
     },
 
-    exports: ({ ns: msg }, { settings }) => settings.target === 'assemblyscript' ? [
-        msg.x_create,
-        msg.x_getTokenTypes,
-        msg.x_createTemplate,
-        msg.writeStringToken,
-        msg.writeFloatToken,
-        msg.readStringToken,
-        msg.readFloatToken,
-        msg.FLOAT_TOKEN,
-        msg.STRING_TOKEN,
-    ]: [],
+    exports: ({ ns: msg }, { settings }) =>
+        settings.target === 'assemblyscript'
+            ? [
+                  msg.x_create,
+                  msg.x_getTokenTypes,
+                  msg.x_createTemplate,
+                  msg.writeStringToken,
+                  msg.writeFloatToken,
+                  msg.readStringToken,
+                  msg.readFloatToken,
+                  msg.FLOAT_TOKEN,
+                  msg.STRING_TOKEN,
+              ]
+            : [],
 }

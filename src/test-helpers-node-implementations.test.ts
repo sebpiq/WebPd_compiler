@@ -37,8 +37,8 @@ describe('test-helpers-node-implementations', () => {
             'should work with signal inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation = {
-                    dsp: ({ ins, outs }) => 
-                        ast`${outs.$0!} = ${ins.$0!} + 0.1`,
+                    // prettier-ignore
+                    dsp: ({ ins, outs }) => ast`${outs.$0!} = ${ins.$0!} + 0.1`,
                 }
 
                 const node: DspGraph.Node = {
@@ -66,10 +66,13 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     messageReceivers: ({ snds }, { globals }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`
-                            ${snds.$0!}(${globals.msg!.floats!}([ ${globals.msg!.readFloatToken!}(m, 0) + 0.1 ]))
+                            ${snds.$0!}(${globals.msg!.floats!}([
+                                ${globals.msg!.readFloatToken!}(m, 0) + 0.1 
+                            ]))
                             return
                         `,
                     }),
@@ -100,10 +103,13 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     messageReceivers: ({ snds }, { globals }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`
-                        ${snds.$0!}(${globals.msg!.floats!}([toFloat(${globals.core!.FRAME!})]))
+                        ${snds.$0!}(${globals.msg!.floats!}([
+                            toFloat(${globals.core!.FRAME!})
+                        ]))
                         return
                     `,
                     }),
@@ -134,6 +140,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     messageReceivers: (_, { globals }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`
@@ -185,6 +192,7 @@ describe('test-helpers-node-implementations', () => {
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
                     messageReceivers: (_, { globals }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
                             Var(globals.msg!.Message!, 'm')
                         ], 'void')`

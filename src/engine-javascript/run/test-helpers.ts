@@ -25,7 +25,9 @@ import { promisify } from 'util'
 import { EngineLifecycleRawModule, compileRawModule } from '.'
 const execPromise = promisify(exec)
 
-export const compileJavascript = async (code: Code): Promise<EngineLifecycleRawModule> => {
+export const compileJavascript = async (
+    code: Code
+): Promise<EngineLifecycleRawModule> => {
     try {
         return compileRawModule(code) as any
     } catch (err) {

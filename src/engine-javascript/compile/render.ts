@@ -27,10 +27,12 @@ import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
 import { ReadOnlyIndex } from '../../compile/proxies'
 
-export default (
-    renderInput: RenderInput,
-): JavaScriptEngineCode => {
-    const { precompiledCode, settings, variableNamesReadOnly: variableNamesIndex } = renderInput
+export default (renderInput: RenderInput): JavaScriptEngineCode => {
+    const {
+        precompiledCode,
+        settings,
+        variableNamesReadOnly: variableNamesIndex,
+    } = renderInput
     const variableNamesReadOnly = ReadOnlyIndex(variableNamesIndex)
     const { globals } = variableNamesReadOnly
     const renderTemplateInput = {

@@ -19,23 +19,31 @@
  */
 
 import { AstClass, AstConstVar, AstFunc, AstVar } from '../../ast/types'
-import { CodeMacros } from "../../compile/render/types"
+import { CodeMacros } from '../../compile/render/types'
 import { Code } from '../../ast/types'
 
 const Var = (declaration: AstVar, renderedValue?: Code) =>
+    // prettier-ignore
     `let ${declaration.name}: ${declaration.type}${renderedValue ? ` = ${renderedValue}` : ''}`
 
 const ConstVar = (declaration: AstConstVar, renderedValue: Code) =>
+    // prettier-ignore
     `const ${declaration.name}: ${declaration.type} = ${renderedValue}`
 
-const Func = (declaration: AstFunc, renderedArgsValues: Array<Code | null>, renderedBody: Code) => 
+const Func = (
+    declaration: AstFunc,
+    renderedArgsValues: Array<Code | null>,
+    renderedBody: Code
+) =>
+    // prettier-ignore
     `function ${declaration.name !== null ? declaration.name: ''}(${
         declaration.args.map(
             (arg, i) => `${arg.name}: ${arg.type}${renderedArgsValues[i] ? `=${renderedArgsValues[i]}`: ''}`).join(', ')
     }): ${declaration.returnType} {${renderedBody}}`
 
-const Class = (declaration: AstClass) => 
-`class ${declaration.name} {
+const Class = (declaration: AstClass) =>
+    // prettier-ignore
+    `class ${declaration.name} {
 ${declaration.members.map(
     varDeclaration => `${varDeclaration.name}: ${varDeclaration.type}`
 ).join('\n')}

@@ -23,6 +23,7 @@ import { core } from '../core/core'
 import { sked } from './sked'
 
 describe('sked', () => {
+    // prettier-ignore
     runTestSuite(
         [
             {
@@ -104,7 +105,7 @@ describe('sked', () => {
                     ${ConstVar(
                         sked.Id,
                         'skedId',
-                        `${sked.wait}(skeduler, 'some_event', () => received.push(123))`,
+                        `${sked.wait}(skeduler, 'some_event', () => received.push(123))`
                     )}
                     ${sked.cancel}(skeduler, skedId)
                     ${sked.emit}(skeduler, 'some_event')

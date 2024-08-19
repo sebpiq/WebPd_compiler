@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import assert from "assert"
-import { validateSettings } from "./settings"
+import assert from 'assert'
+import { validateSettings } from './settings'
 
 describe('validateSettings', () => {
     it('should validate settings and set defaults', () => {
@@ -31,18 +31,21 @@ describe('validateSettings', () => {
         assert.deepStrictEqual(settings.audio, {
             channelCount: { in: 2, out: 2 },
             bitDepth: 64,
-        },)
+        })
     })
 
     it('should throw error if bitDepth invalid', () => {
         assert.throws(() =>
-            validateSettings({
-                target: 'assemblyscript',
-                audio: {
-                    channelCount: { in: 2, out: 2 },
-                    bitDepth: 666,
-                },
-            } as any, 'javascript')
+            validateSettings(
+                {
+                    target: 'assemblyscript',
+                    audio: {
+                        channelCount: { in: 2, out: 2 },
+                        bitDepth: 666,
+                    },
+                } as any,
+                'javascript'
+            )
         )
     })
 })

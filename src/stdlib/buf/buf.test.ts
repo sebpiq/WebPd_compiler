@@ -24,6 +24,7 @@ import { bufCore, bufPushPull, bufWriteRead } from './buf'
 import { core } from '../core/core'
 
 describe('buf', () => {
+    // prettier-ignore
     runTestSuite(
         [
             {

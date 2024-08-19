@@ -114,7 +114,8 @@ describe('metadata', () => {
                         },
                         // We don't test the details of the variable names generated
                         // for global code, as they are generated dynamically.
-                        globals: metadata.compilation.variableNamesIndex.globals,
+                        globals:
+                            metadata.compilation.variableNamesIndex.globals,
                     },
                 },
             })

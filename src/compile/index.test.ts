@@ -37,13 +37,23 @@ describe('compile', () => {
     }
 
     it('should compile assemblyscript without error', () => {
-        const compileResult = compile({}, {}, 'assemblyscript', COMPILER_SETTINGS_AS)
+        const compileResult = compile(
+            {},
+            {},
+            'assemblyscript',
+            COMPILER_SETTINGS_AS
+        )
         assert.ok(compileResult.status === 0)
         assert.strictEqual(typeof compileResult.code, 'string')
     })
 
     it('should compile javascript without error', () => {
-        const compileResult = compile({}, {}, 'javascript', COMPILER_SETTINGS_JS)
+        const compileResult = compile(
+            {},
+            {},
+            'javascript',
+            COMPILER_SETTINGS_JS
+        )
         assert.ok(compileResult.status === 0)
         assert.strictEqual(typeof compileResult.code, 'string')
     })

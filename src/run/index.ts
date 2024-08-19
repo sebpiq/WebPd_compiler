@@ -17,17 +17,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { VariableNamesIndex } from "../compile/precompile/types"
-import { CompilerTarget } from "../compile/types"
+import { VariableNamesIndex } from '../compile/precompile/types'
+import { CompilerTarget } from '../compile/types'
 import { readMetadata as readMetadataWasm } from '../engine-assemblyscript/run/metadata'
-import { JavaScriptEngineCode } from "../engine-javascript/compile/types"
-import { createEngine } from "../engine-javascript/run"
-import { RawModuleWithNameMapping } from "./run-helpers"
-import { EngineMetadata } from "./types"
+import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
+import { createEngine } from '../engine-javascript/run'
+import { RawModuleWithNameMapping } from './run-helpers'
+import { EngineMetadata } from './types'
 
 export const readMetadata = async (
     target: CompilerTarget,
-    compiled: ArrayBuffer | JavaScriptEngineCode,
+    compiled: ArrayBuffer | JavaScriptEngineCode
 ): Promise<EngineMetadata> => {
     switch (target) {
         case 'assemblyscript':
@@ -38,11 +38,11 @@ export const readMetadata = async (
 }
 
 /**
- * Reverse-maps exported variable names from `rawModule` according to the mapping defined 
+ * Reverse-maps exported variable names from `rawModule` according to the mapping defined
  * in `variableNamesIndex`.
- * 
+ *
  * For example with :
- * 
+ *
  * ```
  * const variableNamesIndex = {
  *     globals: {
@@ -54,13 +54,15 @@ export const readMetadata = async (
  *     }
  * }
  * ```
- * 
+ *
  * The function `g_fs_readFile` (if it is exported properly by the raw module), will then
  * be available on the returned object at path `.globals.fs.readFile`.
  */
 export const applyEngineNameMapping = (
     rawModule: object,
-    variableNamesIndex: VariableNamesIndex | EngineMetadata['compilation']['variableNamesIndex']
+    variableNamesIndex:
+        | VariableNamesIndex
+        | EngineMetadata['compilation']['variableNamesIndex']
 ) =>
     RawModuleWithNameMapping(rawModule, {
         globals: variableNamesIndex.globals,

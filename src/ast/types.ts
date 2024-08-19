@@ -18,9 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** 
- * Code string, either provided as part of an AST, 
- * or the result of a compilation operation 
+/**
+ * Code string, either provided as part of an AST,
+ * or the result of a compilation operation
  */
 export type Code = string
 
@@ -77,4 +77,3 @@ export interface AstClass extends AstElementBase {
     name: VariableName
     members: Array<AstVar>
 }
-

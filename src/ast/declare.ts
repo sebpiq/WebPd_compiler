@@ -167,19 +167,17 @@ export const _processRawContent = (
  */
 const _intersperse = (
     array1: Readonly<AstContentRawNested>,
-    array2: Readonly<AstContentRawNested>,
+    array2: Readonly<AstContentRawNested>
 ): AstContentRawNested => {
     if (array1.length === 0) {
         return []
     }
-    return array1
-        .slice(1)
-        .reduce<AstContentRawNested>(
-            (combinedContent, element, i) => {
-                return combinedContent.concat([array2[i]!, element])
-            },
-            [array1[0]!]
-        )
+    return array1.slice(1).reduce<AstContentRawNested>(
+        (combinedContent, element, i) => {
+            return combinedContent.concat([array2[i]!, element])
+        },
+        [array1[0]!]
+    )
 }
 
 /**

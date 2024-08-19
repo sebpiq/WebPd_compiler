@@ -56,40 +56,41 @@ describe('readMetadata', () => {
 
     const assertMetadataIsCorrect = (actual: EngineMetadata) => {
         assert.deepStrictEqual<EngineMetadata>(actual, {
-        libVersion: packageInfo.version,
-        settings: {
-            audio: {
-                blockSize: 0,
-                sampleRate: 0,
-                bitDepth: 64,
-                channelCount: {
-                    in: 2,
-                    out: 2,
-                },
-            },
-            io: {
-                messageReceivers: {
-                    node1: {
-                        portletIds: ['0'],
+            libVersion: packageInfo.version,
+            settings: {
+                audio: {
+                    blockSize: 0,
+                    sampleRate: 0,
+                    bitDepth: 64,
+                    channelCount: {
+                        in: 2,
+                        out: 2,
                     },
                 },
-                messageSenders: {},
-            },
-        },
-        compilation: {
-            variableNamesIndex: {
                 io: {
                     messageReceivers: {
                         node1: {
-                            '0': 'IO_rcv_node1_0',
+                            portletIds: ['0'],
                         },
                     },
                     messageSenders: {},
                 },
-                globals: actual.compilation.variableNamesIndex.globals,
             },
-        },
-    })}
+            compilation: {
+                variableNamesIndex: {
+                    io: {
+                        messageReceivers: {
+                            node1: {
+                                '0': 'IO_rcv_node1_0',
+                            },
+                        },
+                        messageSenders: {},
+                    },
+                    globals: actual.compilation.variableNamesIndex.globals,
+                },
+            },
+        })
+    }
 
     it('should read metadata from wasm', async () => {
         const result = compile(

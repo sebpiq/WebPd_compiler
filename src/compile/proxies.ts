@@ -42,7 +42,10 @@ const _proxySetHandlerReadOnly = () => {
     throw new Error('This Proxy is read-only.')
 }
 
-export const _proxyGetHandlerThrowIfKeyUnknown = <T extends Object, K extends string>(
+export const _proxyGetHandlerThrowIfKeyUnknown = <
+    T extends Object,
+    K extends string
+>(
     target: T,
     key: K,
     path?: ProxyPath
@@ -76,7 +79,11 @@ export const _proxyGetHandlerThrowIfKeyUnknown = <T extends Object, K extends st
 
 // ---------------------------- Assigner ---------------------------- //
 type _AssignerSpecIndex<T, C> = {
-    Index: (k: string, context: C, path: ProxyPath) => AssignerSpec<T[keyof T], C>
+    Index: (
+        k: string,
+        context: C,
+        path: ProxyPath
+    ) => AssignerSpec<T[keyof T], C>
     indexConstructor: (context: C, path: ProxyPath) => T
 }
 // TODO : seems to validate pretty much any type. Make more restrictive
@@ -84,16 +91,20 @@ type _AssignerSpecIndex<T, C> = {
 type _AssignerSpecInterface<T, C> = {
     Interface: { [K in keyof T]: AssignerSpec<T[K], C> }
 }
-type _AssignerSpecLiteral<T, C> = { Literal: (context: C, path: ProxyPath) => T }
-type _AssignerSpecLiteralDefaultNull<T, C> = { LiteralDefaultNull: (context: C, path: ProxyPath) => T }
+type _AssignerSpecLiteral<T, C> = {
+    Literal: (context: C, path: ProxyPath) => T
+}
+type _AssignerSpecLiteralDefaultNull<T, C> = {
+    LiteralDefaultNull: (context: C, path: ProxyPath) => T
+}
 
-export type AssignerSpec<T, C=typeof undefined> =
+export type AssignerSpec<T, C = typeof undefined> =
     | _AssignerSpecInterface<T, C>
     | _AssignerSpecIndex<T, C>
     | _AssignerSpecLiteral<T, C>
     | _AssignerSpecLiteralDefaultNull<T, C>
 
-export const Assigner = <T extends { [k: string]: any }, C=typeof undefined>(
+export const Assigner = <T extends { [k: string]: any }, C = typeof undefined>(
     spec: AssignerSpec<T, C>,
     _obj: Partial<T> | undefined,
     context: C,
@@ -149,12 +160,12 @@ export const Assigner = <T extends { [k: string]: any }, C=typeof undefined>(
     })
 }
 
-Assigner.ensureValue = <T, C=typeof undefined>(
+Assigner.ensureValue = <T, C = typeof undefined>(
     _obj: Partial<T> | undefined,
     spec: AssignerSpec<T, C>,
     context: C,
     _path?: ProxyPath,
-    _recursionPath?: ProxyPath,
+    _recursionPath?: ProxyPath
 ): T => {
     if ('Index' in spec) {
         return (_obj || spec.indexConstructor(context, _ensurePath(_path))) as T
@@ -166,7 +177,7 @@ Assigner.ensureValue = <T, C=typeof undefined>(
                 nextSpec as any,
                 context,
                 _addPath(obj, key, _path),
-                _addPath(obj, key, _recursionPath),
+                _addPath(obj, key, _recursionPath)
             )
         })
         return obj
@@ -174,7 +185,8 @@ Assigner.ensureValue = <T, C=typeof undefined>(
         return (_obj || spec.Literal(context, _ensurePath(_path))) as T
     } else if ('LiteralDefaultNull' in spec) {
         if (!_recursionPath) {
-            return (_obj || spec.LiteralDefaultNull(context, _ensurePath(_path))) as T
+            return (_obj ||
+                spec.LiteralDefaultNull(context, _ensurePath(_path))) as T
         } else {
             return (_obj || null) as T
         }
@@ -195,7 +207,9 @@ Assigner.Index = <T, C>(
     indexConstructor: indexConstructor || (() => ({} as T)),
 })
 
-Assigner.Literal = <T, C>(f: (context: C, path: ProxyPath) => T): _AssignerSpecLiteral<T, C> => ({
+Assigner.Literal = <T, C>(
+    f: (context: C, path: ProxyPath) => T
+): _AssignerSpecLiteral<T, C> => ({
     Literal: f,
 })
 
@@ -205,7 +219,7 @@ Assigner.LiteralDefaultNull = <T, C>(
 
 // ---------------------------- ProtectedIndex ---------------------------- //
 /**
- * Helper to declare namespace objects enforcing stricter access rules. 
+ * Helper to declare namespace objects enforcing stricter access rules.
  * Specifically, it forbids :
  * - reading an unknown property.
  * - trying to overwrite an existing property.
@@ -241,12 +255,12 @@ export const ProtectedIndex = <T extends Object>(
 
 // ---------------------------- ReadOnlyIndex ---------------------------- //
 /**
- * Helper to declare namespace objects enforcing stricter access rules. 
+ * Helper to declare namespace objects enforcing stricter access rules.
  * Specifically, it forbids :
  * - reading an unknown property.
  * - writing to a property.
  */
-export const ReadOnlyIndex = <T extends {[k: string]: any}>(
+export const ReadOnlyIndex = <T extends { [k: string]: any }>(
     namespace: T,
     path?: ProxyPath
 ): T => {
@@ -258,9 +272,12 @@ export const ReadOnlyIndex = <T extends {[k: string]: any}>(
             }
             const value = target[key as keyof T]
             if (typeof value === 'object' && value !== null) {
-                return ReadOnlyIndex<T[keyof T]>(value, _addPath(target, key, path))
+                return ReadOnlyIndex<T[keyof T]>(
+                    value,
+                    _addPath(target, key, path)
+                )
             } else {
-                return value 
+                return value
             }
         },
 
@@ -270,12 +287,12 @@ export const ReadOnlyIndex = <T extends {[k: string]: any}>(
 
 // ---------------------------- ReadOnlyIndexWithDollarKeys ---------------------------- //
 /**
- * Helper to declare namespace objects enforcing stricter access rules. 
+ * Helper to declare namespace objects enforcing stricter access rules.
  * Specifically :
  * - it is read only
  * - it throws an error when trying to read an unknown property.
  * - allows to access properties starting with a number by prepending a `$`.
- *      This is convenient to access portlets by their id without using 
+ *      This is convenient to access portlets by their id without using
  *      indexing syntax, for example : `namespace.$0` instead of `namespace['0']`.
  */
 export const ReadOnlyIndexWithDollarKeys = <T extends Object>(

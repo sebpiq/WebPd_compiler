@@ -21,7 +21,11 @@ import assert from 'assert'
 import { Class, Func, Sequence, Var } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { NodeImplementations } from '../types'
-import { STATE_CLASS_NAME, precompileCore, precompileStateClass } from './node-implementations'
+import {
+    STATE_CLASS_NAME,
+    precompileCore,
+    precompileStateClass,
+} from './node-implementations'
 import { AstClass, AstSequence } from '../../ast/types'
 import { makePrecompilation } from '../test-helpers'
 
@@ -52,7 +56,8 @@ describe('precompile.node-implementations', () => {
                 nodeImplementations,
             })
             // Ensure that the `SomeClass` is defined in the namespace
-            precompilation.variableNamesAssigner.nodeImplementations.type1!.SomeClass!
+            precompilation.variableNamesAssigner.nodeImplementations.type1!
+                .SomeClass!
 
             precompileStateClass(precompilation, 'type1')
 
@@ -66,7 +71,10 @@ describe('precompile.node-implementations', () => {
             assert.deepStrictEqual<AstClass>(
                 precompilation.precompiledCode.nodeImplementations.type1!
                     .stateClass,
-                Class('NT_type1_State', [Var('NT_type1_SomeClass', 'a'), Var('Int', 'b')])
+                Class('NT_type1_State', [
+                    Var('NT_type1_SomeClass', 'a'),
+                    Var('Int', 'b'),
+                ])
             )
         })
     })

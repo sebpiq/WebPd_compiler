@@ -70,7 +70,8 @@ describe('precompile.io', () => {
             })
 
             assert.deepStrictEqual(
-                precompilation.precompiledCode.io.messageSenders.n1!['0']!.functionName,
+                precompilation.precompiledCode.io.messageSenders.n1!['0']!
+                    .functionName,
                 'IO_snd_n1_0'
             )
         })

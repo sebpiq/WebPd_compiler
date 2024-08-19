@@ -411,9 +411,8 @@ describe('proxies', () => {
                 [k: string]: { [k: string]: number }
             }
 
-            const someSpecWithObjectLiteral: AssignerSpec<
-                TypeWithObjectLiteral
-            > = Assigner.Index(() => Assigner.Literal(() => ({})))
+            const someSpecWithObjectLiteral: AssignerSpec<TypeWithObjectLiteral> =
+                Assigner.Index(() => Assigner.Literal(() => ({})))
 
             const obj = {}
             const assigner = Assigner(someSpecWithObjectLiteral, obj, undefined)
@@ -434,16 +433,19 @@ describe('proxies', () => {
                 bla: { blo: number }
             }
 
-            const someSpecWithObjectLiteral: AssignerSpec<
-                TypeWithObjectLiteral
-            > = Assigner.Interface({
-                bla: Assigner.Literal(() => ({
-                    blo: 123,
-                })),
-            })
+            const someSpecWithObjectLiteral: AssignerSpec<TypeWithObjectLiteral> =
+                Assigner.Interface({
+                    bla: Assigner.Literal(() => ({
+                        blo: 123,
+                    })),
+                })
 
             const obj1 = {}
-            const assigner1 = Assigner(someSpecWithObjectLiteral, obj1, undefined)
+            const assigner1 = Assigner(
+                someSpecWithObjectLiteral,
+                obj1,
+                undefined
+            )
             assigner1.bla.blo = 456
 
             assert.deepStrictEqual(obj1, {
@@ -605,15 +607,19 @@ describe('proxies', () => {
     describe('ReadOnlyIndex', () => {
         describe('get', () => {
             it('should work with nested index', () => {
-                const namespace = ReadOnlyIndex(
-                    {
-                        bla: {
-                            hello: '1'
-                        },
+                const namespace = ReadOnlyIndex({
+                    bla: {
+                        hello: '1',
                     },
+                })
+                assert.throws(
+                    () => (namespace as any).blo,
+                    /namespace doesn't know key "blo"/
                 )
-                assert.throws(() => (namespace as any).blo, /namespace doesn't know key "blo"/)
-                assert.throws(() => (namespace.bla as any).bye!, /namespace <bla> doesn't know key "bye"/)
+                assert.throws(
+                    () => (namespace.bla as any).bye!,
+                    /namespace <bla> doesn't know key "bye"/
+                )
             })
         })
     })

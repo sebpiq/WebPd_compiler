@@ -1,4 +1,4 @@
-import { VariableName } from "../../ast/types"
+import { VariableName } from '../../ast/types'
 
 export interface SkedNamespacePublic {
     ID_NULL: VariableName

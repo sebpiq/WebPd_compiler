@@ -1,16 +1,17 @@
-import { VariableName } from "../../ast/types"
-import { ArrayBufferOfIntegersPointer, MessagePointer, FloatArrayPointer, StringPointer } from "../../engine-assemblyscript/run/types"
+import { VariableName } from '../../ast/types'
+import {
+    ArrayBufferOfIntegersPointer,
+    MessagePointer,
+    FloatArrayPointer,
+    StringPointer,
+} from '../../engine-assemblyscript/run/types'
 
 export interface MsgExportsAssemblyScript {
     FLOAT_TOKEN: WebAssembly.Global
     STRING_TOKEN: WebAssembly.Global
 
-    x_create: (
-        templatePointer: ArrayBufferOfIntegersPointer
-    ) => MessagePointer
-    x_getTokenTypes: (
-        messagePointer: MessagePointer
-    ) => FloatArrayPointer
+    x_create: (templatePointer: ArrayBufferOfIntegersPointer) => MessagePointer
+    x_getTokenTypes: (messagePointer: MessagePointer) => FloatArrayPointer
     x_createTemplate: (length: number) => FloatArrayPointer
 
     writeStringToken: (

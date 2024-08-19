@@ -592,7 +592,7 @@ describe('graph-traversal', () => {
                         '0': { id: '0', type: 'signal' },
                         '1': { id: '1', type: 'signal' },
                         '2': { id: '2', type: 'message' },
-                    }
+                    },
                 },
                 n2: {
                     sinks: {
@@ -606,7 +606,7 @@ describe('graph-traversal', () => {
                     },
                     outlets: {
                         '0': { id: '0', type: 'signal' },
-                    }
+                    },
                 },
                 n3: {
                     sinks: {
@@ -614,13 +614,11 @@ describe('graph-traversal', () => {
                     },
                     inlets: {
                         '1': { id: '0', type: 'message' },
-                    }
+                    },
                 },
             })
 
-            const results = listSourceConnections(
-                graph.n1!,
-            )
+            const results = listSourceConnections(graph.n1!)
             assert.deepStrictEqual(results, [
                 [
                     { nodeId: 'n2', portletId: '0' },

@@ -27,7 +27,11 @@ import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
 
 export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
-    const { precompiledCode, settings, variableNamesReadOnly: variableNamesIndex } = renderInput
+    const {
+        precompiledCode,
+        settings,
+        variableNamesReadOnly: variableNamesIndex,
+    } = renderInput
     const globals = variableNamesIndex.globals
     const renderTemplateInput = {
         settings,

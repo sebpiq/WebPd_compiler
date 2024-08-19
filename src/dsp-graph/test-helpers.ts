@@ -168,7 +168,9 @@ export const assertGraphConnections = (
     assertGraphIntegrity(graph)
     const actualConnections = Object.keys(graph).reduce(
         (connections, nodeId) => {
-            const moreConnections = listSourceConnections(getNode(graph, nodeId))
+            const moreConnections = listSourceConnections(
+                getNode(graph, nodeId)
+            )
             return [...connections, ...moreConnections]
         },
         [] as Array<GraphConnection>

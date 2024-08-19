@@ -1,4 +1,4 @@
-import { VariableName } from "../../ast/types"
+import { VariableName } from '../../ast/types'
 
 export interface BufNamespacePublic {
     SoundBuffer: VariableName

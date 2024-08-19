@@ -342,7 +342,10 @@ describe('precompile.portlets', () => {
 
             assert.ok(!('n1' in precompilation.variableNamesIndex.nodes))
             assert.ok(
-                !('0' in precompilation.precompiledCode.nodes.n1!.messageReceivers)
+                !(
+                    '0' in
+                    precompilation.precompiledCode.nodes.n1!.messageReceivers
+                )
             )
         })
     })

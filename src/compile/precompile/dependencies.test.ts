@@ -169,7 +169,8 @@ describe('precompile.dependencies', () => {
                 },
                 {
                     namespace: 'module2',
-                    code: ({ ns: module2 }) => Sequence([Func(module2.func2!)``]),
+                    code: ({ ns: module2 }) =>
+                        Sequence([Func(module2.func2!)``]),
                 },
             ]
 

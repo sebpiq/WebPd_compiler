@@ -98,10 +98,12 @@ const _VariableNamesAssignerSpec: AssignerSpec<
     globals: Assigner.Index((ns) =>
         Assigner.Index((name) => {
             if (['fs'].includes(ns)) {
-                return Assigner.Literal(() => _name(NS.GLOBALS, ns, name)) as any
-            
-            // We don't prefix stdlib core module, because these are super 
-            // basic functions that are always included in the global scope.
+                return Assigner.Literal(() =>
+                    _name(NS.GLOBALS, ns, name)
+                ) as any
+
+                // We don't prefix stdlib core module, because these are super
+                // basic functions that are always included in the global scope.
             } else if (ns === 'core') {
                 return Assigner.Literal(() => name)
             } else {

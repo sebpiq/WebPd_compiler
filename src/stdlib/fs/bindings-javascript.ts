@@ -1,6 +1,6 @@
-import { EngineLifecycleRawModule } from "../../engine-javascript/run"
-import { attachBindings } from "../../run/run-helpers"
-import { FsApi, FsExportsJavaScript, FsImportsJavaScript } from "./types"
+import { EngineLifecycleRawModule } from '../../engine-javascript/run'
+import { attachBindings } from '../../run/run-helpers'
+import { FsApi, FsExportsJavaScript, FsImportsJavaScript } from './types'
 
 export interface FsRawModule extends EngineLifecycleRawModule {
     globals: {
@@ -51,44 +51,32 @@ export const createFsModule = (rawModule: FsRawModule): FsApi => {
 
     if ('i_openSoundWriteStream' in fsExportedNames) {
         rawModule.globals.fs.i_openSoundWriteStream = (
-            ...args: Parameters<
-                NonNullable<FsApi>['onOpenSoundWriteStream']
-            >
+            ...args: Parameters<NonNullable<FsApi>['onOpenSoundWriteStream']>
         ) => fs.onOpenSoundWriteStream(...args)
     }
     if ('i_sendSoundStreamData' in fsExportedNames) {
         rawModule.globals.fs.i_sendSoundStreamData = (
-            ...args: Parameters<
-                NonNullable<FsApi>['onSoundStreamData']
-            >
+            ...args: Parameters<NonNullable<FsApi>['onSoundStreamData']>
         ) => fs.onSoundStreamData(...args)
     }
     if ('i_openSoundReadStream' in fsExportedNames) {
         rawModule.globals.fs.i_openSoundReadStream = (
-            ...args: Parameters<
-                NonNullable<FsApi>['onOpenSoundReadStream']
-            >
+            ...args: Parameters<NonNullable<FsApi>['onOpenSoundReadStream']>
         ) => fs.onOpenSoundReadStream(...args)
     }
     if ('i_closeSoundStream' in fsExportedNames) {
         rawModule.globals.fs.i_closeSoundStream = (
-            ...args: Parameters<
-                NonNullable<FsApi>['onCloseSoundStream']
-            >
+            ...args: Parameters<NonNullable<FsApi>['onCloseSoundStream']>
         ) => fs.onCloseSoundStream(...args)
     }
     if ('i_writeSoundFile' in fsExportedNames) {
         rawModule.globals.fs.i_writeSoundFile = (
-            ...args: Parameters<
-                NonNullable<FsApi>['onWriteSoundFile']
-            >
+            ...args: Parameters<NonNullable<FsApi>['onWriteSoundFile']>
         ) => fs.onWriteSoundFile(...args)
     }
     if ('i_readSoundFile' in fsExportedNames) {
         rawModule.globals.fs.i_readSoundFile = (
-            ...args: Parameters<
-                NonNullable<FsApi>['onReadSoundFile']
-            >
+            ...args: Parameters<NonNullable<FsApi>['onReadSoundFile']>
         ) => fs.onReadSoundFile(...args)
     }
     return fs

@@ -24,14 +24,15 @@ import { core } from '../core/core'
 import { msg } from './msg'
 
 describe('msg', () => {
+    // prettier-ignore
     runTestSuite(
         [
             {
                 description: 'floats > should create floats message %s',
                 testFunction: ({ globals: { msg } }) => AnonFunc()`
                     ${ConstVar(
-                        msg.Message, 
-                        'message', 
+                        msg.Message,
+                        'message',
                         `${msg.floats}([111, 222])`
                     )}
                     assert_integersEqual(${msg.getLength}(message), 2)
@@ -41,14 +42,9 @@ describe('msg', () => {
             },
 
             {
-                description:
-                    'floats > should create empty floats message %s',
+                description: 'floats > should create empty floats message %s',
                 testFunction: ({ globals: { msg } }) => AnonFunc()`
-                    ${ConstVar(
-                        msg.Message, 
-                        'message', 
-                        `${msg.floats}([])`
-                    )}
+                    ${ConstVar(msg.Message, 'message', `${msg.floats}([])`)}
                     assert_integersEqual(${msg.getLength}(message), 0)
                 `,
             },
@@ -59,7 +55,7 @@ describe('msg', () => {
                     ${ConstVar(
                         msg.Message,
                         'message',
-                        `${msg.strings}(['', 'blabla', 'blo'])`,
+                        `${msg.strings}(['', 'blabla', 'blo'])`
                     )}
                     assert_integersEqual(${msg.getLength}(message), 3)
                     assert_stringsEqual(${msg.readStringToken}(message, 0), '')
@@ -69,14 +65,9 @@ describe('msg', () => {
             },
 
             {
-                description:
-                    'strings > should create empty strings message %s',
+                description: 'strings > should create empty strings message %s',
                 testFunction: ({ globals: { msg } }) => AnonFunc()`
-                    ${ConstVar(
-                        msg.Message, 
-                        'message', 
-                        `${msg.strings}([])`
-                    )}
+                    ${ConstVar(msg.Message, 'message', `${msg.strings}([])`)}
                     assert_integersEqual(${msg.getLength}(message), 0)
                 `,
             },
@@ -145,7 +136,7 @@ describe('msg', () => {
                             ${msg.FLOAT_TOKEN}, 
                             ${msg.STRING_TOKEN}, 
                             3
-                        ])`,
+                        ])`
                     )}
                     ${msg.writeFloatToken}(message, 0, -123)
                     ${msg.writeStringToken}(message, 1, 'bla')

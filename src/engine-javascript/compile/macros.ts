@@ -19,23 +19,29 @@
  */
 
 import { AstConstVar, AstFunc, AstVar } from '../../ast/types'
-import { CodeMacros } from "../../compile/render/types"
+import { CodeMacros } from '../../compile/render/types'
 import { Code } from '../../ast/types'
 
 const Var = (declaration: AstVar, renderedValue?: Code) =>
-`let ${declaration.name}${renderedValue ? ` = ${renderedValue}` : ''}`
+    // prettier-ignore
+    `let ${declaration.name}${renderedValue ? ` = ${renderedValue}` : ''}`
 
 const ConstVar = (declaration: AstConstVar, renderedValue: Code) =>
+    // prettier-ignore
     `const ${declaration.name} = ${renderedValue}`
 
-const Func = (declaration: AstFunc, renderedArgsValues: Array<Code | null>, renderedBody: Code) => 
+const Func = (
+    declaration: AstFunc,
+    renderedArgsValues: Array<Code | null>,
+    renderedBody: Code
+) =>
+    // prettier-ignore
     `function ${declaration.name !== null ? declaration.name: ''}(${
         declaration.args.map((arg, i) => 
             renderedArgsValues[i] ? `${arg.name}=${renderedArgsValues[i]}`: arg.name).join(', ')
     }) {${renderedBody}}`
 
-const Class = () => 
-    ``
+const Class = () => ``
 
 const macros: CodeMacros = {
     Var,

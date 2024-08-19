@@ -79,8 +79,8 @@ interface GlobalDefinitionsLocalContext<Keys extends string> {
 
 /** Generator for global code that specifies also extra settings */
 export type GlobalDefinitions<
-    AllKeys extends string = string, 
-    ExportsKeys extends string = string,
+    AllKeys extends string = string,
+    ExportsKeys extends string = string
 > = {
     code: (
         localContext: GlobalDefinitionsLocalContext<AllKeys>,

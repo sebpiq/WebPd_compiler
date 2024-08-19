@@ -18,7 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { getFloatArrayType } from '../../run/run-helpers'
-import { BaseRawEngine, FloatArrayPointer, InternalPointer } from '../../engine-assemblyscript/run/types'
+import {
+    BaseRawEngine,
+    FloatArrayPointer,
+    InternalPointer,
+} from '../../engine-assemblyscript/run/types'
 import { AudioSettings } from '../../compile/types'
 import { FloatArray } from '../../run/types'
 import { CoreExportsAssemblyScript } from './types'

@@ -33,6 +33,7 @@ import { Sequence, ConstVar, Func, Var, AnonFunc } from '../../ast/declare'
 import { FsNamespaceAll } from './types'
 
 describe('fs', () => {
+    // prettier-ignore
     runTestSuite(
         [
             {

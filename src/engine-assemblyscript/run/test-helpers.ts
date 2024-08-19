@@ -55,7 +55,7 @@ export const wasmBufferToRawModule = async (
     return wasmInstance.exports as any
 }
 
-export const ascCodeToRawModule = async <M extends object=object>(
+export const ascCodeToRawModule = async <M extends object = object>(
     code: Code,
     bitDepth: AudioSettings['bitDepth'],
     imports: any = {}

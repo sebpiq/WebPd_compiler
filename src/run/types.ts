@@ -21,7 +21,10 @@ import { DspGraph } from '../dsp-graph'
 import { CompilationSettings } from '../compile/types'
 import { VariableNamesIndex } from '../compile/precompile/types'
 import { FsApi } from '../stdlib/fs/types'
-import { FS_OPERATION_FAILURE, FS_OPERATION_SUCCESS } from '../stdlib/fs/constants'
+import {
+    FS_OPERATION_FAILURE,
+    FS_OPERATION_SUCCESS,
+} from '../stdlib/fs/constants'
 import { CommonsApi } from '../stdlib/commons/types'
 
 interface BindingSpecRaw {
@@ -77,7 +80,7 @@ export interface EngineMetadata {
             blockSize: number
         }
         readonly io: CompilationSettings['io']
-    } 
+    }
     readonly compilation: {
         readonly variableNamesIndex: {
             readonly io: VariableNamesIndex['io']
@@ -107,7 +110,7 @@ export interface Engine {
             }
         }
     }
-    
+
     globals: {
         /** API for all shared resources, global events, etc ... */
         commons: CommonsApi

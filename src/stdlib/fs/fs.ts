@@ -28,10 +28,12 @@ import { FS_OPERATION_FAILURE, FS_OPERATION_SUCCESS } from './constants'
 
 const NAMESPACE = 'fs'
 
-export const fsCore: GlobalDefinitions<keyof FsNamespaceAll, keyof FsExportsAssemblyScript> = {
+export const fsCore: GlobalDefinitions<
+    keyof FsNamespaceAll,
+    keyof FsExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
     code: ({ ns: fs }, { settings: { target }, globals: { msg } }) => {
-
         const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`
@@ -140,7 +142,10 @@ export const fsCore: GlobalDefinitions<keyof FsNamespaceAll, keyof FsExportsAsse
     dependencies: [msg],
 }
 
-export const fsReadSoundFile: GlobalDefinitions<keyof FsNamespaceAll, keyof FsExportsAssemblyScript> = {
+export const fsReadSoundFile: GlobalDefinitions<
+    keyof FsNamespaceAll,
+    keyof FsExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
 
     // prettier-ignore
@@ -192,7 +197,10 @@ export const fsReadSoundFile: GlobalDefinitions<keyof FsNamespaceAll, keyof FsEx
     dependencies: [fsCore],
 }
 
-export const fsWriteSoundFile: GlobalDefinitions<keyof FsNamespaceAll, keyof FsExportsAssemblyScript> = {
+export const fsWriteSoundFile: GlobalDefinitions<
+    keyof FsNamespaceAll,
+    keyof FsExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
 
     // prettier-ignore
@@ -245,7 +253,10 @@ export const fsWriteSoundFile: GlobalDefinitions<keyof FsNamespaceAll, keyof FsE
     dependencies: [fsCore],
 }
 
-export const fsSoundStreamCore: GlobalDefinitions<keyof FsNamespaceAll, keyof FsExportsAssemblyScript> = {
+export const fsSoundStreamCore: GlobalDefinitions<
+    keyof FsNamespaceAll,
+    keyof FsExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
 
     // prettier-ignore
@@ -303,7 +314,10 @@ export const fsSoundStreamCore: GlobalDefinitions<keyof FsNamespaceAll, keyof Fs
     dependencies: [bufCore, fsCore],
 }
 
-export const fsReadSoundStream: GlobalDefinitions<keyof FsNamespaceAll, keyof FsExportsAssemblyScript> = {
+export const fsReadSoundStream: GlobalDefinitions<
+    keyof FsNamespaceAll,
+    keyof FsExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
 
     // prettier-ignore
@@ -360,7 +374,10 @@ export const fsReadSoundStream: GlobalDefinitions<keyof FsNamespaceAll, keyof Fs
     dependencies: [fsSoundStreamCore, bufPushPull],
 }
 
-export const fsWriteSoundStream: GlobalDefinitions<keyof FsNamespaceAll, keyof FsExportsAssemblyScript> = {
+export const fsWriteSoundStream: GlobalDefinitions<
+    keyof FsNamespaceAll,
+    keyof FsExportsAssemblyScript
+> = {
     namespace: NAMESPACE,
 
     // prettier-ignore

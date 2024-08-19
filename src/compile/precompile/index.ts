@@ -32,7 +32,9 @@ import {
     getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
 import { PrecompilationInput, Precompilation } from './types'
-import precompileDependencies, { engineMinimalDependencies } from './dependencies'
+import precompileDependencies, {
+    engineMinimalDependencies,
+} from './dependencies'
 import {
     precompileInitialization,
     precompileMessageReceivers,

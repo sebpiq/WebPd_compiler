@@ -19,14 +19,12 @@
  */
 import { AnonFunc, ast, ConstVar, Func, Var } from '../../ast/declare'
 import { runTestSuite } from '../../test-helpers'
-import {
-    commonsArrays,
-    commonsWaitFrame,
-} from './commons'
+import { commonsArrays, commonsWaitFrame } from './commons'
 import { core } from '../core/core'
 import { sked } from '../sked/sked'
 
 describe('commons', () => {
+    // prettier-ignore
     runTestSuite(
         [
             {
@@ -74,11 +72,7 @@ describe('commons', () => {
                 description:
                     'arrays > should embed arrays passed in settings %s',
                 testFunction: ({ globals: { commons } }) => AnonFunc()`
-                    ${ConstVar(
-                        'FloatArray',
-                        'expected',
-                        `createFloatArray(3)`
-                    )}
+                    ${ConstVar('FloatArray', 'expected', `createFloatArray(3)`)}
                     expected[0] = 11
                     expected[1] = 12
                     expected[2] = 666
@@ -97,13 +91,13 @@ describe('commons', () => {
             commonsWaitFrame,
             {
                 namespace: 'tests',
-                code: () => Var('Int', 'callbackCallCounter', '0')
-            }
+                code: () => Var('Int', 'callbackCallCounter', '0'),
+            },
         ],
         {
             arrays: {
                 embeddedArray: new Float32Array([11, 12, 666]),
-            }
+            },
         }
     )
 })

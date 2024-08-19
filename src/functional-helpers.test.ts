@@ -22,7 +22,6 @@ import assert from 'assert'
 import { countTo } from './functional-helpers'
 
 describe('functional-helpers', () => {
-
     describe('countTo', () => {
         it('should generate a list to the count non-inclusive', () => {
             assert.deepStrictEqual(countTo(3), [0, 1, 2])

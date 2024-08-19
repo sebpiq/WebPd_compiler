@@ -51,13 +51,11 @@ export default (
     compilationSettings: UserCompilationSettings
 ): CompilationResult => {
     const settings = validateSettings(compilationSettings, target)
-    const { precompiledCode, variableNamesIndex } = precompile(
-        {
-            graph,
-            nodeImplementations,
-            settings,
-        }
-    )
+    const { precompiledCode, variableNamesIndex } = precompile({
+        graph,
+        nodeImplementations,
+        settings,
+    })
 
     let code: JavaScriptEngineCode | AssemblyScriptWasmEngineCode
     const renderInput: RenderInput = {

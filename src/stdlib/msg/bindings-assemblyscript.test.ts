@@ -26,10 +26,11 @@ import {
     lowerMessage,
 } from './bindings-assemblyscript'
 import { AudioSettings } from '../../compile/types'
-import { TEST_PARAMETERS, ascCodeToRawModule } from '../../engine-assemblyscript/run/test-helpers'
 import {
-    getFloatArrayType,
-} from '../../run/run-helpers'
+    TEST_PARAMETERS,
+    ascCodeToRawModule,
+} from '../../engine-assemblyscript/run/test-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../core/core'
 import { sked } from '../sked/sked'
 import { msg } from './msg'
@@ -80,27 +81,39 @@ describe('msg-bindings', () => {
                     bitDepth,
                     channelCount: { in: 2, out: 2 },
                 },
-            }
+            },
         })
         const globals = precompilation.variableNamesAssigner.globals
-        const globalContext = makeGlobalCodePrecompilationContext(precompilation)
+        const globalContext =
+            makeGlobalCodePrecompilationContext(precompilation)
         return render(
             macros,
             Sequence([
-                core.code({ ns: globals.core as CoreNamespaceAll }, globalContext),
-                sked.code({ ns: globals.sked as SkedNamespaceAll }, globalContext),
+                core.code(
+                    { ns: globals.core as CoreNamespaceAll },
+                    globalContext
+                ),
+                sked.code(
+                    { ns: globals.sked as SkedNamespaceAll },
+                    globalContext
+                ),
                 msg.code({ ns: globals.msg as MsgNamespaceAll }, globalContext),
-                `export function testReadMessageData(message: ${globals.msg
-                    .Message}, index: Int): Int {
+                `export function testReadMessageData(message: ${globals.msg.Message}, index: Int): Int {
                     return message.dataView.getInt32(index * sizeof<Int>())
                 }`,
                 core.exports!(
-                    { ns: precompilation.variableNamesAssigner.globals.core as CoreNamespaceAll },
-                    globalContext,
+                    {
+                        ns: precompilation.variableNamesAssigner.globals
+                            .core as CoreNamespaceAll,
+                    },
+                    globalContext
                 ).map((name) => `export { ${name} }`),
                 msg.exports!(
-                    { ns: precompilation.variableNamesAssigner.globals.msg as MsgNamespaceAll },
-                    globalContext,
+                    {
+                        ns: precompilation.variableNamesAssigner.globals
+                            .msg as MsgNamespaceAll,
+                    },
+                    globalContext
                 ).map((name) => `export { ${name} }`),
             ])
         )
@@ -214,8 +227,7 @@ describe('msg-bindings', () => {
             'should read message to a JavaScript array %s',
             async ({ bitDepth }) => {
                 const precompilation = makePrecompilation({})
-                const globals =
-                    precompilation.variableNamesAssigner.globals
+                const globals = precompilation.variableNamesAssigner.globals
 
                 // prettier-ignore
                 const code = getBaseTestCode(bitDepth) + `
