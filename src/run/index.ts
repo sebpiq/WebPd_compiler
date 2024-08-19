@@ -19,7 +19,7 @@
  */
 import { VariableNamesIndex } from "../compile/precompile/types"
 import { CompilerTarget } from "../compile/types"
-import { readMetadata as readMetadataWasm } from '../engine-assemblyscript/run/engine-lifecycle-bindings'
+import { readMetadata as readMetadataWasm } from '../engine-assemblyscript/run/metadata'
 import { JavaScriptEngineCode } from "../engine-javascript/compile/types"
 import { createEngine } from "../engine-javascript/run"
 import { RawModuleWithNameMapping } from "./run-helpers"

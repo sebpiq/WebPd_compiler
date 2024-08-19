@@ -29,111 +29,87 @@
  */
 
 import { Engine } from '../../run/types'
-import {
-    RawEngine,
-    AssemblyScriptWasmImports,
-    EngineData,
-    ForwardReferences,
-} from './types'
+import { RawEngine, AssemblyScriptWasmImports, EngineContext } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
-import {
-    getFloatArrayType,
-} from '../../run/run-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
 import { createCommonsBindings } from '../../stdlib/commons/bindings-assemblyscript'
 import { attachBindings } from '../../run/run-helpers'
-import {
-    createEngineLifecycleBindings,
-    EngineLifecycleRawModuleWithDependencies,
-    readMetadata,
-} from './engine-lifecycle-bindings'
+import { createEngineLifecycleBindings } from './engine-lifecycle-bindings'
+import { readMetadata } from './metadata'
 import {
     createIoMessageReceiversBindings,
     createIoMessageSendersBindings,
     ioMsgSendersImports,
-    IoRawModuleWithDependencies,
 } from './io-bindings'
 import { Bindings } from '../../run/types'
 import {
     createFsBindings,
     createFsImports,
-    FsRawModuleWithDependencies,
 } from '../../stdlib/fs/bindings-assemblyscript'
 import { applyEngineNameMapping } from '../../run'
 
 export const createEngine = async <AdditionalExports>(
     wasmBuffer: ArrayBuffer,
-    additionalBindings?: Bindings<AdditionalExports>,
+    additionalBindings?: Bindings<AdditionalExports>
 ): Promise<Engine> => {
-    const { rawModule, engineData, forwardReferences } = await createRawModule(
-        wasmBuffer
-    )
-    const rawModuleWithNameMapping = applyEngineNameMapping(
-        rawModule,
-        engineData.metadata.compilation.variableNamesIndex
-    ) as RawEngine
-    const engineBindings = createEngineBindings(
-        rawModuleWithNameMapping,
-        engineData
-    )
-    const engine = attachBindings(rawModuleWithNameMapping, {
-        ...engineBindings,
-        ...(additionalBindings || {}),
-    })
-
-    forwardReferences.engine = engine
-    forwardReferences.rawModule = rawModuleWithNameMapping
-    return engine
-}
-
-export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
+    // Create engine context
     // We need to read metadata before everything, because it is used by other initialization functions
     const metadata = await readMetadata(wasmBuffer)
-
     const bitDepth = metadata.settings.audio.bitDepth
     const arrayType = getFloatArrayType(bitDepth)
-    const engineData: EngineData = {
-        metadata,
-        wasmOutput: new arrayType(0),
-        wasmInput: new arrayType(0),
-        arrayType,
-        bitDepth,
-        blockSize: 0,
+    const engineContext: EngineContext<RawEngine> = {
+        refs: {},
+        metadata: metadata,
+        cache: {
+            wasmOutput: new arrayType(0),
+            wasmInput: new arrayType(0),
+            arrayType,
+            bitDepth,
+            blockSize: 0,
+        },
     }
 
-    const forwardReferences: ForwardReferences<
-        FsRawModuleWithDependencies &
-            EngineLifecycleRawModuleWithDependencies &
-            IoRawModuleWithDependencies
-    > = { rawModule: null, engine: null }
-
+    // Create raw module
     const wasmImports: AssemblyScriptWasmImports = {
-        ...createFsImports(forwardReferences, engineData),
-        ...ioMsgSendersImports(forwardReferences, engineData),
+        ...createFsImports(engineContext),
+        ...ioMsgSendersImports(engineContext),
     }
 
     const wasmInstance = await instantiateWasmModule(wasmBuffer, {
         input: wasmImports,
     })
-    const rawModule = wasmInstance.exports
-    return { rawModule, engineData, forwardReferences }
+
+    engineContext.refs.rawModule = applyEngineNameMapping(
+        wasmInstance.exports,
+        metadata.compilation.variableNamesIndex
+    ) as RawEngine
+
+    // Create engine
+    const engineBindings = createEngineBindings(engineContext)
+    const engine = attachBindings(engineContext.refs.rawModule, {
+        ...engineBindings,
+        ...(additionalBindings || {}),
+    })
+
+    engineContext.refs.engine = engine
+    return engine
 }
 
 export const createEngineBindings = (
-    rawModule: RawEngine,
-    engineData: EngineData
+    engineContext: EngineContext<RawEngine>
 ): Bindings<Engine> => {
-    const exportedNames =
-        engineData.metadata.compilation.variableNamesIndex.globals
+    const { metadata, refs } = engineContext
+    const exportedNames = metadata.compilation.variableNamesIndex.globals
 
     // Create bindings for io
     const io = {
         messageReceivers: attachBindings(
-            rawModule,
-            createIoMessageReceiversBindings(rawModule, engineData)
+            refs.rawModule!,
+            createIoMessageReceiversBindings(engineContext)
         ),
         messageSenders: attachBindings(
-            rawModule,
-            createIoMessageSendersBindings(rawModule, engineData)
+            refs.rawModule!,
+            createIoMessageSendersBindings(engineContext)
         ),
     }
 
@@ -142,26 +118,26 @@ export const createEngineBindings = (
         commons: {
             type: 'proxy',
             value: attachBindings(
-                rawModule,
-                createCommonsBindings(rawModule, engineData)
+                refs.rawModule!,
+                createCommonsBindings(engineContext)
             ),
         },
     }
     if ('fs' in exportedNames) {
         const fs = attachBindings(
-            rawModule,
-            createFsBindings(rawModule, engineData)
+            refs.rawModule!,
+            createFsBindings(engineContext)
         )
         globalsBindings.fs = { type: 'proxy', value: fs }
     }
 
     // Build the full module
     return {
-        ...createEngineLifecycleBindings(rawModule, engineData),
-        metadata: { type: 'proxy', value: engineData.metadata },
+        ...createEngineLifecycleBindings(engineContext),
+        metadata: { type: 'proxy', value: metadata },
         globals: {
             type: 'proxy',
-            value: attachBindings(rawModule, globalsBindings),
+            value: attachBindings(refs.rawModule!, globalsBindings),
         },
         io: { type: 'proxy', value: io },
     }

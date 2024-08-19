@@ -1,10 +1,13 @@
 import { VariableName } from '../../ast/types'
 import { DspGraph } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
-import { Bindings, Engine, Message, EngineMetadata } from '../../run/types'
+import { Bindings, Engine, Message } from '../../run/types'
 import { EngineLifecycleRawModuleWithDependencies } from './engine-lifecycle-bindings'
-import { lowerMessage, liftMessage } from '../../stdlib/msg/bindings-assemblyscript'
-import { EngineData, ForwardReferences, MessagePointer } from './types'
+import {
+    lowerMessage,
+    liftMessage,
+} from '../../stdlib/msg/bindings-assemblyscript'
+import { EngineContext, MessagePointer } from './types'
 
 export interface IoRawModule {
     io: {
@@ -25,11 +28,11 @@ type IoImports = {
 export type IoRawModuleWithDependencies = IoRawModule &
     EngineLifecycleRawModuleWithDependencies
 
-export const createIoMessageReceiversBindings = (
-    rawModule: IoRawModuleWithDependencies,
-    engineData: EngineData
-) =>
-    Object.entries(engineData.metadata.settings.io.messageReceivers).reduce(
+export const createIoMessageReceiversBindings = ({
+    metadata,
+    refs,
+}: EngineContext<IoRawModuleWithDependencies>) =>
+    Object.entries(metadata.settings.io.messageReceivers).reduce(
         (bindings, [nodeId, spec]) => ({
             ...bindings,
             [nodeId]: {
@@ -37,8 +40,11 @@ export const createIoMessageReceiversBindings = (
                 value: mapArray(spec.portletIds, (inletId) => [
                     inletId,
                     (message: Message) => {
-                        const messagePointer = lowerMessage(rawModule, message)
-                        rawModule.io.messageReceivers[nodeId]![inletId]!(
+                        const messagePointer = lowerMessage(
+                            refs.rawModule!,
+                            message
+                        )
+                        refs.rawModule!.io.messageReceivers[nodeId]![inletId]!(
                             messagePointer
                         )
                     },
@@ -48,11 +54,10 @@ export const createIoMessageReceiversBindings = (
         {} as Bindings<Engine['io']['messageReceivers']>
     )
 
-export const createIoMessageSendersBindings = (
-    _: IoRawModuleWithDependencies,
-    engineData: EngineData
-) =>
-    Object.entries(engineData.metadata.settings.io.messageSenders).reduce(
+export const createIoMessageSendersBindings = ({
+    metadata,
+}: EngineContext<IoRawModuleWithDependencies>) =>
+    Object.entries(metadata.settings.io.messageSenders).reduce(
         (bindings, [nodeId, spec]) => ({
             ...bindings,
             [nodeId]: {
@@ -66,25 +71,20 @@ export const createIoMessageSendersBindings = (
         {} as Bindings<Engine['io']['messageSenders']>
     )
 
-export const ioMsgSendersImports = (
-    forwardReferences: ForwardReferences<IoRawModuleWithDependencies>,
-    engineData: EngineData
-) => {
+export const ioMsgSendersImports = ({
+    metadata,
+    refs,
+}: EngineContext<IoRawModuleWithDependencies>) => {
     const wasmImports: IoImports = {}
-    const { variableNamesIndex } = engineData.metadata.compilation
-    Object.entries(engineData.metadata.settings.io.messageSenders).forEach(
+    const { variableNamesIndex } = metadata.compilation
+    Object.entries(metadata.settings.io.messageSenders).forEach(
         ([nodeId, spec]) => {
             spec.portletIds.forEach((outletId) => {
                 const listenerName =
                     variableNamesIndex.io.messageSenders[nodeId]![outletId]!
                 wasmImports[listenerName] = (messagePointer) => {
-                    const message = liftMessage(
-                        forwardReferences.rawModule!,
-                        messagePointer
-                    )
-                    forwardReferences.engine!.io!.messageSenders[nodeId]![
-                        outletId
-                    ]!(message)
+                    const message = liftMessage(refs.rawModule!, messagePointer)
+                    refs.engine!.io!.messageSenders[nodeId]![outletId]!(message)
                 }
             })
         }

@@ -22,14 +22,14 @@ import packageInfo from '../../../package.json'
 import assert from 'assert'
 import { compileAssemblyscript } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
-import { readMetadata } from './engine-lifecycle-bindings'
+import { readMetadata } from './metadata'
 import compile from '../../compile'
 import { NodeImplementations } from '../../compile/types'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { AnonFunc, Var } from '../../ast/declare'
 import { makeSettings } from '../../compile/test-helpers'
 
-describe('engine-lifecycle-bindings', () => {
+describe('metadata', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
             // ARRANGE

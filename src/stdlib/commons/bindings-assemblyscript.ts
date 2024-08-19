@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { EngineData } from '../../engine-assemblyscript/run/types'
+import { EngineContext } from '../../engine-assemblyscript/run/types'
 import {
     CoreRawModuleWithDependencies,
     lowerFloatArray,
@@ -44,19 +44,19 @@ type CommonsRawModuleWithDependencies = CommonsRawModule &
     EngineLifecycleRawModuleWithDependencies
 
 export const createCommonsBindings = (
-    rawModule: CommonsRawModuleWithDependencies,
-    engineData: EngineData
+    engineContext: EngineContext<CommonsRawModuleWithDependencies>
 ): Bindings<CommonsApi> => {
+    const { refs, cache } = engineContext
     return {
         getArray: {
             type: 'proxy',
             value: (arrayName) => {
-                const arrayNamePointer = lowerString(rawModule, arrayName)
+                const arrayNamePointer = lowerString(refs.rawModule!, arrayName)
                 const arrayPointer =
-                    rawModule.globals.commons.getArray(arrayNamePointer)
+                    refs.rawModule!.globals.commons.getArray(arrayNamePointer)
                 return readTypedArray(
-                    rawModule,
-                    engineData.arrayType,
+                    refs.rawModule!,
+                    cache.arrayType,
                     arrayPointer
                 ) as FloatArray
             },
@@ -64,14 +64,17 @@ export const createCommonsBindings = (
         setArray: {
             type: 'proxy',
             value: (arrayName, array) => {
-                const stringPointer = lowerString(rawModule, arrayName)
+                const stringPointer = lowerString(refs.rawModule!, arrayName)
                 const { arrayPointer } = lowerFloatArray(
-                    rawModule,
-                    engineData.bitDepth,
+                    refs.rawModule!,
+                    cache.bitDepth,
                     array
                 )
-                rawModule.globals.commons.setArray(stringPointer, arrayPointer)
-                updateWasmInOuts(rawModule, engineData)
+                refs.rawModule!.globals.commons.setArray(
+                    stringPointer,
+                    arrayPointer
+                )
+                updateWasmInOuts(engineContext)
             },
         },
     }

@@ -67,23 +67,26 @@ export type RawEngine = BaseRawEngine &
 
 export type AssemblyScriptWasmImports = FsImportsAssemblyScript
 
-export interface EngineData {
-    metadata: Engine['metadata']
-    wasmOutput: FloatArray
-    wasmInput: FloatArray
-    arrayType: typeof Float32Array | typeof Float64Array
-    // We use these two values only for caching, to avoid frequent nested access
-    bitDepth: AudioSettings['bitDepth']
-    blockSize: EngineMetadata['settings']['audio']['blockSize']
-}
+export interface EngineContext<RawModuleType = object> {
+    /**
+     * When declaring imported functions, we use objects that will be only available
+     * once compilation is done.
+     * Therefore we use these forward references in imported functions, and fill them up
+     * once compilation is done.
+     */
+    readonly refs: {
+        engine?: Engine
+        rawModule?: RawModuleType
+    }
 
-/**
- * When declaring imported functions, we use objects that will be only available
- * once compilation is done.
- * Therefore we use these forward references in imported functions, and fill them up
- * once compilation is done.
- */
-export interface ForwardReferences<RawModuleType> {
-    rawModule: RawModuleType | null
-    engine: Engine | null
+    /** Values that are accessed frequently are cached here */
+    readonly cache: {
+        wasmOutput: FloatArray
+        wasmInput: FloatArray
+        arrayType: typeof Float32Array | typeof Float64Array
+        bitDepth: AudioSettings['bitDepth']
+        blockSize: EngineMetadata['settings']['audio']['blockSize']
+    }
+
+    readonly metadata: EngineMetadata
 }
