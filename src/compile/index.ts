@@ -31,7 +31,7 @@ import { DspGraph } from '../dsp-graph/types'
 import precompile from './precompile'
 import { validateSettings } from './settings'
 import { RenderInput } from './render/types'
-import { ReadOnlyIndex } from './proxies'
+import { proxyAsReadOnlyIndex } from './proxies'
 
 interface CompilationSuccess {
     status: 0
@@ -61,7 +61,7 @@ export default (
     const renderInput: RenderInput = {
         precompiledCode,
         settings,
-        variableNamesReadOnly: ReadOnlyIndex(variableNamesIndex),
+        variableNamesReadOnly: proxyAsReadOnlyIndex(variableNamesIndex),
     }
     if (target === 'javascript') {
         code = renderToJavascript(renderInput)

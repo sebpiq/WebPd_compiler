@@ -23,7 +23,7 @@ import { traversers } from '../../dsp-graph'
 import { commonsArrays, commonsWaitFrame, core, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
 import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
-import { ReadOnlyIndex } from '../proxies'
+import { proxyAsReadOnlyIndex } from '../proxies'
 
 export default (
     precompilation: Precompilation,
@@ -37,7 +37,9 @@ export default (
     ])
 
     const globalContext: GlobalPrecompilationContext = {
-        globals: ReadOnlyIndex(precompilation.variableNamesIndex.globals),
+        globals: proxyAsReadOnlyIndex(
+            precompilation.variableNamesIndex.globals
+        ),
         settings,
     }
 

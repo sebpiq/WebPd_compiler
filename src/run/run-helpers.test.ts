@@ -19,12 +19,12 @@
  */
 
 import assert from 'assert'
-import { RawModuleWithNameMapping, attachBindings } from './run-helpers'
+import { proxyWithNameMapping, proxyAsModuleWithBindings } from './run-helpers'
 
 describe('modules-helpers', () => {
-    describe('attachBindings', () => {
+    describe('proxyAsModuleWithBindings', () => {
         it('should read undefined for binding that is not declared', () => {
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { blo: 'bli' },
                 {
                     bla: {
@@ -37,7 +37,7 @@ describe('modules-helpers', () => {
         })
 
         it('should read raw attribute from the RawModule', () => {
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -49,7 +49,7 @@ describe('modules-helpers', () => {
         })
 
         it('should read proxied attribute from the bindings', () => {
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -63,7 +63,7 @@ describe('modules-helpers', () => {
 
         it('should read callback attribute from the bindings', () => {
             const blo = (): null => null
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -78,7 +78,7 @@ describe('modules-helpers', () => {
         it('should allow writing callback', () => {
             const blo1 = (): null => null
             const blo2 = (): null => null
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -92,7 +92,7 @@ describe('modules-helpers', () => {
         })
 
         it('should support in operator', () => {
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli', blo: 'blu' },
                 {
                     bla: {
@@ -105,7 +105,7 @@ describe('modules-helpers', () => {
         })
 
         it('should throw error for reading raw attribute that is not defined', () => {
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { blo: 'bli' },
                 {
                     bla: {
@@ -117,7 +117,7 @@ describe('modules-helpers', () => {
         })
 
         it('should throw error for writing unknown attribute', () => {
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -129,7 +129,7 @@ describe('modules-helpers', () => {
         })
 
         it('should throw error for writing attribute that is not writable', () => {
-            const module = attachBindings(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -141,7 +141,7 @@ describe('modules-helpers', () => {
         })
     })
 
-    describe('RawModuleWithNameMapping', () => {
+    describe('proxyWithNameMapping', () => {
         it('should use the name mapping to return the value', () => {
             const rawModule = {
                 blo: 'BLO',
@@ -155,7 +155,7 @@ describe('modules-helpers', () => {
                     o: 'bla',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(
+            const rawModuleWithMapping = proxyWithNameMapping(
                 rawModule,
                 variableNamesIndex
             )
@@ -172,7 +172,7 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(
+            const rawModuleWithMapping = proxyWithNameMapping(
                 rawModule,
                 variableNamesIndex
             )
@@ -188,7 +188,7 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(
+            const rawModuleWithMapping = proxyWithNameMapping(
                 rawModule,
                 variableNamesIndex
             )
@@ -204,7 +204,7 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(
+            const rawModuleWithMapping = proxyWithNameMapping(
                 rawModule,
                 variableNamesIndex
             )
@@ -220,7 +220,7 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(
+            const rawModuleWithMapping = proxyWithNameMapping(
                 rawModule,
                 variableNamesIndex
             )
@@ -233,7 +233,7 @@ describe('modules-helpers', () => {
                 blo: 'BLO',
             }
             const variableNamesIndex = {}
-            const rawModuleWithMapping = RawModuleWithNameMapping(
+            const rawModuleWithMapping = proxyWithNameMapping(
                 rawModule,
                 variableNamesIndex
             )
@@ -250,7 +250,7 @@ describe('modules-helpers', () => {
                     e: 'blo',
                 },
             }
-            const rawModuleWithMapping = RawModuleWithNameMapping(
+            const rawModuleWithMapping = proxyWithNameMapping(
                 rawModule,
                 variableNamesIndex
             )

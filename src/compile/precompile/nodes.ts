@@ -24,7 +24,10 @@ import { Code } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
-import { ReadOnlyIndexWithDollarKeys, ReadOnlyIndex } from '../proxies'
+import {
+    proxyAsReadOnlyIndexWithDollarKeys,
+    proxyAsReadOnlyIndex,
+} from '../proxies'
 import {
     DspGroup,
     Precompilation,
@@ -97,7 +100,7 @@ export const precompileMessageReceivers = (
         precompiledNode,
         variableNamesAssigner
     )
-    const messageReceivers = ReadOnlyIndexWithDollarKeys(
+    const messageReceivers = proxyAsReadOnlyIndexWithDollarKeys(
         precompiledNodeImplementation.nodeImplementation.messageReceivers
             ? precompiledNodeImplementation.nodeImplementation.messageReceivers(
                   {
@@ -310,7 +313,7 @@ export const precompileInlineDsp = (
                     {
                         ns,
                         state,
-                        ins: ReadOnlyIndexWithDollarKeys(
+                        ins: proxyAsReadOnlyIndexWithDollarKeys(
                             {
                                 ...ins,
                                 ...inlinedInputs,
@@ -352,18 +355,22 @@ const _getContext = (
     precompiledNode: PrecompiledNodeCode,
     variableNamesAssigner: VariableNamesIndex
 ) => ({
-    globals: ReadOnlyIndex(variableNamesAssigner.globals),
-    ns: ReadOnlyIndex(
+    globals: proxyAsReadOnlyIndex(variableNamesAssigner.globals),
+    ns: proxyAsReadOnlyIndex(
         variableNamesAssigner.nodeImplementations[precompiledNode.nodeType]!
     ),
     state: precompiledNode.state ? precompiledNode.state.name : '',
-    ins: ReadOnlyIndexWithDollarKeys(precompiledNode.signalIns, nodeId, 'ins'),
-    outs: ReadOnlyIndexWithDollarKeys(
+    ins: proxyAsReadOnlyIndexWithDollarKeys(
+        precompiledNode.signalIns,
+        nodeId,
+        'ins'
+    ),
+    outs: proxyAsReadOnlyIndexWithDollarKeys(
         precompiledNode.signalOuts,
         nodeId,
         'outs'
     ),
-    snds: ReadOnlyIndexWithDollarKeys(
+    snds: proxyAsReadOnlyIndexWithDollarKeys(
         Object.entries(precompiledNode.messageSenders).reduce(
             (snds, [outletId, { messageSenderName }]) => ({
                 ...snds,
@@ -374,7 +381,7 @@ const _getContext = (
         nodeId,
         'snds'
     ),
-    rcvs: ReadOnlyIndexWithDollarKeys(
+    rcvs: proxyAsReadOnlyIndexWithDollarKeys(
         Object.entries(precompiledNode.messageReceivers).reduce(
             (rcvs, [inletId, astFunc]) => ({
                 ...rcvs,

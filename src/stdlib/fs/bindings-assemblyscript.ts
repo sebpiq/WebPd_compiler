@@ -31,7 +31,7 @@ import {
     EngineLifecycleRawModule,
     updateWasmInOuts,
 } from '../../engine-assemblyscript/run/engine-lifecycle-bindings'
-import { RawModuleWithNameMapping } from '../../run/run-helpers'
+import { proxyWithNameMapping } from '../../run/run-helpers'
 import { EngineContext } from '../../engine-assemblyscript/run/types'
 import {
     FsApi,
@@ -132,7 +132,7 @@ export const createFsImports = (
     const { cache, metadata, refs } = engineContext
     const exportedNames = metadata.compilation.variableNamesIndex.globals
     if ('fs' in exportedNames) {
-        const nameMapping = RawModuleWithNameMapping(
+        const nameMapping = proxyWithNameMapping(
             wasmImports!,
             exportedNames!.fs!
         ) as FsImportsAssemblyScript

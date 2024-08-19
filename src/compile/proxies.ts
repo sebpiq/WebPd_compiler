@@ -77,7 +77,7 @@ export const _proxyGetHandlerThrowIfKeyUnknown = <
     return false
 }
 
-// ---------------------------- Assigner ---------------------------- //
+// ---------------------------- proxyAsAssigner ---------------------------- //
 type _AssignerSpecIndex<T, C> = {
     Index: (
         k: string,
@@ -104,14 +104,17 @@ export type AssignerSpec<T, C = typeof undefined> =
     | _AssignerSpecLiteral<T, C>
     | _AssignerSpecLiteralDefaultNull<T, C>
 
-export const Assigner = <T extends { [k: string]: any }, C = typeof undefined>(
+export const proxyAsAssigner = <
+    T extends { [k: string]: any },
+    C = typeof undefined
+>(
     spec: AssignerSpec<T, C>,
     _obj: Partial<T> | undefined,
     context: C,
     _path?: ProxyPath
 ): T => {
     const path = _path || { keys: [], parents: [] }
-    const obj: T = Assigner.ensureValue(_obj, spec, context, path)
+    const obj: T = proxyAsAssigner.ensureValue(_obj, spec, context, path)
 
     // If `_path` is provided, assign the new value to the parent object.
     if (_path) {
@@ -145,7 +148,7 @@ export const Assigner = <T extends { [k: string]: any }, C = typeof undefined>(
                 throw new Error('no builder')
             }
 
-            return Assigner(
+            return proxyAsAssigner(
                 nextSpec,
                 // We use this form here instead of `obj[key]` specifically
                 // to allow Assign to play well with `ProtectedIndex`, which
@@ -160,7 +163,7 @@ export const Assigner = <T extends { [k: string]: any }, C = typeof undefined>(
     })
 }
 
-Assigner.ensureValue = <T, C = typeof undefined>(
+proxyAsAssigner.ensureValue = <T, C = typeof undefined>(
     _obj: Partial<T> | undefined,
     spec: AssignerSpec<T, C>,
     context: C,
@@ -172,7 +175,7 @@ Assigner.ensureValue = <T, C = typeof undefined>(
     } else if ('Interface' in spec) {
         const obj = (_obj || {}) as T
         Object.entries(spec.Interface).forEach(([key, nextSpec]) => {
-            obj[key as keyof T] = Assigner.ensureValue<T[keyof T], C>(
+            obj[key as keyof T] = proxyAsAssigner.ensureValue<T[keyof T], C>(
                 (obj as any)[key],
                 nextSpec as any,
                 context,
@@ -195,11 +198,11 @@ Assigner.ensureValue = <T, C = typeof undefined>(
     }
 }
 
-Assigner.Interface = <T, C>(a: {
+proxyAsAssigner.Interface = <T, C>(a: {
     [K in keyof T]: AssignerSpec<T[K], C>
 }): _AssignerSpecInterface<T, C> => ({ Interface: a })
 
-Assigner.Index = <T, C>(
+proxyAsAssigner.Index = <T, C>(
     f: (k: string, context: C) => AssignerSpec<T[keyof T], C>,
     indexConstructor?: (context: C, path: ProxyPath) => any
 ): _AssignerSpecIndex<T, C> => ({
@@ -207,24 +210,24 @@ Assigner.Index = <T, C>(
     indexConstructor: indexConstructor || (() => ({} as T)),
 })
 
-Assigner.Literal = <T, C>(
+proxyAsAssigner.Literal = <T, C>(
     f: (context: C, path: ProxyPath) => T
 ): _AssignerSpecLiteral<T, C> => ({
     Literal: f,
 })
 
-Assigner.LiteralDefaultNull = <T, C>(
+proxyAsAssigner.LiteralDefaultNull = <T, C>(
     f: (context: C, path: ProxyPath) => T
 ): _AssignerSpecLiteralDefaultNull<T | null, C> => ({ LiteralDefaultNull: f })
 
-// ---------------------------- ProtectedIndex ---------------------------- //
+// ---------------------------- proxyAsProtectedIndex ---------------------------- //
 /**
  * Helper to declare namespace objects enforcing stricter access rules.
  * Specifically, it forbids :
  * - reading an unknown property.
  * - trying to overwrite an existing property.
  */
-export const ProtectedIndex = <T extends Object>(
+export const proxyAsProtectedIndex = <T extends Object>(
     namespace: T,
     path?: ProxyPath
 ) => {
@@ -253,14 +256,14 @@ export const ProtectedIndex = <T extends Object>(
     })
 }
 
-// ---------------------------- ReadOnlyIndex ---------------------------- //
+// ---------------------------- proxyAsReadOnlyIndex ---------------------------- //
 /**
  * Helper to declare namespace objects enforcing stricter access rules.
  * Specifically, it forbids :
  * - reading an unknown property.
  * - writing to a property.
  */
-export const ReadOnlyIndex = <T extends { [k: string]: any }>(
+export const proxyAsReadOnlyIndex = <T extends { [k: string]: any }>(
     namespace: T,
     path?: ProxyPath
 ): T => {
@@ -272,7 +275,7 @@ export const ReadOnlyIndex = <T extends { [k: string]: any }>(
             }
             const value = target[key as keyof T]
             if (typeof value === 'object' && value !== null) {
-                return ReadOnlyIndex<T[keyof T]>(
+                return proxyAsReadOnlyIndex<T[keyof T]>(
                     value,
                     _addPath(target, key, path)
                 )
@@ -285,7 +288,7 @@ export const ReadOnlyIndex = <T extends { [k: string]: any }>(
     })
 }
 
-// ---------------------------- ReadOnlyIndexWithDollarKeys ---------------------------- //
+// ---------------------------- proxyAsReadOnlyIndexWithDollarKeys ---------------------------- //
 /**
  * Helper to declare namespace objects enforcing stricter access rules.
  * Specifically :
@@ -295,7 +298,7 @@ export const ReadOnlyIndex = <T extends { [k: string]: any }>(
  *      This is convenient to access portlets by their id without using
  *      indexing syntax, for example : `namespace.$0` instead of `namespace['0']`.
  */
-export const ReadOnlyIndexWithDollarKeys = <T extends Object>(
+export const proxyAsReadOnlyIndexWithDollarKeys = <T extends Object>(
     namespace: T,
     nodeId: DspGraph.NodeId,
     name: string

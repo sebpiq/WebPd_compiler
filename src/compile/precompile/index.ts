@@ -20,8 +20,8 @@
 
 import { getters, traversers } from '../../dsp-graph'
 import {
-    PrecompiledCodeAssigner,
-    VariableNamesAssigner,
+    proxyAsPrecompiledCodeAssigner,
+    proxyAsVariableNamesAssigner,
     createPrecompiledCode,
     createVariableNamesIndex,
 } from './proxies'
@@ -62,7 +62,7 @@ import {
     precompileIoMessageSender,
     addNodeImplementationsForMessageIo,
 } from './io'
-import { ReadOnlyIndex } from '../proxies'
+import { proxyAsReadOnlyIndex } from '../proxies'
 
 export default (precompilationInput: PrecompilationInput) => {
     const precompilation = initializePrecompilation(precompilationInput)
@@ -255,12 +255,12 @@ export const initializePrecompilation = (
         ...precompilationInput,
         precompiledCode,
         variableNamesIndex,
-        variableNamesAssigner: VariableNamesAssigner({
+        variableNamesAssigner: proxyAsVariableNamesAssigner({
             variableNamesIndex,
             input: precompilationInput,
         }),
-        variableNamesReadOnly: ReadOnlyIndex(variableNamesIndex),
-        precompiledCodeAssigner: PrecompiledCodeAssigner({
+        variableNamesReadOnly: proxyAsReadOnlyIndex(variableNamesIndex),
+        precompiledCodeAssigner: proxyAsPrecompiledCodeAssigner({
             precompiledCode,
             input: precompilationInput,
         }),

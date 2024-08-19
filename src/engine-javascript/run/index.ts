@@ -28,7 +28,7 @@
  * @module
  */
 
-import { attachBindings } from '../../run/run-helpers'
+import { proxyAsModuleWithBindings } from '../../run/run-helpers'
 import { Bindings } from '../../run/types'
 import { Code } from '../../ast/types'
 import { Engine } from '../../run/types'
@@ -82,7 +82,7 @@ export const createEngineBindings = (
         io: { type: 'raw' },
         globals: {
             type: 'proxy',
-            value: attachBindings(rawModule, globalsBindings),
+            value: proxyAsModuleWithBindings(rawModule, globalsBindings),
         },
     }
 }
@@ -96,7 +96,7 @@ export const createEngine = <AdditionalExports>(
         rawModule,
         rawModule.metadata.compilation.variableNamesIndex
     )
-    return attachBindings(rawModule, {
+    return proxyAsModuleWithBindings(rawModule, {
         ...createEngineBindings(rawModuleWithNameMapping),
         ...(additionalBindings || {}),
     })

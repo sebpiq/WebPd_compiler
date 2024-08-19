@@ -33,7 +33,7 @@ import { RawEngine, AssemblyScriptWasmImports, EngineContext } from './types'
 import { instantiateWasmModule } from './wasm-helpers'
 import { getFloatArrayType } from '../../run/run-helpers'
 import { createCommonsBindings } from '../../stdlib/commons/bindings-assemblyscript'
-import { attachBindings } from '../../run/run-helpers'
+import { proxyAsModuleWithBindings } from '../../run/run-helpers'
 import { createEngineLifecycleBindings } from './engine-lifecycle-bindings'
 import { readMetadata } from './metadata'
 import {
@@ -86,7 +86,7 @@ export const createEngine = async <AdditionalExports>(
 
     // Create engine
     const engineBindings = createEngineBindings(engineContext)
-    const engine = attachBindings(engineContext.refs.rawModule, {
+    const engine = proxyAsModuleWithBindings(engineContext.refs.rawModule, {
         ...engineBindings,
         ...(additionalBindings || {}),
     })
@@ -103,11 +103,11 @@ export const createEngineBindings = (
 
     // Create bindings for io
     const io = {
-        messageReceivers: attachBindings(
+        messageReceivers: proxyAsModuleWithBindings(
             refs.rawModule!,
             createIoMessageReceiversBindings(engineContext)
         ),
-        messageSenders: attachBindings(
+        messageSenders: proxyAsModuleWithBindings(
             refs.rawModule!,
             createIoMessageSendersBindings(engineContext)
         ),
@@ -117,14 +117,14 @@ export const createEngineBindings = (
     const globalsBindings: Bindings<Engine['globals']> = {
         commons: {
             type: 'proxy',
-            value: attachBindings(
+            value: proxyAsModuleWithBindings(
                 refs.rawModule!,
                 createCommonsBindings(engineContext)
             ),
         },
     }
     if ('fs' in exportedNames) {
-        const fs = attachBindings(
+        const fs = proxyAsModuleWithBindings(
             refs.rawModule!,
             createFsBindings(engineContext)
         )
@@ -137,7 +137,7 @@ export const createEngineBindings = (
         metadata: { type: 'proxy', value: metadata },
         globals: {
             type: 'proxy',
-            value: attachBindings(refs.rawModule!, globalsBindings),
+            value: proxyAsModuleWithBindings(refs.rawModule!, globalsBindings),
         },
         io: { type: 'proxy', value: io },
     }

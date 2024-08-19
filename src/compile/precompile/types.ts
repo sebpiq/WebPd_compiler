@@ -165,6 +165,10 @@ export interface DspGroup {
  *     }
  * }
  * ```
+ *
+ * Both `counter` variables are namespaced respectively under `fs` and `buf`,
+ * therefore ensuring their unicity, also the map allow to store the automatically
+ * generated names, making it possible to avoid direct manipulation.
  */
 export interface VariableNamesIndex {
     /** Namespace for individual nodes */

@@ -25,7 +25,7 @@ import render from '../../compile/render'
 import macros from './macros'
 import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
-import { ReadOnlyIndex } from '../../compile/proxies'
+import { proxyAsReadOnlyIndex } from '../../compile/proxies'
 
 export default (renderInput: RenderInput): JavaScriptEngineCode => {
     const {
@@ -33,7 +33,7 @@ export default (renderInput: RenderInput): JavaScriptEngineCode => {
         settings,
         variableNamesReadOnly: variableNamesIndex,
     } = renderInput
-    const variableNamesReadOnly = ReadOnlyIndex(variableNamesIndex)
+    const variableNamesReadOnly = proxyAsReadOnlyIndex(variableNamesIndex)
     const { globals } = variableNamesReadOnly
     const renderTemplateInput = {
         settings,

@@ -22,7 +22,7 @@ import { CompilerTarget } from '../compile/types'
 import { readMetadata as readMetadataWasm } from '../engine-assemblyscript/run/metadata'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
 import { createEngine } from '../engine-javascript/run'
-import { RawModuleWithNameMapping } from './run-helpers'
+import { proxyWithNameMapping } from './run-helpers'
 import { EngineMetadata } from './types'
 
 export const readMetadata = async (
@@ -64,7 +64,7 @@ export const applyEngineNameMapping = (
         | VariableNamesIndex
         | EngineMetadata['compilation']['variableNamesIndex']
 ) =>
-    RawModuleWithNameMapping(rawModule, {
+    proxyWithNameMapping(rawModule, {
         globals: variableNamesIndex.globals,
         io: variableNamesIndex.io,
     })

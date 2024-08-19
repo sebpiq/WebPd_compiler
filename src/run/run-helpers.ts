@@ -27,8 +27,9 @@ import { Bindings } from './types'
 export const getFloatArrayType = (bitDepth: AudioSettings['bitDepth']) =>
     bitDepth === 64 ? Float64Array : Float32Array
 
-/** Helper to create a Module by wrapping a RawModule with Bindings */
-export const attachBindings = <ModuleType extends { [key: string]: any }>(
+export const proxyAsModuleWithBindings = <
+    ModuleType extends { [key: string]: any }
+>(
     rawModule: { [key: string]: any },
     bindings: Bindings<ModuleType>
 ): ModuleType =>
@@ -89,7 +90,10 @@ export const attachBindings = <ModuleType extends { [key: string]: any }>(
         }
     ) as ModuleType
 
-export const RawModuleWithNameMapping = (
+/**
+ *
+ */
+export const proxyWithNameMapping = (
     rawModule: object,
     variableNamesIndex: NameMapping
 ) => {
@@ -104,10 +108,7 @@ export const RawModuleWithNameMapping = (
                 } else if (key in variableNamesIndex) {
                     const nextVariableNames =
                         variableNamesIndex[key as keyof NameMapping]!
-                    return RawModuleWithNameMapping(
-                        rawModule,
-                        nextVariableNames
-                    )
+                    return proxyWithNameMapping(rawModule, nextVariableNames)
                 } else if (_proxyGetHandlerThrowIfKeyUnknown(rawModule, key)) {
                     return undefined
                 }
