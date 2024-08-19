@@ -21,7 +21,12 @@
 import { AstClass, AstElement, AstFunc, AstSequence } from '../ast/types'
 import { VariableName } from '../ast/types'
 import { DspGraph } from '../dsp-graph'
-import { VariableNamesIndex } from './precompile/types'
+import { FsNamespacePublic } from '../stdlib/fs/types'
+import { BufNamespacePublic } from '../stdlib/buf/types'
+import { CommonsNamespacePublic } from '../stdlib/commons/types'
+import { CoreNamespacePublic } from '../stdlib/core/types'
+import { MsgNamespacePublic } from '../stdlib/msg/types'
+import { SkedNamespacePublic } from '../stdlib/sked/types'
 
 type PortletsSpecMetadataBasicValue = boolean | string | number
 
@@ -185,6 +190,74 @@ export interface NodeImplementation<NodeArgsType = {}> {
 
 export type NodeImplementations = {
     [nodeType: string]: NodeImplementation<any>
+}
+
+/**
+ * Map of all variable names used for compilation. This map allows to :
+ *  - ensure name unicity through the use of namespaces
+ *  - give all variable names a stable path
+ *
+ * For example we might have :
+ *
+ * ```
+ * const variableNamesIndex = {
+ *     globals: {
+ *         // ...
+ *         fs: {
+ *             // ...
+ *             counter: 'g_fs_counter_auto_generated_12345'
+ *         },
+ *         buf: {
+ *             // ...
+ *             counter: 'g_buf_counter'
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * Both `counter` variables are namespaced respectively under `fs` and `buf`,
+ * therefore ensuring their unicity, also the map allow to store the automatically
+ * generated names, making it possible to avoid direct manipulation.
+ */
+export interface VariableNamesIndex {
+    /** Namespace for individual nodes */
+    readonly nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
+
+    readonly nodeImplementations: {
+        [nodeType: DspGraph.NodeType]: Namespace
+    }
+
+    readonly globals: {
+        fs?: Record<keyof FsNamespacePublic, VariableName>
+        buf?: Record<keyof BufNamespacePublic, VariableName>
+        commons: Record<keyof CommonsNamespacePublic, VariableName>
+        core: Record<keyof CoreNamespacePublic, VariableName>
+        msg: Record<keyof MsgNamespacePublic, VariableName>
+        sked: Record<keyof SkedNamespacePublic, VariableName>
+        [ns: DspGraph.NodeType]: Namespace | undefined
+    }
+
+    readonly io: {
+        readonly messageReceivers: {
+            [nodeId: DspGraph.NodeId]: {
+                [inletId: DspGraph.PortletId]: VariableName
+            }
+        }
+        readonly messageSenders: {
+            [nodeId: DspGraph.NodeId]: {
+                [outletId: DspGraph.PortletId]: VariableName
+            }
+        }
+    }
+
+    readonly coldDspGroups: { [groupId: string]: VariableName }
+}
+
+export interface NodeVariableNames {
+    readonly signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
+    readonly messageSenders: { [outletId: DspGraph.PortletId]: VariableName }
+    readonly messageReceivers: { [inletId: DspGraph.PortletId]: VariableName }
+    state: VariableName | null
 }
 
 export type Namespace = { [name: string]: VariableName }

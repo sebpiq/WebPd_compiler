@@ -32,8 +32,8 @@ import {
     DspGroup,
     Precompilation,
     PrecompiledNodeCode,
-    VariableNamesIndex,
 } from './types'
+import { VariableNamesIndex } from '../types'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
 type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }

@@ -17,12 +17,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { GlobalDefinitions, GlobalPrecompilationContext } from '../types'
+import { GlobalDefinitions, GlobalPrecompilationContext, VariableNamesIndex } from '../types'
 import { AstElement, AstFunc, AstSequence, VariableName } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { commonsArrays, commonsWaitFrame, core, msg } from '../../stdlib'
 import { Sequence } from '../../ast/declare'
-import { Precompilation, PrecompiledCode, VariableNamesIndex } from './types'
+import { Precompilation, PrecompiledCode } from './types'
 import { proxyAsReadOnlyIndex } from '../proxies'
 
 export default (

@@ -17,8 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { VariableNamesIndex } from '../compile/precompile/types'
-import { CompilerTarget } from '../compile/types'
+import { CompilerTarget, VariableNamesIndex } from '../compile/types'
 import { readMetadata as readMetadataWasm } from '../engine-assemblyscript/run/metadata'
 import { JavaScriptEngineCode } from '../engine-javascript/compile/types'
 import { createEngine } from '../engine-javascript/run'

@@ -28,9 +28,9 @@ import {
 import {
     PrecompilationInput,
     PrecompiledCode,
-    VariableNamesIndex,
 } from './types'
 import { Sequence, ast } from '../../ast/declare'
+import { VariableNamesIndex } from '../types'
 
 // ---------------------------- VariableNamesIndex ---------------------------- //
 const NS = {

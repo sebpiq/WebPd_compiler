@@ -18,7 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph } from '../../dsp-graph'
-import { Precompilation, VariableNamesIndex } from './types'
+import { VariableNamesIndex } from '../types'
+import { Precompilation } from './types'
 
 export const STATE_CLASS_NAME = 'State'
 

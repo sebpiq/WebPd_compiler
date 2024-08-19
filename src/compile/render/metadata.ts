@@ -19,7 +19,7 @@
  */
 import packageInfo from '../../../package.json'
 import { EngineMetadata } from '../../run/types'
-import { VariableNamesIndex } from '../precompile/types'
+import { VariableNamesIndex } from '../types'
 import { RenderInput } from './types'
 
 /** Helper to build engine metadata from compilation object */

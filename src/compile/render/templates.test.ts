@@ -38,8 +38,8 @@ import {
 } from '../test-helpers'
 import templates from './templates'
 import { AstSequence } from '../../ast/types'
-import { VariableNamesIndex } from '../precompile/types'
 import { CommonsNamespaceAll } from '../../stdlib/commons/types'
+import { VariableNamesIndex } from '../types'
 
 describe('templates', () => {
     describe('templates.portletsDeclarations', () => {

@@ -18,8 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph } from '../dsp-graph'
-import { CompilationSettings } from '../compile/types'
-import { VariableNamesIndex } from '../compile/precompile/types'
+import { CompilationSettings, VariableNamesIndex } from '../compile/types'
 import { FsApi } from '../stdlib/fs/types'
 import {
     FS_OPERATION_FAILURE,
