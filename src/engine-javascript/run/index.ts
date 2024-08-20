@@ -40,7 +40,7 @@ import {
     CommonsRawModule,
     createCommonsModule,
 } from '../../stdlib/commons/bindings-javascript'
-import { applyEngineNameMapping } from '../../run'
+import { proxyWithEngineNameMapping } from '../../run/run-helpers'
 
 export interface EngineLifecycleRawModule {
     metadata: Engine['metadata']
@@ -92,7 +92,7 @@ export const createEngine = <AdditionalExports>(
     additionalBindings?: Bindings<AdditionalExports>
 ): Engine => {
     const rawModule = compileRawModule(code)
-    const rawModuleWithNameMapping = applyEngineNameMapping(
+    const rawModuleWithNameMapping = proxyWithEngineNameMapping(
         rawModule,
         rawModule.metadata.compilation.variableNamesIndex
     )

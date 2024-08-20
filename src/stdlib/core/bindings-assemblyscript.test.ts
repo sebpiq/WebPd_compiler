@@ -46,7 +46,7 @@ import {
 import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
 import { CoreNamespaceAll } from './types'
-import { applyEngineNameMapping } from '../../run'
+import { proxyWithEngineNameMapping } from '../../run/run-helpers'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule {
@@ -110,7 +110,7 @@ describe('core-bindings', () => {
             precompilation.variableNamesAssigner,
             makeGlobalCodePrecompilationContext(precompilation)
         )
-        return applyEngineNameMapping(
+        return proxyWithEngineNameMapping(
             rawModule,
             precompilation.variableNamesIndex
         ) as CoreRawModuleWithDependencies & CoreTestRawModule

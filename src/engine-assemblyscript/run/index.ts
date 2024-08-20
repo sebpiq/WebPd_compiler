@@ -46,7 +46,7 @@ import {
     createFsBindings,
     createFsImports,
 } from '../../stdlib/fs/bindings-assemblyscript'
-import { applyEngineNameMapping } from '../../run'
+import { proxyWithEngineNameMapping } from '../../run/run-helpers'
 
 export const createEngine = async <AdditionalExports>(
     wasmBuffer: ArrayBuffer,
@@ -79,7 +79,7 @@ export const createEngine = async <AdditionalExports>(
         input: wasmImports,
     })
 
-    engineContext.refs.rawModule = applyEngineNameMapping(
+    engineContext.refs.rawModule = proxyWithEngineNameMapping(
         wasmInstance.exports,
         metadata.compilation.variableNamesIndex
     ) as RawEngine

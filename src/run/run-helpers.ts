@@ -19,8 +19,8 @@
  */
 
 import { _proxyGetHandlerThrowIfKeyUnknown } from '../compile/proxies'
-import { AudioSettings } from '../compile/types'
-import { Bindings } from './types'
+import { AudioSettings, VariableNamesIndex } from '../compile/types'
+import { Bindings, EngineMetadata } from './types'
 
 // NOTE : not necessarily the most logical place to put this function, but we need it here
 // cause it's imported by the bindings.
@@ -91,8 +91,37 @@ export const proxyAsModuleWithBindings = <
     ) as ModuleType
 
 /**
+ * Reverse-maps exported variable names from `rawModule` according to the mapping defined
+ * in `variableNamesIndex`.
  *
+ * For example with :
+ *
+ * ```
+ * const variableNamesIndex = {
+ *     globals: {
+ *         // ...
+ *         fs: {
+ *             // ...
+ *             readFile: 'g_fs_readFile'
+ *         },
+ *     }
+ * }
+ * ```
+ *
+ * The function `g_fs_readFile` (if it is exported properly by the raw module), will then
+ * be available on the returned object at path `.globals.fs.readFile`.
  */
+export const proxyWithEngineNameMapping = (
+    rawModule: object,
+    variableNamesIndex:
+        | VariableNamesIndex
+        | EngineMetadata['compilation']['variableNamesIndex']
+) =>
+    proxyWithNameMapping(rawModule, {
+        globals: variableNamesIndex.globals,
+        io: variableNamesIndex.io,
+    })
+
 export const proxyWithNameMapping = (
     rawModule: object,
     variableNamesIndex: NameMapping
@@ -107,7 +136,7 @@ export const proxyWithNameMapping = (
                     return Reflect.get(rawModule, key)
                 } else if (key in variableNamesIndex) {
                     const nextVariableNames =
-                        variableNamesIndex[key as keyof NameMapping]!
+                        variableNamesIndex[key as keyof NameMappingObject]!
                     return proxyWithNameMapping(rawModule, nextVariableNames)
                 } else if (_proxyGetHandlerThrowIfKeyUnknown(rawModule, key)) {
                     return undefined
@@ -120,7 +149,7 @@ export const proxyWithNameMapping = (
                 const key = String(k)
                 if (key in variableNamesIndex) {
                     const variableName =
-                        variableNamesIndex[key as keyof NameMapping]!
+                        variableNamesIndex[key as keyof NameMappingObject]!
                     if (typeof variableName !== 'string') {
                         throw new Error(
                             `Failed to set value for key ${String(
@@ -141,4 +170,5 @@ export const proxyWithNameMapping = (
     }
 }
 
-type NameMapping = { [key: string]: string | NameMapping } | string | undefined
+type NameMappingObject = { [key: string]: string | NameMapping }
+type NameMapping =  NameMappingObject | string | undefined

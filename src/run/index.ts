@@ -35,35 +35,3 @@ export const readMetadata = async (
             return createEngine(compiled as string).metadata
     }
 }
-
-/**
- * Reverse-maps exported variable names from `rawModule` according to the mapping defined
- * in `variableNamesIndex`.
- *
- * For example with :
- *
- * ```
- * const variableNamesIndex = {
- *     globals: {
- *         // ...
- *         fs: {
- *             // ...
- *             readFile: 'g_fs_readFile'
- *         },
- *     }
- * }
- * ```
- *
- * The function `g_fs_readFile` (if it is exported properly by the raw module), will then
- * be available on the returned object at path `.globals.fs.readFile`.
- */
-export const applyEngineNameMapping = (
-    rawModule: object,
-    variableNamesIndex:
-        | VariableNamesIndex
-        | EngineMetadata['compilation']['variableNamesIndex']
-) =>
-    proxyWithNameMapping(rawModule, {
-        globals: variableNamesIndex.globals,
-        io: variableNamesIndex.io,
-    })

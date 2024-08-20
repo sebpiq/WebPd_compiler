@@ -47,7 +47,7 @@ import { instantiateAndDedupeDependencies } from '../../compile/precompile/depen
 import { CoreNamespaceAll } from '../core/types'
 import { MsgNamespaceAll } from './types'
 import { SkedNamespaceAll } from '../sked/types'
-import { applyEngineNameMapping } from '../../run'
+import { proxyWithEngineNameMapping } from '../../run/run-helpers'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule {
@@ -138,7 +138,7 @@ describe('msg-bindings', () => {
             precompilation.variableNamesAssigner,
             makeGlobalCodePrecompilationContext(precompilation)
         )
-        return applyEngineNameMapping(
+        return proxyWithEngineNameMapping(
             rawModule,
             precompilation.variableNamesIndex
         ) as MsgTestRawModule & MsgRawModuleWithDependencies
