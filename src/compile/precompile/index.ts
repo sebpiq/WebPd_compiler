@@ -20,8 +20,8 @@
 
 import { getters, traversers } from '../../dsp-graph'
 import {
-    PrecompiledCodeAssigner,
-    VariableNamesAssigner,
+    proxyAsPrecompiledCodeAssigner,
+    proxyAsVariableNamesAssigner,
     createPrecompiledCode,
     createVariableNamesIndex,
 } from './proxies'
@@ -32,7 +32,9 @@ import {
     getNodeImplementationsUsedInGraph,
 } from '../compile-helpers'
 import { PrecompilationInput, Precompilation } from './types'
-import precompileDependencies from './dependencies'
+import precompileDependencies, {
+    engineMinimalDependencies,
+} from './dependencies'
 import {
     precompileInitialization,
     precompileMessageReceivers,
@@ -60,6 +62,7 @@ import {
     precompileIoMessageSender,
     addNodeImplementationsForMessageIo,
 } from './io'
+import { proxyAsReadOnlyIndex } from '../proxies'
 
 export default (precompilationInput: PrecompilationInput) => {
     const precompilation = initializePrecompilation(precompilationInput)
@@ -114,10 +117,15 @@ export default (precompilationInput: PrecompilationInput) => {
         precompilation.precompiledCode.graph.fullTraversal
     )
 
+    // ------------------------ DEPENDENCIES ------------------------ //
+    precompileDependencies(precompilation, engineMinimalDependencies())
+
     // -------------------- NODE IMPLEMENTATIONS & STATES ------------------ //
     Object.keys(precompilation.nodeImplementations).forEach((nodeType) => {
-        precompileStateClass(precompilation, nodeType)
+        // Run first because we might use some members declared here
+        // in the state initialization.
         precompileCore(precompilation, nodeType)
+        precompileStateClass(precompilation, nodeType)
     })
     nodes.forEach((node) => {
         precompileState(precompilation, node)
@@ -229,9 +237,6 @@ export default (precompilationInput: PrecompilationInput) => {
         precompileMessageReceivers(precompilation, node)
     })
 
-    // ------------------------ MISC ------------------------ //
-    precompileDependencies(precompilation)
-
     return precompilation
 }
 
@@ -250,11 +255,12 @@ export const initializePrecompilation = (
         ...precompilationInput,
         precompiledCode,
         variableNamesIndex,
-        variableNamesAssigner: VariableNamesAssigner({
+        variableNamesAssigner: proxyAsVariableNamesAssigner({
             variableNamesIndex,
             input: precompilationInput,
         }),
-        precompiledCodeAssigner: PrecompiledCodeAssigner({
+        variableNamesReadOnly: proxyAsReadOnlyIndex(variableNamesIndex),
+        precompiledCodeAssigner: proxyAsPrecompiledCodeAssigner({
             precompiledCode,
             input: precompilationInput,
         }),

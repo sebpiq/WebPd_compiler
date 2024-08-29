@@ -27,14 +27,18 @@ import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
 
 export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
-    const { precompiledCode, settings, variableNamesIndex } = renderInput
+    const {
+        precompiledCode,
+        settings,
+        variableNamesReadOnly: variableNamesIndex,
+    } = renderInput
+    const globals = variableNamesIndex.globals
     const renderTemplateInput = {
         settings,
-        globs: variableNamesIndex.globs,
+        globals,
         precompiledCode,
     }
     const { channelCount } = settings.audio
-    const globs = variableNamesIndex.globs
     const metadata = buildMetadata(renderInput)
 
     // prettier-ignore
@@ -44,33 +48,23 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
         ${templates.dependencies(renderTemplateInput)}
         ${templates.nodeImplementationsCoreAndStateClasses(renderTemplateInput)}
 
-        ${templates.globs(renderTemplateInput)}
-        let ${globs.input}: FloatArray = createFloatArray(0)
-        let ${globs.output}: FloatArray = createFloatArray(0)
-
-        ${templates.embeddedArrays(renderTemplateInput)}
-
         ${templates.nodeStateInstances(renderTemplateInput)}
         ${templates.portletsDeclarations(renderTemplateInput)}
 
         ${templates.coldDspFunctions(renderTemplateInput)}
         ${templates.ioMessageReceivers(renderTemplateInput)}
         ${templates.ioMessageSenders(renderTemplateInput, (variableName) => 
-            ast`export declare function ${variableName}(m: Message): void`)}
+            ast`export declare function ${variableName}(m: ${globals.msg!.Message!}): void`)}
 
         export function initialize(sampleRate: Float, blockSize: Int): void {
-            ${globs.input} = createFloatArray(blockSize * ${channelCount.in.toString()})
-            ${globs.output} = createFloatArray(blockSize * ${channelCount.out.toString()})
-            ${globs.sampleRate} = sampleRate
-            ${globs.blockSize} = blockSize
+            ${globals.core!.INPUT!} = createFloatArray(blockSize * ${channelCount.in.toString()})
+            ${globals.core!.OUTPUT!} = createFloatArray(blockSize * ${channelCount.out.toString()})
+            ${globals.core!.SAMPLE_RATE!} = sampleRate
+            ${globals.core!.BLOCK_SIZE!} = blockSize
 
             ${templates.nodeInitializations(renderTemplateInput)}
             ${templates.coldDspInitialization(renderTemplateInput)}
         }
-
-        export function getInput(): FloatArray { return ${globs.input} }
-
-        export function getOutput(): FloatArray { return ${globs.output} }
 
         export function dspLoop(): void {
             ${templates.dspLoop(renderTemplateInput)}
@@ -90,7 +84,7 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
             ({ name, args, returnType }) => ast`export declare function ${name} (${
                 args.map((a) => `${a.name}: ${a.type}`).join(',')
             }): ${returnType}`, 
-            ({ name }) => ast`export { ${name} }`
+            (name) => ast`export { ${name} }`
         )}
     `)
 }

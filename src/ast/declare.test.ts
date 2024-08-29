@@ -33,7 +33,7 @@ import { AstSequence, AstFunc } from './types'
 describe('declare', () => {
     describe('_processRawContent', () => {
         it('should filter out null', () => {
-            const someVar = Var('Int', 'bla')
+            const someVar = Var(`Int`, `bla`)
             assert.deepStrictEqual(
                 _processRawContent([null, 'a', someVar, null, 'b', null]),
                 ['a', someVar, 'b']
@@ -41,7 +41,7 @@ describe('declare', () => {
         })
 
         it('should combine adjacent strings', () => {
-            const someVar = Var('Int', 'bla')
+            const someVar = Var(`Int`, `bla`)
             assert.deepStrictEqual(
                 _processRawContent(['a', 'b', someVar, 'c', 'd']),
                 ['ab', someVar, 'cd']
@@ -55,9 +55,9 @@ describe('declare', () => {
         })
 
         it('should recursively flatten arrays, add newlines between array elements and recusively combine strings', () => {
-            const var1 = Var('Int', 'bla')
-            const var2 = Var('Int', 'blu')
-            const var3 = Var('Int', 'bli')
+            const var1 = Var(`Int`, `bla`)
+            const var2 = Var(`Int`, `blu`)
+            const var3 = Var(`Int`, `bli`)
             assert.deepStrictEqual(
                 _processRawContent([
                     ['a', 'b', var1],
@@ -70,14 +70,14 @@ describe('declare', () => {
         })
 
         it('should expand AstSequence', () => {
-            const var1 = Var('Int', 'bla')
-            const var2 = Var('Int', 'blu')
+            const var1 = Var(`Int`, `bla`)
+            const var2 = Var(`Int`, `blu`)
             const ast1: AstSequence = {
                 astType: 'Sequence',
                 content: [var1, 'blo', var2],
             }
 
-            const var3 = Var('Int', 'bli')
+            const var3 = Var(`Int`, `bli`)
             const ast2: AstSequence = {
                 astType: 'Sequence',
                 content: [var3, 'bly'],
@@ -89,14 +89,14 @@ describe('declare', () => {
         })
 
         it('should leave other AST elements untouched', () => {
-            const var1 = Var('Int', 'bla')
-            const var2 = Var('Int', 'blu')
+            const var1 = Var(`Int`, `bla`)
+            const var2 = Var(`Int`, `blu`)
             const func1 = Func('myFunc')`
                 ${var1}
                 ${var2}
             `
 
-            const var3 = Var('Int', 'bli')
+            const var3 = Var(`Int`, `bli`)
             const class1 = Class('myClass', [var3])
 
             assert.deepStrictEqual(
@@ -108,7 +108,7 @@ describe('declare', () => {
 
     describe('Sequence', () => {
         it('should intersperse newlines between elements', () => {
-            const var1 = Var('Int', 'bla')
+            const var1 = Var(`Int`, `bla`)
             const sequence = Sequence(['a', 'b', var1, 'c'])
             assert.deepStrictEqual<AstSequence>(sequence, {
                 astType: 'Sequence',
@@ -119,8 +119,8 @@ describe('declare', () => {
 
     describe('Ast', () => {
         it('should intersperse newlines between array elements, but not mess with top-level strings', () => {
-            const var1 = Var('Int', 'bla', '1')
-            const var2 = ConstVar('Int', 'blu', '3')
+            const var1 = Var(`Int`, `bla`, `1`)
+            const var2 = ConstVar(`Int`, `blu`, `3`)
             const sequence = ast`
                 ${var1}
                 bla = 2
@@ -141,7 +141,7 @@ describe('declare', () => {
         it('should allow to declare a function', () => {
             const astFunc = Func(
                 'myFunc',
-                [Var('number', 'arg1'), Var('string', 'arg2')],
+                [Var(`number`, `arg1`), Var(`string`, `arg2`)],
                 'void'
             )`const a = 1`
 
@@ -172,8 +172,8 @@ describe('declare', () => {
 
         it('should allow function body to declare variables', () => {
             const astFunc = Func('myFunc', [], 'string')`
-                ${Var('number', 'a', '1')}
-                ${ConstVar('string', 'b', '"HELLO"')}
+                ${Var(`number`, `a`, `1`)}
+                ${ConstVar(`string`, `b`, `"HELLO"`)}
                 return b`
 
             assert.deepStrictEqual<AstFunc>(astFunc, {
@@ -261,7 +261,7 @@ describe('declare', () => {
     describe('AnonFunc', () => {
         it('should allow to declare an anonymous function', () => {
             const astFunc = AnonFunc(
-                [Var('number', 'arg1')],
+                [Var(`number`, `arg1`)],
                 'void'
             )`const a = 1`
 
@@ -302,7 +302,7 @@ describe('declare', () => {
 
     describe('Var', () => {
         it('should accept value as number', () => {
-            const var1 = Var('Int', 'bla', 1)
+            const var1 = Var(`Int`, `bla`, 1)
             assert.deepStrictEqual(var1, {
                 astType: 'Var',
                 name: 'bla',

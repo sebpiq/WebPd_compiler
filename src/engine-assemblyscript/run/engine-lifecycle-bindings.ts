@@ -19,41 +19,26 @@
  */
 
 import { Bindings } from '../../run/types'
-import { mapArray } from '../../functional-helpers'
-import { VariableName } from '../../ast/types'
+import { Engine, FloatArray } from '../../run/types'
 import {
-    Engine,
-    EngineMetadata,
-    FloatArray,
-    Message,
-    RawModule,
-} from '../../run/types'
-import { CoreRawModule, liftString, readTypedArray } from './core-bindings'
-import { liftMessage, lowerMessage, MsgRawModule } from './msg-bindings'
-import {
-    EngineData,
-    FloatArrayPointer,
-    MessagePointer,
-    ForwardReferences,
-    EngineRawModule,
-} from './types'
-import { instantiateWasmModule } from './wasm-helpers'
+    CoreRawModuleWithDependencies,
+    readTypedArray,
+} from '../../stdlib/core/bindings-assemblyscript'
+import { MsgRawModuleWithDependencies } from '../../stdlib/msg/bindings-assemblyscript'
+import { EngineContext } from './types'
 
-export interface EngineLifecycleRawModule extends RawModule {
+export interface EngineLifecycleRawModule {
     initialize: (sampleRate: number, blockSize: number) => void
     dspLoop: () => void
-
-    // Pointers to input and output buffers
-    getOutput: () => FloatArrayPointer
-    getInput: () => FloatArrayPointer
 
     // Pointer to a JSON string representation of `EngineMetadata`
     metadata: WebAssembly.Global
 }
 
-export type EngineLifecycleWithDependenciesRawModule = CoreRawModule &
-    MsgRawModule &
-    EngineLifecycleRawModule
+export type EngineLifecycleRawModuleWithDependencies =
+    EngineLifecycleRawModule &
+        MsgRawModuleWithDependencies &
+        CoreRawModuleWithDependencies
 
 interface EngineLifecycleBindings {
     initialize: Engine['initialize']
@@ -64,35 +49,35 @@ interface EngineLifecycleBindings {
 // which could cause memory grow (lowerString, lowerMessage,
 //      lowerBuffer, lowerMessage) :
 // https://github.com/emscripten-core/emscripten/issues/6747
-export const updateWasmInOuts = (
-    rawModule: EngineLifecycleWithDependenciesRawModule,
-    engineData: EngineData
-) => {
-    engineData.wasmOutput = readTypedArray(
-        rawModule,
-        engineData.arrayType,
-        rawModule.getOutput()
+export const updateWasmInOuts = ({
+    refs,
+    cache,
+}: EngineContext<EngineLifecycleRawModuleWithDependencies>) => {
+    cache.wasmOutput = readTypedArray(
+        refs.rawModule!,
+        cache.arrayType,
+        refs.rawModule!.globals.core.x_getOutput()
     ) as FloatArray
-    engineData.wasmInput = readTypedArray(
-        rawModule,
-        engineData.arrayType,
-        rawModule.getInput()
+    cache.wasmInput = readTypedArray(
+        refs.rawModule!,
+        cache.arrayType,
+        refs.rawModule!.globals.core.x_getInput()
     ) as FloatArray
 }
 
 export const createEngineLifecycleBindings = (
-    rawModule: EngineLifecycleWithDependenciesRawModule,
-    engineData: EngineData
+    engineContext: EngineContext<EngineLifecycleRawModuleWithDependencies>
 ): Bindings<EngineLifecycleBindings> => {
+    const { refs, cache, metadata } = engineContext
     return {
         initialize: {
             type: 'proxy',
             value: (sampleRate: number, blockSize: number): void => {
-                engineData.metadata.audioSettings.blockSize = blockSize
-                engineData.metadata.audioSettings.sampleRate = sampleRate
-                engineData.blockSize = blockSize
-                rawModule.initialize(sampleRate, blockSize)
-                updateWasmInOuts(rawModule, engineData)
+                metadata.settings.audio.blockSize = blockSize
+                metadata.settings.audio.sampleRate = sampleRate
+                cache.blockSize = blockSize
+                refs.rawModule!.initialize(sampleRate, blockSize)
+                updateWasmInOuts(engineContext)
             },
         },
 
@@ -100,123 +85,23 @@ export const createEngineLifecycleBindings = (
             type: 'proxy',
             value: (input: Array<FloatArray>, output: Array<FloatArray>) => {
                 for (let channel = 0; channel < input.length; channel++) {
-                    engineData.wasmInput.set(
+                    cache.wasmInput.set(
                         input[channel]!,
-                        channel * engineData.blockSize
+                        channel * cache.blockSize
                     )
                 }
-                updateWasmInOuts(rawModule, engineData)
-                rawModule.dspLoop()
-                updateWasmInOuts(rawModule, engineData)
+                updateWasmInOuts(engineContext)
+                refs.rawModule!.dspLoop()
+                updateWasmInOuts(engineContext)
                 for (let channel = 0; channel < output.length; channel++) {
                     output[channel]!.set(
-                        engineData.wasmOutput.subarray(
-                            engineData.blockSize * channel,
-                            engineData.blockSize * (channel + 1)
+                        cache.wasmOutput.subarray(
+                            cache.blockSize * channel,
+                            cache.blockSize * (channel + 1)
                         )
                     )
                 }
             },
         },
     }
-}
-
-export const createIoMessageReceiversBindings = (
-    rawModule: EngineLifecycleWithDependenciesRawModule,
-    engineData: EngineData
-): Bindings<Engine['io']['messageReceivers']> =>
-    Object.entries(engineData.metadata.compilation.io.messageReceivers).reduce(
-        (bindings, [nodeId, spec]) => ({
-            ...bindings,
-            [nodeId]: {
-                type: 'proxy',
-                value: mapArray(spec.portletIds, (inletId) => [
-                    inletId,
-                    (message: Message) => {
-                        const messagePointer = lowerMessage(rawModule, message)
-                        ;(rawModule as any)[
-                            engineData.metadata.compilation.variableNamesIndex
-                                .io.messageReceivers[nodeId]![inletId]!
-                        ](messagePointer)
-                    },
-                ]),
-            },
-        }),
-        {}
-    )
-
-export const createIoMessageSendersBindings = (
-    _: EngineLifecycleWithDependenciesRawModule,
-    engineData: EngineData
-): Bindings<Engine['io']['messageSenders']> =>
-    Object.entries(engineData.metadata.compilation.io.messageSenders).reduce(
-        (bindings, [nodeId, spec]) => ({
-            ...bindings,
-            [nodeId]: {
-                type: 'proxy',
-                value: mapArray(spec.portletIds, (outletId) => [
-                    outletId,
-                    {
-                        onMessage: () => undefined,
-                    },
-                ]),
-            },
-        }),
-        {}
-    )
-
-export const ioMsgSendersImports = (
-    forwardReferences: ForwardReferences<EngineLifecycleWithDependenciesRawModule>,
-    metadata: EngineMetadata
-) => {
-    const wasmImports: {
-        [listenerName: VariableName]: (messagePointer: MessagePointer) => void
-    } = {}
-    const { variableNamesIndex } = metadata.compilation
-    Object.entries(metadata.compilation.io.messageSenders).forEach(
-        ([nodeId, spec]) => {
-            spec.portletIds.forEach((outletId) => {
-                const listenerName =
-                    variableNamesIndex.io.messageSenders[nodeId]![outletId]!
-                wasmImports[listenerName] = (messagePointer) => {
-                    const message = liftMessage(
-                        forwardReferences.rawModule!,
-                        messagePointer
-                    )
-                    forwardReferences.modules.io!.messageSenders[nodeId]![
-                        outletId
-                    ]!.onMessage(message)
-                }
-            })
-        }
-    )
-    return wasmImports
-}
-
-export const readMetadata = async (
-    wasmBuffer: ArrayBuffer
-): Promise<EngineMetadata> => {
-    // In order to read metadata, we need to introspect the module to get the imports
-    const inputImports: {
-        [listenerName: VariableName]: () => void
-    } = {}
-    const wasmModule = WebAssembly.Module.imports(
-        new WebAssembly.Module(wasmBuffer)
-    )
-
-    // Then we generate dummy functions to be able to instantiate the module
-    wasmModule
-        .filter(
-            (imprt) => imprt.module === 'input' && imprt.kind === 'function'
-        )
-        .forEach((imprt) => (inputImports[imprt.name] = () => undefined))
-    const wasmInstance = await instantiateWasmModule(wasmBuffer, {
-        input: inputImports,
-    })
-
-    // Finally, once the module instantiated, we read the metadata
-    const wasmExports = wasmInstance.exports as unknown as EngineRawModule
-    const stringPointer = wasmExports.metadata.valueOf()
-    const metadataJSON = liftString(wasmExports, stringPointer)
-    return JSON.parse(metadataJSON)
 }

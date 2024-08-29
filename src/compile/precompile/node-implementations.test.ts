@@ -21,13 +21,17 @@ import assert from 'assert'
 import { Class, Func, Sequence, Var } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { NodeImplementations } from '../types'
-import { STATE_CLASS_NAME, precompileCore, precompileStateClass } from './node-implementations'
+import {
+    STATE_CLASS_NAME,
+    precompileCore,
+    precompileStateClass,
+} from './node-implementations'
 import { AstClass, AstSequence } from '../../ast/types'
 import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.node-implementations', () => {
     describe('precompileStateClass', () => {
-        it('should precompile stateClass and add all names to the namespace in variableNamesIndex', () => {
+        it('should precompile stateClass in variableNamesIndex', () => {
             const graph = makeGraph({
                 // Needed as a sample node insance to compile `NodeImplementation.state`
                 n1: {
@@ -41,8 +45,8 @@ describe('precompile.node-implementations', () => {
                 type1: {
                     state: ({ ns, node: { args } }) =>
                         Class(ns[STATE_CLASS_NAME]!, [
-                            Var(ns.SomeClass!, 'a', args.a),
-                            Var('Int', 'b', args.b),
+                            Var(ns.SomeClass!, `a`, args.a),
+                            Var(`Int`, `b`, args.b),
                         ]),
                 },
             }
@@ -51,11 +55,14 @@ describe('precompile.node-implementations', () => {
                 graph,
                 nodeImplementations,
             })
+            // Ensure that the `SomeClass` is defined in the namespace
+            precompilation.variableNamesAssigner.nodeImplementations.type1!
+                .SomeClass!
 
             precompileStateClass(precompilation, 'type1')
 
             assert.deepStrictEqual(
-                precompilation.variableNamesIndex.nodeImplementations.type1!,
+                precompilation.variableNamesIndex.nodeImplementations.type1,
                 {
                     State: 'NT_type1_State',
                     SomeClass: 'NT_type1_SomeClass',
@@ -64,7 +71,10 @@ describe('precompile.node-implementations', () => {
             assert.deepStrictEqual<AstClass>(
                 precompilation.precompiledCode.nodeImplementations.type1!
                     .stateClass,
-                Class('NT_type1_State', [Var('NT_type1_SomeClass', 'a'), Var('Int', 'b')])
+                Class('NT_type1_State', [
+                    Var(`NT_type1_SomeClass`, `a`),
+                    Var(`Int`, `b`),
+                ])
             )
         })
     })
@@ -90,7 +100,7 @@ describe('precompile.node-implementations', () => {
             )
 
             assert.deepStrictEqual(
-                precompilation.variableNamesIndex.nodeImplementations.type1!,
+                precompilation.variableNamesIndex.nodeImplementations.type1,
                 {
                     bla: 'NT_type1_bla',
                     blo: 'NT_type1_blo',

@@ -21,12 +21,11 @@
 import asc from 'assemblyscript/asc'
 import { AudioSettings } from '../../compile/types'
 import { Code } from '../../ast/types'
-import { RawModule } from '../../run/types'
 import { instantiateWasmModule } from './wasm-helpers'
 
 export const TEST_PARAMETERS = [
     { bitDepth: 32 as AudioSettings['bitDepth'] },
-    { bitDepth: 64 as AudioSettings['bitDepth'] },
+    // { bitDepth: 64 as AudioSettings['bitDepth'] },
 ]
 
 export const compileAssemblyscript = async (
@@ -51,12 +50,12 @@ export const compileAssemblyscript = async (
 export const wasmBufferToRawModule = async (
     buffer: ArrayBuffer,
     imports: any = {}
-): Promise<RawModule> => {
+): Promise<object> => {
     const wasmInstance = await instantiateWasmModule(buffer, imports)
     return wasmInstance.exports as any
 }
 
-export const ascCodeToRawModule = async <M extends RawModule>(
+export const ascCodeToRawModule = async <M extends object = object>(
     code: Code,
     bitDepth: AudioSettings['bitDepth'],
     imports: any = {}

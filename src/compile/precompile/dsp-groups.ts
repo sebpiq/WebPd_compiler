@@ -23,11 +23,7 @@ import { buildGraphTraversalSignal } from '../compile-helpers'
 import { ColdDspGroup, DspGroup, Precompilation } from './types'
 
 export const precompileColdDspGroup = (
-    {
-        graph,
-        variableNamesAssigner,
-        precompiledCodeAssigner,
-    }: Precompilation,
+    { graph, variableNamesAssigner, precompiledCodeAssigner }: Precompilation,
     dspGroup: DspGroup,
     groupId: string
 ) => {
@@ -117,10 +113,7 @@ export const buildColdDspGroups = (
         .map<DspGroup>((dspGroup) => ({
             traversal: traversers.signalTraversal(
                 precompilation.graph,
-                traversers.toNodes(
-                    precompilation.graph,
-                    dspGroup.outNodesIds
-                )
+                traversers.toNodes(precompilation.graph, dspGroup.outNodesIds)
             ),
             outNodesIds: dspGroup.outNodesIds,
         }))

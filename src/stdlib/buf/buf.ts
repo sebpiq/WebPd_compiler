@@ -18,63 +18,69 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Sequence, Class, ConstVar, Func, Var } from '../ast/declare'
-import {
-    GlobalCodeGenerator,
-    GlobalCodeGeneratorWithSettings,
-} from '../compile/types'
+import { Sequence, Class, ConstVar, Func, Var } from '../../ast/declare'
+import { GlobalDefinitions } from '../../compile/types'
+import { BufNamespaceAll } from './types'
 
-export const bufCore: GlobalCodeGenerator = () => Sequence([
-    /**
-     * Ring buffer 
-     */
-    Class('buf_SoundBuffer', [
-        Var('FloatArray', 'data'),
-        Var('Int', 'length'),
-        Var('Int', 'writeCursor'),
-        Var('Int', 'pullAvailableLength'),
+const NAMESPACE = 'buf'
+
+export const bufCore: GlobalDefinitions<keyof BufNamespaceAll> = {
+    namespace: NAMESPACE,
+    // prettier-ignore
+    code: ({ ns: buf }) => Sequence([
+        /**
+         * Ring buffer 
+         */
+        Class(buf.SoundBuffer, [
+            Var(`FloatArray`, `data`),
+            Var(`Int`, `length`),
+            Var(`Int`, `writeCursor`),
+            Var(`Int`, `pullAvailableLength`),
+        ]),
+
+        /** Erases all the content from the buffer */
+        Func(buf.clear, [
+            Var(buf.SoundBuffer, `buffer`)
+        ], 'void')`
+            buffer.data.fill(0)
+        `,
+
+        /** Erases all the content from the buffer */
+        Func(buf.create, [
+            Var(`Int`, `length`)
+        ], buf.SoundBuffer)`
+            return {
+                data: createFloatArray(length),
+                length: length,
+                writeCursor: 0,
+                pullAvailableLength: 0,
+            }
+        `
     ]),
+}
 
-    /** Erases all the content from the buffer */
-    Func('buf_clear', [
-        Var('buf_SoundBuffer', 'buffer')
-    ], 'void')`
-        buffer.data.fill(0)
-    `,
-
-    /** Erases all the content from the buffer */
-    Func('buf_create', [
-        Var('Int', 'length')
-    ], 'buf_SoundBuffer')`
-        return {
-            data: createFloatArray(length),
-            length: length,
-            writeCursor: 0,
-            pullAvailableLength: 0,
-        }
-    `
-])
-
-export const bufPushPull: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => Sequence([
+export const bufPushPull: GlobalDefinitions<keyof BufNamespaceAll> = {
+    namespace: NAMESPACE,
+    // prettier-ignore
+    code: ({ ns: buf }) => Sequence([
         /**
          * Pushes a block to the buffer, throwing an error if the buffer is full. 
-         * If the block is written successfully, {@link buf_SoundBuffer#writeCursor} 
+         * If the block is written successfully, {@link buf.SoundBuffer#writeCursor} 
          * is moved corresponding with the length of data written.
          * 
          * @todo : Optimize by allowing to read/write directly from host
          */
-        Func('buf_pushBlock', [
-            Var('buf_SoundBuffer', 'buffer'), 
-            Var('FloatArray', 'block')
+        Func(buf.pushBlock, [
+            Var(buf.SoundBuffer, `buffer`), 
+            Var(`FloatArray`, `block`)
         ], 'Int')`
             if (buffer.pullAvailableLength + block.length > buffer.length) {
                 throw new Error('buffer full')
             }
 
-            ${Var('Int', 'left', 'block.length')}
+            ${Var(`Int`, `left`, `block.length`)}
             while (left > 0) {
-                ${ConstVar('Int', 'lengthToWrite', `toInt(Math.min(
+                ${ConstVar(`Int`, `lengthToWrite`, `toInt(Math.min(
                     toFloat(buffer.length - buffer.writeCursor), 
                     toFloat(left),
                 ))`)}
@@ -97,13 +103,13 @@ export const bufPushPull: GlobalCodeGeneratorWithSettings = {
          * This is a destructive operation, and the sample will be 
          * unavailable for subsequent readers with the same operation.
          */
-        Func('buf_pullSample', [
-            Var('buf_SoundBuffer', 'buffer')
+        Func(buf.pullSample, [
+            Var(buf.SoundBuffer, `buffer`)
         ], 'Float')`
             if (buffer.pullAvailableLength <= 0) {
                 return 0
             }
-            ${ConstVar('Int', 'readCursor', 'buffer.writeCursor - buffer.pullAvailableLength')}
+            ${ConstVar(`Int`, `readCursor`, `buffer.writeCursor - buffer.pullAvailableLength`)}
             buffer.pullAvailableLength -= 1
             return buffer.data[readCursor >= 0 ? readCursor : buffer.length + readCursor]
         `
@@ -111,14 +117,16 @@ export const bufPushPull: GlobalCodeGeneratorWithSettings = {
     dependencies: [bufCore],
 }
 
-export const bufWriteRead: GlobalCodeGeneratorWithSettings = {
-    codeGenerator: () => Sequence([
+export const bufWriteRead: GlobalDefinitions<keyof BufNamespaceAll> = {
+    namespace: NAMESPACE,
+    // prettier-ignore
+    code: ({ ns: buf }) => Sequence([
         /**
          * Writes a sample at \`@link writeCursor\` and increments \`writeCursor\` by one.
          */
-        Func('buf_writeSample', [
-            Var('buf_SoundBuffer', 'buffer'), 
-            Var('Float', 'value')
+        Func(buf.writeSample, [
+            Var(buf.SoundBuffer, `buffer`), 
+            Var(`Float`, `value`)
         ], 'void')`
             buffer.data[buffer.writeCursor] = value
             buffer.writeCursor = (buffer.writeCursor + 1) % buffer.length
@@ -127,12 +135,12 @@ export const bufWriteRead: GlobalCodeGeneratorWithSettings = {
         /**
          * Reads the sample at position \`writeCursor - offset\`.
          * @param offset Must be between 0 (for reading the last written sample)
-         *  and {@link buf_SoundBuffer#length} - 1. A value outside these bounds will not cause 
+         *  and {@link buf.SoundBuffer#length} - 1. A value outside these bounds will not cause 
          *  an error, but might cause unexpected results.
          */
-        Func('buf_readSample', [
-            Var('buf_SoundBuffer', 'buffer'), 
-            Var('Int', 'offset')
+        Func(buf.readSample, [
+            Var(buf.SoundBuffer, `buffer`), 
+            Var(`Int`, `offset`)
         ], 'Float')`
             // R = (buffer.writeCursor - 1 - offset) -> ideal read position
             // W = R % buffer.length -> wrap it so that its within buffer length bounds (but could be negative)

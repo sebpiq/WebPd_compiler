@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { commonsArrays } from './stdlib/commons'
-import { fsReadSoundFile } from './stdlib/fs'
+import { commonsArrays } from './stdlib/commons/commons'
+import { fsReadSoundFile } from './stdlib/fs/fs'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/graph-helpers'
 import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
@@ -37,8 +37,8 @@ describe('test-helpers-node-implementations', () => {
             'should work with signal inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation = {
-                    dsp: ({ ins, outs }) => 
-                        ast`${outs.$0!} = ${ins.$0!} + 0.1`,
+                    // prettier-ignore
+                    dsp: ({ ins, outs }) => ast`${outs.$0!} = ${ins.$0!} + 0.1`,
                 }
 
                 const node: DspGraph.Node = {
@@ -65,11 +65,14 @@ describe('test-helpers-node-implementations', () => {
             'should work with message inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ snds }) => ({
+                    messageReceivers: ({ snds }, { msg }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                            ${snds.$0!}(msg_floats([ msg_readFloatToken(m, 0) + 0.1 ]))
+                            ${snds.$0!}(${msg.floats}([
+                                ${msg.readFloatToken}(m, 0) + 0.1 
+                            ]))
                             return
                         `,
                     }),
@@ -99,11 +102,14 @@ describe('test-helpers-node-implementations', () => {
             'should send message at the right frame %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ globs, snds }) => ({
+                    messageReceivers: ({ snds }, { msg, core }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                        ${snds.$0!}(msg_floats([toFloat(${globs.frame})]))
+                        ${snds.$0!}(${msg.floats}([
+                            toFloat(${core.FRAME})
+                        ]))
                         return
                     `,
                     }),
@@ -133,11 +139,12 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests with fs %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({}) => ({
+                    messageReceivers: (_, { msg, fs }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                            fs_readSoundFile('/bla', {
+                            ${fs!.readSoundFile}('/bla', {
                                 channelCount: 11,
                                 sampleRate: 666,
                                 bitDepth: 12,
@@ -184,11 +191,12 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests on arrays %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: () => ({
+                    messageReceivers: (_, { msg, commons }) => ({
+                        // prettier-ignore
                         '0': AnonFunc([
-                            Var('Message', 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                            commons_getArray('array1')[0] = 666
+                            ${commons.getArray}('array1')[0] = 666
                             return
                         `,
                     }),

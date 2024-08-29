@@ -20,15 +20,16 @@
 
 import { writeFileSync } from 'fs'
 import { Code } from '../../ast/types'
-import { RawModule } from '../../run/types'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { createRawModule } from '.'
+import { EngineLifecycleRawModule, compileRawModule } from '.'
 const execPromise = promisify(exec)
 
-export const jsCodeToRawModule = async (code: Code): Promise<RawModule> => {
+export const compileJavascript = async (
+    code: Code
+): Promise<EngineLifecycleRawModule> => {
     try {
-        return createRawModule(code) as any
+        return compileRawModule(code) as any
     } catch (err) {
         const errMessage = await getJSEvalErrorSite(code)
         throw new Error('ERROR in generated JS code ' + errMessage)

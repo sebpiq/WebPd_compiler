@@ -25,15 +25,19 @@ import render from '../../compile/render'
 import macros from './macros'
 import { ast } from '../../ast/declare'
 import { RenderInput } from '../../compile/render/types'
+import { proxyAsReadOnlyIndex } from '../../compile/proxies'
 
-export default (
-    renderInput: RenderInput,
-): JavaScriptEngineCode => {
-    const { precompiledCode, settings, variableNamesIndex } = renderInput
-    const globs = variableNamesIndex.globs
+export default (renderInput: RenderInput): JavaScriptEngineCode => {
+    const {
+        precompiledCode,
+        settings,
+        variableNamesReadOnly: variableNamesIndex,
+    } = renderInput
+    const variableNamesReadOnly = proxyAsReadOnlyIndex(variableNamesIndex)
+    const { globals } = variableNamesReadOnly
     const renderTemplateInput = {
         settings,
-        globs,
+        globals,
         precompiledCode,
     }
     const metadata = buildMetadata(renderInput)
@@ -42,10 +46,6 @@ export default (
     return render(macros, ast`
         ${templates.dependencies(renderTemplateInput)}
         ${templates.nodeImplementationsCoreAndStateClasses(renderTemplateInput)}
-
-        ${templates.globs(renderTemplateInput)}
-
-        ${templates.embeddedArrays(renderTemplateInput)}
 
         ${templates.nodeStateInstances(renderTemplateInput)}
         ${templates.portletsDeclarations(renderTemplateInput)}
@@ -56,20 +56,20 @@ export default (
             variableName, 
             nodeId, 
             outletId
-        ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'].onMessage(m)}`)}
+        ) => ast`const ${variableName} = (m) => {exports.io.messageSenders['${nodeId}']['${outletId}'](m)}`)}
 
         const exports = {
             metadata: ${JSON.stringify(metadata)},
             initialize: (sampleRate, blockSize) => {
-                exports.metadata.audioSettings.sampleRate = sampleRate
-                exports.metadata.audioSettings.blockSize = blockSize
-                ${globs.sampleRate} = sampleRate
-                ${globs.blockSize} = blockSize
+                exports.metadata.settings.audio.sampleRate = sampleRate
+                exports.metadata.settings.audio.blockSize = blockSize
+                ${globals.core!.SAMPLE_RATE!} = sampleRate
+                ${globals.core!.BLOCK_SIZE!} = blockSize
 
                 ${templates.nodeInitializations(renderTemplateInput)}
                 ${templates.coldDspInitialization(renderTemplateInput)}
             },
-            dspLoop: (${globs.input}, ${globs.output}) => {
+            dspLoop: (${globals.core!.INPUT!}, ${globals.core!.OUTPUT!}) => {
                 ${templates.dspLoop(renderTemplateInput)}
             },
             io: {
@@ -85,7 +85,7 @@ export default (
                     ${Object.entries(settings.io.messageSenders).map(([nodeId, spec]) =>
                         ast`${nodeId}: {
                             ${spec.portletIds.map(outletId => 
-                                `"${outletId}": {onMessage: () => undefined},`)}
+                                `"${outletId}": () => undefined,`)}
                         },`
                     )}
                 },
@@ -98,7 +98,7 @@ export default (
                 exports.${name} = () => { throw new Error('import for ${name} not provided') }
                 const ${name} = (...args) => exports.${name}(...args)
             `, 
-            ({ name }) => ast`exports.${name} = ${name}`
+            (name) => ast`exports.${name} = ${name}`
         )}
     `)
 }

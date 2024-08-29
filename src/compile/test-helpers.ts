@@ -20,13 +20,11 @@
 import assert from 'assert'
 import { validateSettings } from './settings'
 import { initializePrecompilation } from './precompile'
-import {
-    PrecompilationInput,
-    Precompilation,
-} from './precompile/types'
-import { RenderTemplateInput } from './render/types'
+import { PrecompilationInput, Precompilation } from './precompile/types'
+import { RenderInput, RenderTemplateInput } from './render/types'
 import { AstSequence, AstElement, Code } from '../ast/types'
 import { CompilationSettings } from './types'
+import { proxyAsReadOnlyIndex } from './proxies'
 
 type PartialSettings = Partial<CompilationSettings>
 
@@ -54,11 +52,24 @@ export const makePrecompilation = (
     return initializePrecompilation(input)
 }
 
+export const precompilationToRenderInput = (
+    precompilation: Precompilation
+): RenderInput => {
+    return {
+        precompiledCode: precompilation.precompiledCode,
+        settings: precompilation.settings,
+        variableNamesReadOnly: proxyAsReadOnlyIndex(
+            precompilation.variableNamesIndex
+        ),
+    }
+}
+
 export const precompilationToRenderTemplateInput = (
     precompilation: Precompilation
 ): RenderTemplateInput => {
     return {
-        globs: precompilation.variableNamesIndex.globs,
+        globals: proxyAsReadOnlyIndex(precompilation.variableNamesIndex)
+            .globals,
         precompiledCode: precompilation.precompiledCode,
         settings: precompilation.settings,
     }

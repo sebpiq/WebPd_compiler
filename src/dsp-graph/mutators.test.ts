@@ -286,18 +286,18 @@ describe('mutators', () => {
                     outlets: {
                         10: { id: '10', type: 'message' },
                         11: { id: '11', type: 'message' },
-                    }
+                    },
                 },
                 n1: {
                     inlets: {
                         21: { id: '21', type: 'message' },
                         23: { id: '23', type: 'message' },
-                    }
+                    },
                 },
                 n2: {
                     inlets: {
                         22: { id: '22', type: 'message' },
-                    }
+                    },
                 },
             })
             assertGraphConnections(graph, [
@@ -333,12 +333,12 @@ describe('mutators', () => {
                     outlets: {
                         0: { id: '0', type: 'message' },
                         1: { id: '1', type: 'message' },
-                    }
+                    },
                 },
                 n1: {
                     inlets: {
                         1: { id: '1', type: 'message' },
-                    }
+                    },
                 },
             })
 
@@ -359,7 +359,7 @@ describe('mutators', () => {
                     },
                     outlets: {
                         0: { id: '0', type: 'message' },
-                    }
+                    },
                 },
                 n1: {
                     sinks: {
@@ -367,12 +367,12 @@ describe('mutators', () => {
                     },
                     outlets: {
                         0: { id: '0', type: 'message' },
-                    }
+                    },
                 },
                 n2: {
                     inlets: {
                         0: { id: '0', type: 'message' },
-                    }
+                    },
                 },
             })
 

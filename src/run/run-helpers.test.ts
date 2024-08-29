@@ -19,12 +19,12 @@
  */
 
 import assert from 'assert'
-import { createModule } from './run-helpers'
+import { proxyWithNameMapping, proxyAsModuleWithBindings } from './run-helpers'
 
 describe('modules-helpers', () => {
-    describe('createModule', () => {
+    describe('proxyAsModuleWithBindings', () => {
         it('should read undefined for binding that is not declared', () => {
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { blo: 'bli' },
                 {
                     bla: {
@@ -37,7 +37,7 @@ describe('modules-helpers', () => {
         })
 
         it('should read raw attribute from the RawModule', () => {
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -49,7 +49,7 @@ describe('modules-helpers', () => {
         })
 
         it('should read proxied attribute from the bindings', () => {
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -63,7 +63,7 @@ describe('modules-helpers', () => {
 
         it('should read callback attribute from the bindings', () => {
             const blo = (): null => null
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -78,7 +78,7 @@ describe('modules-helpers', () => {
         it('should allow writing callback', () => {
             const blo1 = (): null => null
             const blo2 = (): null => null
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -91,8 +91,21 @@ describe('modules-helpers', () => {
             assert.strictEqual(module.bla, blo2)
         })
 
+        it('should support in operator', () => {
+            const module = proxyAsModuleWithBindings(
+                { bla: 'bli', blo: 'blu' },
+                {
+                    bla: {
+                        type: 'raw',
+                    },
+                }
+            )
+            assert.ok('bla' in module)
+            assert.ok(!('blo' in module))
+        })
+
         it('should throw error for reading raw attribute that is not defined', () => {
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { blo: 'bli' },
                 {
                     bla: {
@@ -104,7 +117,7 @@ describe('modules-helpers', () => {
         })
 
         it('should throw error for writing unknown attribute', () => {
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -116,7 +129,7 @@ describe('modules-helpers', () => {
         })
 
         it('should throw error for writing attribute that is not writable', () => {
-            const module = createModule(
+            const module = proxyAsModuleWithBindings(
                 { bla: 'bli' },
                 {
                     bla: {
@@ -125,6 +138,125 @@ describe('modules-helpers', () => {
                 }
             )
             assert.throws(() => ((module as any).bla = 'poi'))
+        })
+    })
+
+    describe('proxyWithNameMapping', () => {
+        it('should use the name mapping to return the value', () => {
+            const rawModule = {
+                blo: 'BLO',
+                bla: 'BLA',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+                i: {
+                    o: 'bla',
+                },
+            }
+            const rawModuleWithMapping = proxyWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
+            assert.strictEqual(rawModuleWithMapping.a.e, 'BLO')
+            assert.strictEqual(rawModuleWithMapping.i.o, 'BLA')
+        })
+
+        it('should directly return the value if it exists in the raw module', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = proxyWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
+            assert.strictEqual(rawModuleWithMapping.blo, 'BLO')
+        })
+
+        it('should raise an error if key is not found', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = proxyWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
+            assert.throws(() => (rawModuleWithMapping as any).UNKNOWN)
+        })
+
+        it('should raise an error if nested key is not found', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = proxyWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
+            assert.throws(() => (rawModuleWithMapping as any).a.UNKNOWN)
+        })
+
+        it('should support in operator in the name mapping', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = proxyWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
+            assert.ok('a' in rawModuleWithMapping)
+            assert.ok('e' in rawModuleWithMapping.a)
+        })
+
+        it('should support in operator in the raw module', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {}
+            const rawModuleWithMapping = proxyWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
+
+            assert.ok('blo' in rawModuleWithMapping)
+        })
+
+        it('should support setting the value with the name mapping', () => {
+            const rawModule = {
+                blo: 'BLO',
+            }
+            const variableNamesIndex = {
+                a: {
+                    e: 'blo',
+                },
+            }
+            const rawModuleWithMapping = proxyWithNameMapping(
+                rawModule,
+                variableNamesIndex
+            )
+
+            rawModuleWithMapping.a.e = 'new_blo'
+            assert.strictEqual(rawModuleWithMapping.a.e, 'new_blo')
         })
     })
 })

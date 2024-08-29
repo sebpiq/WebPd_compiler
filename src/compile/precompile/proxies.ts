@@ -20,117 +20,145 @@
 
 import { DspGraph, getters } from '../../dsp-graph'
 import { getNodeImplementation } from '../compile-helpers'
-import { ProtectedIndex, Assigner, AssignerSpec } from '../proxies'
+import {
+    proxyAsProtectedIndex,
+    proxyAsAssigner,
+    AssignerSpec,
+} from '../proxies'
 import {
     PrecompilationInput,
     PrecompiledCode,
-    VariableNamesIndex,
 } from './types'
 import { Sequence, ast } from '../../ast/declare'
+import { VariableNamesIndex } from '../types'
 
 // ---------------------------- VariableNamesIndex ---------------------------- //
-export const VariableNamesAssigner = ({
+const NS = {
+    GLOBALS: 'G',
+    NODES: 'N',
+    NODE_TYPES: 'NT',
+    IO: 'IO',
+    COLD: 'COLD',
+}
+
+const _VARIABLE_NAMES_ASSIGNER_SPEC: AssignerSpec<
+    VariableNamesIndex,
+    PrecompilationInput
+> = proxyAsAssigner.Interface({
+    nodes: proxyAsAssigner.Index((nodeId: DspGraph.NodeId) =>
+        proxyAsAssigner.Interface({
+            signalOuts: proxyAsAssigner.Index((portletId: DspGraph.PortletId) =>
+                proxyAsAssigner.Literal(() =>
+                    _name(NS.NODES, nodeId, 'outs', portletId)
+                )
+            ),
+            messageSenders: proxyAsAssigner.Index(
+                (portletId: DspGraph.PortletId) =>
+                    proxyAsAssigner.Literal(() =>
+                        _name(NS.NODES, nodeId, 'snds', portletId)
+                    )
+            ),
+            messageReceivers: proxyAsAssigner.Index(
+                (portletId: DspGraph.PortletId) =>
+                    proxyAsAssigner.Literal(() =>
+                        _name(NS.NODES, nodeId, 'rcvs', portletId)
+                    )
+            ),
+            state: proxyAsAssigner.LiteralDefaultNull(() =>
+                _name(NS.NODES, nodeId, 'state')
+            ),
+        })
+    ),
+
+    nodeImplementations: proxyAsAssigner.Index(
+        (nodeType, { nodeImplementations }) => {
+            const nodeImplementation = getNodeImplementation(
+                nodeImplementations,
+                nodeType
+            )
+            const nodeTypePrefix =
+                (nodeImplementation.flags
+                    ? nodeImplementation.flags.alphaName
+                    : null) || nodeType
+
+            return proxyAsAssigner.Index((name) =>
+                proxyAsAssigner.Literal(() =>
+                    _name(NS.NODE_TYPES, nodeTypePrefix, name)
+                )
+            )
+        }
+    ),
+
+    globals: proxyAsAssigner.Index((ns) =>
+        proxyAsAssigner.Index((name) => {
+            if (['fs'].includes(ns)) {
+                return proxyAsAssigner.Literal(() =>
+                    _name(NS.GLOBALS, ns, name)
+                ) as any
+
+                // We don't prefix stdlib core module, because these are super
+                // basic functions that are always included in the global scope.
+            } else if (ns === 'core') {
+                return proxyAsAssigner.Literal(() => name)
+            } else {
+                return proxyAsAssigner.Literal(() =>
+                    _name(NS.GLOBALS, ns, name)
+                )
+            }
+        })
+    ),
+
+    io: proxyAsAssigner.Interface({
+        messageReceivers: proxyAsAssigner.Index((nodeId: DspGraph.NodeId) =>
+            proxyAsAssigner.Index((inletId: DspGraph.PortletId) =>
+                proxyAsAssigner.Literal(() =>
+                    _name(NS.IO, 'rcv', nodeId, inletId)
+                )
+            )
+        ),
+        messageSenders: proxyAsAssigner.Index((nodeId: DspGraph.NodeId) =>
+            proxyAsAssigner.Index((outletId: DspGraph.PortletId) =>
+                proxyAsAssigner.Literal(() =>
+                    _name(NS.IO, 'snd', nodeId, outletId)
+                )
+            )
+        ),
+    }),
+
+    coldDspGroups: proxyAsAssigner.Index((groupId: string) =>
+        proxyAsAssigner.Literal(() => _name(NS.COLD, groupId))
+    ),
+})
+
+/**
+ * Creates a proxy to a VariableNamesIndex object that makes sure that
+ * all valid entries are provided with a default value on the fly
+ * when they are first accessed.
+ */
+export const proxyAsVariableNamesAssigner = ({
     input: context,
     variableNamesIndex,
 }: {
     input: PrecompilationInput
     variableNamesIndex: Partial<VariableNamesIndex>
-}) => Assigner(_VariableNamesAssignerSpec, variableNamesIndex, context)
+}) =>
+    proxyAsAssigner(_VARIABLE_NAMES_ASSIGNER_SPEC, variableNamesIndex, context)
 
 export const createVariableNamesIndex = (
     precompilationInput: PrecompilationInput
-) => Assigner.ensureValue({}, _VariableNamesAssignerSpec, precompilationInput)
-
-export const createGlobsVariableNames = (): VariableNamesIndex['globs'] => ({
-    iterFrame: 'F',
-    frame: 'FRAME',
-    blockSize: 'BLOCK_SIZE',
-    sampleRate: 'SAMPLE_RATE',
-    output: 'OUTPUT',
-    input: 'INPUT',
-    nullMessageReceiver: 'SND_TO_NULL',
-    nullSignal: 'NULL_SIGNAL',
-    emptyMessage: 'EMPTY_MESSAGE',
-})
-
-const _VariableNamesAssignerSpec: AssignerSpec<
-    VariableNamesIndex,
-    PrecompilationInput
-> = Assigner.Interface({
-    nodes: Assigner.Index((nodeId: DspGraph.NodeId) =>
-        Assigner.Interface({
-            signalOuts: Assigner.Index((portletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('N', nodeId, 'outs', portletId))
-            ),
-            messageSenders: Assigner.Index((portletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('N', nodeId, 'snds', portletId))
-            ),
-            messageReceivers: Assigner.Index((portletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('N', nodeId, 'rcvs', portletId))
-            ),
-            state: Assigner.LiteralDefaultNull(() => _name('N', nodeId, 'state')),
-        })
-    ),
-
-    nodeImplementations: Assigner.Index((nodeType, { nodeImplementations }) => {
-        const nodeImplementation = getNodeImplementation(
-            nodeImplementations,
-            nodeType
-        )
-        const nodeTypePrefix = 
-            (nodeImplementation.flags
-                ? nodeImplementation.flags.alphaName
-                : null) || nodeType
-
-        return Assigner.Index((name) =>
-            Assigner.Literal(() => _name('NT', nodeTypePrefix, name))
-        )
-    }),
-
-    globs: Assigner.Literal(createGlobsVariableNames),
-
-    globalCode: Assigner.Index((ns) =>
-        Assigner.Index((name) =>
-            Assigner.Literal(() => _name('G', ns, name))
-        )
-    ),
-
-    io: Assigner.Interface({
-        messageReceivers: Assigner.Index((nodeId: DspGraph.NodeId) =>
-            Assigner.Index((inletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('IORCV', nodeId, inletId))
-            )
-        ),
-        messageSenders: Assigner.Index((nodeId: DspGraph.NodeId) =>
-            Assigner.Index((outletId: DspGraph.PortletId) =>
-                Assigner.Literal(() => _name('IOSND', nodeId, outletId))
-            )
-        ),
-    }),
-
-    coldDspGroups: Assigner.Index((groupId: string) =>
-        Assigner.Literal(() => _name('COLD', groupId))
-    ),
-})
+) =>
+    proxyAsAssigner.ensureValue(
+        {},
+        _VARIABLE_NAMES_ASSIGNER_SPEC,
+        precompilationInput
+    )
 
 // ---------------------------- PrecompiledCode ---------------------------- //
-export const PrecompiledCodeAssigner = ({
-    input: context,
-    precompiledCode,
-}: {
-    input: PrecompilationInput
-    precompiledCode: Partial<PrecompiledCode>
-}) => Assigner(_PrecompiledCodeAssignerSpec, precompiledCode, context)
-
-export const createPrecompiledCode = (
-    precompilationInput: PrecompilationInput
-) => Assigner.ensureValue({}, _PrecompiledCodeAssignerSpec, precompilationInput)
-
-const _PrecompiledCodeAssignerSpec: AssignerSpec<
+const _PRECOMPILED_CODE_ASSIGNER_SPEC: AssignerSpec<
     PrecompiledCode,
     PrecompilationInput
-> = Assigner.Interface({
-    graph: Assigner.Literal(
+> = proxyAsAssigner.Interface({
+    graph: proxyAsAssigner.Literal(
         (_, path) =>
             ({
                 fullTraversal: [],
@@ -138,13 +166,13 @@ const _PrecompiledCodeAssignerSpec: AssignerSpec<
                     traversal: [],
                     outNodesIds: [],
                 },
-                coldDspGroups: ProtectedIndex({}, path),
+                coldDspGroups: proxyAsProtectedIndex({}, path),
             } as PrecompiledCode['graph'])
     ),
 
-    nodeImplementations: Assigner.Index(
+    nodeImplementations: proxyAsAssigner.Index(
         (nodeType, { nodeImplementations }) =>
-            Assigner.Literal(() => ({
+            proxyAsAssigner.Literal(() => ({
                 nodeImplementation: getNodeImplementation(
                     nodeImplementations,
                     nodeType
@@ -152,12 +180,12 @@ const _PrecompiledCodeAssignerSpec: AssignerSpec<
                 stateClass: null,
                 core: null,
             })),
-        (_, path) => ProtectedIndex({}, path)
+        (_, path) => proxyAsProtectedIndex({}, path)
     ),
 
-    nodes: Assigner.Index(
+    nodes: proxyAsAssigner.Index(
         (nodeId, { graph }) =>
-            Assigner.Literal(() => ({
+            proxyAsAssigner.Literal(() => ({
                 nodeType: getters.getNode(graph, nodeId).type,
                 messageReceivers: {},
                 messageSenders: {},
@@ -170,10 +198,10 @@ const _PrecompiledCodeAssignerSpec: AssignerSpec<
                 },
                 state: null,
             })),
-        (_, path) => ProtectedIndex({}, path)
+        (_, path) => proxyAsProtectedIndex({}, path)
     ),
 
-    dependencies: Assigner.Literal(
+    dependencies: proxyAsAssigner.Literal(
         () =>
             ({
                 imports: [],
@@ -182,22 +210,49 @@ const _PrecompiledCodeAssignerSpec: AssignerSpec<
             } as PrecompiledCode['dependencies'])
     ),
 
-    io: Assigner.Interface({
-        messageReceivers: Assigner.Index(
+    io: proxyAsAssigner.Interface({
+        messageReceivers: proxyAsAssigner.Index(
             (_: DspGraph.NodeId) =>
-                Assigner.Literal((_, path) => ProtectedIndex({}, path)),
-            (_, path) => ProtectedIndex({}, path)
+                proxyAsAssigner.Literal((_, path) =>
+                    proxyAsProtectedIndex({}, path)
+                ),
+            (_, path) => proxyAsProtectedIndex({}, path)
         ),
-        messageSenders: Assigner.Index(
+        messageSenders: proxyAsAssigner.Index(
             (_: DspGraph.NodeId) =>
-                Assigner.Literal((_, path) => ProtectedIndex({}, path)),
-            (_, path) => ProtectedIndex({}, path)
+                proxyAsAssigner.Literal((_, path) =>
+                    proxyAsProtectedIndex({}, path)
+                ),
+            (_, path) => proxyAsProtectedIndex({}, path)
         ),
     }),
 })
 
+/**
+ * Creates a proxy to a PrecompiledCode object that makes sure that
+ * all valid entries are provided with a default value on the fly
+ * when they are first accessed.
+ */
+export const proxyAsPrecompiledCodeAssigner = ({
+    input: context,
+    precompiledCode,
+}: {
+    input: PrecompilationInput
+    precompiledCode: Partial<PrecompiledCode>
+}) => proxyAsAssigner(_PRECOMPILED_CODE_ASSIGNER_SPEC, precompiledCode, context)
+
+export const createPrecompiledCode = (
+    precompilationInput: PrecompilationInput
+) =>
+    proxyAsAssigner.ensureValue(
+        {},
+        _PRECOMPILED_CODE_ASSIGNER_SPEC,
+        precompilationInput
+    )
+
 // ---------------------------- MISC ---------------------------- //
-const _name = (...parts: Array<string>) => parts.map(assertValidNamePart).join('_')
+const _name = (...parts: Array<string>) =>
+    parts.map(assertValidNamePart).join('_')
 
 export const assertValidNamePart = (namePart: string) => {
     const isInvalid = !VALID_NAME_PART_REGEXP.exec(namePart)

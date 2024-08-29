@@ -24,24 +24,24 @@ import render from '../../compile/render'
 
 describe('macros', () => {
     it('should render a Var declaration', () => {
-        const var1 = Var('Int', 'a')
-        assert.strictEqual(macros.Var(var1, '1'), 'let a = 1')
+        const var1 = Var(`Int`, `a`)
+        assert.strictEqual(macros.Var(var1, `1`), `let a = 1`)
     })
 
     it('should render a Var declaration with undefined value', () => {
-        const var1 = Var('Int', 'a')
-        assert.strictEqual(macros.Var(var1, undefined), 'let a')
+        const var1 = Var(`Int`, `a`)
+        assert.strictEqual(macros.Var(var1, undefined), `let a`)
     })
 
     it('should render a ConstVar declaration', () => {
-        const var1 = ConstVar('string', 'a', 'BLOOOOoo')
-        assert.strictEqual(macros.ConstVar(var1, '"bla"'), 'const a = "bla"')
+        const var1 = ConstVar(`string`, `a`, `BLOOOOoo`)
+        assert.strictEqual(macros.ConstVar(var1, `"bla"`), `const a = "bla"`)
     })
 
     it('should render a Func declaration', () => {
         const func1 = Func(
             'myFunc',
-            [Var('Int', 'a'), Var('string', 'b', '"bla"')],
+            [Var(`Int`, `a`), Var(`string`, `b`, `"bla"`)],
             'string'
         )`return (a + 1).toString() + b`
 
@@ -57,7 +57,7 @@ describe('macros', () => {
     })
 
     it('should render a Class declaration', () => {
-        const class1 = Class('MyClass', [Var('Int', 'a'), Var('Float', 'b')])
+        const class1 = Class('MyClass', [Var(`Int`, `a`), Var(`Float`, `b`)])
         assert.strictEqual(macros.Class(class1), ``)
     })
 })

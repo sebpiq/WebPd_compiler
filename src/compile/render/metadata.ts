@@ -19,24 +19,47 @@
  */
 import packageInfo from '../../../package.json'
 import { EngineMetadata } from '../../run/types'
+import { VariableNamesIndex } from '../types'
 import { RenderInput } from './types'
 
 /** Helper to build engine metadata from compilation object */
 export const buildMetadata = ({
-    variableNamesIndex,
-    settings: { audio: audioSettings, io }
-}: RenderInput): EngineMetadata => ({
-    libVersion: packageInfo.version,
-    audioSettings: {
-        ...audioSettings,
-        // Determined at initialize
-        sampleRate: 0,
-        blockSize: 0,
-    },
-    compilation: {
-        io,
-        variableNamesIndex: {
-            io: variableNamesIndex.io,
+    variableNamesReadOnly,
+    precompiledCode: { dependencies },
+    settings: { audio: audioSettings, io },
+}: RenderInput): EngineMetadata => {
+    const filteredGlobals: Partial<VariableNamesIndex['globals']> = {}
+    const exportsAndImportsNames = [
+        ...dependencies.exports,
+        ...dependencies.imports.map((astFunc) => astFunc.name),
+    ]
+    Object.entries(variableNamesReadOnly.globals).forEach(([ns, names]) =>
+        Object.entries(names || {}).forEach(([name, variableName]) => {
+            if (exportsAndImportsNames.includes(variableName)) {
+                if (!filteredGlobals[ns]) {
+                    filteredGlobals[ns] = {}
+                }
+                filteredGlobals[ns]![name] = variableName
+            }
+        })
+    )
+
+    return {
+        libVersion: packageInfo.version,
+        settings: {
+            audio: {
+                ...audioSettings,
+                // Determined at initialize
+                sampleRate: 0,
+                blockSize: 0,
+            },
+            io,
         },
-    },
-})
+        compilation: {
+            variableNamesIndex: {
+                io: variableNamesReadOnly.io,
+                globals: filteredGlobals as VariableNamesIndex['globals'],
+            },
+        },
+    }
+}

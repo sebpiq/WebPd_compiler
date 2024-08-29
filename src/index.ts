@@ -23,15 +23,19 @@ export {
     NodeImplementations,
     CompilerTarget,
     AudioSettings,
+    VariableNamesIndex,
 } from './compile/types'
 export { Code } from './ast/types'
-export { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from './stdlib/fs'
+export {
+    FS_OPERATION_SUCCESS,
+    FS_OPERATION_FAILURE,
+} from './stdlib/fs/constants'
 export { Engine, Message, FloatArray } from './run/types'
 export { createEngine as createAssemblyScriptWasmEngine } from './engine-assemblyscript/run'
 export { createEngine as createJavaScriptEngine } from './engine-javascript/run'
 export { readMetadata } from './run'
 export { getFloatArrayType } from './run/run-helpers'
-export { ProtectedIndex } from './compile/proxies'
+export { proxyAsProtectedIndex as ProtectedIndex } from './compile/proxies'
 export * as functional from './functional-helpers'
 export * as dspGraph from './dsp-graph'
 export { DspGraph } from './dsp-graph'

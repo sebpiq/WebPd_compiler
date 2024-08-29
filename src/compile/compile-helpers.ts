@@ -22,8 +22,6 @@ import jsMacros from '../engine-javascript/compile/macros'
 import ascMacros from '../engine-assemblyscript/compile/macros'
 import {
     CompilerTarget,
-    GlobalCodeDefinition,
-    GlobalCodeGeneratorWithSettings,
     NodeImplementation,
     NodeImplementations,
 } from './types'
@@ -102,8 +100,3 @@ export const buildGraphTraversalSignal = (
 
 export const getGraphSignalSinks = (graph: DspGraph.Graph) =>
     Object.values(graph).filter((node) => !!node.isPullingSignal)
-
-export const isGlobalDefinitionWithSettings = (
-    globalCodeDefinition: GlobalCodeDefinition
-): globalCodeDefinition is GlobalCodeGeneratorWithSettings =>
-    !(typeof globalCodeDefinition === 'function')

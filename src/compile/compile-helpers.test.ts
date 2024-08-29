@@ -38,8 +38,7 @@ describe('compile-helpers', () => {
 
         it('should return node implementation if it exists', () => {
             assert.strictEqual(
-                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType')
-                    .dsp,
+                getNodeImplementation(NODE_IMPLEMENTATIONS, 'someNodeType').dsp,
                 NODE_IMPLEMENTATIONS.someNodeType!.dsp!
             )
         })

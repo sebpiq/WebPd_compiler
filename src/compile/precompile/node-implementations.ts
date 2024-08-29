@@ -18,6 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph } from '../../dsp-graph'
+import { VariableNamesIndex } from '../types'
 import { Precompilation } from './types'
 
 export const STATE_CLASS_NAME = 'State'
@@ -26,6 +27,7 @@ export const precompileStateClass = (
     {
         graph,
         settings,
+        variableNamesReadOnly,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -43,16 +45,20 @@ export const precompileStateClass = (
                 `No node of type "${nodeType}" exists in the graph.`
             )
         }
-        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
-        const astClass = precompiledImplementation.nodeImplementation.state({
-            globs: variableNamesAssigner.globs,
-            node: sampleNode,
+
+        // Ensure the class name exists in the namespace.
+        _getNamespace(nodeType, variableNamesAssigner)[STATE_CLASS_NAME]
+        const astClass = precompiledImplementation.nodeImplementation.state(
+            {
+                ns: _getNamespace(nodeType, variableNamesReadOnly),
+                node: sampleNode,
+            },
+            variableNamesReadOnly.globals,
             settings,
-            ns: namespaceAssigner,
-        })
+        )
         precompiledImplementation.stateClass = {
             ...astClass,
-            // Reset member values which are irrelevant in the state class.
+            // Reset member values since they are irrelevant for the state class declaration.
             members: astClass.members.map((member) => ({
                 ...member,
                 value: undefined,
@@ -64,6 +70,7 @@ export const precompileStateClass = (
 export const precompileCore = (
     {
         settings,
+        variableNamesReadOnly,
         variableNamesAssigner,
         precompiledCodeAssigner,
     }: Precompilation,
@@ -73,13 +80,17 @@ export const precompileCore = (
         precompiledCodeAssigner.nodeImplementations[nodeType]!
     const nodeImplementation = precompiledImplementation.nodeImplementation
     if (nodeImplementation.core) {
-        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
-        precompiledImplementation.core = nodeImplementation.core({
+        precompiledImplementation.core = nodeImplementation.core(
+            {
+                ns: _getNamespace(nodeType, variableNamesAssigner),
+            },
+            variableNamesReadOnly.globals,
             settings,
-            globs: variableNamesAssigner.globs,
-            ns: namespaceAssigner,
-        })
+        )
     }
 }
 
-
+const _getNamespace = (
+    nodeType: DspGraph.NodeType,
+    variableNamesIndex: VariableNamesIndex
+) => variableNamesIndex.nodeImplementations[nodeType]!

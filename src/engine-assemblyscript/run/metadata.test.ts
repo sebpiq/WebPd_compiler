@@ -22,16 +22,17 @@ import packageInfo from '../../../package.json'
 import assert from 'assert'
 import { compileAssemblyscript } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
-import { readMetadata } from './engine-lifecycle-bindings'
+import { readMetadata } from './metadata'
 import compile from '../../compile'
 import { NodeImplementations } from '../../compile/types'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { AnonFunc, Var } from '../../ast/declare'
 import { makeSettings } from '../../compile/test-helpers'
 
-describe('engine-lifecycle-bindings', () => {
+describe('metadata', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
+            // ARRANGE
             const compilationSettings = makeSettings({
                 audio: {
                     bitDepth: 32,
@@ -57,12 +58,13 @@ describe('engine-lifecycle-bindings', () => {
 
             const nodeImplementations: NodeImplementations = {
                 DUMMY: {
-                    messageReceivers: () => ({
-                        '0': AnonFunc([Var('Message', 'm')])``,
+                    messageReceivers: (_, { msg }) => ({
+                        '0': AnonFunc([ Var(msg.Message, `m`) ])``,
                     }),
                 },
             }
 
+            // ACT
             const result = await compile(
                 graph,
                 nodeImplementations,
@@ -81,32 +83,39 @@ describe('engine-lifecycle-bindings', () => {
 
             const metadata = await readMetadata(wasmBuffer)
 
+            // ASSERT
             assert.deepStrictEqual<EngineMetadata>(metadata, {
                 libVersion: packageInfo.version,
-                audioSettings: {
-                    ...compilationSettings.audio,
-                    blockSize: 0,
-                    sampleRate: 0,
+                settings: {
+                    audio: {
+                        ...compilationSettings.audio,
+                        blockSize: 0,
+                        sampleRate: 0,
+                    },
+                    io: {
+                        messageReceivers:
+                            compilationSettings.io.messageReceivers,
+                        messageSenders: compilationSettings.io.messageSenders,
+                    },
                 },
                 compilation: {
                     variableNamesIndex: {
                         io: {
                             messageReceivers: {
                                 node1: {
-                                    '0': 'IORCV_node1_0',
+                                    '0': 'IO_rcv_node1_0',
                                 },
                             },
                             messageSenders: {
                                 node1: {
-                                    '0': 'IOSND_node1_0',
+                                    '0': 'IO_snd_node1_0',
                                 },
                             },
                         },
-                    },
-                    io: {
-                        messageReceivers:
-                            compilationSettings.io.messageReceivers,
-                        messageSenders: compilationSettings.io.messageSenders,
+                        // We don't test the details of the variable names generated
+                        // for global code, as they are generated dynamically.
+                        globals:
+                            metadata.compilation.variableNamesIndex.globals,
                     },
                 },
             })

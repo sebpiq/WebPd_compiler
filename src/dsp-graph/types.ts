@@ -81,8 +81,5 @@ export declare module DspGraph {
 
     type GraphTraversal = Array<NodeId>
 
-    type Connection = [
-        DspGraph.ConnectionEndpoint,
-        DspGraph.ConnectionEndpoint
-    ]
+    type Connection = [DspGraph.ConnectionEndpoint, DspGraph.ConnectionEndpoint]
 }

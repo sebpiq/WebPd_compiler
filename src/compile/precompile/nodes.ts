@@ -24,21 +24,15 @@ import { Code } from '../../ast/types'
 import { DspGraph, getters } from '../../dsp-graph'
 import { mapArray } from '../../functional-helpers'
 import { getMacros } from '../compile-helpers'
-import { ReadOnlyIndexWithDollarKeys, ReadOnlyIndex } from '../proxies'
 import {
-    DspGroup,
-    Precompilation,
-    PrecompiledNodeCode,
-    VariableNamesIndex,
-} from './types'
-import {
-    STATE_CLASS_NAME,
-} from './node-implementations'
+    proxyAsReadOnlyIndexWithDollarKeys,
+    proxyAsReadOnlyIndex,
+} from '../proxies'
+import { DspGroup, Precompilation, PrecompiledNodeCode } from './types'
+import { VariableNamesIndex } from '../types'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
 type InlinedInputs = { [inletId: DspGraph.PortletId]: Code }
-
-const MESSAGE_RECEIVER_SIGNATURE = AnonFunc([Var('Message', 'm')], 'void')``
 
 export const precompileState = (
     {
@@ -52,24 +46,18 @@ export const precompileState = (
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
     if (precompiledNodeImplementation.nodeImplementation.state) {
-        const nodeType = node.type
-        if (
-            !(
-                STATE_CLASS_NAME in
-                variableNamesAssigner.nodeImplementations[nodeType]!
-            )
-        ) {
-            throw new Error(`No ${STATE_CLASS_NAME} defined for ${nodeType}`)
-        }
-
-        const namespaceAssigner = variableNamesAssigner.nodeImplementations[nodeType]!
+        const { ns, globals } = _getContext(
+            node.id,
+            precompiledNode,
+            variableNamesAssigner
+        )
         const astClass = precompiledNodeImplementation.nodeImplementation.state(
             {
-                globs: variableNamesAssigner.globs,
-                ns: namespaceAssigner,
+                ns,
                 node,
-                settings,
-            }
+            },
+            globals,
+            settings
         )
 
         // Add state iniialization to the node.
@@ -101,22 +89,22 @@ export const precompileMessageReceivers = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { state, snds, ns } = _getContext(
+    const { state, snds, ns, globals } = _getContext(
         node.id,
         precompiledNode,
         variableNamesAssigner
     )
-    const messageReceivers = ReadOnlyIndexWithDollarKeys(
+    const messageReceivers = proxyAsReadOnlyIndexWithDollarKeys(
         precompiledNodeImplementation.nodeImplementation.messageReceivers
             ? precompiledNodeImplementation.nodeImplementation.messageReceivers(
                   {
-                      globs: variableNamesAssigner.globs,
                       ns,
                       state,
                       snds,
                       node,
-                      settings,
-                  }
+                  },
+                  globals,
+                  settings
               )
             : {},
         node.id,
@@ -125,7 +113,10 @@ export const precompileMessageReceivers = (
 
     Object.keys(precompiledNode.messageReceivers).forEach((inletId) => {
         const implementedFunc = messageReceivers[inletId]!
-        assertFuncSignatureEqual(implementedFunc, MESSAGE_RECEIVER_SIGNATURE)
+        assertFuncSignatureEqual(
+            implementedFunc,
+            AnonFunc([Var(globals.msg!.Message!, `m`)], `void`)``
+        )
         const targetFunc = precompiledNode.messageReceivers[inletId]!
 
         // We can't override values in the namespace, so we need to copy
@@ -149,21 +140,23 @@ export const precompileInitialization = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { state, snds, ns } = _getContext(
+    const { state, snds, ns, globals } = _getContext(
         node.id,
         precompiledNode,
         variableNamesAssigner
     )
     precompiledNode.initialization = precompiledNodeImplementation
         .nodeImplementation.initialization
-        ? precompiledNodeImplementation.nodeImplementation.initialization({
-              globs: variableNamesAssigner.globs,
-              ns,
-              state,
-              snds,
-              node,
-              settings,
-          })
+        ? precompiledNodeImplementation.nodeImplementation.initialization(
+              {
+                  ns,
+                  state,
+                  snds,
+                  node,
+              },
+              globals,
+              settings
+          )
         : ast``
 }
 
@@ -178,7 +171,7 @@ export const precompileDsp = (
     const precompiledNode = precompiledCodeAssigner.nodes[node.id]!
     const precompiledNodeImplementation =
         precompiledCodeAssigner.nodeImplementations[precompiledNode.nodeType]!
-    const { outs, ins, snds, state, ns } = _getContext(
+    const { outs, ins, snds, state, ns, globals } = _getContext(
         node.id,
         precompiledNode,
         variableNamesAssigner
@@ -188,16 +181,18 @@ export const precompileDsp = (
         throw new Error(`No dsp to generate for node ${node.type}:${node.id}`)
     }
 
-    const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp({
-        globs: variableNamesAssigner.globs,
-        ns,
-        node,
-        state,
-        ins,
-        outs,
-        snds,
-        settings,
-    })
+    const compiledDsp = precompiledNodeImplementation.nodeImplementation.dsp(
+        {
+            ns,
+            node,
+            state,
+            ins,
+            outs,
+            snds,
+        },
+        globals,
+        settings
+    )
 
     // Nodes that come here might have inlinable dsp, but still can't
     // be inlined because, for example, they have 2 sinks.
@@ -259,7 +254,7 @@ export const precompileInlineDsp = (
                 precompiledCodeAssigner.nodeImplementations[
                     precompiledNode.nodeType
                 ]!
-            const { ins, outs, snds, state, ns } = _getContext(
+            const { ins, outs, snds, state, ns, globals } = _getContext(
                 nodeId,
                 precompiledNode,
                 variableNamesAssigner
@@ -302,23 +297,25 @@ export const precompileInlineDsp = (
             }
 
             const compiledDsp =
-                precompiledNodeImplementation.nodeImplementation.dsp({
-                    globs: variableNamesAssigner.globs,
-                    ns,
-                    state,
-                    ins: ReadOnlyIndexWithDollarKeys(
-                        {
-                            ...ins,
-                            ...inlinedInputs,
-                        },
-                        nodeId,
-                        'ins'
-                    ),
-                    outs,
-                    snds,
-                    node,
-                    settings,
-                })
+                precompiledNodeImplementation.nodeImplementation.dsp(
+                    {
+                        ns,
+                        state,
+                        ins: proxyAsReadOnlyIndexWithDollarKeys(
+                            {
+                                ...ins,
+                                ...inlinedInputs,
+                            },
+                            nodeId,
+                            'ins'
+                        ),
+                        outs,
+                        snds,
+                        node,
+                    },
+                    globals,
+                    settings
+                )
 
             if (!('astType' in compiledDsp)) {
                 throw new Error(`Inlined dsp can only be an AstSequence`)
@@ -342,19 +339,24 @@ export const precompileInlineDsp = (
 const _getContext = (
     nodeId: DspGraph.NodeId,
     precompiledNode: PrecompiledNodeCode,
-    variableNamesIndex: VariableNamesIndex
+    variableNamesAssigner: VariableNamesIndex
 ) => ({
-    ns: ReadOnlyIndex(
-        variableNamesIndex.nodeImplementations[precompiledNode.nodeType]!
+    globals: proxyAsReadOnlyIndex(variableNamesAssigner.globals),
+    ns: proxyAsReadOnlyIndex(
+        variableNamesAssigner.nodeImplementations[precompiledNode.nodeType]!
     ),
     state: precompiledNode.state ? precompiledNode.state.name : '',
-    ins: ReadOnlyIndexWithDollarKeys(precompiledNode.signalIns, nodeId, 'ins'),
-    outs: ReadOnlyIndexWithDollarKeys(
+    ins: proxyAsReadOnlyIndexWithDollarKeys(
+        precompiledNode.signalIns,
+        nodeId,
+        'ins'
+    ),
+    outs: proxyAsReadOnlyIndexWithDollarKeys(
         precompiledNode.signalOuts,
         nodeId,
         'outs'
     ),
-    snds: ReadOnlyIndexWithDollarKeys(
+    snds: proxyAsReadOnlyIndexWithDollarKeys(
         Object.entries(precompiledNode.messageSenders).reduce(
             (snds, [outletId, { messageSenderName }]) => ({
                 ...snds,
@@ -365,7 +367,7 @@ const _getContext = (
         nodeId,
         'snds'
     ),
-    rcvs: ReadOnlyIndexWithDollarKeys(
+    rcvs: proxyAsReadOnlyIndexWithDollarKeys(
         Object.entries(precompiledNode.messageReceivers).reduce(
             (rcvs, [inletId, astFunc]) => ({
                 ...rcvs,

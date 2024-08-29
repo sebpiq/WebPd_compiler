@@ -20,13 +20,14 @@
 import assert from 'assert'
 import {
     AssignerSpec,
-    Assigner,
-    ProtectedIndex,
-    ReadOnlyIndexWithDollarKeys,
+    proxyAsAssigner,
+    proxyAsProtectedIndex,
+    proxyAsReadOnlyIndexWithDollarKeys,
+    proxyAsReadOnlyIndex,
 } from './proxies'
 
 describe('proxies', () => {
-    it('Assigner and ProtectedIndex should be working together', () => {
+    it('proxyAsAssigner and proxyAsProtectedIndex should be working together', () => {
         interface Type {
             a: {
                 [k: string]: {
@@ -36,15 +37,15 @@ describe('proxies', () => {
             }
         }
 
-        const spec: AssignerSpec<Type> = Assigner.Interface({
-            a: Assigner.Index(
-                (k: string) => Assigner.Literal(() => ({ b: 1, c: 2 })),
-                () => ProtectedIndex({})
+        const spec: AssignerSpec<Type> = proxyAsAssigner.Interface({
+            a: proxyAsAssigner.Index(
+                (k: string) => proxyAsAssigner.Literal(() => ({ b: 1, c: 2 })),
+                () => proxyAsProtectedIndex({})
             ),
         })
 
         const obj = {}
-        const assigner = Assigner<Type>(spec, obj, undefined)
+        const assigner = proxyAsAssigner<Type>(spec, obj, undefined)
         assert.deepStrictEqual(assigner.a.bla, {
             b: 1,
             c: 2,
@@ -58,8 +59,8 @@ describe('proxies', () => {
         })
     })
 
-    describe('Assigner', () => {
-        describe('Assigner.ensureValue', () => {
+    describe('proxyAsAssigner', () => {
+        describe('proxyAsAssigner.ensureValue', () => {
             it('should initialize Interfaces', () => {
                 interface SomeType {
                     bla: {
@@ -74,21 +75,30 @@ describe('proxies', () => {
                     }
                 }
 
-                const someSpec: AssignerSpec<SomeType> = Assigner.Interface({
-                    bla: Assigner.Interface({
-                        blo: Assigner.Index((k1: string) =>
-                            Assigner.Interface({
-                                bli: Assigner.Index((k2: string) =>
-                                    Assigner.Literal(() => `${k1}_${k2}`)
-                                ),
-                                ble: Assigner.Literal(() => parseInt(k1, 10)),
-                            })
-                        ),
-                    }),
-                })
+                const someSpec: AssignerSpec<SomeType> =
+                    proxyAsAssigner.Interface({
+                        bla: proxyAsAssigner.Interface({
+                            blo: proxyAsAssigner.Index((k1: string) =>
+                                proxyAsAssigner.Interface({
+                                    bli: proxyAsAssigner.Index((k2: string) =>
+                                        proxyAsAssigner.Literal(
+                                            () => `${k1}_${k2}`
+                                        )
+                                    ),
+                                    ble: proxyAsAssigner.Literal(() =>
+                                        parseInt(k1, 10)
+                                    ),
+                                })
+                            ),
+                        }),
+                    })
 
                 assert.deepStrictEqual(
-                    Assigner.ensureValue<SomeType>({}, someSpec, undefined),
+                    proxyAsAssigner.ensureValue<SomeType>(
+                        {},
+                        someSpec,
+                        undefined
+                    ),
                     {
                         bla: {
                             blo: {},
@@ -105,13 +115,20 @@ describe('proxies', () => {
                     ble: number
                 }
 
-                const someSpec: AssignerSpec<SomeType> = Assigner.Interface({
-                    bli: Assigner.Index(() => Assigner.Literal(() => `123`)),
-                    ble: Assigner.Literal(() => 456),
-                })
+                const someSpec: AssignerSpec<SomeType> =
+                    proxyAsAssigner.Interface({
+                        bli: proxyAsAssigner.Index(() =>
+                            proxyAsAssigner.Literal(() => `123`)
+                        ),
+                        ble: proxyAsAssigner.Literal(() => 456),
+                    })
 
                 assert.deepStrictEqual(
-                    Assigner.ensureValue<SomeType>({}, someSpec, undefined),
+                    proxyAsAssigner.ensureValue<SomeType>(
+                        {},
+                        someSpec,
+                        undefined
+                    ),
                     { bli: {}, ble: 456 }
                 )
             })
@@ -121,12 +138,12 @@ describe('proxies', () => {
                     [k: string]: string
                 }
 
-                const someSpec: AssignerSpec<SomeType> = Assigner.Index(() =>
-                    Assigner.Literal(() => `123`)
+                const someSpec: AssignerSpec<SomeType> = proxyAsAssigner.Index(
+                    () => proxyAsAssigner.Literal(() => `123`)
                 )
 
                 assert.deepStrictEqual(
-                    Assigner.ensureValue<SomeType>(
+                    proxyAsAssigner.ensureValue<SomeType>(
                         { a: '123' },
                         someSpec,
                         undefined
@@ -142,10 +159,10 @@ describe('proxies', () => {
                     }
                 }
 
-                const spec: AssignerSpec<SomeType, string> = Assigner.Interface(
-                    {
-                        a: Assigner.Index(
-                            (k: string) => Assigner.Literal(() => k),
+                const spec: AssignerSpec<SomeType, string> =
+                    proxyAsAssigner.Interface({
+                        a: proxyAsAssigner.Index(
+                            (k: string) => proxyAsAssigner.Literal(() => k),
                             // Create Index with an existing entry
                             (context, path) => ({
                                 HELLO: [context, ...path.keys, 'hello'].join(
@@ -153,11 +170,10 @@ describe('proxies', () => {
                                 ),
                             })
                         ),
-                    }
-                )
+                    })
 
                 assert.deepStrictEqual(
-                    Assigner.ensureValue(undefined, spec, 'CONTEXT'),
+                    proxyAsAssigner.ensureValue(undefined, spec, 'CONTEXT'),
                     {
                         a: {
                             HELLO: 'CONTEXT.a.hello',
@@ -173,29 +189,34 @@ describe('proxies', () => {
 
                 const someSpec: AssignerSpec<SomeType, string> = {
                     Interface: {
-                        bla: Assigner.Literal((context, path) =>
+                        bla: proxyAsAssigner.Literal((context, path) =>
                             [context, ...path.keys, `123`].join('.')
                         ),
                     },
                 }
 
                 assert.deepStrictEqual(
-                    Assigner.ensureValue(undefined, someSpec, 'CONTEXT'),
+                    proxyAsAssigner.ensureValue(undefined, someSpec, 'CONTEXT'),
                     { bla: 'CONTEXT.bla.123' }
                 )
             })
 
             it('should pass path and context to LiteralDefaultNull', () => {
                 const someSpec: AssignerSpec<string | null, string> =
-                    Assigner.LiteralDefaultNull((context, path) =>
+                    proxyAsAssigner.LiteralDefaultNull((context, path) =>
                         [context, ...path.keys, `123`].join('.')
                     )
 
                 assert.strictEqual(
-                    Assigner.ensureValue(undefined, someSpec, 'CONTEXT', {
-                        keys: ['bla'],
-                        parents: [],
-                    }),
+                    proxyAsAssigner.ensureValue(
+                        undefined,
+                        someSpec,
+                        'CONTEXT',
+                        {
+                            keys: ['bla'],
+                            parents: [],
+                        }
+                    ),
                     'CONTEXT.bla.123'
                 )
             })
@@ -207,11 +228,11 @@ describe('proxies', () => {
 
                 const someSpecWithDefaultNull: AssignerSpec<TypeWithDefault> = {
                     Interface: {
-                        bli: Assigner.LiteralDefaultNull(() => `123`),
+                        bli: proxyAsAssigner.LiteralDefaultNull(() => `123`),
                     },
                 }
 
-                const obj = Assigner.ensureValue<TypeWithDefault>(
+                const obj = proxyAsAssigner.ensureValue<TypeWithDefault>(
                     {},
                     someSpecWithDefaultNull,
                     undefined
@@ -239,21 +260,25 @@ describe('proxies', () => {
             }
 
             const someSpec: AssignerSpec<SomeType, Context> =
-                Assigner.Interface({
-                    bla: Assigner.Interface({
-                        blo: Assigner.Index((k1: string) =>
-                            Assigner.Interface({
-                                bli: Assigner.Index((k2: string) =>
-                                    Assigner.Literal(() => `${k1}_${k2}`)
+                proxyAsAssigner.Interface({
+                    bla: proxyAsAssigner.Interface({
+                        blo: proxyAsAssigner.Index((k1: string) =>
+                            proxyAsAssigner.Interface({
+                                bli: proxyAsAssigner.Index((k2: string) =>
+                                    proxyAsAssigner.Literal(() => `${k1}_${k2}`)
                                 ),
-                                ble: Assigner.Literal(() => parseInt(k1, 10)),
+                                ble: proxyAsAssigner.Literal(() =>
+                                    parseInt(k1, 10)
+                                ),
                             })
                         ),
                     }),
                 })
 
             const obj = {}
-            const assigner = Assigner(someSpec, obj, { someValue: '123' })
+            const assigner = proxyAsAssigner(someSpec, obj, {
+                someValue: '123',
+            })
 
             const bli456 = assigner.bla.blo['123']!.bli['456']!
             assert.strictEqual(bli456, '123_456')
@@ -296,14 +321,14 @@ describe('proxies', () => {
             }
 
             const spec: AssignerSpec<SomeTypeWithChainedIndexes, Context> =
-                Assigner.Index((k1: string) =>
-                    Assigner.Index((k2: string) =>
-                        Assigner.Literal(() => `${k1}_${k2}`)
+                proxyAsAssigner.Index((k1: string) =>
+                    proxyAsAssigner.Index((k2: string) =>
+                        proxyAsAssigner.Literal(() => `${k1}_${k2}`)
                     )
                 )
 
             const obj = {}
-            const assigner = Assigner(spec, obj, { someValue: '123' })
+            const assigner = proxyAsAssigner(spec, obj, { someValue: '123' })
 
             assert.strictEqual(assigner.hello!.bonjour!, 'hello_bonjour')
             assert.strictEqual(assigner.hello!.ola!, 'hello_ola')
@@ -334,13 +359,13 @@ describe('proxies', () => {
                 Context
             > = {
                 Interface: {
-                    bla: Assigner.Literal(() => `123`),
-                    bli: Assigner.LiteralDefaultNull(() => `456`),
+                    bla: proxyAsAssigner.Literal(() => `123`),
+                    bli: proxyAsAssigner.LiteralDefaultNull(() => `456`),
                 },
             }
 
             const obj = {}
-            const assigner = Assigner(someSpecWithDefaultNull, obj, {
+            const assigner = proxyAsAssigner(someSpecWithDefaultNull, obj, {
                 someValue: '123',
             })
 
@@ -371,22 +396,28 @@ describe('proxies', () => {
             const obj = {}
 
             const someSpec: AssignerSpec<SomeType, Context> =
-                Assigner.Interface({
-                    bla: Assigner.Interface({
-                        blo: Assigner.Index((k1: string, context: Context) =>
-                            Assigner.Interface({
-                                bli: Assigner.Index((k2: string) =>
-                                    Assigner.Literal(
-                                        () => `${k1}_${k2}_${context.someValue}`
-                                    )
-                                ),
-                                ble: Assigner.Literal(() => parseInt(k1, 10)),
-                            })
+                proxyAsAssigner.Interface({
+                    bla: proxyAsAssigner.Interface({
+                        blo: proxyAsAssigner.Index(
+                            (k1: string, context: Context) =>
+                                proxyAsAssigner.Interface({
+                                    bli: proxyAsAssigner.Index((k2: string) =>
+                                        proxyAsAssigner.Literal(
+                                            () =>
+                                                `${k1}_${k2}_${context.someValue}`
+                                        )
+                                    ),
+                                    ble: proxyAsAssigner.Literal(() =>
+                                        parseInt(k1, 10)
+                                    ),
+                                })
                         ),
                     }),
                 })
 
-            const assigner = Assigner(someSpec, obj, { someValue: 'hello' })
+            const assigner = proxyAsAssigner(someSpec, obj, {
+                someValue: 'hello',
+            })
 
             const bli456 = assigner.bla.blo['123']!.bli['456']!
             assert.strictEqual(bli456, '123_456_hello')
@@ -410,12 +441,15 @@ describe('proxies', () => {
                 [k: string]: { [k: string]: number }
             }
 
-            const someSpecWithObjectLiteral: AssignerSpec<
-                TypeWithObjectLiteral
-            > = Assigner.Index(() => Assigner.Literal(() => ({})))
+            const someSpecWithObjectLiteral: AssignerSpec<TypeWithObjectLiteral> =
+                proxyAsAssigner.Index(() => proxyAsAssigner.Literal(() => ({})))
 
             const obj = {}
-            const assigner = Assigner(someSpecWithObjectLiteral, obj, undefined)
+            const assigner = proxyAsAssigner(
+                someSpecWithObjectLiteral,
+                obj,
+                undefined
+            )
 
             assigner.bla!.hello = 123
             assigner.bla!.hi = 456
@@ -433,16 +467,19 @@ describe('proxies', () => {
                 bla: { blo: number }
             }
 
-            const someSpecWithObjectLiteral: AssignerSpec<
-                TypeWithObjectLiteral
-            > = Assigner.Interface({
-                bla: Assigner.Literal(() => ({
-                    blo: 123,
-                })),
-            })
+            const someSpecWithObjectLiteral: AssignerSpec<TypeWithObjectLiteral> =
+                proxyAsAssigner.Interface({
+                    bla: proxyAsAssigner.Literal(() => ({
+                        blo: 123,
+                    })),
+                })
 
             const obj1 = {}
-            const assigner1 = Assigner(someSpecWithObjectLiteral, obj1, undefined)
+            const assigner1 = proxyAsAssigner(
+                someSpecWithObjectLiteral,
+                obj1,
+                undefined
+            )
             assigner1.bla.blo = 456
 
             assert.deepStrictEqual(obj1, {
@@ -452,7 +489,7 @@ describe('proxies', () => {
             })
 
             const obj2 = {}
-            Assigner(someSpecWithObjectLiteral, obj2, undefined)
+            proxyAsAssigner(someSpecWithObjectLiteral, obj2, undefined)
             assert.deepStrictEqual(obj2, {
                 bla: {
                     blo: 123,
@@ -465,12 +502,12 @@ describe('proxies', () => {
                 bla: string
             }
 
-            const someSpec: AssignerSpec<SomeType> = Assigner.Interface({
-                bla: Assigner.Literal(() => '123'),
+            const someSpec: AssignerSpec<SomeType> = proxyAsAssigner.Interface({
+                bla: proxyAsAssigner.Literal(() => '123'),
             })
 
             const obj = {}
-            const assigner = Assigner(someSpec, obj, undefined)
+            const assigner = proxyAsAssigner(someSpec, obj, undefined)
 
             assert.strictEqual(assigner.bla, '123')
             assert.throws(
@@ -480,10 +517,10 @@ describe('proxies', () => {
         })
     })
 
-    describe('ProtectedIndex', () => {
+    describe('proxyAsProtectedIndex', () => {
         describe('get', () => {
             it('should proxy access to exisinting keys', () => {
-                const namespace = ProtectedIndex({
+                const namespace = proxyAsProtectedIndex({
                     bla: '1',
                     hello: '2',
                 })
@@ -492,18 +529,20 @@ describe('proxies', () => {
             })
 
             it('should throw error when trying to access unknown key', () => {
-                const namespace: { [key: string]: string } = ProtectedIndex({
-                    bla: '1',
-                    hello: '2',
-                })
+                const namespace: { [key: string]: string } =
+                    proxyAsProtectedIndex({
+                        bla: '1',
+                        hello: '2',
+                    })
                 assert.throws(() => namespace.blo)
             })
 
             it('should not prevent from using JSON stringify', () => {
-                const namespace: { [key: string]: string } = ProtectedIndex({
-                    bla: '1',
-                    hello: '2',
-                })
+                const namespace: { [key: string]: string } =
+                    proxyAsProtectedIndex({
+                        bla: '1',
+                        hello: '2',
+                    })
                 assert.deepStrictEqual(
                     JSON.stringify(namespace),
                     '{"bla":"1","hello":"2"}'
@@ -513,27 +552,29 @@ describe('proxies', () => {
 
         describe('set', () => {
             it('should allow setting a key that doesnt aready exist', () => {
-                const namespace: { [key: string]: string } = ProtectedIndex({
-                    bla: '1',
-                })
+                const namespace: { [key: string]: string } =
+                    proxyAsProtectedIndex({
+                        bla: '1',
+                    })
                 namespace.blo = '2'
                 assert.strictEqual(namespace.bla, '1')
                 assert.strictEqual(namespace.blo, '2')
             })
 
             it('should throw error when trying to overwrite existing key', () => {
-                const namespace: { [key: string]: string } = ProtectedIndex({
-                    bla: '1',
-                })
+                const namespace: { [key: string]: string } =
+                    proxyAsProtectedIndex({
+                        bla: '1',
+                    })
                 assert.throws(() => (namespace.bla = '2'))
             })
         })
     })
 
-    describe('ReadOnlyIndexWithDollarKeys', () => {
+    describe('proxyAsReadOnlyIndexWithDollarKeys', () => {
         describe('get', () => {
             it('should proxy access to exisinting keys', () => {
-                const namespace = ReadOnlyIndexWithDollarKeys(
+                const namespace = proxyAsReadOnlyIndexWithDollarKeys(
                     {
                         bla: '1',
                         hello: '2',
@@ -547,7 +588,7 @@ describe('proxies', () => {
 
             it('should create automatic $ alias for keys starting with a number', () => {
                 const namespace: { [key: string]: string } =
-                    ReadOnlyIndexWithDollarKeys(
+                    proxyAsReadOnlyIndexWithDollarKeys(
                         {
                             '0': 'blabla',
                             '0_bla': 'bloblo',
@@ -561,7 +602,7 @@ describe('proxies', () => {
 
             it('should throw error when trying to access unknown key', () => {
                 const namespace: { [key: string]: string } =
-                    ReadOnlyIndexWithDollarKeys(
+                    proxyAsReadOnlyIndexWithDollarKeys(
                         {
                             bla: '1',
                             hello: '2',
@@ -577,7 +618,7 @@ describe('proxies', () => {
 
             it('should not prevent from using JSON stringify', () => {
                 const namespace: { [key: string]: string } =
-                    ReadOnlyIndexWithDollarKeys(
+                    proxyAsReadOnlyIndexWithDollarKeys(
                         {
                             bla: '1',
                             hello: '2',
@@ -595,8 +636,28 @@ describe('proxies', () => {
         describe('set', () => {
             it('should throw error when trying to write any key', () => {
                 const namespace: { [key: string]: string } =
-                    ReadOnlyIndexWithDollarKeys({}, '', '')
+                    proxyAsReadOnlyIndexWithDollarKeys({}, '', '')
                 assert.throws(() => (namespace.bla = '2'))
+            })
+        })
+    })
+
+    describe('proxyAsReadOnlyIndex', () => {
+        describe('get', () => {
+            it('should work with nested index', () => {
+                const namespace = proxyAsReadOnlyIndex({
+                    bla: {
+                        hello: '1',
+                    },
+                })
+                assert.throws(
+                    () => (namespace as any).blo,
+                    /namespace doesn't know key "blo"/
+                )
+                assert.throws(
+                    () => (namespace.bla as any).bye!,
+                    /namespace <bla> doesn't know key "bye"/
+                )
             })
         })
     })

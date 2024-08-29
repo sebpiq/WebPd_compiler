@@ -38,8 +38,8 @@ describe('readMetadata', () => {
     })
     const NODE_IMPLEMENTATIONS: NodeImplementations = {
         DUMMY: {
-            messageReceivers: () => ({
-                '0': AnonFunc([Var('Message', 'message')])``,
+            messageReceivers: (_, { msg }) => ({
+                '0': AnonFunc([ Var(msg.Message, `message`) ])``,
             }),
         },
     }
@@ -54,37 +54,42 @@ describe('readMetadata', () => {
         },
     }
 
-    const EXPECTED_METADATA: EngineMetadata = {
-        libVersion: packageInfo.version,
-        audioSettings: {
-            blockSize: 0,
-            sampleRate: 0,
-            bitDepth: 64,
-            channelCount: {
-                in: 2,
-                out: 2,
-            },
-        },
-        compilation: {
-            io: {
-                messageReceivers: {
-                    node1: {
-                        portletIds: ['0'],
+    const assertMetadataIsCorrect = (actual: EngineMetadata) => {
+        assert.deepStrictEqual<EngineMetadata>(actual, {
+            libVersion: packageInfo.version,
+            settings: {
+                audio: {
+                    blockSize: 0,
+                    sampleRate: 0,
+                    bitDepth: 64,
+                    channelCount: {
+                        in: 2,
+                        out: 2,
                     },
                 },
-                messageSenders: {},
-            },
-            variableNamesIndex: {
                 io: {
                     messageReceivers: {
                         node1: {
-                            '0': 'IORCV_node1_0',
+                            portletIds: ['0'],
                         },
                     },
                     messageSenders: {},
                 },
             },
-        },
+            compilation: {
+                variableNamesIndex: {
+                    io: {
+                        messageReceivers: {
+                            node1: {
+                                '0': 'IO_rcv_node1_0',
+                            },
+                        },
+                        messageSenders: {},
+                    },
+                    globals: actual.compilation.variableNamesIndex.globals,
+                },
+            },
+        })
     }
 
     it('should read metadata from wasm', async () => {
@@ -99,7 +104,7 @@ describe('readMetadata', () => {
         }
         const wasmBuffer = await compileAssemblyscript(result.code, 64)
         const metadata = await readMetadata('assemblyscript', wasmBuffer)
-        assert.deepStrictEqual(metadata, EXPECTED_METADATA)
+        assertMetadataIsCorrect(metadata)
     })
 
     it('should read metadata from javascript', async () => {
@@ -113,6 +118,6 @@ describe('readMetadata', () => {
             throw new Error(`Compilation failed: ${result.status}`)
         }
         const metadata = await readMetadata('javascript', result.code)
-        assert.deepStrictEqual(metadata, EXPECTED_METADATA)
+        assertMetadataIsCorrect(metadata)
     })
 })

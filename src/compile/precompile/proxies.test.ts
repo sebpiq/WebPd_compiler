@@ -21,7 +21,6 @@ import assert from 'assert'
 import { assertValidNamePart } from './proxies'
 
 describe('variable-names-index', () => {
-
     describe('assertValidNamePart', () => {
         it('should throw an error if name part contains invalid characters', () => {
             assert.throws(() => assertValidNamePart('bla)-he'))

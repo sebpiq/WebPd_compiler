@@ -21,43 +21,38 @@
 import {
     AudioSettings,
     CompilerTarget,
-    GlobalCodeDefinition,
-    GlobalCodeDefinitionExport,
-    GlobalCodeGeneratorWithSettings,
+    GlobalDefinitions,
+    CompilationSettings,
+    VariableNamesIndex,
 } from './compile/types'
-import { AstSequence, Code, AstFunc } from './ast/types'
+import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
-import { Engine, Module, RawModule } from './run/types'
+import { BindingSpec, Engine } from './run/types'
 import { writeFile } from 'fs/promises'
 import { getMacros } from './compile/compile-helpers'
-import { jsCodeToRawModule } from './engine-javascript/run/test-helpers'
 import {
     compileAssemblyscript,
     wasmBufferToRawModule,
 } from './engine-assemblyscript/run/test-helpers'
 import { mapArray, renderSwitch } from './functional-helpers'
-import {
-    createRawModule as createAssemblyScriptWasmRawModule,
-    createBindings as createAssemblyScriptWasmEngineBindings,
-} from './engine-assemblyscript/run'
-import {
-    RawJavaScriptEngine,
-    createBindings as createJavaScriptEngineBindings,
-} from './engine-javascript/run'
-import { createModule } from './run/run-helpers'
+import { compileRawModule } from './engine-javascript/run'
 import render from './compile/render'
 import {
     collectAndDedupeExports,
     flattenDependencies,
     instantiateAndDedupeDependencies,
 } from './compile/precompile/dependencies'
-import { createGlobsVariableNames } from './compile/precompile/proxies'
-import { makeSettings } from './compile/test-helpers'
+import {
+    makePrecompilation,
+} from './compile/test-helpers'
+import { createAssemblyScriptWasmEngine, createJavaScriptEngine } from '.'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']
     target: CompilerTarget
 }
+
+type Module = object
 
 export const TEST_PARAMETERS: Array<TestParameters> = [
     { bitDepth: 32, target: 'javascript' },
@@ -81,23 +76,17 @@ export const round = (v: number, decimals: number = 4) => {
 }
 
 interface CreateTestModuleApplyBindings {
-    assemblyscript?: (buffer: ArrayBuffer) => Promise<Module>
-    javascript?: (rawModule: RawModule) => Promise<Module>
+    assemblyscript: (buffer: ArrayBuffer) => Promise<Module>
+    javascript: (code: Code) => Promise<Module>
 }
 
 /** Helper function to create a `Module` for running tests. */
-export const createTestModule = async <ModuleType extends Module>(
+export const createTestModule = async (
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    applyBindings: CreateTestModuleApplyBindings = {}
-): Promise<ModuleType> => {
-    const applyBindingsNonNull: Required<CreateTestModuleApplyBindings> = {
-        javascript: async (rawModule) => rawModule,
-        assemblyscript: (buffer) => wasmBufferToRawModule(buffer),
-        ...applyBindings,
-    }
-
+    applyBindings: CreateTestModuleApplyBindings
+) => {
     // Always save latest compilation for easy inspection
     await writeFile(
         `./tmp/latest-compilation.${target === 'javascript' ? 'js' : 'as'}`,
@@ -105,69 +94,74 @@ export const createTestModule = async <ModuleType extends Module>(
     )
     switch (target) {
         case 'javascript':
-            const rawModule = await jsCodeToRawModule(code)
-            const jsModule = await applyBindingsNonNull.javascript(rawModule)
-            return jsModule as ModuleType
+            const jsModule = await applyBindings.javascript(code)
+            return jsModule
         case 'assemblyscript':
             const buffer = await compileAssemblyscript(code, bitDepth)
-            const ascModule = await applyBindingsNonNull.assemblyscript(buffer)
-            return ascModule as ModuleType
+            const ascModule = await applyBindings.assemblyscript(buffer)
+            return ascModule
     }
 }
 
-type TestEngine<ExportsKeys> = Engine & {
-    [Property in keyof ExportsKeys]: any
-}
-
-type TestEngineExportsKeys = { [name: string]: any }
-
-export const createTestEngine = <ExportsKeys extends TestEngineExportsKeys>(
+// Set default type to 'UNKNOWN' otherwise default type is `string` which
+// is too permissive, showing any string key as available on the engine.
+export const createTestEngine = <ExportedKeys extends string = 'UNKNOWN'>(
     target: CompilerTarget,
     bitDepth: AudioSettings['bitDepth'],
     code: Code,
-    dependencies: Array<GlobalCodeDefinition> = []
+    dependencies: Array<GlobalDefinitions> = []
 ) => {
+    const precompilation = makePrecompilation({
+        settings: {
+            target,
+            audio: {
+                bitDepth,
+                channelCount: { in: 2, out: 2 },
+            },
+        },
+    })
+    const globals = precompilation.variableNamesReadOnly.globals
+    const settings = precompilation.settings
     const exports = collectAndDedupeExports(
-        target,
-        flattenDependencies(dependencies)
+        flattenDependencies(dependencies),
+        precompilation.variableNamesAssigner,
+        globals, settings
     )
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
-    return createTestModule<TestEngine<ExportsKeys>>(target, bitDepth, code, {
-        javascript: async (rawModule) => {
-            return createModule(rawModule, {
-                ...mapArray(exports, ({ name }) => [
+    return createTestModule(target, bitDepth, code, {
+        javascript: async (code: Code) =>
+            createJavaScriptEngine(
+                code,
+                mapArray(exports, (name) => [
                     String(name),
-                    { type: 'raw' },
-                ]),
-                ...createJavaScriptEngineBindings(rawModule as RawJavaScriptEngine),
-            })
-        },
-        assemblyscript: async (buffer) => {
-            const { rawModule, engineData, forwardReferences } =
-                await createAssemblyScriptWasmRawModule(buffer)
-            const engineBindings = await createAssemblyScriptWasmEngineBindings(
-                rawModule,
-                engineData,
-                forwardReferences
-            )
-            return createModule(rawModule, {
-                ...mapArray(exports, ({ name }) => [
+                    { type: 'raw' } as BindingSpec<any>,
+                ])
+            ),
+        assemblyscript: async (buffer) =>
+            createAssemblyScriptWasmEngine(
+                buffer,
+                mapArray(exports, (name) => [
                     String(name),
-                    { type: 'raw' },
-                ]),
-                ...engineBindings,
-            })
-        },
-    })
+                    { type: 'raw' } as BindingSpec<any>,
+                ])
+            ),
+    }) as Promise<Engine & Record<ExportedKeys, any>>
 }
 
 export const runTestSuite = (
     tests: Array<{
         description: string
-        testFunction: (target: CompilerTarget) => AstFunc
+        testFunction: ({
+            target,
+            globals,
+        }: {
+            target: CompilerTarget
+            globals: VariableNamesIndex['globals']
+        }) => AstFunc
     }>,
-    dependencies: Array<GlobalCodeDefinition> = []
+    dependencies: Array<GlobalDefinitions> = [],
+    partialSettings: Partial<CompilationSettings> = {}
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
     let testCounter = 1
@@ -176,34 +170,44 @@ export const runTestSuite = (
     beforeAll(async () => {
         for (let testParameters of TEST_PARAMETERS) {
             const { target, bitDepth } = testParameters
-            const settings = makeSettings({
-                audio: {
-                    bitDepth,
-                    channelCount: { in: 2, out: 2 },
+            const precompilation = makePrecompilation({
+                settings: {
+                    ...partialSettings,
+                    audio: {
+                        bitDepth,
+                        channelCount: { in: 2, out: 2 },
+                    },
+                    target,
                 },
-                target,
             })
-            const testsCodeDefinitions: Array<GlobalCodeGeneratorWithSettings> =
-                tests.map<GlobalCodeGeneratorWithSettings>(({ testFunction }, i) => {
-                    const astTestFunc = testFunction(target)
-                    const codeGeneratorWithSettings: GlobalCodeGeneratorWithSettings = {
-                        codeGenerator: () => ({
+            const globals = precompilation.variableNamesReadOnly.globals
+            const settings = precompilation.settings
+            const testsCodeDefinitions: Array<GlobalDefinitions> =
+                tests.map<GlobalDefinitions>(({ testFunction }, i) => {
+                    const astTestFunc = testFunction({
+                        target,
+                        globals: precompilation.variableNamesAssigner.globals,
+                    })
+                    const codeGeneratorWithSettings: GlobalDefinitions = {
+                        namespace: 'tests',
+                        code: () => ({
                             ...astTestFunc,
                             name: testFunctionNames[i]!,
                         }),
-                        exports: [{ name: testFunctionNames[i]! }],
+                        exports: () => [testFunctionNames[i]!],
                     }
                     return codeGeneratorWithSettings
                 })
 
-            let sequence = Sequence([
-                Func('reportTestFailure', [Var('string', 'msg')], 'void')`
+            // prettier-ignore
+            const testsAndDependencies = Sequence([
+                Func('reportTestFailure', [Var(`string`, `msg`)], `void`)`
                     console.log(msg)
                     throw new Error('test failed')
                 `,
                 Func(
                     'assert_stringsEqual',
-                    [Var('string', 'actual'), Var('string', 'expected')],
+                    [Var(`string`, `actual`), Var(`string`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -214,7 +218,7 @@ export const runTestSuite = (
                 `,
                 Func(
                     'assert_booleansEqual',
-                    [Var('boolean', 'actual'), Var('boolean', 'expected')],
+                    [Var(`boolean`, `actual`), Var(`boolean`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -225,7 +229,7 @@ export const runTestSuite = (
                 `,
                 Func(
                     'assert_integersEqual',
-                    [Var('Int', 'actual'), Var('Int', 'expected')],
+                    [Var(`Int`, `actual`), Var(`Int`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -236,7 +240,7 @@ export const runTestSuite = (
                 `,
                 Func(
                     'assert_floatsEqual',
-                    [Var('Float', 'actual'), Var('Float', 'expected')],
+                    [Var(`Float`, `actual`), Var(`Float`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -248,8 +252,8 @@ export const runTestSuite = (
                 Func(
                     'assert_floatArraysEqual',
                     [
-                        Var('FloatArray', 'actual'),
-                        Var('FloatArray', 'expected'),
+                        Var(`FloatArray`, `actual`),
+                        Var(`FloatArray`, `expected`),
                     ],
                     'void'
                 )`
@@ -258,7 +262,7 @@ export const runTestSuite = (
                             'Arrays of different length ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
-                    for (${Var('Int', 'i', '0')}; i < actual.length; i++) {
+                    for (${Var(`Int`, `i`, `0`)}; i < actual.length; i++) {
                         if (actual[i] !== expected[i]) {
                             reportTestFailure(
                                 'Arrays are not equal ' + actual.toString() 
@@ -268,22 +272,24 @@ export const runTestSuite = (
                 `,
 
                 instantiateAndDedupeDependencies(
-                    settings,
                     flattenDependencies([
                         ...dependencies,
                         ...testsCodeDefinitions,
                     ]),
-                    createGlobsVariableNames()
+                    precompilation.variableNamesAssigner,
+                    globals, 
+                    settings
                 ),
 
                 target === 'javascript' ? 'const exports = {}' : null,
 
                 generateTestExports(
                     target,
-                    collectAndDedupeExports(target, [
-                        ...dependencies,
-                        ...testsCodeDefinitions,
-                    ])
+                    collectAndDedupeExports(
+                        [...dependencies, ...testsCodeDefinitions],
+                        precompilation.variableNamesAssigner,
+                        globals, settings
+                    )
                 ),
             ])
 
@@ -292,7 +298,12 @@ export const runTestSuite = (
                 await createTestModule(
                     target,
                     bitDepth,
-                    render(getMacros(target), sequence)
+                    render(getMacros(target), testsAndDependencies),
+                    {
+                        javascript: async (code) => compileRawModule(code),
+                        assemblyscript: (buffer) =>
+                            wasmBufferToRawModule(buffer),
+                    }
                 ),
             ])
         }
@@ -320,15 +331,15 @@ export const runTestSuite = (
 
 const generateTestExports = (
     target: CompilerTarget,
-    exports: Array<GlobalCodeDefinitionExport>
+    exports: Array<VariableName>
 ): AstSequence =>
     ast`${renderSwitch(
         [
             target === 'assemblyscript',
-            exports.map(({ name }) => `export { ${name} }`),
+            exports.map((name) => `export { ${name} }`),
         ],
         [
             target === 'javascript',
-            exports.map(({ name }) => `exports.${name} = ${name}`),
+            exports.map((name) => `exports.${name} = ${name}`),
         ]
     )}`

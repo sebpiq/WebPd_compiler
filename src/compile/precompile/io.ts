@@ -37,11 +37,9 @@ interface MessageSenderNodeArgs {
 
 const messageSenderNodeImplementation: NodeImplementation<MessageSenderNodeArgs> =
     {
-        messageReceivers: ({ node: { args } }) => ({
+        messageReceivers: ({ node: { args } }, { msg }) => ({
             // prettier-ignore
-            '0': AnonFunc([
-                Var('Message', 'm')
-            ])`
+            '0': AnonFunc([ Var(msg.Message, `m`) ])`
                 ${args.messageSenderName}(m)
                 return
             `,

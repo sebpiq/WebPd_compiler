@@ -95,7 +95,7 @@ describe('precompile.portlets', () => {
             // Substitute with empty signal in signalIns
             assert.strictEqual(
                 precompilation.precompiledCode.nodes.n1!.signalIns['0'],
-                precompilation.variableNamesIndex.globs.nullSignal
+                precompilation.variableNamesIndex.globals.core!.NULL_SIGNAL!
             )
         })
     })
@@ -218,7 +218,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n1!.messageSenders['0'],
                 {
                     messageSenderName:
-                        precompilation.variableNamesIndex.globs
+                        precompilation.variableNamesIndex.globals.msg!
                             .nullMessageReceiver,
                     sinkFunctionNames: [],
                 }
@@ -290,6 +290,7 @@ describe('precompile.portlets', () => {
             })
 
             const precompilation = makePrecompilation({ graph })
+            const globals = precompilation.variableNamesAssigner.globals
 
             precompileMessageInlet(precompilation, graph.n2!, '0')
             precompileMessageInlet(precompilation, graph.n3!, '0')
@@ -309,7 +310,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n2!.messageReceivers['0'],
                 Func(
                     'N_n2_rcvs_0',
-                    [Var('Message', 'm')],
+                    [Var(globals.msg!.Message!, `m`)],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
@@ -317,7 +318,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n3!.messageReceivers['0'],
                 Func(
                     'N_n3_rcvs_0',
-                    [Var('Message', 'm')],
+                    [Var(globals.msg!.Message!, `m`)],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
@@ -341,7 +342,10 @@ describe('precompile.portlets', () => {
 
             assert.ok(!('n1' in precompilation.variableNamesIndex.nodes))
             assert.ok(
-                !('0' in precompilation.precompiledCode.nodes.n1!.messageReceivers)
+                !(
+                    '0' in
+                    precompilation.precompiledCode.nodes.n1!.messageReceivers
+                )
             )
         })
     })

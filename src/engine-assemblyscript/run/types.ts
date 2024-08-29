@@ -20,11 +20,13 @@
 
 import { AudioSettings } from '../../compile/types'
 import { Engine, EngineMetadata, FloatArray } from '../../run/types'
-import { CoreRawModule } from './core-bindings'
-import { FsRawModule, FsImports } from './fs-bindings'
-import { MsgRawModule } from './msg-bindings'
-import { CommonsRawModule } from './commons-bindings'
+import { CoreRawModule } from '../../stdlib/core/bindings-assemblyscript'
+import { MsgRawModule } from '../../stdlib/msg/bindings-assemblyscript'
+import { CommonsRawModule } from '../../stdlib/commons/bindings-assemblyscript'
 import { EngineLifecycleRawModule } from './engine-lifecycle-bindings'
+import { IoRawModule } from './io-bindings'
+import { FsRawModule } from '../../stdlib/fs/bindings-assemblyscript'
+import { FsImportsAssemblyScript } from '../../stdlib/fs/types'
 
 export type StringPointer = number
 
@@ -44,39 +46,47 @@ export type InternalPointer = number
  */
 export type ArrayBufferOfIntegersPointer = number
 
+export interface BaseRawEngine {
+    // Signatures of internal methods that enable to access wasm memory.
+    // REF : https://www.assemblyscript.org/runtime.html#interface
+    __new: (length: number, classType: number) => InternalPointer
+    memory: WebAssembly.Memory
+}
+
 /**
  * Interface for members that are exported in the WASM module resulting from compilation of
  * WebPd assemblyscript code.
  */
-export type EngineRawModule = CommonsRawModule &
+export type RawEngine = BaseRawEngine &
+    EngineLifecycleRawModule &
+    IoRawModule &
+    CommonsRawModule &
     CoreRawModule &
     MsgRawModule &
-    FsRawModule &
-    EngineLifecycleRawModule
+    FsRawModule
 
-export type AssemblyScriptWasmImports = FsImports
+export type AssemblyScriptWasmImports = FsImportsAssemblyScript
 
-export interface EngineData {
-    metadata: Engine['metadata']
-    wasmOutput: FloatArray
-    wasmInput: FloatArray
-    arrayType: typeof Float32Array | typeof Float64Array
-    // We use these two values only for caching, to avoid frequent nested access
-    bitDepth: AudioSettings['bitDepth']
-    blockSize: EngineMetadata['audioSettings']['blockSize']
-}
-
-/**
- * When declaring imported functions, we use objects that will be only available
- * once compilation done.
- * Therefore we use these forward references in imported functions, and fill them up
- * once compilation is done.
- */
-export interface ForwardReferences<RawModuleType> {
-    rawModule?: RawModuleType
-    engineData?: EngineData
-    modules: {
-        fs?: Engine['fs']
-        io?: Engine['io']
+export interface EngineContext<RawModuleType = object> {
+    /**
+     * When declaring imported functions, we use objects that will be only available
+     * once compilation is done.
+     * Therefore we use these forward references in imported functions, and fill them up
+     * once compilation is done.
+     */
+    readonly refs: {
+        engine?: Engine
+        rawModule?: RawModuleType
     }
+
+    /** Values that are accessed frequently are cached here */
+    readonly cache: {
+        wasmOutput: FloatArray
+        wasmInput: FloatArray
+        arrayType: typeof Float32Array | typeof Float64Array
+        bitDepth: AudioSettings['bitDepth']
+        blockSize: EngineMetadata['settings']['audio']['blockSize']
+    }
+
+    readonly metadata: EngineMetadata
 }

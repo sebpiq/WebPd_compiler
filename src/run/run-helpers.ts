@@ -18,16 +18,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { AudioSettings } from '../compile/types'
-import { Bindings } from './types'
+import { _proxyGetHandlerThrowIfKeyUnknown } from '../compile/proxies'
+import { AudioSettings, VariableNamesIndex } from '../compile/types'
+import { Bindings, EngineMetadata } from './types'
 
 // NOTE : not necessarily the most logical place to put this function, but we need it here
 // cause it's imported by the bindings.
 export const getFloatArrayType = (bitDepth: AudioSettings['bitDepth']) =>
     bitDepth === 64 ? Float64Array : Float32Array
 
-/** Helper to create a Module by wrapping a RawModule with Bindings */
-export const createModule = <ModuleType extends { [key: string]: any }>(
+export const proxyAsModuleWithBindings = <
+    ModuleType extends { [key: string]: any }
+>(
     rawModule: { [key: string]: any },
     bindings: Bindings<ModuleType>
 ): ModuleType =>
@@ -64,7 +66,9 @@ export const createModule = <ModuleType extends { [key: string]: any }>(
                     return undefined
                 }
             },
-
+            has: function (_, k) {
+                return k in bindings
+            },
             set: (_, k, newValue) => {
                 if (bindings.hasOwnProperty(String(k))) {
                     const key = String(k) as keyof ModuleType
@@ -85,3 +89,86 @@ export const createModule = <ModuleType extends { [key: string]: any }>(
             },
         }
     ) as ModuleType
+
+/**
+ * Reverse-maps exported variable names from `rawModule` according to the mapping defined
+ * in `variableNamesIndex`.
+ *
+ * For example with :
+ *
+ * ```
+ * const variableNamesIndex = {
+ *     globals: {
+ *         // ...
+ *         fs: {
+ *             // ...
+ *             readFile: 'g_fs_readFile'
+ *         },
+ *     }
+ * }
+ * ```
+ *
+ * The function `g_fs_readFile` (if it is exported properly by the raw module), will then
+ * be available on the returned object at path `.globals.fs.readFile`.
+ */
+export const proxyWithEngineNameMapping = (
+    rawModule: object,
+    variableNamesIndex:
+        | VariableNamesIndex
+        | EngineMetadata['compilation']['variableNamesIndex']
+) =>
+    proxyWithNameMapping(rawModule, {
+        globals: variableNamesIndex.globals,
+        io: variableNamesIndex.io,
+    })
+
+export const proxyWithNameMapping = (
+    rawModule: object,
+    variableNamesIndex: NameMapping
+) => {
+    if (typeof variableNamesIndex === 'string') {
+        return (rawModule as any)[variableNamesIndex]
+    } else if (typeof variableNamesIndex === 'object') {
+        return new Proxy(rawModule, {
+            get: (_, k): any => {
+                const key = String(k)
+                if (key in rawModule) {
+                    return Reflect.get(rawModule, key)
+                } else if (key in variableNamesIndex) {
+                    const nextVariableNames =
+                        variableNamesIndex[key as keyof NameMappingObject]!
+                    return proxyWithNameMapping(rawModule, nextVariableNames)
+                } else if (_proxyGetHandlerThrowIfKeyUnknown(rawModule, key)) {
+                    return undefined
+                }
+            },
+            has: function (_, k) {
+                return k in rawModule || k in variableNamesIndex
+            },
+            set: (_, k, value) => {
+                const key = String(k)
+                if (key in variableNamesIndex) {
+                    const variableName =
+                        variableNamesIndex[key as keyof NameMappingObject]!
+                    if (typeof variableName !== 'string') {
+                        throw new Error(
+                            `Failed to set value for key ${String(
+                                k
+                            )}: variable name is not a string`
+                        )
+                    }
+                    return Reflect.set(rawModule, variableName, value)
+                } else {
+                    throw new Error(
+                        `Key ${String(k)} is not defined in raw module`
+                    )
+                }
+            },
+        })
+    } else {
+        throw new Error(`Invalid name mapping`)
+    }
+}
+
+type NameMappingObject = { [key: string]: string | NameMapping }
+type NameMapping =  NameMappingObject | string | undefined

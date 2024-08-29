@@ -30,12 +30,12 @@ describe('render', () => {
 
     it('should render Var and ConstVar properly', () => {
         assert.strictEqual(
-            render(macros, Var('number', 'a', '1')),
+            render(macros, Var(`number`, `a`, `1`)),
             `let a: number = 1`
         )
-        assert.strictEqual(render(macros, Var('number', 'a')), `let a: number`)
+        assert.strictEqual(render(macros, Var(`number`, `a`)), `let a: number`)
         assert.strictEqual(
-            render(macros, ConstVar('string', 'b', '"HELLO"')),
+            render(macros, ConstVar(`string`, `b`, `"HELLO"`)),
             `const b: string = "HELLO"`
         )
     })
@@ -44,17 +44,17 @@ describe('render', () => {
         const func = Func(
             'myFunc',
             [
-                Var('Int', 'arg1'),
+                Var(`Int`, `arg1`),
                 Var(
                     'Array<(a: Int) => void>',
                     'arg2',
-                    ast`[${AnonFunc([Var('Int', 'a')])``}]`
+                    ast`[${AnonFunc([Var(`Int`, `a`)])``}]`
                 ),
             ],
             'string'
         )`
-            ${Var('number', 'a', '1')}
-            ${ConstVar('string', 'b', '"HELLO"')}
+            ${Var(`number`, `a`, `1`)}
+            ${ConstVar(`string`, `b`, `"HELLO"`)}
             return b + a.toString() + arg1.toString()
         `
         assert.strictEqual(
@@ -68,7 +68,7 @@ describe('render', () => {
     })
 
     it('should render Class properly', () => {
-        const cls = Class('MyClass', [Var('Int', 'a'), Var('string', 'b')])
+        const cls = Class('MyClass', [Var(`Int`, `a`), Var(`string`, `b`)])
         assert.strictEqual(
             render(macros, cls),
             `class MyClass {
@@ -80,15 +80,15 @@ b: string
 
     it('should render a Sequence properly', () => {
         const sequence = ast`
-            ${Var('number', 'a', '1')}
-            ${ConstVar('string', 'b', '"HELLO"')}
+            ${Var(`number`, `a`, `1`)}
+            ${ConstVar(`string`, `b`, `"HELLO"`)}
             // My function documentation
-            ${Func('myFunc', [Var('Int', 'arg1')], 'string')`
-                ${Var('number', 'a', '1')}
-                ${ConstVar('string', 'b', '"HELLO"')}
+            ${Func('myFunc', [Var(`Int`, `arg1`)], `string`)`
+                ${Var(`number`, `a`, `1`)}
+                ${ConstVar(`string`, `b`, `"HELLO"`)}
                 return b + a.toString() + arg1.toString()
             `}
-            ${Class('MyClass', [Var('Int', 'a'), Var('Float', 'b')])}`
+            ${Class('MyClass', [Var(`Int`, `a`), Var(`Float`, `b`)])}`
 
         assert.strictEqual(
             render(macros, sequence),

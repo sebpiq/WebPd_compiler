@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { GlobalCodeDefinitionExport } from '../types'
 import {
     AstConstVar,
     AstFunc,
@@ -28,35 +27,10 @@ import { Sequence, Func, Var, ast, ConstVar } from '../../ast/declare'
 import { DspGraph } from '../../dsp-graph'
 import { findColdDspGroupFromSink } from '../precompile/dsp-groups'
 import { RenderTemplateInput } from './types'
+import { CommonsNamespaceAll } from '../../stdlib/commons/types'
 
 const dependencies = ({ precompiledCode }: RenderTemplateInput) =>
     precompiledCode.dependencies.ast
-
-const globs = ({ globs }: RenderTemplateInput): AstSequence =>
-    // prettier-ignore
-    Sequence([
-        Var('Int', globs.iterFrame, '0'),
-        Var('Int', globs.frame, '0'),
-        Var('Int', globs.blockSize, '0'),
-        Var('Float', globs.sampleRate, '0'),
-        Var('Float', globs.nullSignal, '0'),
-        Func(globs.nullMessageReceiver, [
-            Var('Message', 'm')
-        ], 'void')``,
-        Var('Message', globs.emptyMessage, 'msg_create([])'),
-    ])
-
-const embeddedArrays = ({ settings: { arrays } }: RenderTemplateInput) =>
-    Sequence(
-        Object.entries(arrays).map(([arrayName, array]) =>
-            Sequence([
-                `commons_setArray("${arrayName}", createFloatArray(${array.length}))`,
-                `commons_getArray("${arrayName}").set(${JSON.stringify(
-                    Array.from(array)
-                )})`,
-            ])
-        )
-    )
 
 const nodeImplementationsCoreAndStateClasses = ({
     precompiledCode: { nodeImplementations },
@@ -111,6 +85,7 @@ const nodeInitializations = ({
     ])
 
 const ioMessageReceivers = ({
+    globals: { msg },
     precompiledCode: { io },
 }: RenderTemplateInput): AstSequence =>
     Sequence(
@@ -119,7 +94,7 @@ const ioMessageReceivers = ({
                 (precompiledIoMessageReceiver) => {
                     // prettier-ignore
                     return Func(precompiledIoMessageReceiver.functionName, [
-                    Var('Message', 'm')
+                    Var(msg.Message, `m`)
                 ], 'void')`
                     ${precompiledIoMessageReceiver.getSinkFunctionName()}(m)
                 `
@@ -152,6 +127,7 @@ const ioMessageSenders = (
     )
 
 const portletsDeclarations = ({
+    globals: { msg },
     precompiledCode: { graph, nodes },
     settings: { debug },
 }: RenderTemplateInput): AstSequence =>
@@ -161,7 +137,7 @@ const portletsDeclarations = ({
             .map(([precompiledNode, nodeId]) => [
                 // 1. Declares signal outlets
                 Object.values(precompiledNode.signalOuts).map((outName) =>
-                    Var('Float', outName, '0')
+                    Var(`Float`, outName, `0`)
                 ),
 
                 // 2. Declares message receivers for all message inlets.
@@ -170,8 +146,7 @@ const portletsDeclarations = ({
                         // prettier-ignore
                         return Func(astFunc.name!, astFunc.args, astFunc.returnType)`
                             ${astFunc.body}
-                            throw new Error('Node type "${precompiledNode.nodeType}", id "${nodeId}", inlet "${inletId}", unsupported message : ' + msg_display(${astFunc.args[0]!.name})${
-                                debug
+                            throw new Error('Node "${nodeId}", inlet "${inletId}", unsupported message : ' + ${msg.display}(${astFunc.args[0]!.name})${debug
                                     ? " + '\\nDEBUG : remember, you must return from message receiver'"
                                     : ''})
                         `
@@ -191,7 +166,7 @@ const portletsDeclarations = ({
                 ({ messageSenderName, sinkFunctionNames }) =>
                     // prettier-ignore
                     Func(messageSenderName, [
-                        Var('Message', 'm')
+                        Var(msg.Message, `m`)
                     ], 'void')`
                         ${sinkFunctionNames.map(functionName => 
                             `${functionName}(m)`)}
@@ -200,7 +175,7 @@ const portletsDeclarations = ({
     ])
 
 const dspLoop = ({
-    globs,
+    globals: { core, commons },
     precompiledCode: {
         nodes,
         graph: { hotDspGroup, coldDspGroups },
@@ -208,8 +183,8 @@ const dspLoop = ({
 }: RenderTemplateInput) =>
     // prettier-ignore
     ast`
-        for (${globs.iterFrame} = 0; ${globs.iterFrame} < ${globs.blockSize}; ${globs.iterFrame}++) {
-            _commons_emitFrame(${globs.frame})
+        for (${core.IT_FRAME} = 0; ${core.IT_FRAME} < ${core.BLOCK_SIZE}; ${core.IT_FRAME}++) {
+            ${(commons as CommonsNamespaceAll)._emitFrame}(${core.FRAME})
             ${hotDspGroup.traversal.map((nodeId) => [
                 // For all inlets dsp functions, we render those that are not
                 // the sink of a cold dsp group.
@@ -226,21 +201,22 @@ const dspLoop = ({
                     ),
                 nodes[nodeId]!.dsp.loop
             ])}
-            ${globs.frame}++
+            ${core.FRAME}++
         }
     `
 
 const coldDspInitialization = ({
-    globs,
+    globals: { msg },
     precompiledCode: { graph },
 }: RenderTemplateInput) =>
     Sequence(
         Object.values(graph.coldDspGroups).map(
-            ({ functionName }) => `${functionName}(${globs.emptyMessage})`
+            ({ functionName }) => `${functionName}(${msg.emptyMessage})`
         )
     )
 
 const coldDspFunctions = ({
+    globals: { msg },
     precompiledCode: {
         graph: { coldDspGroups },
         nodes,
@@ -255,7 +231,7 @@ const coldDspFunctions = ({
             }) =>
                 // prettier-ignore
                 Func(functionName, [
-                    Var('Message', 'm')
+                    Var(msg.Message, `m`)
                 ], 'void')`
                     ${dspGroup.traversal.map((nodeId) => 
                         nodes[nodeId]!.dsp.loop
@@ -277,7 +253,7 @@ const coldDspFunctions = ({
 const importsExports = (
     { precompiledCode: { dependencies } }: RenderTemplateInput,
     generateImport: (imprt: AstFunc) => AstSequence,
-    generateExport: (xprt: GlobalCodeDefinitionExport) => AstSequence
+    generateExport: (xprt: VariableName) => AstSequence
 ): AstSequence =>
     Sequence([
         dependencies.imports.map(generateImport),
@@ -285,9 +261,7 @@ const importsExports = (
     ])
 
 export default {
-    globs,
     dependencies,
-    embeddedArrays,
     nodeImplementationsCoreAndStateClasses,
     nodeStateInstances,
     nodeInitializations,

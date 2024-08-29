@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { NodeImplementation, GlobalCodeGeneratorWithSettings } from '../types'
+import { NodeImplementation, GlobalDefinitions, VariableNamesIndex } from '../types'
 import {
     AstClass,
     AstElement,
@@ -38,6 +38,7 @@ export interface Precompilation {
     readonly precompiledCodeAssigner: PrecompiledCode
     readonly variableNamesIndex: VariableNamesIndex
     readonly variableNamesAssigner: VariableNamesIndex
+    readonly variableNamesReadOnly: VariableNamesIndex
 }
 
 export interface PrecompilationInput {
@@ -60,8 +61,8 @@ export interface PrecompiledCode {
     }
 
     readonly dependencies: {
-        imports: NonNullable<GlobalCodeGeneratorWithSettings['imports']>
-        exports: NonNullable<GlobalCodeGeneratorWithSettings['exports']>
+        imports: ReturnType<NonNullable<GlobalDefinitions['imports']>>
+        exports: ReturnType<NonNullable<GlobalDefinitions['exports']>>
         ast: AstSequence
     }
 
@@ -134,57 +135,4 @@ export interface ColdDspGroup {
 export interface DspGroup {
     traversal: DspGraph.GraphTraversal
     outNodesIds: Array<DspGraph.NodeId>
-}
-
-/**
- * Map of all global variable names used for compilation.
- */
-export interface VariableNamesIndex {
-    /** Namespace for individual nodes */
-    readonly nodes: { [nodeId: DspGraph.NodeId]: NodeVariableNames }
-
-    readonly nodeImplementations: {
-        [nodeType: DspGraph.NodeType]: { [name: string]: VariableName }
-    }
-
-    /** Namespace for global variables */
-    readonly globs: {
-        /** Frame count, reinitialized at each dsp loop start */
-        iterFrame: string
-        /** Frame count, never reinitialized */
-        frame: string
-        blockSize: string
-        sampleRate: string
-        output: string
-        input: string
-        nullMessageReceiver: string
-        nullSignal: string
-        emptyMessage: string
-    }
-
-    readonly globalCode: {
-        [ns: DspGraph.NodeType]: { [name: string]: VariableName }
-    }
-
-    readonly io: {
-        readonly messageReceivers: {
-            [nodeId: DspGraph.NodeId]: {
-                [inletId: DspGraph.PortletId]: VariableName
-            }
-        }
-        readonly messageSenders: {
-            [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: VariableName
-            }
-        }
-    }
-
-    readonly coldDspGroups: { [groupId: string]: VariableName }
-}
-
-export interface NodeVariableNames {
-    readonly signalOuts: { [outletId: DspGraph.PortletId]: VariableName }
-    readonly messageSenders: { [outletId: DspGraph.PortletId]: VariableName }
-    readonly messageReceivers: { [inletId: DspGraph.PortletId]: VariableName }
-    state: VariableName | null
 }

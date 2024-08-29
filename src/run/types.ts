@@ -17,16 +17,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { FS_OPERATION_SUCCESS, FS_OPERATION_FAILURE } from '../stdlib/fs'
 import { DspGraph } from '../dsp-graph'
-import { CompilationSettings } from '../compile/types'
-import { VariableNamesIndex } from '../compile/precompile/types'
-
-/** Type for a module without bindings */
-export interface RawModule {}
-
-/** Type for a module with bindings */
-export interface Module {}
+import { CompilationSettings, VariableNamesIndex } from '../compile/types'
+import { FsApi } from '../stdlib/fs/types'
+import {
+    FS_OPERATION_FAILURE,
+    FS_OPERATION_SUCCESS,
+} from '../stdlib/fs/constants'
+import { CommonsApi } from '../stdlib/commons/types'
 
 interface BindingSpecRaw {
     type: 'raw'
@@ -39,7 +37,7 @@ interface BindingSpecCallback<ValueType> {
     type: 'callback'
     value: ValueType
 }
-type BindingSpec<ValueType> =
+export type BindingSpec<ValueType> =
     | BindingSpecRaw
     | BindingSpecBinding<ValueType>
     | BindingSpecCallback<ValueType>
@@ -74,14 +72,18 @@ export type Signal = number
 
 export interface EngineMetadata {
     readonly libVersion: string
-    readonly audioSettings: CompilationSettings['audio'] & {
-        sampleRate: number
-        blockSize: number
+    readonly settings: {
+        readonly audio: CompilationSettings['audio'] & {
+            // Assigned at run time through `initialize`
+            sampleRate: number
+            blockSize: number
+        }
+        readonly io: CompilationSettings['io']
     }
     readonly compilation: {
-        readonly io: CompilationSettings['io']
         readonly variableNamesIndex: {
             readonly io: VariableNamesIndex['io']
+            readonly globals: VariableNamesIndex['globals']
         }
     }
 }
@@ -97,100 +99,22 @@ export interface Engine {
     io: {
         messageReceivers: {
             [nodeId: DspGraph.NodeId]: {
-                [inletId: DspGraph.PortletId]: (m: Message) => void
+                [inletId: DspGraph.PortletId]: (message: Message) => void
             }
         }
-    
+
         messageSenders: {
             [nodeId: DspGraph.NodeId]: {
-                [outletId: DspGraph.PortletId]: {
-                    onMessage: (message: Message) => void
-                }
+                [outletId: DspGraph.PortletId]: (message: Message) => void
             }
         }
     }
 
-    /** API for all shared resources, global events, etc ... */
-    commons: {
-        getArray: (arrayName: string) => FloatArray
-        setArray: (arrayName: string, array: FloatArray | Array<number>) => void
-    }
+    globals: {
+        /** API for all shared resources, global events, etc ... */
+        commons: CommonsApi
 
-    /** Filesystem API for the engine */
-    fs: {
-        /** Callback which the host environment must set to receive "read sound file" requests. */
-        onReadSoundFile: (
-            operationId: number,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        /**
-         * Callback which the host environment must set to receive "write sound file" requests.
-         *
-         * @param sound - this data needs to be copied or handled immediately,
-         * as the engine might reuse or garbage collect the original array.
-         */
-        onWriteSoundFile: (
-            operationId: number,
-            sound: Array<FloatArray>,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        /** Callback which the host environment must set to receive "read sound stream" requests. */
-        onOpenSoundReadStream: (
-            operationId: number,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        /** Callback which the host environment must set to receive "write sound stream" requests. */
-        onOpenSoundWriteStream: (
-            operationId: number,
-            url: string,
-            info: SoundFileInfo
-        ) => void
-
-        /**
-         * Callback which the host environment must set to receive sound stream data for an ongoing write stream.
-         *
-         * @param sound - this data needs to be copied or handled immediately,
-         * as the engine might reuse or garbage collect the original array.
-         */
-        onSoundStreamData: (
-            operationId: number,
-            sound: Array<FloatArray>
-        ) => void
-
-        /** Callback which the host environment must set to receive "close sound stream" requests. */
-        onCloseSoundStream: (operationId: number, status: number) => void
-
-        /**
-         * Function for the host environment to send back the response to an engine's
-         * "read sound file" request.
-         *
-         * @param sound Empty array if the operation has failed.
-         */
-        sendReadSoundFileResponse: (
-            operationId: number,
-            status: fs_OperationStatus,
-            sound: Array<FloatArray>
-        ) => void
-
-        sendWriteSoundFileResponse: (
-            operationId: number,
-            status: fs_OperationStatus
-        ) => void
-
-        sendSoundStreamData: (
-            operationId: number,
-            sound: Array<FloatArray>
-        ) => number
-
-        closeSoundStream: (
-            operationId: number,
-            status: fs_OperationStatus
-        ) => void
+        /** Filesystem API for the engine */
+        fs?: FsApi
     }
 }

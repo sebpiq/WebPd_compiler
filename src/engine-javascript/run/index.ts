@@ -19,7 +19,7 @@
  */
 
 /**
- * These bindings enable easier interaction with Wasm modules generated with our AssemblyScript compilation.
+ * These bindings enable easier interaction with modules generated with our JavaScript compilation.
  * For example : instantiation, passing data back and forth, etc ...
  *
  * **Warning** : These bindings are compiled with rollup as a standalone JS module for inclusion in other libraries.
@@ -28,32 +28,21 @@
  * @module
  */
 
-import { getFloatArrayType } from '../../run/run-helpers'
-import { createModule } from '../../run/run-helpers'
+import { proxyAsModuleWithBindings } from '../../run/run-helpers'
 import { Bindings } from '../../run/types'
-import { AudioSettings } from '../../compile/types'
 import { Code } from '../../ast/types'
-import { Engine, FloatArray, RawModule } from '../../run/types'
+import { Engine } from '../../run/types'
+import {
+    createFsModule,
+    FsRawModule,
+} from '../../stdlib/fs/bindings-javascript'
+import {
+    CommonsRawModule,
+    createCommonsModule,
+} from '../../stdlib/commons/bindings-javascript'
+import { proxyWithEngineNameMapping } from '../../run/run-helpers'
 
-interface CommonsRawModule extends RawModule {
-    commons_getArray: Engine['commons']['getArray']
-    commons_setArray: Engine['commons']['setArray']
-}
-
-interface FsRawModule extends RawModule {
-    x_fs_onReadSoundFileResponse: Engine['fs']['sendReadSoundFileResponse']
-    x_fs_onWriteSoundFileResponse: Engine['fs']['sendWriteSoundFileResponse']
-    x_fs_onCloseSoundStream: Engine['fs']['closeSoundStream']
-    x_fs_onSoundStreamData: Engine['fs']['sendSoundStreamData']
-    i_fs_openSoundWriteStream: Engine['fs']['onOpenSoundWriteStream']
-    i_fs_sendSoundStreamData: Engine['fs']['onSoundStreamData']
-    i_fs_openSoundReadStream: Engine['fs']['onOpenSoundReadStream']
-    i_fs_closeSoundStream: Engine['fs']['onCloseSoundStream']
-    i_fs_writeSoundFile: Engine['fs']['onWriteSoundFile']
-    i_fs_readSoundFile: Engine['fs']['onReadSoundFile']
-}
-
-interface EngineLifecycleRawModule extends RawModule {
+export interface EngineLifecycleRawModule {
     metadata: Engine['metadata']
     initialize: Engine['initialize']
     dspLoop: Engine['dspLoop']
@@ -64,95 +53,51 @@ export type RawJavaScriptEngine = CommonsRawModule &
     FsRawModule &
     EngineLifecycleRawModule
 
-export const createRawModule = (code: Code): RawModule =>
+export const compileRawModule = (code: Code): EngineLifecycleRawModule =>
     new Function(`
         ${code}
         return exports
     `)()
 
-export const createBindings = (
+export const createEngineBindings = (
     rawModule: RawJavaScriptEngine
-): Bindings<Engine> => ({
-    fs: { type: 'proxy', value: createFsModule(rawModule) },
-    metadata: { type: 'raw' },
-    initialize: { type: 'raw' },
-    dspLoop: { type: 'raw' },
-    io: { type: 'raw' },
-    commons: {
-        type: 'proxy',
-        value: createCommonsModule(
-            rawModule,
-            rawModule.metadata.audioSettings.bitDepth
-        ),
-    },
-})
+): Bindings<Engine> => {
+    const exportedNames =
+        rawModule.metadata!.compilation.variableNamesIndex.globals
+    const globalsBindings: Bindings<Engine['globals']> = {
+        commons: {
+            type: 'proxy',
+            value: createCommonsModule(rawModule, rawModule.metadata),
+        },
+    }
 
-export const createEngine = (code: Code): Engine => {
-    const rawModule = createRawModule(code) as RawJavaScriptEngine
-    return createModule(rawModule, createBindings(rawModule))
+    if ('fs' in exportedNames) {
+        globalsBindings.fs = { type: 'proxy', value: createFsModule(rawModule) }
+    }
+
+    return {
+        metadata: { type: 'raw' },
+        initialize: { type: 'raw' },
+        dspLoop: { type: 'raw' },
+        io: { type: 'raw' },
+        globals: {
+            type: 'proxy',
+            value: proxyAsModuleWithBindings(rawModule, globalsBindings),
+        },
+    }
 }
 
-const createFsModule = (rawModule: FsRawModule): Engine['fs'] => {
-    const fs = createModule<Engine['fs']>(rawModule, {
-        onReadSoundFile: { type: 'callback', value: () => undefined },
-        onWriteSoundFile: { type: 'callback', value: () => undefined },
-        onOpenSoundReadStream: { type: 'callback', value: () => undefined },
-        onOpenSoundWriteStream: { type: 'callback', value: () => undefined },
-        onSoundStreamData: { type: 'callback', value: () => undefined },
-        onCloseSoundStream: { type: 'callback', value: () => undefined },
-        sendReadSoundFileResponse: {
-            type: 'proxy',
-            value: rawModule.x_fs_onReadSoundFileResponse,
-        },
-        sendWriteSoundFileResponse: {
-            type: 'proxy',
-            value: rawModule.x_fs_onWriteSoundFileResponse,
-        },
-        sendSoundStreamData: {
-            type: 'proxy',
-            value: rawModule.x_fs_onSoundStreamData,
-        },
-        closeSoundStream: {
-            type: 'proxy',
-            value: rawModule.x_fs_onCloseSoundStream,
-        },
-    })
-
-    rawModule.i_fs_openSoundWriteStream = (
-        ...args: Parameters<Engine['fs']['onOpenSoundWriteStream']>
-    ) => fs.onOpenSoundWriteStream(...args)
-    rawModule.i_fs_sendSoundStreamData = (
-        ...args: Parameters<Engine['fs']['onSoundStreamData']>
-    ) => fs.onSoundStreamData(...args)
-    rawModule.i_fs_openSoundReadStream = (
-        ...args: Parameters<Engine['fs']['onOpenSoundReadStream']>
-    ) => fs.onOpenSoundReadStream(...args)
-    rawModule.i_fs_closeSoundStream = (
-        ...args: Parameters<Engine['fs']['onCloseSoundStream']>
-    ) => fs.onCloseSoundStream(...args)
-    rawModule.i_fs_writeSoundFile = (
-        ...args: Parameters<Engine['fs']['onWriteSoundFile']>
-    ) => fs.onWriteSoundFile(...args)
-    rawModule.i_fs_readSoundFile = (
-        ...args: Parameters<Engine['fs']['onReadSoundFile']>
-    ) => fs.onReadSoundFile(...args)
-    return fs
-}
-
-const createCommonsModule = (
-    rawModule: CommonsRawModule,
-    bitDepth: AudioSettings['bitDepth']
-): Engine['commons'] => {
-    const floatArrayType = getFloatArrayType(bitDepth)
-    return createModule<Engine['commons']>(rawModule, {
-        getArray: { type: 'proxy', value: rawModule.commons_getArray },
-        setArray: {
-            type: 'proxy',
-            value: (arrayName: string, array: FloatArray | Array<number>) =>
-                rawModule.commons_setArray(
-                    arrayName,
-                    new floatArrayType(array)
-                ),
-        },
+export const createEngine = <AdditionalExports>(
+    code: Code,
+    additionalBindings?: Bindings<AdditionalExports>
+): Engine => {
+    const rawModule = compileRawModule(code)
+    const rawModuleWithNameMapping = proxyWithEngineNameMapping(
+        rawModule,
+        rawModule.metadata.compilation.variableNamesIndex
+    )
+    return proxyAsModuleWithBindings(rawModule, {
+        ...createEngineBindings(rawModuleWithNameMapping),
+        ...(additionalBindings || {}),
     })
 }

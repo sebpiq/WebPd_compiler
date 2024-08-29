@@ -33,7 +33,7 @@ import { getFloatArrayType } from './run/run-helpers'
 import { DspGraph } from './dsp-graph'
 import { nodeDefaults } from './dsp-graph/graph-helpers'
 import { commonsArrays } from './stdlib'
-import { AnonFunc, Class, ConstVar, Sequence, Var, ast } from './ast/declare'
+import { AnonFunc, Class, Sequence, Var } from './ast/declare'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
 interface NodeTestSettings<NodeArguments> {
@@ -45,11 +45,14 @@ interface NodeTestSettings<NodeArguments> {
     arrays?: { [arrayName: string]: Array<number> }
 }
 
-type EngineFsKeys = keyof Engine['fs']
+type EngineFs = NonNullable<Engine['globals']['fs']>
+type EngineFsKeys = keyof EngineFs
 
 type FrameNode = {
     fs?: {
-        [FsFuncName in EngineFsKeys]?: Parameters<Engine['fs'][FsFuncName]>
+        [FsFuncName in keyof EngineFs]?: Parameters<
+            NonNullable<EngineFs[FsFuncName]>
+        >
     }
 }
 export type FrameNodeIn = FrameNode & {
@@ -154,17 +157,19 @@ export const generateFramesForNode = async <NodeArguments>(
                                 fakeSourceNode.outlets[outletId]!.type ===
                                 'signal'
                         )
-                        .map((outletId) => Var('Float', `VALUE_${outletId}`, 0))
+                        .map((outletId) => Var(`Float`, `VALUE_${outletId}`, 0))
                 ),
 
-            messageReceivers: ({ snds, state }) =>
+            messageReceivers: ({ snds, state }, { msg }) =>
                 Object.entries(fakeSourceNode.outlets).reduce(
                     (messageReceivers, [outletId, outlet]) => {
                         // Messages received for message outlets are directly proxied
                         if (outlet.type === 'message') {
                             return {
                                 ...messageReceivers,
-                                [outletId]: AnonFunc([Var('Message', 'm')])`
+                                [outletId]: AnonFunc([
+                                    Var(msg.Message, `m`),
+                                ])`
                                 ${snds[outletId]!}(m)
                                 return
                             `,
@@ -174,8 +179,10 @@ export const generateFramesForNode = async <NodeArguments>(
                         } else {
                             return {
                                 ...messageReceivers,
-                                [outletId]: AnonFunc([Var('Message', 'm')])`
-                                ${state}.VALUE_${outletId} = msg_readFloatToken(m, 0)
+                                [outletId]: AnonFunc([
+                                    Var(msg.Message, `m`),
+                                ])`
+                                ${state}.VALUE_${outletId} = ${msg.readFloatToken!}(m, 0)
                                 return
                             `,
                             }
@@ -201,7 +208,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            dsp: ({ ins, snds }) =>
+            dsp: ({ ins, snds }, { msg }) =>
                 Sequence(
                     Object.keys(testNode.sinks)
                         .filter(
@@ -211,12 +218,12 @@ export const generateFramesForNode = async <NodeArguments>(
                         .map(
                             (outletId) =>
                                 // prettier-ignore
-                                `${snds[outletId]}(msg_floats([${ins[outletId]}]))`
+                                `${snds[outletId]}(${msg.floats}([${ins[outletId]}]))`
                         )
                 ),
 
             // Take incoming messages and directly proxy them
-            messageReceivers: ({ snds }) =>
+            messageReceivers: ({ snds }, { msg }) =>
                 mapArray(
                     Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>
@@ -224,7 +231,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     ),
                     (inletId) => [
                         inletId,
-                        AnonFunc([Var('Message', 'm')])`
+                        AnonFunc([Var(msg.Message, `m`)])`
                             ${snds[inletId]!}(m)
                             return
                         `,
@@ -264,7 +271,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
     if (arrays) {
         Object.entries(arrays).forEach(([arrayName, data]) => {
-            engine.commons.setArray(arrayName, data)
+            engine.globals.commons.setArray(arrayName, data)
         })
     }
 
@@ -323,36 +330,37 @@ export const generateFramesForNode = async <NodeArguments>(
                 outputFrame.fs[funcName] = args
             }
         }
-        engine.fs.onCloseSoundStream = (...args) =>
-            _fsCallback('onCloseSoundStream', args)
-        engine.fs.onOpenSoundReadStream = (...args) =>
-            _fsCallback('onOpenSoundReadStream', args)
-        engine.fs.onOpenSoundWriteStream = (...args) =>
-            _fsCallback('onOpenSoundWriteStream', args)
-        engine.fs.onReadSoundFile = (...args) =>
-            _fsCallback('onReadSoundFile', args)
-        engine.fs.onSoundStreamData = (...args) =>
-            _fsCallback('onSoundStreamData', args)
-        engine.fs.onWriteSoundFile = (...args) =>
-            _fsCallback('onWriteSoundFile', args)
+
+        if (engine.globals.fs) {
+            engine.globals.fs.onCloseSoundStream = (...args) =>
+                _fsCallback('onCloseSoundStream', args)
+            engine.globals.fs.onOpenSoundReadStream = (...args) =>
+                _fsCallback('onOpenSoundReadStream', args)
+            engine.globals.fs.onOpenSoundWriteStream = (...args) =>
+                _fsCallback('onOpenSoundWriteStream', args)
+            engine.globals.fs.onReadSoundFile = (...args) =>
+                _fsCallback('onReadSoundFile', args)
+            engine.globals.fs.onSoundStreamData = (...args) =>
+                _fsCallback('onSoundStreamData', args)
+            engine.globals.fs.onWriteSoundFile = (...args) =>
+                _fsCallback('onWriteSoundFile', args)
+        }
 
         // Set up engine outs to receive sent messages
         Object.keys(engine.io.messageSenders['fakeSinkNode']!).forEach(
             (outletId) => {
-                engine.io.messageSenders['fakeSinkNode']![outletId] = {
-                    onMessage: (m) => {
-                        if (testNode.outlets[outletId]!.type === 'message') {
-                            outputFrame.sequence!.push(outletId)
-                            outputFrame.outs[outletId] =
-                                outputFrame.outs[outletId] || []
-                            const output = outputFrame.outs[
-                                outletId
-                            ] as Array<Message>
-                            output.push(m)
-                        } else {
-                            outputFrame.outs[outletId] = m[0] as number
-                        }
-                    },
+                engine.io.messageSenders['fakeSinkNode']![outletId] = (m) => {
+                    if (testNode.outlets[outletId]!.type === 'message') {
+                        outputFrame.sequence!.push(outletId)
+                        outputFrame.outs[outletId] =
+                            outputFrame.outs[outletId] || []
+                        const output = outputFrame.outs[
+                            outletId
+                        ] as Array<Message>
+                        output.push(m)
+                    } else {
+                        outputFrame.outs[outletId] = m[0] as number
+                    }
                 }
             }
         )
@@ -365,9 +373,12 @@ export const generateFramesForNode = async <NodeArguments>(
         }
 
         // Send in fs commands
-        if (inputFrame.fs) {
+        if (engine.globals.fs && inputFrame.fs) {
             Object.entries(inputFrame.fs).forEach(([funcName, args]) => {
-                ;(engine.fs[funcName as EngineFsKeys] as any).apply(null, args)
+                ;(engine.globals.fs![funcName as EngineFsKeys] as any).apply(
+                    null,
+                    args
+                )
             })
         }
 
@@ -378,14 +389,14 @@ export const generateFramesForNode = async <NodeArguments>(
                 outputFrame.commons.getArray = {}
                 inputFrame.commons.getArray.forEach((arrayName) => {
                     outputFrame.commons!.getArray![arrayName] = Array.from(
-                        engine.commons.getArray(arrayName)
+                        engine.globals.commons.getArray(arrayName)
                     )
                 })
             }
             if (inputFrame.commons.setArray) {
                 Object.entries(inputFrame.commons.setArray).forEach(
                     ([arrayName, array]) => {
-                        engine.commons.setArray(arrayName, array)
+                        engine.globals.commons.setArray(arrayName, array)
                     }
                 )
             }
@@ -471,14 +482,14 @@ export const generateFrames = (
     engineInput =
         engineInput ||
         buildEngineBlock(
-            engine.metadata.audioSettings.bitDepth,
-            engine.metadata.audioSettings.channelCount.in,
+            engine.metadata.settings.audio.bitDepth,
+            engine.metadata.settings.audio.channelCount.in,
             blockSize
         )
 
     const engineOutput = buildEngineBlock(
-        engine.metadata.audioSettings.bitDepth,
-        engine.metadata.audioSettings.channelCount.out,
+        engine.metadata.settings.audio.bitDepth,
+        engine.metadata.settings.audio.channelCount.out,
         blockSize
     )
 

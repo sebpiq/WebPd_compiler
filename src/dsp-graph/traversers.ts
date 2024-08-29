@@ -193,7 +193,7 @@ const _messageTraversalDepthFirstRecursive = (
 export const trimGraph = (
     graph: DspGraph.Graph,
     graphTraversal: DspGraph.GraphTraversal
-): DspGraph.Graph => 
+): DspGraph.Graph =>
     mapArray(
         Object.values(graph).filter((node) => graphTraversal.includes(node.id)),
         (node) => [

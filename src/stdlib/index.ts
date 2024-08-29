@@ -17,9 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-export * from './buf'
-export * from './commons'
-export * from './core'
-export * from './fs'
-export * from './msg'
-export * from './sked'
+export * from './buf/buf'
+export * from './commons/commons'
+export * from './core/core'
+export * from './fs/fs'
+export * from './msg/msg'
+export * from './sked/sked'

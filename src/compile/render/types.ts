@@ -18,8 +18,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { AstVar, Code, AstConstVar, AstFunc, AstClass } from '../../ast/types'
-import { PrecompiledCode, VariableNamesIndex } from '../precompile/types'
-import { CompilationSettings } from '../types'
+import { PrecompiledCode } from '../precompile/types'
+import { CompilationSettings, VariableNamesIndex } from '../types'
 
 /**
  * Macros injected in code generators so that they can be written in a generic manner.
@@ -39,9 +39,9 @@ export interface CodeMacros {
 export interface RenderInput {
     readonly settings: Readonly<CompilationSettings>
     readonly precompiledCode: Readonly<PrecompiledCode>
-    readonly variableNamesIndex: Readonly<VariableNamesIndex>
+    readonly variableNamesReadOnly: Readonly<VariableNamesIndex>
 }
 
-export type RenderTemplateInput = Omit<RenderInput, 'variableNamesIndex'> & {
-    readonly globs: VariableNamesIndex['globs']
+export type RenderTemplateInput = Omit<RenderInput, 'variableNamesReadOnly'> & {
+    readonly globals: VariableNamesIndex['globals']
 }

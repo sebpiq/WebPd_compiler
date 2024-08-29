@@ -29,112 +29,116 @@
  */
 
 import { Engine } from '../../run/types'
+import { RawEngine, AssemblyScriptWasmImports, EngineContext } from './types'
+import { instantiateWasmModule } from './wasm-helpers'
+import { getFloatArrayType } from '../../run/run-helpers'
+import { createCommonsBindings } from '../../stdlib/commons/bindings-assemblyscript'
+import { proxyAsModuleWithBindings } from '../../run/run-helpers'
+import { createEngineLifecycleBindings } from './engine-lifecycle-bindings'
+import { readMetadata } from './metadata'
+import {
+    createIoMessageReceiversBindings,
+    createIoMessageSendersBindings,
+    ioMsgSendersImports,
+} from './io-bindings'
+import { Bindings } from '../../run/types'
 import {
     createFsBindings,
     createFsImports,
-    FsWithDependenciesRawModule,
-} from './fs-bindings'
-import {
-    EngineRawModule,
-    AssemblyScriptWasmImports,
-    EngineData,
-    ForwardReferences,
-} from './types'
-import { instantiateWasmModule } from './wasm-helpers'
-import { getFloatArrayType } from '../../run/run-helpers'
-import { createCommonsBindings } from './commons-bindings'
-import { createModule } from '../../run/run-helpers'
-import {
-    createEngineLifecycleBindings,
-    createIoMessageReceiversBindings,
-    createIoMessageSendersBindings,
-    EngineLifecycleWithDependenciesRawModule,
-    ioMsgSendersImports,
-    readMetadata,
-} from './engine-lifecycle-bindings'
-import { Bindings } from '../../run/types'
+} from '../../stdlib/fs/bindings-assemblyscript'
+import { proxyWithEngineNameMapping } from '../../run/run-helpers'
 
-export const createEngine = async (
-    wasmBuffer: ArrayBuffer
+export const createEngine = async <AdditionalExports>(
+    wasmBuffer: ArrayBuffer,
+    additionalBindings?: Bindings<AdditionalExports>
 ): Promise<Engine> => {
-    const { rawModule, engineData, forwardReferences } = await createRawModule(
-        wasmBuffer
-    )
-    const engineBindings = await createBindings(
-        rawModule,
-        engineData,
-        forwardReferences
-    )
-    return createModule(rawModule, engineBindings)
-}
-
-export const createRawModule = async (wasmBuffer: ArrayBuffer) => {
+    // Create engine context
     // We need to read metadata before everything, because it is used by other initialization functions
     const metadata = await readMetadata(wasmBuffer)
-
-    const forwardReferences: ForwardReferences<
-        FsWithDependenciesRawModule & EngineLifecycleWithDependenciesRawModule
-    > = { modules: {} }
-
-    const wasmImports: AssemblyScriptWasmImports = {
-        ...createFsImports(forwardReferences),
-        ...ioMsgSendersImports(forwardReferences, metadata),
+    const bitDepth = metadata.settings.audio.bitDepth
+    const arrayType = getFloatArrayType(bitDepth)
+    const engineContext: EngineContext<RawEngine> = {
+        refs: {},
+        metadata: metadata,
+        cache: {
+            wasmOutput: new arrayType(0),
+            wasmInput: new arrayType(0),
+            arrayType,
+            bitDepth,
+            blockSize: 0,
+        },
     }
 
-    const bitDepth = metadata.audioSettings.bitDepth
-    const arrayType = getFloatArrayType(bitDepth)
-    const engineData: EngineData = {
-        metadata,
-        wasmOutput: new arrayType(0),
-        wasmInput: new arrayType(0),
-        arrayType,
-        bitDepth,
-        blockSize: 0,
+    // Create raw module
+    const wasmImports: AssemblyScriptWasmImports = {
+        ...createFsImports(engineContext),
+        ...ioMsgSendersImports(engineContext),
     }
 
     const wasmInstance = await instantiateWasmModule(wasmBuffer, {
         input: wasmImports,
     })
-    const rawModule = wasmInstance.exports as unknown as EngineRawModule
-    return { rawModule, engineData, forwardReferences }
+
+    engineContext.refs.rawModule = proxyWithEngineNameMapping(
+        wasmInstance.exports,
+        metadata.compilation.variableNamesIndex
+    ) as RawEngine
+
+    // Create engine
+    const engineBindings = createEngineBindings(engineContext)
+    const engine = proxyAsModuleWithBindings(engineContext.refs.rawModule, {
+        ...engineBindings,
+        ...(additionalBindings || {}),
+    })
+
+    engineContext.refs.engine = engine
+    return engine
 }
 
-export const createBindings = async (
-    rawModule: EngineRawModule,
-    engineData: EngineData,
-    forwardReferences: ForwardReferences<
-        FsWithDependenciesRawModule & EngineLifecycleWithDependenciesRawModule
-    >
-): Promise<Bindings<Engine>> => {
-    // Create bindings for core modules
-    const commons = createModule(
-        rawModule,
-        createCommonsBindings(rawModule, engineData)
-    )
-    const fs = createModule(rawModule, createFsBindings(rawModule, engineData))
+export const createEngineBindings = (
+    engineContext: EngineContext<RawEngine>
+): Bindings<Engine> => {
+    const { metadata, refs } = engineContext
+    const exportedNames = metadata.compilation.variableNamesIndex.globals
+
+    // Create bindings for io
     const io = {
-        messageReceivers: createModule(
-            rawModule,
-            createIoMessageReceiversBindings(rawModule, engineData)
+        messageReceivers: proxyAsModuleWithBindings(
+            refs.rawModule!,
+            createIoMessageReceiversBindings(engineContext)
         ),
-        messageSenders: createModule(
-            rawModule,
-            createIoMessageSendersBindings(rawModule, engineData)
+        messageSenders: proxyAsModuleWithBindings(
+            refs.rawModule!,
+            createIoMessageSendersBindings(engineContext)
         ),
     }
 
-    // Update forward refs for use in Wasm imports
-    forwardReferences.modules.fs = fs
-    forwardReferences.modules.io = io
-    forwardReferences.engineData = engineData
-    forwardReferences.rawModule = rawModule
+    // Create bindings for core modules
+    const globalsBindings: Bindings<Engine['globals']> = {
+        commons: {
+            type: 'proxy',
+            value: proxyAsModuleWithBindings(
+                refs.rawModule!,
+                createCommonsBindings(engineContext)
+            ),
+        },
+    }
+    if ('fs' in exportedNames) {
+        const fs = proxyAsModuleWithBindings(
+            refs.rawModule!,
+            createFsBindings(engineContext)
+        )
+        globalsBindings.fs = { type: 'proxy', value: fs }
+    }
 
     // Build the full module
     return {
-        ...createEngineLifecycleBindings(rawModule, engineData),
-        metadata: { type: 'proxy', value: engineData.metadata },
-        commons: { type: 'proxy', value: commons },
-        fs: { type: 'proxy', value: fs },
+        ...createEngineLifecycleBindings(engineContext),
+        metadata: { type: 'proxy', value: metadata },
+        globals: {
+            type: 'proxy',
+            value: proxyAsModuleWithBindings(refs.rawModule!, globalsBindings),
+        },
         io: { type: 'proxy', value: io },
     }
 }
