@@ -22,8 +22,8 @@ import {
     AudioSettings,
     CompilerTarget,
     GlobalDefinitions,
-    GlobalPrecompilationContext,
     CompilationSettings,
+    VariableNamesIndex,
 } from './compile/types'
 import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
 import { ast, Sequence, Func, Var } from './ast/declare'
@@ -43,7 +43,6 @@ import {
     instantiateAndDedupeDependencies,
 } from './compile/precompile/dependencies'
 import {
-    makeGlobalCodePrecompilationContext,
     makePrecompilation,
 } from './compile/test-helpers'
 import { createAssemblyScriptWasmEngine, createJavaScriptEngine } from '.'
@@ -121,11 +120,12 @@ export const createTestEngine = <ExportedKeys extends string = 'UNKNOWN'>(
             },
         },
     })
-    const context = makeGlobalCodePrecompilationContext(precompilation)
+    const globals = precompilation.variableNamesReadOnly.globals
+    const settings = precompilation.settings
     const exports = collectAndDedupeExports(
         flattenDependencies(dependencies),
         precompilation.variableNamesAssigner,
-        context
+        globals, settings
     )
     // Create modules with bindings containing not only the basic bindings but also raw bindings
     // for all functions exported in `dependencies`
@@ -157,11 +157,11 @@ export const runTestSuite = (
             globals,
         }: {
             target: CompilerTarget
-            globals: GlobalPrecompilationContext['globals']
+            globals: VariableNamesIndex['globals']
         }) => AstFunc
     }>,
     dependencies: Array<GlobalDefinitions> = [],
-    settings: Partial<CompilationSettings> = {}
+    partialSettings: Partial<CompilationSettings> = {}
 ) => {
     const testModules: Array<[TestParameters, Module]> = []
     let testCounter = 1
@@ -172,7 +172,7 @@ export const runTestSuite = (
             const { target, bitDepth } = testParameters
             const precompilation = makePrecompilation({
                 settings: {
-                    ...settings,
+                    ...partialSettings,
                     audio: {
                         bitDepth,
                         channelCount: { in: 2, out: 2 },
@@ -180,7 +180,8 @@ export const runTestSuite = (
                     target,
                 },
             })
-            const context = makeGlobalCodePrecompilationContext(precompilation)
+            const globals = precompilation.variableNamesReadOnly.globals
+            const settings = precompilation.settings
             const testsCodeDefinitions: Array<GlobalDefinitions> =
                 tests.map<GlobalDefinitions>(({ testFunction }, i) => {
                     const astTestFunc = testFunction({
@@ -200,13 +201,13 @@ export const runTestSuite = (
 
             // prettier-ignore
             const testsAndDependencies = Sequence([
-                Func('reportTestFailure', [Var('string', 'msg')], 'void')`
+                Func('reportTestFailure', [Var(`string`, `msg`)], `void`)`
                     console.log(msg)
                     throw new Error('test failed')
                 `,
                 Func(
                     'assert_stringsEqual',
-                    [Var('string', 'actual'), Var('string', 'expected')],
+                    [Var(`string`, `actual`), Var(`string`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -217,7 +218,7 @@ export const runTestSuite = (
                 `,
                 Func(
                     'assert_booleansEqual',
-                    [Var('boolean', 'actual'), Var('boolean', 'expected')],
+                    [Var(`boolean`, `actual`), Var(`boolean`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -228,7 +229,7 @@ export const runTestSuite = (
                 `,
                 Func(
                     'assert_integersEqual',
-                    [Var('Int', 'actual'), Var('Int', 'expected')],
+                    [Var(`Int`, `actual`), Var(`Int`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -239,7 +240,7 @@ export const runTestSuite = (
                 `,
                 Func(
                     'assert_floatsEqual',
-                    [Var('Float', 'actual'), Var('Float', 'expected')],
+                    [Var(`Float`, `actual`), Var(`Float`, `expected`)],
                     'void'
                 )`
                     if (actual !== expected) {
@@ -251,8 +252,8 @@ export const runTestSuite = (
                 Func(
                     'assert_floatArraysEqual',
                     [
-                        Var('FloatArray', 'actual'),
-                        Var('FloatArray', 'expected'),
+                        Var(`FloatArray`, `actual`),
+                        Var(`FloatArray`, `expected`),
                     ],
                     'void'
                 )`
@@ -261,7 +262,7 @@ export const runTestSuite = (
                             'Arrays of different length ' + actual.toString() 
                             + ' expected ' + expected.toString())
                     }
-                    for (${Var('Int', 'i', '0')}; i < actual.length; i++) {
+                    for (${Var(`Int`, `i`, `0`)}; i < actual.length; i++) {
                         if (actual[i] !== expected[i]) {
                             reportTestFailure(
                                 'Arrays are not equal ' + actual.toString() 
@@ -276,7 +277,8 @@ export const runTestSuite = (
                         ...testsCodeDefinitions,
                     ]),
                     precompilation.variableNamesAssigner,
-                    makeGlobalCodePrecompilationContext(precompilation)
+                    globals, 
+                    settings
                 ),
 
                 target === 'javascript' ? 'const exports = {}' : null,
@@ -286,7 +288,7 @@ export const runTestSuite = (
                     collectAndDedupeExports(
                         [...dependencies, ...testsCodeDefinitions],
                         precompilation.variableNamesAssigner,
-                        context
+                        globals, settings
                     )
                 ),
             ])

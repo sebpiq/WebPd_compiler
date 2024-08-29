@@ -77,7 +77,7 @@ describe('sked', () => {
                 testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
                     const skeduler = ${sked.create}(true)
-                    ${Var(sked.Id, 'skedId', sked.ID_NULL)}
+                    ${Var(sked.Id, `skedId`, sked.ID_NULL)}
 
                     // Schedule and resolve a few events
                     ${sked.wait}(skeduler, 'some_event', () => received.push(123))
@@ -162,7 +162,7 @@ describe('sked', () => {
                 testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
                     const skeduler = ${sked.create}(false)
-                    ${Var(sked.Id, 'skedId', `${sked.waitFuture}(
+                    ${Var(sked.Id, `skedId`, `${sked.waitFuture}(
                         skeduler, 
                         'some_event', 
                         () => received.push(123)
@@ -210,7 +210,7 @@ describe('sked', () => {
                     const skeduler = ${sked.create}(false)
 
                     // Register a couple of listeners and emit
-                    ${ConstVar(sked.Id, 'skedId', `${sked.subscribe}(
+                    ${ConstVar(sked.Id, `skedId`, `${sked.subscribe}(
                         skeduler, 
                         'some_event', 
                         () => received.push(123)
@@ -235,7 +235,7 @@ describe('sked', () => {
                 testFunction: ({ globals: { sked } }) => AnonFunc()`
                     initializeTests()
                     const skeduler = ${sked.create}(false)
-                    ${ConstVar(sked.Id, 'skedId', `${sked.subscribe}(
+                    ${ConstVar(sked.Id, `skedId`, `${sked.subscribe}(
                         skeduler, 
                         'some_event', 
                         () => received.push(123)
@@ -262,7 +262,7 @@ describe('sked', () => {
             {
                 namespace: '_',
                 code: () => Sequence([
-                    Var('Array<Int>', 'received', '[]'),
+                    Var(`Array<Int>`, `received`, `[]`),
                     Func('initializeTests')`
                         received = []
                     `,

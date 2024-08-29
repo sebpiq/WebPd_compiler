@@ -130,13 +130,11 @@ describe('Engine', () => {
                     DUMMY: {
                         dsp: (
                             _,
+                            { core },
                             {
-                                globals: { core },
-                                settings: {
-                                    audio: { channelCount },
-                                    target,
-                                },
-                            }
+                                audio: { channelCount },
+                                target,
+                            },
                         ) =>
                             // prettier-ignore
                             target === 'assemblyscript'
@@ -201,13 +199,11 @@ describe('Engine', () => {
                     DUMMY: {
                         dsp: (
                             _,
+                            { core },
                             {
-                                globals: { core },
-                                settings: {
-                                    target,
-                                    audio: { channelCount },
-                                },
-                            }
+                                target,
+                                audio: { channelCount },
+                            },
                         ) =>
                             // prettier-ignore
                             target === 'assemblyscript'
@@ -286,9 +282,9 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     DUMMY: {
-                        messageReceivers: (_, { globals: { msg } }) => ({
+                        messageReceivers: (_, { msg }) => ({
                             blo: AnonFunc(
-                                [Var(msg.Message, 'm')],
+                                [Var(msg.Message, `m`)],
                                 'void'
                             )`return`,
                         }),
@@ -362,7 +358,7 @@ describe('Engine', () => {
                     const testCode: GlobalDefinitions = {
                         namespace: '_',
                         // prettier-ignore
-                        code: (_, { globals: { commons } }) => ast`
+                        code: (_, { commons }) => ast`
                             const array = createFloatArray(4)
                             array[0] = 123
                             array[1] = 456
@@ -395,32 +391,32 @@ describe('Engine', () => {
                     const testCode: GlobalDefinitions = {
                         namespace: 'tests',
                         // prettier-ignore
-                        code: (_, { globals: { commons } }) =>
+                        code: (_, { commons }) =>
                             Sequence([
                                 Func(
                                     'testReadArray1',
-                                    [Var('Int', 'index')],
+                                    [Var(`Int`, `index`)],
                                     'Float'
                                 )`
                                     return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array1')[index]
                                 `,
                                 Func(
                                     'testReadArray2',
-                                    [Var('Int', 'index')],
+                                    [Var(`Int`, `index`)],
                                     'Float'
                                 )`
                                     return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array2')[index]
                                 `,
                                 Func(
                                     'testReadArray3',
-                                    [Var('Int', 'index')],
+                                    [Var(`Int`, `index`)],
                                     'Float'
                                 )`
                                     return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array3')[index]
                                 `,
                                 Func(
                                     'testIsFloatArray',
-                                    [Var('Int', 'index')],
+                                    [Var(`Int`, `index`)],
                                     'void'
                                 )`
                                     return ${(commons as CommonsNamespaceAll)._ARRAYS}.get('array3').set([111, 222])
@@ -508,11 +504,11 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals: { fs } }) =>
+                code: (_, { fs }) =>
                     Sequence([
-                        Var(fs!.OperationId, 'receivedId', '-1'),
-                        Var(fs!.OperationStatus, 'receivedStatus', '-1'),
-                        Var('FloatArray[]', 'receivedSound', '[]'),
+                        Var(fs!.OperationId, `receivedId`, `-1`),
+                        Var(fs!.OperationStatus, `receivedStatus`, `-1`),
+                        Var(`FloatArray[]`, `receivedSound`, `[]`),
 
                         Func('testStartReadFile', [], 'Int')`
                             return ${fs!.readSoundFile}(
@@ -527,9 +523,9 @@ describe('Engine', () => {
                                 }, ${Func(
                                     'readSoundFileComplete',
                                     [
-                                        Var(fs!.OperationId, 'id'),
-                                        Var(fs!.OperationStatus, 'status'),
-                                        Var('FloatArray[]', 'sound'),
+                                        Var(fs!.OperationId, `id`),
+                                        Var(fs!.OperationStatus, `status`),
+                                        Var(`FloatArray[]`, `sound`),
                                     ],
                                     'void'
                                 )`
@@ -550,7 +546,7 @@ describe('Engine', () => {
                         `,
                         Func(
                             'testOperationCleaned',
-                            [Var(fs!.OperationId, 'id')],
+                            [Var(fs!.OperationId, `id`)],
                             'boolean'
                         )`
                             return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
@@ -656,19 +652,19 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals: { fs } }) =>
+                code: (_, { fs }) =>
                     Sequence([
-                        Var(fs!.OperationId, 'receivedId', '-1'),
+                        Var(fs!.OperationId, `receivedId`, `-1`),
                         Var(
                             fs!.OperationStatus,
                             'receivedStatus',
                             '-1'
                         ),
-                        ConstVar('Int', 'channelCount', '3'),
+                        ConstVar(`Int`, `channelCount`, `3`),
 
                         Func(
                             'testStartReadStream',
-                            [Var('FloatArray', 'array')],
+                            [Var(`FloatArray`, `array`)],
                             'Int'
                         )`
                             return ${fs!.openSoundReadStream}(
@@ -684,7 +680,7 @@ describe('Engine', () => {
                                 ${Func(
                                     'fs_openSoundReadStreamComplete',
                                     [
-                                        Var(fs!.OperationId, 'id'),
+                                        Var(fs!.OperationId, `id`),
                                         Var(
                                             fs!.OperationStatus,
                                             'status'
@@ -708,23 +704,23 @@ describe('Engine', () => {
 
                         Func(
                             'testOperationChannelCount',
-                            [Var(fs!.OperationId, 'id')],
+                            [Var(fs!.OperationId, `id`)],
                             'Int'
                         )`
                             return ${(fs as FsNamespaceAll)
-                                ._SOUND_STREAM_BUFFERS}.get(id).length
+                                .SOUND_STREAM_BUFFERS}.get(id).length
                         `,
 
                         Func(
                             'testOperationCleaned',
-                            [Var(fs!.OperationId, 'id')],
+                            [Var(fs!.OperationId, `id`)],
                             'boolean'
                         )`
                             return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
                                 && !${(fs as FsNamespaceAll)._OPERATIONS_CALLBACKS}.has(id)
                                 && !${(fs as FsNamespaceAll)
                                     ._OPERATIONS_SOUND_CALLBACKS}.has(id)
-                                && !${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.has(id)
+                                && !${(fs as FsNamespaceAll).SOUND_STREAM_BUFFERS}.has(id)
                         `,
                     ]),
                 exports: () => [
@@ -749,14 +745,14 @@ describe('Engine', () => {
                     const testCode: GlobalDefinitions = {
                         namespace: 'tests',
                         // prettier-ignore
-                        code: (_, { globals: { fs, buf } }) =>
+                        code: (_, { fs, buf }) =>
                             Sequence([
                                 Func(
                                     'testReceivedSound',
-                                    [Var(fs!.OperationId, 'id')],
+                                    [Var(fs!.OperationId, `id`)],
                                     'boolean'
                                 )`
-                                    const buffers = ${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.get(id)
+                                    const buffers = ${(fs as FsNamespaceAll).SOUND_STREAM_BUFFERS}.get(id)
                                     return ${buf!.pullSample}(buffers[0]) === -1
                                         && ${buf!.pullSample}(buffers[0]) === -2
                                         && ${buf!.pullSample}(buffers[0]) === -3
@@ -849,13 +845,13 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals: { fs } }) =>
+                code: (_, { fs }) =>
                     Sequence([
-                        Var(fs!.OperationId, 'receivedId', '-1'),
-                        Var(fs!.OperationStatus, 'receivedStatus', '-1'),
-                        ConstVar('Int', 'channelCount', '3'),
-                        ConstVar('Int', 'fsBlockSize', '2'),
-                        Var('Int', 'counter', '0'),
+                        Var(fs!.OperationId, `receivedId`, `-1`),
+                        Var(fs!.OperationStatus, `receivedStatus`, `-1`),
+                        ConstVar(`Int`, `channelCount`, `3`),
+                        ConstVar(`Int`, `fsBlockSize`, `2`),
+                        Var(`Int`, `counter`, `0`),
 
                         Func('testStartWriteStream', [], 'Int')`
                             return ${fs!.openSoundWriteStream}(
@@ -871,8 +867,8 @@ describe('Engine', () => {
                                 ${Func(
                                     'fs_openSoundWriteStreamComplete',
                                     [
-                                        Var(fs!.OperationId, 'id'),
-                                        Var(fs!.OperationStatus, 'status'),
+                                        Var(fs!.OperationId, `id`),
+                                        Var(fs!.OperationStatus, `status`),
                                     ],
                                     'void'
                                 )`
@@ -883,7 +879,7 @@ describe('Engine', () => {
                         `, 
                         Func(
                             'testSendSoundStreamData',
-                            [Var(fs!.OperationId, 'id')],
+                            [Var(fs!.OperationId, `id`)],
                             'void'
                         )`
                             ${ConstVar(
@@ -915,13 +911,13 @@ describe('Engine', () => {
                         `,
                         Func(
                             'testOperationCleaned',
-                            [Var(fs!.OperationId, 'id')],
+                            [Var(fs!.OperationId, `id`)],
                             'boolean'
                         )`
                             return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
                                 && !${(fs as FsNamespaceAll)._OPERATIONS_CALLBACKS}.has(id)
                                 && !${(fs as FsNamespaceAll)._OPERATIONS_SOUND_CALLBACKS}.has(id)
-                                && !${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.has(id)
+                                && !${(fs as FsNamespaceAll).SOUND_STREAM_BUFFERS}.has(id)
                         `,
                     ]),
                 exports: () => [
@@ -1042,9 +1038,9 @@ describe('Engine', () => {
             const sharedTestingCode: GlobalDefinitions = {
                 namespace: 'tests',
                 // prettier-ignore
-                code: (_, { globals: { fs } }) =>
+                code: (_, { fs }) =>
                     Sequence([
-                        Var(fs!.OperationId, 'receivedId', '-1'),
+                        Var(fs!.OperationId, `receivedId`, `-1`),
                         Var(
                             fs!.OperationStatus,
                             'receivedStatus',
@@ -1085,7 +1081,7 @@ describe('Engine', () => {
                                 }, ${Func(
                                     'fs_writeSoundFileComplete',
                                     [
-                                        Var(fs!.OperationId, 'id'),
+                                        Var(fs!.OperationId, `id`),
                                         Var(
                                             fs!.OperationStatus,
                                             'status'
@@ -1106,7 +1102,7 @@ describe('Engine', () => {
                         `,
                         Func(
                             'testOperationCleaned',
-                            [Var(fs!.OperationId, 'id')],
+                            [Var(fs!.OperationId, `id`)],
                             'boolean'
                         )`
                             return !${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
@@ -1221,7 +1217,7 @@ describe('Engine', () => {
                 const testCode: GlobalDefinitions = {
                     namespace: 'tests',
                     // prettier-ignore
-                    code: (_, { globals: { msg } }) =>
+                    code: (_, { msg }) =>
                         Sequence([
                             ConstVar(
                                 msg.Message,
@@ -1333,14 +1329,14 @@ describe('Engine', () => {
                     someNodeType: {
                         messageReceivers: (
                             { node: { id } },
-                            { globals: { msg } }
+                            { msg }
                         ) => ({
                             someInlet1: AnonFunc(
-                                [Var(msg.Message, 'm')],
+                                [Var(msg.Message, `m`)],
                                 'void'
                             )`received.get('${id}:1').push(m);return`,
                             someInlet2: AnonFunc(
-                                [Var(msg.Message, 'm')],
+                                [Var(msg.Message, `m`)],
                                 'void'
                             )`received.get('${id}:2').push(m);return`,
                         }),
@@ -1350,7 +1346,7 @@ describe('Engine', () => {
                 const testCode: GlobalDefinitions = {
                     namespace: 'tests',
                     // prettier-ignore
-                    code: (_, { globals: { msg } }) =>
+                    code: (_, { msg }) =>
                         Sequence([
                             ConstVar(
                                 `Map<string, Array<${msg.Message}>>`,
@@ -1365,7 +1361,7 @@ describe('Engine', () => {
 
                             Func(
                                 'messageIsCorrect',
-                                [Var(msg.Message, 'message')],
+                                [Var(msg.Message, `message`)],
                                 'boolean'
                             )`
                                 return ${msg.getLength}(message) === 2
@@ -1473,13 +1469,13 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: ({ snds }, { globals: { msg } }) => ({
+                        messageReceivers: ({ snds }, { msg }) => ({
                             '0': AnonFunc(
-                                [Var(msg.Message, 'm')],
+                                [Var(msg.Message, `m`)],
                                 'void'
                             )`${snds['0']!}(m);return`,
                             '1': AnonFunc(
-                                [Var(msg.Message, 'm')],
+                                [Var(msg.Message, `m`)],
                                 'void'
                             )`${snds['1']!}(m);return`,
                         }),
@@ -1529,10 +1525,10 @@ describe('Engine', () => {
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: (_, { globals: { msg } }) => ({
+                        messageReceivers: (_, { msg }) => ({
                             // No return so an error will be thrown
                             someInlet: AnonFunc(
-                                [Var(msg.Message, 'm')],
+                                [Var(msg.Message, `m`)],
                                 'void'
                             )``,
                         }),

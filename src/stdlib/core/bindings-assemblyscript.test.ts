@@ -39,10 +39,7 @@ import {
 import { Sequence } from '../../ast/declare'
 import macros from '../../engine-assemblyscript/compile/macros'
 import render from '../../compile/render'
-import {
-    makeGlobalCodePrecompilationContext,
-    makePrecompilation,
-} from '../../compile/test-helpers'
+import { makePrecompilation } from '../../compile/test-helpers'
 import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
 import { CoreNamespaceAll } from './types'
@@ -78,13 +75,13 @@ describe('core-bindings', () => {
         const assignerNs = precompilation.variableNamesAssigner.globals
             .core as CoreNamespaceAll
         const localContext = { ns: assignerNs }
-        const globalContext =
-            makeGlobalCodePrecompilationContext(precompilation)
+        const globals = precompilation.variableNamesReadOnly.globals
+        const settings = precompilation.settings
         return render(
             macros,
             Sequence([
-                core.code(localContext, globalContext),
-                core.exports!(localContext, globalContext).map(
+                core.code(localContext, globals, settings),
+                core.exports!(localContext, globals, settings).map(
                     (name) => `export { ${name} }`
                 ),
             ])
@@ -104,11 +101,14 @@ describe('core-bindings', () => {
                 target: 'assemblyscript',
             },
         })
+        const globals = precompilation.variableNamesReadOnly.globals
+        const settings = precompilation.settings
         // We instantiate the code to make sure all names are assigned
         instantiateAndDedupeDependencies(
             [core],
             precompilation.variableNamesAssigner,
-            makeGlobalCodePrecompilationContext(precompilation)
+            globals,
+            settings
         )
         return proxyWithEngineNameMapping(
             rawModule,

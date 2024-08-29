@@ -58,8 +58,8 @@ describe('metadata', () => {
 
             const nodeImplementations: NodeImplementations = {
                 DUMMY: {
-                    messageReceivers: (_, { globals }) => ({
-                        '0': AnonFunc([Var(globals.msg!.Message!, 'm')])``,
+                    messageReceivers: (_, { msg }) => ({
+                        '0': AnonFunc([ Var(msg.Message, `m`) ])``,
                     }),
                 },
             }

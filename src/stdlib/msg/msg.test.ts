@@ -44,7 +44,7 @@ describe('msg', () => {
             {
                 description: 'floats > should create empty floats message %s',
                 testFunction: ({ globals: { msg } }) => AnonFunc()`
-                    ${ConstVar(msg.Message, 'message', `${msg.floats}([])`)}
+                    ${ConstVar(msg.Message, `message`, `${msg.floats}([])`)}
                     assert_integersEqual(${msg.getLength}(message), 0)
                 `,
             },
@@ -67,7 +67,7 @@ describe('msg', () => {
             {
                 description: 'strings > should create empty strings message %s',
                 testFunction: ({ globals: { msg } }) => AnonFunc()`
-                    ${ConstVar(msg.Message, 'message', `${msg.strings}([])`)}
+                    ${ConstVar(msg.Message, `message`, `${msg.strings}([])`)}
                     assert_integersEqual(${msg.getLength}(message), 0)
                 `,
             },

@@ -47,23 +47,23 @@ describe('precompile.nodes', () => {
 
             const nodeImplementations: NodeImplementations = {
                 type1: {
-                    messageReceivers: (_, { globals }) => ({
+                    messageReceivers: (_, { msg }) => ({
                         '0': AnonFunc([
-                            Var(globals.msg!.Message!, 'm'),
+                            Var(msg.Message!, `m`),
                         ])`// message receiver type1 inlet 0`,
                         '1': AnonFunc([
-                            Var(globals.msg!.Message!, 'm'),
+                            Var(msg.Message!, `m`),
                         ])`// message receiver type1 inlet 1`,
                     }),
                 },
                 type2: {
-                    messageReceivers: (_, { globals }) => ({
+                    messageReceivers: (_, { msg }) => ({
                         '0': AnonFunc([
-                            Var(globals.msg!.Message!, 'm'),
+                            Var(msg.Message!, `m`),
                         ])`// message receiver type2 inlet 0`,
                         // extra message receiver that will be ignored
                         '1': AnonFunc([
-                            Var(globals.msg!.Message!, 'm'),
+                            Var(msg.Message!, `m`),
                         ])`// message receiver type2 inlet 1`,
                     }),
                 },
@@ -94,10 +94,10 @@ describe('precompile.nodes', () => {
                 precompilation.precompiledCode.nodes.n1!.messageReceivers,
                 {
                     '0': Func('N_n1_rcvs_0', [
-                        Var(globals.msg!.Message!, 'm'),
+                        Var(globals.msg!.Message!, `m`),
                     ])`// message receiver type1 inlet 0`,
                     '1': Func('N_n1_rcvs_1', [
-                        Var(globals.msg!.Message!, 'm'),
+                        Var(globals.msg!.Message!, `m`),
                     ])`// message receiver type1 inlet 1`,
                 }
             )
@@ -106,7 +106,7 @@ describe('precompile.nodes', () => {
                 precompilation.precompiledCode.nodes.n2!.messageReceivers,
                 {
                     '0': Func('N_n2_rcvs_0', [
-                        Var(globals.msg!.Message!, 'm'),
+                        Var(globals.msg!.Message!, `m`),
                     ])`// message receiver type2 inlet 0`,
                 }
             )
@@ -220,8 +220,8 @@ describe('precompile.nodes', () => {
                 type1: {
                     state: ({ ns, node: { args } }) =>
                         Class(ns.State!, [
-                            Var('Int', 'a', args.a),
-                            Var('Int', 'b', args.b),
+                            Var(`Int`, `a`, args.a),
+                            Var(`Int`, `b`, args.b),
                         ]),
                 },
             }

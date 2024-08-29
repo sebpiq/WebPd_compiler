@@ -17,7 +17,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-import { GlobalDefinitions, GlobalPrecompilationContext, VariableNamesIndex } from '../types'
+import {
+    CompilationSettings,
+    GlobalDefinitions,
+    VariableNamesIndex,
+} from '../types'
 import { AstElement, AstFunc, AstSequence, VariableName } from '../../ast/types'
 import { traversers } from '../../dsp-graph'
 import { commonsArrays, commonsWaitFrame, core, msg } from '../../stdlib'
@@ -36,44 +40,46 @@ export default (
         ..._collectDependenciesFromGraph(precompilation),
     ])
 
-    const globalContext: GlobalPrecompilationContext = {
-        globals: proxyAsReadOnlyIndex(
-            precompilation.variableNamesIndex.globals
-        ),
-        settings,
-    }
+    const globals = proxyAsReadOnlyIndex(
+        precompilation.variableNamesIndex.globals
+    )
 
     // Flatten and de-duplicate all the module's dependencies
     precompiledCodeAssigner.dependencies.ast = instantiateAndDedupeDependencies(
         dependencies,
         variableNamesAssigner,
-        globalContext
+        globals,
+        settings
     )
 
     // Collect and attach imports / exports info
     precompiledCodeAssigner.dependencies.exports = collectAndDedupeExports(
         dependencies,
         variableNamesAssigner,
-        globalContext
+        globals,
+        settings
     )
     precompiledCodeAssigner.dependencies.imports = collectAndDedupeImports(
         dependencies,
         variableNamesAssigner,
-        globalContext
+        globals,
+        settings
     )
 }
 
 export const instantiateAndDedupeDependencies = (
     dependencies: Array<GlobalDefinitions>,
     variableNamesAssigner: VariableNamesIndex,
-    globalContext: GlobalPrecompilationContext
+    globals: VariableNamesIndex['globals'],
+    settings: CompilationSettings
 ): AstSequence => {
     return Sequence(
         dependencies
             .map((globalDefinitions) =>
                 globalDefinitions.code(
                     _getLocalContext(variableNamesAssigner, globalDefinitions),
-                    globalContext
+                    globals,
+                    settings
                 )
             )
             .reduce<Array<AstElement>>(
@@ -98,7 +104,8 @@ export const engineMinimalDependencies = (): Array<GlobalDefinitions> => [
 export const collectAndDedupeExports = (
     dependencies: Array<GlobalDefinitions>,
     variableNamesAssigner: VariableNamesIndex,
-    globalContext: GlobalPrecompilationContext
+    globals: VariableNamesIndex['globals'],
+    settings: CompilationSettings
 ): PrecompiledCode['dependencies']['exports'] =>
     dependencies.reduce<Array<VariableName>>(
         (exports, globalDefinitions) =>
@@ -111,7 +118,8 @@ export const collectAndDedupeExports = (
                                   variableNamesAssigner,
                                   globalDefinitions
                               ),
-                              globalContext
+                              globals,
+                              settings
                           )
                           .filter((xprt) =>
                               exports.every(
@@ -126,7 +134,8 @@ export const collectAndDedupeExports = (
 export const collectAndDedupeImports = (
     dependencies: Array<GlobalDefinitions>,
     variableNamesAssigner: VariableNamesIndex,
-    globalContext: GlobalPrecompilationContext
+    globals: VariableNamesIndex['globals'],
+    settings: CompilationSettings
 ): PrecompiledCode['dependencies']['imports'] =>
     dependencies.reduce<Array<AstFunc>>(
         (imports, globalDefinitions) =>
@@ -139,7 +148,8 @@ export const collectAndDedupeImports = (
                                   variableNamesAssigner,
                                   globalDefinitions
                               ),
-                              globalContext
+                              globals,
+                              settings
                           )
                           .filter((imprt) =>
                               imports.every(

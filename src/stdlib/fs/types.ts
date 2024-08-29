@@ -155,6 +155,7 @@ export interface FsImportsAssemblyScript {
 export interface FsNamespacePublic {
     OPERATION_SUCCESS: VariableName
     OPERATION_FAILURE: VariableName
+    SOUND_STREAM_BUFFERS: VariableName
     OperationId: VariableName
     OperationStatus: VariableName
     OperationCallback: VariableName
@@ -177,7 +178,6 @@ export interface FsNamespacePrivate {
     _OPERATIONS_CALLBACKS: VariableName
     _OPERATIONS_SOUND_CALLBACKS: VariableName
     _OPERATIONS_COUNTER: VariableName
-    _SOUND_STREAM_BUFFERS: VariableName
     _SOUND_BUFFER_LENGTH: VariableName
 }
 

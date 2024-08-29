@@ -53,10 +53,8 @@ export const precompileStateClass = (
                 ns: _getNamespace(nodeType, variableNamesReadOnly),
                 node: sampleNode,
             },
-            {
-                globals: variableNamesReadOnly.globals,
-                settings,
-            }
+            variableNamesReadOnly.globals,
+            settings,
         )
         precompiledImplementation.stateClass = {
             ...astClass,
@@ -86,10 +84,8 @@ export const precompileCore = (
             {
                 ns: _getNamespace(nodeType, variableNamesAssigner),
             },
-            {
-                settings,
-                globals: variableNamesReadOnly.globals,
-            }
+            variableNamesReadOnly.globals,
+            settings,
         )
     }
 }

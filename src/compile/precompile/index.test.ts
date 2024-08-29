@@ -346,13 +346,13 @@ describe('precompile', () => {
 
         const nodeImplementations: NodeImplementations = {
             type1: {
-                state: ({ ns }) => Class(ns.State!, [Var('Int', 'bla', 0)]),
+                state: ({ ns }) => Class(ns.State!, [Var(`Int`, `bla`, 0)]),
                 dsp: () => ast`// dsp n1`,
                 dependencies: [],
             },
             // Unused node implementation
             type2: {
-                state: ({ ns }) => Class(ns.State!, [Var('Int', 'bla', 0)]),
+                state: ({ ns }) => Class(ns.State!, [Var(`Int`, `bla`, 0)]),
             },
         }
 
@@ -367,7 +367,7 @@ describe('precompile', () => {
             {
                 nodeImplementation: nodeImplementations.type1,
                 stateClass: Class('NT_type1_State', [
-                    Var('Int', 'bla', undefined),
+                    Var(`Int`, `bla`, undefined),
                 ]),
                 core: null,
             }

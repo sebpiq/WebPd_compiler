@@ -31,7 +31,7 @@ export const commonsArrays: GlobalDefinitions<
 > = {
     namespace: NAMESPACE,
     // prettier-ignore
-    code: ({ ns: commons }, { globals: { sked }, settings }) => Sequence([
+    code: ({ ns: commons }, { sked }, settings) => Sequence([
         ConstVar(
             'Map<string, FloatArray>', 
             commons._ARRAYS, 
@@ -45,7 +45,7 @@ export const commonsArrays: GlobalDefinitions<
 
         /** Gets an named array, throwing an error if the array doesn't exist. */
         Func(commons.getArray, [
-            Var('string', 'arrayName')
+            Var(`string`, `arrayName`)
         ], 'FloatArray')`
             if (!${commons._ARRAYS}.has(arrayName)) {
                 throw new Error('Unknown array ' + arrayName)
@@ -54,14 +54,14 @@ export const commonsArrays: GlobalDefinitions<
         `,
 
         Func(commons.hasArray, [
-            Var('string', 'arrayName')
+            Var(`string`, `arrayName`)
         ], 'boolean')`
             return ${commons._ARRAYS}.has(arrayName)
         `,
 
         Func(commons.setArray, [
-            Var('string', 'arrayName'), 
-            Var('FloatArray', 'array'),
+            Var(`string`, `arrayName`), 
+            Var(`FloatArray`, `array`),
         ], 'void')`
             ${commons._ARRAYS}.set(arrayName, array)
             ${sked.emit}(${commons._ARRAYS_SKEDULER}, arrayName)
@@ -73,8 +73,8 @@ export const commonsArrays: GlobalDefinitions<
          * @returns An id that can be used to cancel the subscription.
          */
         Func(commons.subscribeArrayChanges, [
-            Var('string', 'arrayName'), 
-            Var(sked.Callback, 'callback'),
+            Var(`string`, `arrayName`), 
+            Var(sked.Callback, `callback`),
         ], sked.Id)`
             const id = ${sked.subscribe}(${commons._ARRAYS_SKEDULER}, arrayName, callback)
             if (${commons._ARRAYS}.has(arrayName)) {
@@ -87,7 +87,7 @@ export const commonsArrays: GlobalDefinitions<
          * @param id The id received when subscribing.
          */
         Func(commons.cancelArrayChangesSubscription, [
-            Var(sked.Id, 'id')
+            Var(sked.Id, `id`)
         ], 'void')`
             ${sked.cancel}(${commons._ARRAYS_SKEDULER}, id)
         `,
@@ -114,7 +114,7 @@ export const commonsWaitFrame: GlobalDefinitions<
 > = {
     namespace: NAMESPACE,
     // prettier-ignore
-    code: ({ ns: commons }, { globals: { sked } }) => Sequence([
+    code: ({ ns: commons }, { sked }) => Sequence([
         ConstVar(
             sked.Skeduler, 
             commons._FRAME_SKEDULER, 
@@ -122,7 +122,7 @@ export const commonsWaitFrame: GlobalDefinitions<
         ),
 
         Func(commons._emitFrame, [
-            Var('Int', 'frame')
+            Var(`Int`, `frame`)
         ], 'void')`
             ${sked.emit}(${commons._FRAME_SKEDULER}, frame.toString())
         `,
@@ -132,8 +132,8 @@ export const commonsWaitFrame: GlobalDefinitions<
          * If the frame already occurred, or is the current frame, the callback won't be executed.
          */
         Func(commons.waitFrame, [
-            Var('Int', 'frame'), 
-            Var(sked.Callback, 'callback'),
+            Var(`Int`, `frame`), 
+            Var(sked.Callback, `callback`),
         ], sked.Id)`
             return ${sked.waitFuture}(${commons._FRAME_SKEDULER}, frame.toString(), callback)
         `,
@@ -142,7 +142,7 @@ export const commonsWaitFrame: GlobalDefinitions<
          * Cancels waiting for a frame to occur.
          */
         Func(commons.cancelWaitFrame, [
-            Var(sked.Id, 'id')
+            Var(sked.Id, `id`)
         ], 'void')`
             ${sked.cancel}(${commons._FRAME_SKEDULER}, id)
         `,

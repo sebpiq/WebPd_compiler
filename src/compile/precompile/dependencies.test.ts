@@ -29,10 +29,7 @@ import precompileDependencies, {
 import { Class, Func, Sequence, ast } from '../../ast/declare'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { PrecompiledCode } from './types'
-import {
-    makeGlobalCodePrecompilationContext,
-    makePrecompilation,
-} from '../test-helpers'
+import { makePrecompilation } from '../test-helpers'
 
 describe('precompile.dependencies', () => {
     describe('default', () => {
@@ -245,7 +242,8 @@ describe('precompile.dependencies', () => {
                     blaDefinitions2,
                 ],
                 precompilation.variableNamesAssigner,
-                makeGlobalCodePrecompilationContext(precompilation)
+                precompilation.variableNamesAssigner.globals,
+                precompilation.settings
             )
             assert.deepStrictEqual(astSequence, Sequence([blo, bla1, bli]))
         })
@@ -338,7 +336,8 @@ describe('precompile.dependencies', () => {
                 collectAndDedupeExports(
                     dependencies,
                     precompilation.variableNamesAssigner,
-                    makeGlobalCodePrecompilationContext(precompilation)
+                    precompilation.variableNamesAssigner.globals,
+                    precompilation.settings
                 ),
                 ['ex1', 'ex3', 'ex4']
             )
@@ -375,7 +374,8 @@ describe('precompile.dependencies', () => {
                 collectAndDedupeImports(
                     dependencies,
                     precompilation.variableNamesAssigner,
-                    makeGlobalCodePrecompilationContext(precompilation)
+                    precompilation.variableNamesAssigner.globals,
+                    precompilation.settings
                 ),
                 [Func('ex1')``, Func('ex3')``, Func('ex4')``]
             )

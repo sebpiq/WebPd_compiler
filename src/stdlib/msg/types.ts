@@ -62,7 +62,9 @@ export interface MsgNamespacePublic {
     writeStringToken: VariableName
     create: VariableName
     Handler: VariableName
+    /** Base type for message objects */
     Message: VariableName
+    Template: VariableName
     getLength: VariableName
     getTokenType: VariableName
     isStringToken: VariableName
@@ -76,7 +78,6 @@ export interface MsgNamespacePublic {
 }
 
 interface MsgNamespacePrivate {
-    _Template: VariableName
     _Header: VariableName
     _HeaderEntry: VariableName
     _FloatToken: VariableName

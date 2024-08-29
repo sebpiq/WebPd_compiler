@@ -32,22 +32,22 @@ export const bufCore: GlobalDefinitions<keyof BufNamespaceAll> = {
          * Ring buffer 
          */
         Class(buf.SoundBuffer, [
-            Var('FloatArray', 'data'),
-            Var('Int', 'length'),
-            Var('Int', 'writeCursor'),
-            Var('Int', 'pullAvailableLength'),
+            Var(`FloatArray`, `data`),
+            Var(`Int`, `length`),
+            Var(`Int`, `writeCursor`),
+            Var(`Int`, `pullAvailableLength`),
         ]),
 
         /** Erases all the content from the buffer */
         Func(buf.clear, [
-            Var(buf.SoundBuffer, 'buffer')
+            Var(buf.SoundBuffer, `buffer`)
         ], 'void')`
             buffer.data.fill(0)
         `,
 
         /** Erases all the content from the buffer */
         Func(buf.create, [
-            Var('Int', 'length')
+            Var(`Int`, `length`)
         ], buf.SoundBuffer)`
             return {
                 data: createFloatArray(length),
@@ -71,16 +71,16 @@ export const bufPushPull: GlobalDefinitions<keyof BufNamespaceAll> = {
          * @todo : Optimize by allowing to read/write directly from host
          */
         Func(buf.pushBlock, [
-            Var(buf.SoundBuffer, 'buffer'), 
-            Var('FloatArray', 'block')
+            Var(buf.SoundBuffer, `buffer`), 
+            Var(`FloatArray`, `block`)
         ], 'Int')`
             if (buffer.pullAvailableLength + block.length > buffer.length) {
                 throw new Error('buffer full')
             }
 
-            ${Var('Int', 'left', 'block.length')}
+            ${Var(`Int`, `left`, `block.length`)}
             while (left > 0) {
-                ${ConstVar('Int', 'lengthToWrite', `toInt(Math.min(
+                ${ConstVar(`Int`, `lengthToWrite`, `toInt(Math.min(
                     toFloat(buffer.length - buffer.writeCursor), 
                     toFloat(left),
                 ))`)}
@@ -104,12 +104,12 @@ export const bufPushPull: GlobalDefinitions<keyof BufNamespaceAll> = {
          * unavailable for subsequent readers with the same operation.
          */
         Func(buf.pullSample, [
-            Var(buf.SoundBuffer, 'buffer')
+            Var(buf.SoundBuffer, `buffer`)
         ], 'Float')`
             if (buffer.pullAvailableLength <= 0) {
                 return 0
             }
-            ${ConstVar('Int', 'readCursor', 'buffer.writeCursor - buffer.pullAvailableLength')}
+            ${ConstVar(`Int`, `readCursor`, `buffer.writeCursor - buffer.pullAvailableLength`)}
             buffer.pullAvailableLength -= 1
             return buffer.data[readCursor >= 0 ? readCursor : buffer.length + readCursor]
         `
@@ -125,8 +125,8 @@ export const bufWriteRead: GlobalDefinitions<keyof BufNamespaceAll> = {
          * Writes a sample at \`@link writeCursor\` and increments \`writeCursor\` by one.
          */
         Func(buf.writeSample, [
-            Var(buf.SoundBuffer, 'buffer'), 
-            Var('Float', 'value')
+            Var(buf.SoundBuffer, `buffer`), 
+            Var(`Float`, `value`)
         ], 'void')`
             buffer.data[buffer.writeCursor] = value
             buffer.writeCursor = (buffer.writeCursor + 1) % buffer.length
@@ -139,8 +139,8 @@ export const bufWriteRead: GlobalDefinitions<keyof BufNamespaceAll> = {
          *  an error, but might cause unexpected results.
          */
         Func(buf.readSample, [
-            Var(buf.SoundBuffer, 'buffer'), 
-            Var('Int', 'offset')
+            Var(buf.SoundBuffer, `buffer`), 
+            Var(`Int`, `offset`)
         ], 'Float')`
             // R = (buffer.writeCursor - 1 - offset) -> ideal read position
             // W = R % buffer.length -> wrap it so that its within buffer length bounds (but could be negative)

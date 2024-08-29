@@ -45,8 +45,8 @@ describe('precompile.node-implementations', () => {
                 type1: {
                     state: ({ ns, node: { args } }) =>
                         Class(ns[STATE_CLASS_NAME]!, [
-                            Var(ns.SomeClass!, 'a', args.a),
-                            Var('Int', 'b', args.b),
+                            Var(ns.SomeClass!, `a`, args.a),
+                            Var(`Int`, `b`, args.b),
                         ]),
                 },
             }
@@ -62,7 +62,7 @@ describe('precompile.node-implementations', () => {
             precompileStateClass(precompilation, 'type1')
 
             assert.deepStrictEqual(
-                precompilation.variableNamesIndex.nodeImplementations.type1!,
+                precompilation.variableNamesIndex.nodeImplementations.type1,
                 {
                     State: 'NT_type1_State',
                     SomeClass: 'NT_type1_SomeClass',
@@ -72,8 +72,8 @@ describe('precompile.node-implementations', () => {
                 precompilation.precompiledCode.nodeImplementations.type1!
                     .stateClass,
                 Class('NT_type1_State', [
-                    Var('NT_type1_SomeClass', 'a'),
-                    Var('Int', 'b'),
+                    Var(`NT_type1_SomeClass`, `a`),
+                    Var(`Int`, `b`),
                 ])
             )
         })
@@ -100,7 +100,7 @@ describe('precompile.node-implementations', () => {
             )
 
             assert.deepStrictEqual(
-                precompilation.variableNamesIndex.nodeImplementations.type1!,
+                precompilation.variableNamesIndex.nodeImplementations.type1,
                 {
                     bla: 'NT_type1_bla',
                     blo: 'NT_type1_blo',

@@ -73,11 +73,6 @@ export interface CompilationSettings {
     debug: boolean
 }
 
-export interface GlobalPrecompilationContext {
-    readonly globals: VariableNamesIndex['globals']
-    readonly settings: CompilationSettings
-}
-
 interface GlobalDefinitionsLocalContext<Keys extends string> {
     readonly ns: { [name in Keys]: VariableName }
 }
@@ -89,16 +84,19 @@ export type GlobalDefinitions<
 > = {
     code: (
         localContext: GlobalDefinitionsLocalContext<AllKeys>,
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) => AstElement
     namespace: string
     exports?: (
         localContext: GlobalDefinitionsLocalContext<ExportsKeys>,
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) => Array<VariableName>
     imports?: (
         localContext: GlobalDefinitionsLocalContext<AllKeys>,
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) => Array<AstFunc>
     dependencies?: Array<GlobalDefinitions>
 }
@@ -125,14 +123,16 @@ export interface NodeImplementation<NodeArgsType = {}> {
             ns: ReadOnlyNamespace
             node: DspGraph.Node<NodeArgsType>
         },
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) => AstClass
 
     core?: (
         localContext: {
             ns: AssignerNamespace
         },
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) => AstElement
 
     initialization?: (
@@ -142,7 +142,8 @@ export interface NodeImplementation<NodeArgsType = {}> {
             snds: ReadOnlyNamespace
             node: DspGraph.Node<NodeArgsType>
         },
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) => AstSequence
 
     /**
@@ -161,7 +162,8 @@ export interface NodeImplementation<NodeArgsType = {}> {
             snds: ReadOnlyNamespace
             node: DspGraph.Node<NodeArgsType>
         },
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) =>
         | AstSequence
         | {
@@ -179,7 +181,8 @@ export interface NodeImplementation<NodeArgsType = {}> {
             snds: ReadOnlyNamespace
             node: DspGraph.Node<NodeArgsType>
         },
-        globalContext: GlobalPrecompilationContext
+        globals: VariableNamesIndex['globals'],
+        settings: CompilationSettings,
     ) => {
         [inletId: DspGraph.PortletId]: AstFunc
     }

@@ -159,7 +159,7 @@ export const precompileMessageInlet = (
         // precompiling message receivers.
         precompiledNode.messageReceivers[inletId] = Func(
             messageReceiverName,
-            [Var(globals.msg!.Message!, 'm')],
+            [Var(globals.msg!.Message!, `m`)],
             'void'
         )`throw new Error("This placeholder should have been replaced during precompilation")`
     } else {

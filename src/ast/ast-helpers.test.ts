@@ -32,14 +32,14 @@ describe('ast-helpers', () => {
         it('should throw if functions dont have the same arguments type or count', () => {
             assert.throws(() =>
                 assertFuncSignatureEqual(
-                    AnonFunc([Var('Int', 'bla')])``,
-                    AnonFunc([Var('Float', 'bla')])``
+                    AnonFunc([Var(`Int`, `bla`)])``,
+                    AnonFunc([Var(`Float`, `bla`)])``
                 )
             )
             assert.throws(() =>
                 assertFuncSignatureEqual(
-                    AnonFunc([Var('Int', 'bla'), Var('Int', 'blo')])``,
-                    AnonFunc([Var('Int', 'bla')])``
+                    AnonFunc([Var(`Int`, `bla`), Var(`Int`, `blo`)])``,
+                    AnonFunc([Var(`Int`, `bla`)])``
                 )
             )
         })
@@ -47,8 +47,8 @@ describe('ast-helpers', () => {
         it('should throw if functions dont have the same return type', () => {
             assert.throws(() =>
                 assertFuncSignatureEqual(
-                    AnonFunc([Var('Int', 'bla')], 'Int')``,
-                    AnonFunc([Var('Int', 'bla')], 'Float')``
+                    AnonFunc([Var(`Int`, `bla`)], `Int`)``,
+                    AnonFunc([Var(`Int`, `bla`)], `Float`)``
                 )
             )
         })
@@ -56,8 +56,8 @@ describe('ast-helpers', () => {
         it('should not throw if functions have different argument names', () => {
             assert.doesNotThrow(() =>
                 assertFuncSignatureEqual(
-                    AnonFunc([Var('Int', 'bla')])``,
-                    AnonFunc([Var('Int', 'blo')])``
+                    AnonFunc([Var(`Int`, `bla`)])``,
+                    AnonFunc([Var(`Int`, `blo`)])``
                 )
             )
         })
@@ -66,11 +66,11 @@ describe('ast-helpers', () => {
             assert.doesNotThrow(() =>
                 assertFuncSignatureEqual(
                     AnonFunc(
-                        [Var('Int', 'bla'), Var('Array<Bla>', 'blo')],
+                        [Var(`Int`, `bla`), Var(`Array<Bla>`, `blo`)],
                         'string'
                     )``,
                     AnonFunc(
-                        [Var('Int', 'bla'), Var('Array<Bla>', 'blo')],
+                        [Var(`Int`, `bla`), Var(`Array<Bla>`, `blo`)],
                         'string'
                     )``
                 )

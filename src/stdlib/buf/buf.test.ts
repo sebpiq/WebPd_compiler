@@ -31,8 +31,8 @@ describe('buf', () => {
                 description:
                     'common > should clear content when calling buf!.clear %s',
                 testFunction: ({ globals: { buf } }) => AnonFunc()`
-                    ${ConstVar(buf!.SoundBuffer, 'soundBuffer', `${buf!.create}(5)`)}
-                    ${ConstVar('FloatArray', 'data', 'createFloatArray(4)')}
+                    ${ConstVar(buf!.SoundBuffer, `soundBuffer`, `${buf!.create}(5)`)}
+                    ${ConstVar(`FloatArray`, `data`, `createFloatArray(4)`)}
                     data.set([11, 22, 33, 44])
 
                     ${buf!.pushBlock}(
@@ -51,7 +51,7 @@ describe('buf', () => {
                     'push / pull mode > should be able to push and pull from SoundBuffer %s',
                 testFunction: ({ globals: { buf } }) => AnonFunc()`
                     const soundBuffer = ${buf!.create}(5)
-                    ${Var('Int', 'availableLength', '-1')}
+                    ${Var(`Int`, `availableLength`, `-1`)}
                     let data3 = createFloatArray(3)
                     let data4 = createFloatArray(4)
                     data3.set([55, 66, 77])

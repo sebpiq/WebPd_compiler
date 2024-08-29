@@ -29,78 +29,83 @@ export const msg: GlobalDefinitions<
     keyof MsgExportsAssemblyScript
 > = {
     namespace: NAMESPACE,
-    code: ({ ns: msg }, { settings: { target } }) => {
+    code: ({ ns: msg }, _, { target }) => {
         // prettier-ignore
         const declareFuncs = {
-            create: Func(msg.create, [Var(msg._Template, 'template')], msg.Message),
+            create: Func(msg.create, [Var(msg.Template, `template`)], msg.Message),
             writeStringToken: Func(msg.writeStringToken, [
-                Var(msg.Message, 'message'),
-                Var('Int', 'tokenIndex'),
-                Var('string', 'value'),
+                Var(msg.Message, `message`),
+                Var(`Int`, `tokenIndex`),
+                Var(`string`, `value`),
             ], 'void'),
             writeFloatToken: Func(msg.writeFloatToken, [
-                Var(msg.Message, 'message'),
-                Var('Int', 'tokenIndex'),
-                Var(msg._FloatToken, 'value'),
+                Var(msg.Message, `message`),
+                Var(`Int`, `tokenIndex`),
+                Var(msg._FloatToken, `value`),
             ], 'void'),
             readStringToken: Func(msg.readStringToken, [
-                Var(msg.Message, 'message'),
-                Var('Int', 'tokenIndex'),
+                Var(msg.Message, `message`),
+                Var(`Int`, `tokenIndex`),
             ], 'string'),
             readFloatToken: Func(msg.readFloatToken, [
-                Var(msg.Message, 'message'), 
-                Var('Int', 'tokenIndex'), 
+                Var(msg.Message, `message`), 
+                Var(`Int`, `tokenIndex`), 
             ], msg._FloatToken),
             getLength: Func(msg.getLength, [
-                Var(msg.Message, 'message')
+                Var(msg.Message, `message`)
             ], 'Int'),
             getTokenType: Func(msg.getTokenType, [
-                Var(msg.Message, 'message'),
-                Var('Int', 'tokenIndex'),
+                Var(msg.Message, `message`),
+                Var(`Int`, `tokenIndex`),
             ], 'Int'),
             isStringToken: Func(msg.isStringToken, [
-                Var(msg.Message, 'message'), 
-                Var('Int', 'tokenIndex'),   
+                Var(msg.Message, `message`), 
+                Var(`Int`, `tokenIndex`),   
             ], 'boolean'),
             isFloatToken: Func(msg.isFloatToken, [
-                Var(msg.Message, 'message'), 
-                Var('Int', 'tokenIndex'),
+                Var(msg.Message, `message`), 
+                Var(`Int`, `tokenIndex`),
             ], 'boolean'),
             isMatching: Func(msg.isMatching, [
-                Var(msg.Message, 'message'),
-                Var(`Array<${msg._HeaderEntry}>`, 'tokenTypes'),
+                Var(msg.Message, `message`),
+                Var(`Array<${msg._HeaderEntry}>`, `tokenTypes`),
             ], 'boolean'),
             floats: Func(msg.floats, [
-                Var('Array<Float>', 'values'),
+                Var(`Array<Float>`, `values`),
             ], msg.Message),
             strings: Func(msg.strings, [
-                Var('Array<string>', 'values'),
+                Var(`Array<string>`, `values`),
             ], msg.Message),
             display: Func(msg.display, [
-                Var(msg.Message, 'message'),
+                Var(msg.Message, `message`),
             ], 'string')
         }
 
         const shared = [
-            Func(msg.nullMessageReceiver, [Var(msg.Message, 'm')], 'void')``,
+            Func(msg.nullMessageReceiver, [Var(msg.Message, `m`)], `void`)``,
             Var(msg.Message, msg.emptyMessage, `${msg.create}([])`),
         ]
+
+        // Enforce names exist in namespace even if not using AssemblyScript.
+        msg.Template
+        msg.Handler
 
         if (target === 'assemblyscript') {
             // prettier-ignore
             return Sequence([
                 `
+                type ${msg.Template} = Array<Int>
+                
                 type ${msg._FloatToken} = Float
                 type ${msg._CharToken} = Int
 
-                type ${msg._Template} = Array<Int>
                 type ${msg._HeaderEntry} = Int
 
                 type ${msg.Handler} = (m: ${msg.Message}) => void
                 `,
 
-                ConstVar(msg._HeaderEntry, msg.FLOAT_TOKEN, '0'),
-                ConstVar(msg._HeaderEntry, msg.STRING_TOKEN, '1'),
+                ConstVar(msg._HeaderEntry, msg.FLOAT_TOKEN, `0`),
+                ConstVar(msg._HeaderEntry, msg.STRING_TOKEN, `1`),
 
                 // =========================== MSG API
                 declareFuncs.create`
@@ -236,7 +241,7 @@ export const msg: GlobalDefinitions<
                 `,
 
                 declareFuncs.strings`
-                    const template: ${msg._Template} = []
+                    const template: ${msg.Template} = []
                     for (let i: Int = 0; i < values.length; i++) {
                         template.push(${msg.STRING_TOKEN})
                         template.push(values[i].length)
@@ -261,18 +266,18 @@ export const msg: GlobalDefinitions<
                 `,
 
                 Class(msg.Message, [
-                    Var('DataView', 'dataView'),
-                    Var(msg._Header, 'header'),
-                    Var(msg._HeaderEntry, 'tokenCount'),
-                    Var(msg._Header, 'tokenTypes'),
-                    Var(msg._Header, 'tokenPositions'),
+                    Var(`DataView`, `dataView`),
+                    Var(msg._Header, `header`),
+                    Var(msg._HeaderEntry, `tokenCount`),
+                    Var(msg._Header, `tokenTypes`),
+                    Var(msg._Header, `tokenPositions`),
                 ]),
 
                 // =========================== EXPORTED API
                 Func(msg.x_create, [
-                    Var('Int32Array', 'templateTypedArray')
+                    Var(`Int32Array`, `templateTypedArray`)
                 ], msg.Message)`
-                    const template: ${msg._Template} = new Array<Int>(templateTypedArray.length)
+                    const template: ${msg.Template} = new Array<Int>(templateTypedArray.length)
                     for (let i: Int = 0; i < templateTypedArray.length; i++) {
                         template[i] = templateTypedArray[i]
                     }
@@ -280,13 +285,13 @@ export const msg: GlobalDefinitions<
                 `,
 
                 Func(msg.x_getTokenTypes, [
-                    Var(msg.Message, 'message')
+                    Var(msg.Message, `message`)
                 ], msg._Header)`
                     return message.tokenTypes
                 `,
 
                 Func(msg.x_createTemplate, [
-                    Var('i32', 'length')
+                    Var(`i32`, `length`)
                 ], 'Int32Array')`
                     return new Int32Array(length)
                 `,
@@ -301,14 +306,14 @@ export const msg: GlobalDefinitions<
                 `type ${msg._Header} = Int32Array`,
 
                 Func(msg._computeHeaderLength, [
-                    Var('Int', 'tokenCount')
+                    Var(`Int`, `tokenCount`)
                 ], 'Int')`
                     return 1 + tokenCount * 2 + 1
                 `,
 
                 Func(msg._unpackHeader, [
-                    Var('DataView', 'messageDataView'), 
-                    Var(msg._HeaderEntry, 'tokenCount'),
+                    Var(`DataView`, `messageDataView`), 
+                    Var(msg._HeaderEntry, `tokenCount`),
                 ], msg._Header)`
                     const headerLength = ${msg._computeHeaderLength}(tokenCount)
                     // TODO : why is this \`wrap\` not working ?
@@ -321,13 +326,13 @@ export const msg: GlobalDefinitions<
                 `,
 
                 Func(msg._unpackTokenTypes, [
-                    Var(msg._Header, 'header'),
+                    Var(msg._Header, `header`),
                 ], msg._Header)`
                     return header.slice(1, 1 + header[0])
                 `,
 
                 Func(msg._unpackTokenPositions, [
-                    Var(msg._Header, 'header'),
+                    Var(msg._Header, `header`),
                 ], msg._Header)`
                     return header.slice(1 + header[0])
                 `,
@@ -337,8 +342,8 @@ export const msg: GlobalDefinitions<
         } else if (target === 'javascript') {
             // prettier-ignore
             return Sequence([
-                ConstVar('string', msg.FLOAT_TOKEN, '"number"'),
-                ConstVar('string', msg.STRING_TOKEN, '"string"'),
+                ConstVar(`string`, msg.FLOAT_TOKEN, `"number"`),
+                ConstVar(`string`, msg.STRING_TOKEN, `"string"`),
 
                 declareFuncs.create`
                     const m = []
@@ -402,8 +407,8 @@ export const msg: GlobalDefinitions<
         }
     },
 
-    exports: ({ ns: msg }, { settings }) =>
-        settings.target === 'assemblyscript'
+    exports: ({ ns: msg }, _, { target }) =>
+        target === 'assemblyscript'
             ? [
                   msg.x_create,
                   msg.x_getTokenTypes,

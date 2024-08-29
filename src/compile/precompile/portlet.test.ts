@@ -310,7 +310,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n2!.messageReceivers['0'],
                 Func(
                     'N_n2_rcvs_0',
-                    [Var(globals.msg!.Message!, 'm')],
+                    [Var(globals.msg!.Message!, `m`)],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
             )
@@ -318,7 +318,7 @@ describe('precompile.portlets', () => {
                 precompilation.precompiledCode.nodes.n3!.messageReceivers['0'],
                 Func(
                     'N_n3_rcvs_0',
-                    [Var(globals.msg!.Message!, 'm')],
+                    [Var(globals.msg!.Message!, `m`)],
                     'void'
                 )`throw new Error("This placeholder should have been replaced during precompilation")`
             )

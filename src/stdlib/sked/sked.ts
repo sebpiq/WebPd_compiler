@@ -27,7 +27,7 @@ const NAMESPACE = 'sked'
 
 export const sked: GlobalDefinitions<keyof SkedNamespaceAll> = {
     namespace: NAMESPACE,
-    code: ({ ns: sked }, { settings: { target } }) => {
+    code: ({ ns: sked }, _, { target }) => {
         const content: Array<AstSequenceContent> = []
         if (target === 'assemblyscript') {
             content.push(`
@@ -46,31 +46,31 @@ export const sked: GlobalDefinitions<keyof SkedNamespaceAll> = {
              * Skeduler id that will never be used. 
              * Can be used as a "no id", or "null" value. 
              */
-            ConstVar(sked.Id, sked.ID_NULL, '-1'),
+            ConstVar(sked.Id, sked.ID_NULL, `-1`),
 
-            ConstVar(sked.Id, sked._ID_COUNTER_INIT, '1'),
+            ConstVar(sked.Id, sked._ID_COUNTER_INIT, `1`),
 
-            ConstVar('Int', sked._MODE_WAIT, '0'),
-            ConstVar('Int', sked._MODE_SUBSCRIBE, '1'),
+            ConstVar(`Int`, sked._MODE_WAIT, `0`),
+            ConstVar(`Int`, sked._MODE_SUBSCRIBE, `1`),
 
             // =========================== SKED API
             Class(sked._Request, [
-                Var(sked.Id, 'id'),
-                Var(sked.Mode, 'mode'),
-                Var(sked.Callback, 'callback'),
+                Var(sked.Id, `id`),
+                Var(sked.Mode, `mode`),
+                Var(sked.Callback, `callback`),
             ]),
 
             Class(sked.Skeduler, [
-                Var(`Map<${sked.Event}, Array<${sked.Id}>>`, 'events'),
-                Var(`Map<${sked.Id}, ${sked._Request}>`, 'requests'),
-                Var('boolean', 'isLoggingEvents'),
-                Var(`Set<${sked.Event}>`, 'eventLog'),
-                Var(sked.Id, 'idCounter'),
+                Var(`Map<${sked.Event}, Array<${sked.Id}>>`, `events`),
+                Var(`Map<${sked.Id}, ${sked._Request}>`, `requests`),
+                Var(`boolean`, `isLoggingEvents`),
+                Var(`Set<${sked.Event}>`, `eventLog`),
+                Var(sked.Id, `idCounter`),
             ]),
 
             /** Creates a new Skeduler. */
             Func(sked.create, [
-                Var('boolean', 'isLoggingEvents')
+                Var(`boolean`, `isLoggingEvents`)
             ], sked.Skeduler)`
                 return {
                     eventLog: new Set(),
@@ -89,9 +89,9 @@ export const sked: GlobalDefinitions<keyof SkedNamespaceAll> = {
              * @returns an id allowing to cancel the callback with {@link ${sked.cancel}}
              */
             Func(sked.wait, [
-                Var(sked.Skeduler, 'skeduler'),
-                Var(sked.Event, 'event'),
-                Var(sked.Callback, 'callback'),
+                Var(sked.Skeduler, `skeduler`),
+                Var(sked.Event, `event`),
+                Var(sked.Callback, `callback`),
             ], sked.Id)`
                 if (skeduler.isLoggingEvents === false) {
                     throw new Error("Please activate skeduler's isLoggingEvents")
@@ -112,9 +112,9 @@ export const sked: GlobalDefinitions<keyof SkedNamespaceAll> = {
              * @returns an id allowing to cancel the callback with {@link sked.cancel}
              */
             Func(sked.waitFuture, [
-                Var(sked.Skeduler, 'skeduler'),
-                Var(sked.Event, 'event'),
-                Var(sked.Callback, 'callback'),
+                Var(sked.Skeduler, `skeduler`),
+                Var(sked.Event, `event`),
+                Var(sked.Callback, `callback`),
             ], sked.Id)`
                 return ${sked._createRequest}(skeduler, event, callback, ${sked._MODE_WAIT})
             `,
@@ -124,27 +124,27 @@ export const sked: GlobalDefinitions<keyof SkedNamespaceAll> = {
              * @returns an id allowing to cancel the callback with {@link sked.cancel}
              */
             Func(sked.subscribe, [
-                Var(sked.Skeduler, 'skeduler'),
-                Var(sked.Event, 'event'),
-                Var(sked.Callback, 'callback'),
+                Var(sked.Skeduler, `skeduler`),
+                Var(sked.Event, `event`),
+                Var(sked.Callback, `callback`),
             ], sked.Id)`
                 return ${sked._createRequest}(skeduler, event, callback, ${sked._MODE_SUBSCRIBE})
             `,
 
             /** Notifies the skeduler that an event has just occurred. */
             Func(sked.emit, [
-                Var(sked.Skeduler, 'skeduler'), 
-                Var(sked.Event, 'event')
+                Var(sked.Skeduler, `skeduler`), 
+                Var(sked.Event, `event`)
             ], 'void')`
                 if (skeduler.isLoggingEvents === true) {
                     skeduler.eventLog.add(event)
                 }
                 if (skeduler.events.has(event)) {
-                    ${ConstVar(`Array<${sked.Id}>`, 'skedIds', 'skeduler.events.get(event)')}
-                    ${ConstVar(`Array<${sked.Id}>`, 'skedIdsStaying', '[]')}
-                    for (${Var('Int', 'i', '0')}; i < skedIds.length; i++) {
+                    ${ConstVar(`Array<${sked.Id}>`, `skedIds`, `skeduler.events.get(event)`)}
+                    ${ConstVar(`Array<${sked.Id}>`, `skedIdsStaying`, `[]`)}
+                    for (${Var(`Int`, `i`, `0`)}; i < skedIds.length; i++) {
                         if (skeduler.requests.has(skedIds[i])) {
-                            ${ConstVar(sked._Request, 'request', 'skeduler.requests.get(skedIds[i])')}
+                            ${ConstVar(sked._Request, `request`, `skeduler.requests.get(skedIds[i])`)}
                             request.callback(event)
                             if (request.mode === ${sked._MODE_WAIT}) {
                                 skeduler.requests.delete(request.id)
@@ -159,21 +159,21 @@ export const sked: GlobalDefinitions<keyof SkedNamespaceAll> = {
 
             /** Cancels a callback */
             Func(sked.cancel, [
-                Var(sked.Skeduler, 'skeduler'), 
-                Var(sked.Id, 'id'),
+                Var(sked.Skeduler, `skeduler`), 
+                Var(sked.Id, `id`),
             ], 'void')`
                 skeduler.requests.delete(id)
             `,
 
             // =========================== PRIVATE
             Func(sked._createRequest, [
-                Var(sked.Skeduler, 'skeduler'),
-                Var(sked.Event, 'event'),
-                Var(sked.Callback, 'callback'),
-                Var(sked.Mode, 'mode'),
+                Var(sked.Skeduler, `skeduler`),
+                Var(sked.Event, `event`),
+                Var(sked.Callback, `callback`),
+                Var(sked.Mode, `mode`),
             ], sked.Id)`
-                ${ConstVar(sked.Id, 'id', `${sked._nextId}(skeduler)`)}
-                ${ConstVar(sked._Request, 'request', `{
+                ${ConstVar(sked.Id, `id`, `${sked._nextId}(skeduler)`)}
+                ${ConstVar(sked._Request, `request`, `{
                     id, 
                     mode, 
                     callback,
@@ -188,7 +188,7 @@ export const sked: GlobalDefinitions<keyof SkedNamespaceAll> = {
             `,
 
             Func(sked._nextId, [
-                Var(sked.Skeduler, 'skeduler')
+                Var(sked.Skeduler, `skeduler`)
             ], sked.Id)`
                 return skeduler.idCounter++
             `,

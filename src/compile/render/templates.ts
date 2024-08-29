@@ -94,7 +94,7 @@ const ioMessageReceivers = ({
                 (precompiledIoMessageReceiver) => {
                     // prettier-ignore
                     return Func(precompiledIoMessageReceiver.functionName, [
-                    Var(msg.Message, 'm')
+                    Var(msg.Message, `m`)
                 ], 'void')`
                     ${precompiledIoMessageReceiver.getSinkFunctionName()}(m)
                 `
@@ -137,7 +137,7 @@ const portletsDeclarations = ({
             .map(([precompiledNode, nodeId]) => [
                 // 1. Declares signal outlets
                 Object.values(precompiledNode.signalOuts).map((outName) =>
-                    Var('Float', outName, '0')
+                    Var(`Float`, outName, `0`)
                 ),
 
                 // 2. Declares message receivers for all message inlets.
@@ -166,7 +166,7 @@ const portletsDeclarations = ({
                 ({ messageSenderName, sinkFunctionNames }) =>
                     // prettier-ignore
                     Func(messageSenderName, [
-                        Var(msg.Message, 'm')
+                        Var(msg.Message, `m`)
                     ], 'void')`
                         ${sinkFunctionNames.map(functionName => 
                             `${functionName}(m)`)}
@@ -231,7 +231,7 @@ const coldDspFunctions = ({
             }) =>
                 // prettier-ignore
                 Func(functionName, [
-                    Var(msg.Message, 'm')
+                    Var(msg.Message, `m`)
                 ], 'void')`
                     ${dspGroup.traversal.map((nodeId) => 
                         nodes[nodeId]!.dsp.loop

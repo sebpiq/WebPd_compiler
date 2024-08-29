@@ -39,7 +39,6 @@ import { Sequence } from '../../ast/declare'
 import render from '../../compile/render'
 import macros from '../../engine-assemblyscript/compile/macros'
 import {
-    makeGlobalCodePrecompilationContext,
     makePrecompilation,
 } from '../../compile/test-helpers'
 import { Code } from '../../ast/types'
@@ -84,20 +83,19 @@ describe('msg-bindings', () => {
             },
         })
         const globals = precompilation.variableNamesAssigner.globals
-        const globalContext =
-            makeGlobalCodePrecompilationContext(precompilation)
+        const settings = precompilation.settings
         return render(
             macros,
             Sequence([
                 core.code(
                     { ns: globals.core as CoreNamespaceAll },
-                    globalContext
+                    globals, settings
                 ),
                 sked.code(
                     { ns: globals.sked as SkedNamespaceAll },
-                    globalContext
+                    globals, settings
                 ),
-                msg.code({ ns: globals.msg as MsgNamespaceAll }, globalContext),
+                msg.code({ ns: globals.msg as MsgNamespaceAll }, globals, settings),
                 `export function testReadMessageData(message: ${globals.msg.Message}, index: Int): Int {
                     return message.dataView.getInt32(index * sizeof<Int>())
                 }`,
@@ -106,14 +104,14 @@ describe('msg-bindings', () => {
                         ns: precompilation.variableNamesAssigner.globals
                             .core as CoreNamespaceAll,
                     },
-                    globalContext
+                    globals, settings
                 ).map((name) => `export { ${name} }`),
                 msg.exports!(
                     {
                         ns: precompilation.variableNamesAssigner.globals
                             .msg as MsgNamespaceAll,
                     },
-                    globalContext
+                    globals, settings
                 ).map((name) => `export { ${name} }`),
             ])
         )
@@ -132,11 +130,13 @@ describe('msg-bindings', () => {
                 target: 'assemblyscript',
             },
         })
+        const globals = precompilation.variableNamesAssigner.globals
+        const settings = precompilation.settings
         // We instantiate the code to make sure all names are assigned
         instantiateAndDedupeDependencies(
             [msg],
             precompilation.variableNamesAssigner,
-            makeGlobalCodePrecompilationContext(precompilation)
+            globals, settings
         )
         return proxyWithEngineNameMapping(
             rawModule,

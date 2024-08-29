@@ -78,9 +78,9 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 sequence,
                 Sequence([
-                    Var('Float', 'N_n1_outs_0', '0'),
-                    Var('Float', 'N_n1_outs_1', '0'),
-                    Var('Float', 'N_n2_outs_0', '0'),
+                    Var(`Float`, `N_n1_outs_0`, `0`),
+                    Var(`Float`, `N_n1_outs_1`, `0`),
+                    Var(`Float`, `N_n2_outs_0`, `0`),
                 ])
             )
         })
@@ -111,17 +111,17 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '0'
             ] = Func('N_n1_rcvs_0', [
-                Var(globals.msg.Message, 'm'),
+                Var(globals.msg.Message, `m`),
             ])`// [n1] message receiver 0`
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '1'
             ] = Func('N_n1_rcvs_1', [
-                Var(globals.msg.Message, 'm'),
+                Var(globals.msg.Message, `m`),
             ])`// [n1] message receiver 1`
             precompilation.precompiledCodeAssigner.nodes.n2!.messageReceivers[
                 '0'
             ] = Func('N_n2_rcvs_0', [
-                Var(globals.msg.Message, 'm'),
+                Var(globals.msg.Message, `m`),
             ])`// [n2] message receiver 0`
 
             const sequence = templates.portletsDeclarations(
@@ -133,13 +133,13 @@ describe('templates', () => {
                 // prettier-ignore
                 Sequence([
                     Func('N_n1_rcvs_0', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + ${globals.msg.display!}(m))`,
                     Func('N_n1_rcvs_1', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`// [n1] message receiver 1\nthrow new Error('Node "n1", inlet "1", unsupported message : ' + ${globals.msg.display!}(m))`,
                     Func('N_n2_rcvs_0', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`// [n2] message receiver 0\nthrow new Error('Node "n2", inlet "0", unsupported message : ' + ${globals.msg.display!}(m))`,
                 ])
             )
@@ -167,7 +167,7 @@ describe('templates', () => {
             precompilation.precompiledCodeAssigner.nodes.n1!.messageReceivers[
                 '0'
             ] = Func('N_n1_rcvs_0', [
-                Var(globals.msg.Message, 'm'),
+                Var(globals.msg.Message, `m`),
             ])`// [n1] message receiver 0`
 
             const sequence = templates.portletsDeclarations(
@@ -179,7 +179,7 @@ describe('templates', () => {
                 // prettier-ignore
                 Sequence([
                     Func('N_n1_rcvs_0', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`// [n1] message receiver 0\nthrow new Error('Node "n1", inlet "0", unsupported message : ' + ${globals.msg.display!}(m) + '\\nDEBUG : remember, you must return from message receiver')`,
                 ])
             )
@@ -235,10 +235,10 @@ describe('templates', () => {
                 sequence,
                 Sequence([
                     Func('N_n1_snds_0', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`N_n2_rcvs_0(m)\nN_n2_rcvs_1(m)\nDSP_1(m)`,
                     Func('N_n1_snds_1', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`outlerListener_n1_0(m)\nN_n2_rcvs_0(m)`,
                 ])
             )
@@ -278,12 +278,12 @@ describe('templates', () => {
             ]
 
             precompilation.precompiledCodeAssigner.nodeImplementations.type1!.stateClass =
-                Class('State', [Var('Float', 'a'), Var('Float', 'b')])
+                Class('State', [Var(`Float`, `a`), Var(`Float`, `b`)])
             precompilation.precompiledCodeAssigner.nodes.n1!.state = {
                 name: 'n1_STATE',
                 initialization: {
                     a: Sequence(['111']),
-                    b: Sequence([AnonFunc([Var('Float', 'x')])`return x * 2`]),
+                    b: Sequence([AnonFunc([Var(`Float`, `x`)])`return x * 2`]),
                 },
             }
             precompilation.precompiledCodeAssigner.nodes.n2!.state = {
@@ -306,10 +306,10 @@ describe('templates', () => {
                         'State',
                         'n1_STATE',
                         ast`{\na: 111,\nb: ${AnonFunc([
-                            Var('Float', 'x'),
+                            Var(`Float`, `x`),
                         ])`return x * 2`},\n}`
                     ),
-                    ConstVar('State', 'n2_STATE', ast`{\na: 333,\nb: 444,\n}`),
+                    ConstVar(`State`, `n2_STATE`, ast`{\na: 333,\nb: 444,\n}`),
                 ])
             )
         })
@@ -324,19 +324,19 @@ describe('templates', () => {
             const precompilation = makePrecompilation({ nodeImplementations })
 
             precompilation.precompiledCodeAssigner.nodeImplementations.type1!.stateClass =
-                Class('State_type1', [Var('Float', 'a')])
+                Class('State_type1', [Var(`Float`, `a`)])
             precompilation.precompiledCodeAssigner.nodeImplementations.type1!.core =
                 Sequence([
-                    ConstVar('Bla', 'bla', '"hello"'),
-                    Func('blo', [Var('State_type1', 'state')])`// blo`,
+                    ConstVar(`Bla`, `bla`, `"hello"`),
+                    Func('blo', [Var(`State_type1`, `state`)])`// blo`,
                 ])
             precompilation.precompiledCodeAssigner.nodeImplementations.type1!.nodeImplementation =
                 {}
 
             precompilation.precompiledCodeAssigner.nodeImplementations.type2!.stateClass =
-                Class('State_type2', [Var('Float', 'b')])
+                Class('State_type2', [Var(`Float`, `b`)])
             precompilation.precompiledCodeAssigner.nodeImplementations.type2!.core =
-                Sequence([ConstVar('Int', 'i', '0')])
+                Sequence([ConstVar(`Int`, `i`, `0`)])
             precompilation.precompiledCodeAssigner.nodeImplementations.type2!.nodeImplementation =
                 {}
 
@@ -347,11 +347,11 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 sequence,
                 Sequence([
-                    Class('State_type1', [Var('Float', 'a')]),
-                    ConstVar('Bla', 'bla', '"hello"'),
-                    Func('blo', [Var('State_type1', 'state')])`// blo`,
-                    Class('State_type2', [Var('Float', 'b')]),
-                    ConstVar('Int', 'i', '0'),
+                    Class('State_type1', [Var(`Float`, `a`)]),
+                    ConstVar(`Bla`, `bla`, `"hello"`),
+                    Func('blo', [Var(`State_type1`, `state`)])`// blo`,
+                    Class('State_type2', [Var(`Float`, `b`)]),
+                    ConstVar(`Int`, `i`, `0`),
                 ])
             )
         })
@@ -377,7 +377,7 @@ describe('templates', () => {
                 'n2',
             ]
             precompilation.precompiledCodeAssigner.nodes.n1!.initialization = ast`
-                ${Var('Float', 'n1', '0')}
+                ${Var(`Float`, `n1`, `0`)}
                 console.log(n1)
             `
             precompilation.precompiledCodeAssigner.nodes.n2!.initialization = ast``
@@ -388,7 +388,7 @@ describe('templates', () => {
 
             assertAstSequencesAreEqual(
                 sequence,
-                Sequence([Var('Float', 'n1', '0'), 'console.log(n1)'])
+                Sequence([Var(`Float`, `n1`, `0`), `console.log(n1)`])
             )
         })
     })
@@ -422,7 +422,7 @@ describe('templates', () => {
                 sequence,
                 Sequence([
                     Func('ioRcv_function', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`ioRcvNode_messageSender(m)`,
                 ])
             )
@@ -621,8 +621,8 @@ describe('templates', () => {
                 normalizeAstSequence(sequence),
                 // prettier-ignore
                 Sequence([
-                    Func('COLD_0', [Var(globals.msg.Message, 'm')])`// n1\n// n2`,
-                    Func('COLD_1', [Var(globals.msg.Message, 'm')])`// n3`,
+                    Func('COLD_0', [Var(globals.msg.Message, `m`)])`// n1\n// n2`,
+                    Func('COLD_1', [Var(globals.msg.Message, `m`)])`// n3`,
                 ])
             )
         })
@@ -673,7 +673,7 @@ describe('templates', () => {
                 normalizeAstSequence(sequence),
                 Sequence([
                     Func('COLD_0', [
-                        Var(globals.msg.Message, 'm'),
+                        Var(globals.msg.Message, `m`),
                     ])`// n1\n// inlet dsp n2`,
                 ])
             )
@@ -723,7 +723,7 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    Func('COLD_0', [Var(globals.msg.Message, 'm')])`// n1`,
+                    Func('COLD_0', [Var(globals.msg.Message, `m`)])`// n1`,
                 ])
             )
         })

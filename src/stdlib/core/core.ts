@@ -31,35 +31,35 @@ export const core: GlobalDefinitions<
     namespace: NAMESPACE,
 
     // prettier-ignore
-    code: ({ ns: core }, { settings: { target, audio: { bitDepth } } }) => {
+    code: ({ ns: core }, _, { target, audio: { bitDepth } }) => {
         const Int = 'i32'
         const Float = bitDepth === 32 ? 'f32' : 'f64'
         const FloatArray = bitDepth === 32 ? 'Float32Array' : 'Float64Array'
         const getFloat = bitDepth === 32 ? 'getFloat32' : 'getFloat64'
         const setFloat = bitDepth === 32 ? 'setFloat32' : 'setFloat64'
         const declareFuncs = {
-            toInt: Func(core.toInt, [Var('Float', 'v')], 'Int'),
-            toFloat: Func(core.toFloat, [Var('Int', 'v')], 'Float'),
-            createFloatArray: Func(core.createFloatArray, [Var('Int', 'length')], 'FloatArray'),
+            toInt: Func(core.toInt, [Var(`Float`, `v`)], `Int`),
+            toFloat: Func(core.toFloat, [Var(`Int`, `v`)], `Float`),
+            createFloatArray: Func(core.createFloatArray, [Var(`Int`, `length`)], `FloatArray`),
             setFloatDataView: Func(core.setFloatDataView, [
-                Var('DataView', 'dataView'), 
-                Var('Int', 'position'), 
-                Var('Float', 'value'), 
+                Var(`DataView`, `dataView`), 
+                Var(`Int`, `position`), 
+                Var(`Float`, `value`), 
             ], 'void'),
             getFloatDataView: Func(core.getFloatDataView, [
-                Var('DataView', 'dataView'), 
-                Var('Int', 'position'), 
+                Var(`DataView`, `dataView`), 
+                Var(`Int`, `position`), 
             ], 'Float')
         }
 
         const shared = [
-            Var('Int', core.IT_FRAME, '0'),
-            Var('Int', core.FRAME, '0'),
-            Var('Int', core.BLOCK_SIZE, '0'),
-            Var('Float', core.SAMPLE_RATE, '0'),
-            Var('Float', core.NULL_SIGNAL, '0'),
-            Var('FloatArray', core.INPUT, 'createFloatArray(0)'),
-            Var('FloatArray', core.OUTPUT, 'createFloatArray(0)'),
+            Var(`Int`, core.IT_FRAME, `0`),
+            Var(`Int`, core.FRAME, `0`),
+            Var(`Int`, core.BLOCK_SIZE, `0`),
+            Var(`Float`, core.SAMPLE_RATE, `0`),
+            Var(`Float`, core.NULL_SIGNAL, `0`),
+            Var(`FloatArray`, core.INPUT, `createFloatArray(0)`),
+            Var(`FloatArray`, core.OUTPUT, `createFloatArray(0)`),
         ]
 
         if (target === 'assemblyscript') {
@@ -92,21 +92,21 @@ export const core: GlobalDefinitions<
                 `,
 
                 Func(core.x_pushToListOfArrays, [
-                    Var('FloatArray[]', 'arrays'), 
-                    Var('FloatArray', 'array')
+                    Var(`FloatArray[]`, `arrays`), 
+                    Var(`FloatArray`, `array`)
                 ], 'void')`
                     arrays.push(array)
                 `,
 
                 Func(core.x_getListOfArraysLength, [
-                    Var('FloatArray[]', 'arrays')
+                    Var(`FloatArray[]`, `arrays`)
                 ], 'Int')`
                     return arrays.length
                 `,
 
                 Func(core.x_getListOfArraysElem, [
-                    Var('FloatArray[]', 'arrays'), 
-                    Var('Int', 'index')
+                    Var(`FloatArray[]`, `arrays`), 
+                    Var(`Int`, `index`)
                 ], 'FloatArray')`
                     return arrays[index]
                 `,
@@ -150,8 +150,8 @@ export const core: GlobalDefinitions<
         }
     },
 
-    exports: ({ ns: core }, { settings }) =>
-        settings.target === 'assemblyscript'
+    exports: ({ ns: core }, _, { target }) =>
+        target === 'assemblyscript'
             ? [
                   core.x_createListOfArrays,
                   core.x_pushToListOfArrays,

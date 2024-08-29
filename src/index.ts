@@ -23,6 +23,7 @@ export {
     NodeImplementations,
     CompilerTarget,
     AudioSettings,
+    VariableNamesIndex,
 } from './compile/types'
 export { Code } from './ast/types'
 export {

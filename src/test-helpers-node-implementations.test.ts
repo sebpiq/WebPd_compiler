@@ -65,13 +65,13 @@ describe('test-helpers-node-implementations', () => {
             'should work with message inlets %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ snds }, { globals }) => ({
+                    messageReceivers: ({ snds }, { msg }) => ({
                         // prettier-ignore
                         '0': AnonFunc([
-                            Var(globals.msg!.Message!, 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                            ${snds.$0!}(${globals.msg!.floats!}([
-                                ${globals.msg!.readFloatToken!}(m, 0) + 0.1 
+                            ${snds.$0!}(${msg.floats}([
+                                ${msg.readFloatToken}(m, 0) + 0.1 
                             ]))
                             return
                         `,
@@ -102,13 +102,13 @@ describe('test-helpers-node-implementations', () => {
             'should send message at the right frame %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: ({ snds }, { globals }) => ({
+                    messageReceivers: ({ snds }, { msg, core }) => ({
                         // prettier-ignore
                         '0': AnonFunc([
-                            Var(globals.msg!.Message!, 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                        ${snds.$0!}(${globals.msg!.floats!}([
-                            toFloat(${globals.core!.FRAME!})
+                        ${snds.$0!}(${msg.floats}([
+                            toFloat(${core.FRAME})
                         ]))
                         return
                     `,
@@ -139,12 +139,12 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests with fs %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: (_, { globals }) => ({
+                    messageReceivers: (_, { msg, fs }) => ({
                         // prettier-ignore
                         '0': AnonFunc([
-                            Var(globals.msg!.Message!, 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                            ${globals.fs!.readSoundFile!}('/bla', {
+                            ${fs!.readSoundFile}('/bla', {
                                 channelCount: 11,
                                 sampleRate: 666,
                                 bitDepth: 12,
@@ -191,12 +191,12 @@ describe('test-helpers-node-implementations', () => {
             'should handle tests on arrays %s',
             async ({ target }) => {
                 const nodeImplementation: NodeImplementation<{}> = {
-                    messageReceivers: (_, { globals }) => ({
+                    messageReceivers: (_, { msg, commons }) => ({
                         // prettier-ignore
                         '0': AnonFunc([
-                            Var(globals.msg!.Message!, 'm')
+                            Var(msg.Message, `m`)
                         ], 'void')`
-                            ${globals.commons!.getArray!}('array1')[0] = 666
+                            ${commons.getArray}('array1')[0] = 666
                             return
                         `,
                     }),

@@ -41,7 +41,7 @@ describe('fs', () => {
                     'sound info > should be able to convert SoundInfo to Message %s',
                 testFunction: ({ globals: { msg, fs } }) => AnonFunc()`
                     initializeTest()
-                    ${ConstVar(fs!.SoundInfo, 'soundInfo', `{
+                    ${ConstVar(fs!.SoundInfo, `soundInfo`, `{
                         channelCount: 2,
                         sampleRate: 48000,
                         bitDepth: 24,
@@ -124,7 +124,7 @@ describe('fs', () => {
                     assert_integersEqual(callbackOperationId, 0)
 
                     // 2. Operation is done, call fs_sendReadSoundFileResponse
-                    ${Var('FloatArray[]', 'sound', `[
+                    ${Var(`FloatArray[]`, `sound`, `[
                         createFloatArray(3),
                         createFloatArray(3),
                         createFloatArray(3),
@@ -189,7 +189,7 @@ describe('fs', () => {
                     'openSoundReadStream > should create the operation %s',
                 testFunction: ({ globals: { fs } }) => AnonFunc()`
                     initializeTest()
-                    ${ConstVar('Int', 'channelCount', '22')}
+                    ${ConstVar(`Int`, `channelCount`, `22`)}
                     ${ConstVar(
                         fs!.OperationId,
                         'operationId',
@@ -220,8 +220,8 @@ describe('fs', () => {
                     }))
 
                     assert_booleansEqual(${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(operationId), true)
-                    assert_booleansEqual(${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.has(operationId), true)
-                    assert_integersEqual(${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.get(operationId).length, channelCount)
+                    assert_booleansEqual(${(fs as FsNamespaceAll).SOUND_STREAM_BUFFERS}.has(operationId), true)
+                    assert_integersEqual(${(fs as FsNamespaceAll).SOUND_STREAM_BUFFERS}.get(operationId).length, channelCount)
                 `,
             },
 
@@ -230,8 +230,8 @@ describe('fs', () => {
                     'fs_onSoundStreamData > should push data to the buffer %s',
                 testFunction: ({ globals: { fs, buf } }) => AnonFunc()`
                     initializeTest()
-                    ${Var('Int', 'availableFrameCount', '0')}
-                    ${Var('FloatArray[]', 'data', '[]')}
+                    ${Var(`Int`, `availableFrameCount`, `0`)}
+                    ${Var(`FloatArray[]`, `data`, `[]`)}
 
                     // 1. Create the operation
                     ${ConstVar(
@@ -283,9 +283,9 @@ describe('fs', () => {
 
                     // 5. Testing buffer contents
                     ${Func('pullSample', [
-                        Var(fs!.OperationId, 'operationId')
+                        Var(fs!.OperationId, `operationId`)
                     ], 'Float')`
-                        return ${buf!.pullSample}(${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.get(operationId)[0])
+                        return ${buf!.pullSample}(${(fs as FsNamespaceAll).SOUND_STREAM_BUFFERS}.get(operationId)[0])
                     `}
                     assert_floatsEqual(pullSample(operationId), -11)
                     assert_floatsEqual(pullSample(operationId), -22)
@@ -302,7 +302,7 @@ describe('fs', () => {
                     'closeSoundStream > should close the read stream and call the callback %s',
                 testFunction: ({ globals: { fs } }) => AnonFunc()`
                     initializeTest()
-                    ${Var('FloatArray[]', 'data', '[]')}
+                    ${Var(`FloatArray[]`, `data`, `[]`)}
 
                     // 1. Create the operation
                     ${ConstVar(
@@ -392,14 +392,14 @@ describe('fs', () => {
                     'sendSoundStreamData > should push data to the buffer %s',
                 testFunction: ({ globals: { fs } }) => AnonFunc()`
                     initializeTest()
-                    ${Var('Float', 'counter', '0')}
-                    ${Var('FloatArray[]', 'data', '[]')}
+                    ${Var(`Float`, `counter`, `0`)}
+                    ${Var(`FloatArray[]`, `data`, `[]`)}
 
                     ${Func('testSendSoundStreamData', [
-                        Var('Float', 'counter'), 
-                        Var(fs!.OperationId, 'id')
+                        Var(`Float`, `counter`), 
+                        Var(fs!.OperationId, `id`)
                     ], 'void')`
-                        ${ConstVar('FloatArray[]', 'block', `[
+                        ${ConstVar(`FloatArray[]`, `block`, `[
                             createFloatArray(4),
                             createFloatArray(4),
                         ]`)}
@@ -468,7 +468,7 @@ describe('fs', () => {
                 testFunction: ({ globals: { fs } }) => AnonFunc()`
                     initializeTest()
                     ${Func('testSendSoundStreamData', [
-                        Var(fs!.OperationId, 'id')
+                        Var(fs!.OperationId, `id`)
                     ], 'void')`
                         ${ConstVar(
                             'FloatArray[]',
@@ -521,7 +521,7 @@ describe('fs', () => {
                 testFunction: ({ globals: { fs } }) => AnonFunc()`
                     initializeTest()
 
-                    ${ConstVar('FloatArray[]', 'sound', `[
+                    ${ConstVar(`FloatArray[]`, `sound`, `[
                         createFloatArray(4),
                         createFloatArray(4),
                         createFloatArray(4),
@@ -564,7 +564,7 @@ describe('fs', () => {
                 testFunction: ({ globals: { fs } }) => AnonFunc()`
                     initializeTest()
 
-                    ${ConstVar('FloatArray[]', 'sound', `[
+                    ${ConstVar(`FloatArray[]`, `sound`, `[
                         createFloatArray(512),
                         createFloatArray(512),
                     ]`)}
@@ -608,7 +608,7 @@ describe('fs', () => {
                 testFunction: ({ globals: { fs } }) => AnonFunc()`
                     initializeTest()
 
-                    ${ConstVar('FloatArray[]', 'sound', `[
+                    ${ConstVar(`FloatArray[]`, `sound`, `[
                         createFloatArray(512),
                         createFloatArray(512),
                     ]`)}
@@ -650,17 +650,17 @@ describe('fs', () => {
             fsWriteSoundStream,
             {
                 namespace: '_',
-                code: (_, { globals: { msg, fs } }) => Sequence([
+                code: (_, { msg, fs }) => Sequence([
                     // Global test variables
-                    Var('Array<string>', 'calls', '[]'),
-                    Var(`Array<${fs!.OperationId}>`, 'id_received', '[]'),
-                    Var('FloatArray[][]', 'sound_received', '[]'),
-                    Var(`Array<${fs!.Url}>`, 'url_received', '[]'),
-                    Var(`Array<${msg.Message}>`, 'info_received', '[]'),
-                    Var(fs!.OperationStatus, 'status_received', '-1'),
-                    Var('Int', 'callbackOperationId', '0'),
-                    Var(fs!.OperationStatus, 'callbackOperationStatus', '-1'),
-                    Var('FloatArray[]', 'callbackOperationSound', '[]'),
+                    Var(`Array<string>`, `calls`, `[]`),
+                    Var(`Array<${fs!.OperationId}>`, `id_received`, `[]`),
+                    Var(`FloatArray[][]`, `sound_received`, `[]`),
+                    Var(`Array<${fs!.Url}>`, `url_received`, `[]`),
+                    Var(`Array<${msg.Message}>`, `info_received`, `[]`),
+                    Var(fs!.OperationStatus, `status_received`, `-1`),
+                    Var(`Int`, `callbackOperationId`, `0`),
+                    Var(fs!.OperationStatus, `callbackOperationStatus`, `-1`),
+                    Var(`FloatArray[]`, `callbackOperationSound`, `[]`),
                     
                     Func('initializeTest')`
                         calls = []        
@@ -677,9 +677,9 @@ describe('fs', () => {
 
                     // Dummy import
                     Func((fs as FsNamespaceAll).i_readSoundFile, [
-                        Var(fs!.OperationId, 'id'),
-                        Var(fs!.Url, 'url'),
-                        Var(msg.Message, 'info'),
+                        Var(fs!.OperationId, `id`),
+                        Var(fs!.Url, `url`),
+                        Var(msg.Message, `info`),
                     ], 'void')`
                         calls.push('readSoundFile')
                         id_received.push(id)
@@ -688,9 +688,9 @@ describe('fs', () => {
                     `,
 
                     Func((fs as FsNamespaceAll).i_openSoundReadStream, [
-                        Var(fs!.OperationId, 'id'),
-                        Var(fs!.Url, 'url'),
-                        Var(msg.Message, 'info'),
+                        Var(fs!.OperationId, `id`),
+                        Var(fs!.Url, `url`),
+                        Var(msg.Message, `info`),
                     ], 'void')`
                         calls.push('openSoundReadStream')
                         id_received.push(id)
@@ -699,9 +699,9 @@ describe('fs', () => {
                     `,
 
                     Func((fs as FsNamespaceAll).i_openSoundWriteStream, [
-                        Var(fs!.OperationId, 'id'),
-                        Var(fs!.Url, 'url'),
-                        Var(msg.Message, 'info'),
+                        Var(fs!.OperationId, `id`),
+                        Var(fs!.Url, `url`),
+                        Var(msg.Message, `info`),
                     ], 'void')`
                         calls.push('openSoundWriteStream')
                         id_received.push(id)
@@ -710,10 +710,10 @@ describe('fs', () => {
                     `,
 
                     Func((fs as FsNamespaceAll).i_writeSoundFile, [
-                        Var(fs!.OperationId, 'id'),
-                        Var('FloatArray[]', 'sound'),
-                        Var(fs!.Url, 'url'),
-                        Var(msg.Message, 'info'),
+                        Var(fs!.OperationId, `id`),
+                        Var(`FloatArray[]`, `sound`),
+                        Var(fs!.Url, `url`),
+                        Var(msg.Message, `info`),
                     ], 'void')`
                         calls.push('writeSoundFile')
                         id_received.push(id)
@@ -723,8 +723,8 @@ describe('fs', () => {
                     `,
 
                     Func((fs as FsNamespaceAll).i_sendSoundStreamData, [
-                        Var(fs!.OperationId, 'id'), 
-                        Var('FloatArray[]', 'sound')
+                        Var(fs!.OperationId, `id`), 
+                        Var(`FloatArray[]`, `sound`)
                     ], 'void')`
                         calls.push('sendSoundStreamData')
                         id_received.push(id)
@@ -732,8 +732,8 @@ describe('fs', () => {
                     `,
 
                     Func((fs as FsNamespaceAll).i_closeSoundStream, [
-                        Var(fs!.OperationId, 'id'),
-                        Var(fs!.OperationStatus, 'status'),
+                        Var(fs!.OperationId, `id`),
+                        Var(fs!.OperationStatus, `status`),
                     ], 'void')`
                         calls.push('closeSoundStream')
                         id_received.push(id)
@@ -741,9 +741,9 @@ describe('fs', () => {
                     `,
 
                     Func('someSoundCallback', [
-                        Var(fs!.OperationId, 'id'),
-                        Var(fs!.OperationStatus, 'status'),
-                        Var('FloatArray[]', 'sound'),
+                        Var(fs!.OperationId, `id`),
+                        Var(fs!.OperationStatus, `status`),
+                        Var(`FloatArray[]`, `sound`),
                     ], 'void')`
                         callbackOperationId = id
                         callbackOperationStatus = status
@@ -751,29 +751,29 @@ describe('fs', () => {
                     `,
 
                     Func('someCallback', [
-                        Var(fs!.OperationId, 'id'),
-                        Var(fs!.OperationStatus, 'status'),
+                        Var(fs!.OperationId, `id`),
+                        Var(fs!.OperationStatus, `status`),
                     ], 'void')`
                         callbackOperationId = id
                         callbackOperationStatus = status
                     `,
 
                     Func('assert_operationCleaned', [
-                        Var(fs!.OperationId, 'id')
+                        Var(fs!.OperationId, `id`)
                     ], 'void')`
                         if(
                             ${(fs as FsNamespaceAll)._OPERATIONS_IDS}.has(id)
                             || ${(fs as FsNamespaceAll)._OPERATIONS_CALLBACKS}.has(id)
                             || ${(fs as FsNamespaceAll)._OPERATIONS_SOUND_CALLBACKS}.has(id)
-                            || ${(fs as FsNamespaceAll)._SOUND_STREAM_BUFFERS}.has(id)
+                            || ${(fs as FsNamespaceAll).SOUND_STREAM_BUFFERS}.has(id)
                         ) {
                             reportTestFailure('operation ' + id.toString() + ' was not cleaned properly')
                         }
                     `,
 
                     Func('assert_soundInfoMessagesEqual', [
-                        Var(msg.Message, 'actual'), 
-                        Var(msg.Message, 'expected')
+                        Var(msg.Message, `actual`), 
+                        Var(msg.Message, `expected`)
                     ], 'void')`
                         if (!${msg.isMatching}(actual, [
                             ${msg.FLOAT_TOKEN}, 

@@ -157,10 +157,10 @@ export const generateFramesForNode = async <NodeArguments>(
                                 fakeSourceNode.outlets[outletId]!.type ===
                                 'signal'
                         )
-                        .map((outletId) => Var('Float', `VALUE_${outletId}`, 0))
+                        .map((outletId) => Var(`Float`, `VALUE_${outletId}`, 0))
                 ),
 
-            messageReceivers: ({ snds, state }, { globals }) =>
+            messageReceivers: ({ snds, state }, { msg }) =>
                 Object.entries(fakeSourceNode.outlets).reduce(
                     (messageReceivers, [outletId, outlet]) => {
                         // Messages received for message outlets are directly proxied
@@ -168,7 +168,7 @@ export const generateFramesForNode = async <NodeArguments>(
                             return {
                                 ...messageReceivers,
                                 [outletId]: AnonFunc([
-                                    Var(globals.msg!.Message!, 'm'),
+                                    Var(msg.Message, `m`),
                                 ])`
                                 ${snds[outletId]!}(m)
                                 return
@@ -180,10 +180,9 @@ export const generateFramesForNode = async <NodeArguments>(
                             return {
                                 ...messageReceivers,
                                 [outletId]: AnonFunc([
-                                    Var(globals.msg!.Message!, 'm'),
+                                    Var(msg.Message, `m`),
                                 ])`
-                                ${state}.VALUE_${outletId} = ${globals.msg!
-                                    .readFloatToken!}(m, 0)
+                                ${state}.VALUE_${outletId} = ${msg.readFloatToken!}(m, 0)
                                 return
                             `,
                             }
@@ -209,7 +208,7 @@ export const generateFramesForNode = async <NodeArguments>(
 
         fake_sink_node: {
             // Take incoming signal values and proxy them via message
-            dsp: ({ ins, snds }, { globals }) =>
+            dsp: ({ ins, snds }, { msg }) =>
                 Sequence(
                     Object.keys(testNode.sinks)
                         .filter(
@@ -219,12 +218,12 @@ export const generateFramesForNode = async <NodeArguments>(
                         .map(
                             (outletId) =>
                                 // prettier-ignore
-                                `${snds[outletId]}(${globals.msg!.floats!}([${ins[outletId]}]))`
+                                `${snds[outletId]}(${msg.floats}([${ins[outletId]}]))`
                         )
                 ),
 
             // Take incoming messages and directly proxy them
-            messageReceivers: ({ snds }, { globals }) =>
+            messageReceivers: ({ snds }, { msg }) =>
                 mapArray(
                     Object.keys(fakeSinkNode.inlets).filter(
                         (inletId) =>
@@ -232,7 +231,7 @@ export const generateFramesForNode = async <NodeArguments>(
                     ),
                     (inletId) => [
                         inletId,
-                        AnonFunc([Var(globals.msg!.Message!, 'm')])`
+                        AnonFunc([Var(msg.Message, `m`)])`
                             ${snds[inletId]!}(m)
                             return
                         `,

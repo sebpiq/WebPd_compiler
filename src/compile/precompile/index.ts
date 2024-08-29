@@ -117,6 +117,9 @@ export default (precompilationInput: PrecompilationInput) => {
         precompilation.precompiledCode.graph.fullTraversal
     )
 
+    // ------------------------ DEPENDENCIES ------------------------ //
+    precompileDependencies(precompilation, engineMinimalDependencies())
+
     // -------------------- NODE IMPLEMENTATIONS & STATES ------------------ //
     Object.keys(precompilation.nodeImplementations).forEach((nodeType) => {
         // Run first because we might use some members declared here
@@ -214,9 +217,6 @@ export default (precompilationInput: PrecompilationInput) => {
                 })
             })
     })
-
-    // ------------------------ DEPENDENCIES ------------------------ //
-    precompileDependencies(precompilation, engineMinimalDependencies())
 
     // ------------------------ NODE ------------------------ //
     inlinableDspGroups.forEach((dspGroup) => {

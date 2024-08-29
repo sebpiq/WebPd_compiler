@@ -28,11 +28,7 @@ import {
     proxyAsReadOnlyIndexWithDollarKeys,
     proxyAsReadOnlyIndex,
 } from '../proxies'
-import {
-    DspGroup,
-    Precompilation,
-    PrecompiledNodeCode,
-} from './types'
+import { DspGroup, Precompilation, PrecompiledNodeCode } from './types'
 import { VariableNamesIndex } from '../types'
 
 type InlinedNodes = { [nodeId: DspGraph.NodeId]: Code }
@@ -60,10 +56,8 @@ export const precompileState = (
                 ns,
                 node,
             },
-            {
-                globals,
-                settings,
-            }
+            globals,
+            settings
         )
 
         // Add state iniialization to the node.
@@ -109,10 +103,8 @@ export const precompileMessageReceivers = (
                       snds,
                       node,
                   },
-                  {
-                      globals,
-                      settings,
-                  }
+                  globals,
+                  settings
               )
             : {},
         node.id,
@@ -123,7 +115,7 @@ export const precompileMessageReceivers = (
         const implementedFunc = messageReceivers[inletId]!
         assertFuncSignatureEqual(
             implementedFunc,
-            AnonFunc([Var(globals.msg!.Message!, 'm')], 'void')``
+            AnonFunc([Var(globals.msg!.Message!, `m`)], `void`)``
         )
         const targetFunc = precompiledNode.messageReceivers[inletId]!
 
@@ -162,10 +154,8 @@ export const precompileInitialization = (
                   snds,
                   node,
               },
-              {
-                  globals,
-                  settings,
-              }
+              globals,
+              settings
           )
         : ast``
 }
@@ -200,10 +190,8 @@ export const precompileDsp = (
             outs,
             snds,
         },
-        {
-            globals,
-            settings,
-        }
+        globals,
+        settings
     )
 
     // Nodes that come here might have inlinable dsp, but still can't
@@ -325,10 +313,8 @@ export const precompileInlineDsp = (
                         snds,
                         node,
                     },
-                    {
-                        globals,
-                        settings,
-                    }
+                    globals,
+                    settings
                 )
 
             if (!('astType' in compiledDsp)) {
