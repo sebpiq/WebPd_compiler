@@ -54,8 +54,10 @@ export type fs_OperationStatus =
 export type FloatArrayConstructor = typeof Float32Array | typeof Float64Array
 export type FloatArray = InstanceType<FloatArrayConstructor>
 
+export type MessageToken = string | number
+
 /** Type for messages sent through the control flow. */
-export type Message = Array<string | number>
+export type Message = Array<MessageToken>
 
 /** [channelCount, sampleRate, bitDepth, encodingFormat, endianness, extraOptions] */
 export type SoundFileInfo = [

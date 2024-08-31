@@ -73,8 +73,8 @@ export interface MsgNamespacePublic {
     floats: VariableName
     strings: VariableName
     display: VariableName
-    nullMessageReceiver: VariableName
-    emptyMessage: VariableName
+    VOID_MESSAGE_RECEIVER: VariableName
+    EMPTY_MESSAGE: VariableName
 }
 
 interface MsgNamespacePrivate {

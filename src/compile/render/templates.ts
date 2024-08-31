@@ -211,7 +211,7 @@ const coldDspInitialization = ({
 }: RenderTemplateInput) =>
     Sequence(
         Object.values(graph.coldDspGroups).map(
-            ({ functionName }) => `${functionName}(${msg.emptyMessage})`
+            ({ functionName }) => `${functionName}(${msg.EMPTY_MESSAGE})`
         )
     )
 

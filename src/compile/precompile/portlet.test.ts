@@ -219,7 +219,7 @@ describe('precompile.portlets', () => {
                 {
                     messageSenderName:
                         precompilation.variableNamesIndex.globals.msg!
-                            .nullMessageReceiver,
+                            .VOID_MESSAGE_RECEIVER,
                     sinkFunctionNames: [],
                 }
             )

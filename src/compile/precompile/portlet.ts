@@ -138,7 +138,7 @@ export const precompileMessageOutlet = (
     else {
         precompiledNode.messageSenders[outletId] = {
             messageSenderName:
-                variableNamesAssigner.globals.msg!.nullMessageReceiver!,
+                variableNamesAssigner.globals.msg!.VOID_MESSAGE_RECEIVER!,
             sinkFunctionNames: [],
         }
     }

@@ -534,7 +534,7 @@ describe('templates', () => {
             })
             const globals = precompilation.variableNamesAssigner.globals
             // Make sure they are defined
-            globals.msg.emptyMessage
+            globals.msg.EMPTY_MESSAGE
 
             precompilation.precompiledCodeAssigner.graph.coldDspGroups = {
                 '0': {
@@ -562,7 +562,7 @@ describe('templates', () => {
             assertAstSequencesAreEqual(
                 normalizeAstSequence(sequence),
                 Sequence([
-                    `COLD_0(G_msg_emptyMessage)\nCOLD_1(G_msg_emptyMessage)`,
+                    `COLD_0(G_msg_EMPTY_MESSAGE)\nCOLD_1(G_msg_EMPTY_MESSAGE)`,
                 ])
             )
         })

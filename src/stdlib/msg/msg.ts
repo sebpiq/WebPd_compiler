@@ -82,8 +82,8 @@ export const msg: GlobalDefinitions<
         }
 
         const shared = [
-            Func(msg.nullMessageReceiver, [Var(msg.Message, `m`)], `void`)``,
-            Var(msg.Message, msg.emptyMessage, `${msg.create}([])`),
+            Func(msg.VOID_MESSAGE_RECEIVER, [Var(msg.Message, `m`)], `void`)``,
+            Var(msg.Message, msg.EMPTY_MESSAGE, `${msg.create}([])`),
         ]
 
         // Enforce names exist in namespace even if not using AssemblyScript.
