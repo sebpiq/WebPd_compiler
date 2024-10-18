@@ -19,12 +19,17 @@
  */
 
 import assert from 'assert'
-import { countTo } from './functional-helpers'
+import { countTo, renderSwitch } from './functional-helpers'
 
 describe('functional-helpers', () => {
     describe('countTo', () => {
         it('should generate a list to the count non-inclusive', () => {
             assert.deepStrictEqual(countTo(3), [0, 1, 2])
+        })
+    })
+    describe('renderSwitch', () => {
+        it('should render the first route that matches the test', () => {
+            assert.strictEqual(renderSwitch([false, 'bli'], [true, 'bla'], [true, 'foo']), 'bla')
         })
     })
 })

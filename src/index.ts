@@ -30,7 +30,7 @@ export {
     FS_OPERATION_SUCCESS,
     FS_OPERATION_FAILURE,
 } from './stdlib/fs/constants'
-export { Engine, Message, MessageToken, FloatArray } from './run/types'
+export { Engine, EngineMetadata, Message, MessageToken, FloatArray } from './run/types'
 export { createEngine as createAssemblyScriptWasmEngine } from './engine-assemblyscript/run'
 export { createEngine as createJavaScriptEngine } from './engine-javascript/run'
 export { readMetadata } from './run'
