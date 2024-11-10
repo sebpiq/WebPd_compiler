@@ -75,7 +75,7 @@ export default (precompilationInput: PrecompilationInput) => {
 
     Object.entries(precompilationInput.settings.io.messageReceivers).forEach(
         ([specNodeId, spec]) => {
-            spec.portletIds.forEach((specInletId) => {
+            spec.forEach((specInletId) => {
                 precompileIoMessageReceiver(
                     precompilation,
                     specNodeId,
@@ -87,7 +87,7 @@ export default (precompilationInput: PrecompilationInput) => {
 
     Object.entries(precompilationInput.settings.io.messageSenders).forEach(
         ([specNodeId, spec]) => {
-            spec.portletIds.forEach((specInletId) => {
+            spec.forEach((specInletId) => {
                 precompileIoMessageSender(
                     precompilation,
                     specNodeId,

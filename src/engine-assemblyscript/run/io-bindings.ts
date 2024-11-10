@@ -56,7 +56,7 @@ export const createIoMessageReceiversBindings = ({
             ...bindings,
             [nodeId]: {
                 type: 'proxy',
-                value: mapArray(spec.portletIds, (inletId) => [
+                value: mapArray(spec, (inletId) => [
                     inletId,
                     (message: Message) => {
                         const messagePointer = lowerMessage(
@@ -81,7 +81,7 @@ export const createIoMessageSendersBindings = ({
             ...bindings,
             [nodeId]: {
                 type: 'proxy',
-                value: mapArray(spec.portletIds, (outletId) => [
+                value: mapArray(spec, (outletId) => [
                     outletId,
                     (_: Message) => undefined,
                 ]),
@@ -98,7 +98,7 @@ export const ioMsgSendersImports = ({
     const { variableNamesIndex } = metadata.compilation
     Object.entries(metadata.settings.io.messageSenders).forEach(
         ([nodeId, spec]) => {
-            spec.portletIds.forEach((outletId) => {
+            spec.forEach((outletId) => {
                 const listenerName =
                     variableNamesIndex.io.messageSenders[nodeId]![outletId]!
                 wasmImports[listenerName] = (messagePointer) => {

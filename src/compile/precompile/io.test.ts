@@ -40,9 +40,7 @@ describe('precompile.io', () => {
                 settings: {
                     io: {
                         messageSenders: {
-                            n1: {
-                                portletIds: ['0'],
-                            },
+                            n1: ['0'],
                         },
                         messageReceivers: {},
                     },
@@ -93,9 +91,7 @@ describe('precompile.io', () => {
                 settings: {
                     io: {
                         messageReceivers: {
-                            n1: {
-                                portletIds: ['0'],
-                            },
+                            n1: ['0'],
                         },
                         messageSenders: {},
                     },

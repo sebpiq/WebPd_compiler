@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { DspGraph } from '../dsp-graph'
-import { CompilationSettings, VariableNamesIndex } from '../compile/types'
+import { CompilationSettings, CustomMetadata, VariableNamesIndex } from '../compile/types'
 import { FsApi } from '../stdlib/fs/types'
 import {
     FS_OPERATION_FAILURE,
@@ -74,6 +74,7 @@ export type Signal = number
 
 export interface EngineMetadata {
     readonly libVersion: string
+    readonly customMetadata: CustomMetadata
     readonly settings: {
         readonly audio: CompilationSettings['audio'] & {
             // Assigned at run time through `initialize`

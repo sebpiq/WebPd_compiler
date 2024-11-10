@@ -24,6 +24,7 @@ export {
     CompilerTarget,
     AudioSettings,
     VariableNamesIndex,
+    CustomMetadata,
 } from './compile/types'
 export { Code } from './ast/types'
 export {

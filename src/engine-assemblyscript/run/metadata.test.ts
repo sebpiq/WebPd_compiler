@@ -40,10 +40,10 @@ describe('metadata', () => {
                 },
                 io: {
                     messageReceivers: {
-                        node1: { portletIds: ['0'] },
+                        node1: ['0'],
                     },
                     messageSenders: {
-                        node1: { portletIds: ['0'] },
+                        node1: ['0'],
                     },
                 },
             })
@@ -86,6 +86,7 @@ describe('metadata', () => {
             // ASSERT
             assert.deepStrictEqual<EngineMetadata>(metadata, {
                 libVersion: packageInfo.version,
+                customMetadata: {},
                 settings: {
                     audio: {
                         ...compilationSettings.audio,

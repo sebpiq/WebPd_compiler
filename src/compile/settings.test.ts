@@ -32,6 +32,8 @@ describe('validateSettings', () => {
             channelCount: { in: 2, out: 2 },
             bitDepth: 64,
         })
+        assert.strictEqual(settings.debug, false)
+        assert.deepStrictEqual(settings.customMetadata, {})
     })
 
     it('should throw error if bitDepth invalid', () => {

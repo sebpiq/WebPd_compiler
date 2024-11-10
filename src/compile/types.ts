@@ -28,18 +28,19 @@ import { CoreNamespacePublic } from '../stdlib/core/types'
 import { MsgNamespacePublic } from '../stdlib/msg/types'
 import { SkedNamespacePublic } from '../stdlib/sked/types'
 
-type PortletsSpecMetadataBasicValue = boolean | string | number
+export type CustomMetadataValue =
+    | boolean
+    | string
+    | number
+    | Array<CustomMetadataValue>
+    | CustomMetadata
+
+export type CustomMetadata = {
+    [key: string]: CustomMetadataValue
+}
 
 export type IoMessageSpecs = {
-    [nodeId: DspGraph.NodeId]: {
-        portletIds: Array<DspGraph.PortletId>
-        metadata?: {
-            [key: string]:
-                | PortletsSpecMetadataBasicValue
-                | Array<PortletsSpecMetadataBasicValue>
-                | { [key: string]: PortletsSpecMetadataBasicValue }
-        }
-    }
+    [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
 }
 
 export type CompilerTarget = 'assemblyscript' | 'javascript'
@@ -60,6 +61,7 @@ export interface UserCompilationSettings {
         messageSenders?: IoMessageSpecs
     }
     debug?: boolean
+    customMetadata?: CustomMetadata
 }
 
 export interface CompilationSettings {
@@ -71,6 +73,7 @@ export interface CompilationSettings {
         messageSenders: IoMessageSpecs
     }
     debug: boolean
+    customMetadata: CustomMetadata
 }
 
 interface GlobalDefinitionsLocalContext<Keys extends string> {
@@ -85,18 +88,18 @@ export type GlobalDefinitions<
     code: (
         localContext: GlobalDefinitionsLocalContext<AllKeys>,
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) => AstElement
     namespace: string
     exports?: (
         localContext: GlobalDefinitionsLocalContext<ExportsKeys>,
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) => Array<VariableName>
     imports?: (
         localContext: GlobalDefinitionsLocalContext<AllKeys>,
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) => Array<AstFunc>
     dependencies?: Array<GlobalDefinitions>
 }
@@ -124,7 +127,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
             node: DspGraph.Node<NodeArgsType>
         },
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) => AstClass
 
     core?: (
@@ -132,7 +135,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
             ns: AssignerNamespace
         },
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) => AstElement
 
     initialization?: (
@@ -143,7 +146,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
             node: DspGraph.Node<NodeArgsType>
         },
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) => AstSequence
 
     /**
@@ -163,7 +166,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
             node: DspGraph.Node<NodeArgsType>
         },
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) =>
         | AstSequence
         | {
@@ -182,7 +185,7 @@ export interface NodeImplementation<NodeArgsType = {}> {
             node: DspGraph.Node<NodeArgsType>
         },
         globals: VariableNamesIndex['globals'],
-        settings: CompilationSettings,
+        settings: CompilationSettings
     ) => {
         [inletId: DspGraph.PortletId]: AstFunc
     }

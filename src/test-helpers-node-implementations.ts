@@ -244,12 +244,10 @@ export const generateFramesForNode = async <NodeArguments>(
     const compileResult = compile(graph, nodeImplementations, target, {
         io: {
             messageReceivers: {
-                fakeSourceNode: {
-                    portletIds: Object.keys(fakeSourceNode.inlets),
-                },
+                fakeSourceNode: Object.keys(fakeSourceNode.inlets),
             },
             messageSenders: {
-                fakeSinkNode: { portletIds: Object.keys(fakeSinkNode.outlets) },
+                fakeSinkNode: Object.keys(fakeSinkNode.outlets),
             },
         },
         audio: {

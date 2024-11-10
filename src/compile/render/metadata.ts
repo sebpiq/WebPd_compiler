@@ -26,7 +26,7 @@ import { RenderInput } from './types'
 export const buildMetadata = ({
     variableNamesReadOnly,
     precompiledCode: { dependencies },
-    settings: { audio: audioSettings, io },
+    settings: { audio: audioSettings, io, customMetadata },
 }: RenderInput): EngineMetadata => {
     const filteredGlobals: Partial<VariableNamesIndex['globals']> = {}
     const exportsAndImportsNames = [
@@ -46,6 +46,7 @@ export const buildMetadata = ({
 
     return {
         libVersion: packageInfo.version,
+        customMetadata,
         settings: {
             audio: {
                 ...audioSettings,

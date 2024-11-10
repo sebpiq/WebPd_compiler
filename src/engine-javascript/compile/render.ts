@@ -84,7 +84,7 @@ export default (renderInput: RenderInput): JavaScriptEngineCode => {
                 messageSenders: {
                     ${Object.entries(settings.io.messageSenders).map(([nodeId, spec]) =>
                         ast`${nodeId}: {
-                            ${spec.portletIds.map(outletId => 
+                            ${spec.map(outletId => 
                                 `"${outletId}": () => undefined,`)}
                         },`
                     )}

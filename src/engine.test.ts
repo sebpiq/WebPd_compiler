@@ -28,6 +28,7 @@ import {
     GlobalDefinitions,
     UserCompilationSettings,
     IoMessageSpecs,
+    CustomMetadata,
 } from './compile/types'
 import { Engine, Message, SoundFileInfo, EngineMetadata } from './run/types'
 import { makeGraph } from './dsp-graph/test-helpers'
@@ -131,10 +132,7 @@ describe('Engine', () => {
                         dsp: (
                             _,
                             { core },
-                            {
-                                audio: { channelCount },
-                                target,
-                            },
+                            { audio: { channelCount }, target }
                         ) =>
                             // prettier-ignore
                             target === 'assemblyscript'
@@ -200,10 +198,7 @@ describe('Engine', () => {
                         dsp: (
                             _,
                             { core },
-                            {
-                                target,
-                                audio: { channelCount },
-                            },
+                            { target, audio: { channelCount } }
                         ) =>
                             // prettier-ignore
                             target === 'assemblyscript'
@@ -303,10 +298,10 @@ describe('Engine', () => {
                         audio: audioSettings,
                         io: {
                             messageReceivers: {
-                                bla: { portletIds: ['blo'] },
+                                bla: ['blo'],
                             },
                             messageSenders: {
-                                bli: { portletIds: ['blu'] },
+                                bli: ['blu'],
                             },
                         },
                     },
@@ -314,6 +309,7 @@ describe('Engine', () => {
 
                 assert.deepStrictEqual<EngineMetadata>(engine.metadata, {
                     libVersion: packageInfo.version,
+                    customMetadata: {},
                     settings: {
                         audio: {
                             ...audioSettings,
@@ -321,8 +317,8 @@ describe('Engine', () => {
                             sampleRate: 0,
                         },
                         io: {
-                            messageReceivers: { bla: { portletIds: ['blo'] } },
-                            messageSenders: { bli: { portletIds: ['blu'] } },
+                            messageReceivers: { bla: ['blo'] },
+                            messageSenders: { bli: ['blu'] },
                         },
                     },
                     compilation: {
@@ -1208,10 +1204,8 @@ describe('Engine', () => {
                 })
 
                 const messageSenders: IoMessageSpecs = {
-                    ['someNode1']: {
-                        portletIds: ['someOutlet1', 'someOutlet2'],
-                    },
-                    ['someNode2']: { portletIds: ['someOutlet1'] },
+                    ['someNode1']: ['someOutlet1', 'someOutlet2'],
+                    ['someNode2']: ['someOutlet1'],
                 }
 
                 const testCode: GlobalDefinitions = {
@@ -1321,16 +1315,13 @@ describe('Engine', () => {
                 })
 
                 const messageReceivers: IoMessageSpecs = {
-                    someNode1: { portletIds: ['someInlet1', 'someInlet2'] },
-                    someNode2: { portletIds: ['someInlet1'] },
+                    someNode1: ['someInlet1', 'someInlet2'],
+                    someNode2: ['someInlet1'],
                 }
 
                 const nodeImplementations: NodeImplementations = {
                     someNodeType: {
-                        messageReceivers: (
-                            { node: { id } },
-                            { msg }
-                        ) => ({
+                        messageReceivers: ({ node: { id } }, { msg }) => ({
                             someInlet1: AnonFunc(
                                 [Var(msg.Message, `m`)],
                                 'void'
@@ -1460,11 +1451,11 @@ describe('Engine', () => {
                 })
 
                 const messageReceivers: IoMessageSpecs = {
-                    node1: { portletIds: ['0'] },
+                    node1: ['0'],
                 }
 
                 const messageSenders: IoMessageSpecs = {
-                    node2: { portletIds: ['0', '1'] },
+                    node2: ['0', '1'],
                 }
 
                 const nodeImplementations: NodeImplementations = {
@@ -1520,7 +1511,7 @@ describe('Engine', () => {
                 })
 
                 const messageReceivers: IoMessageSpecs = {
-                    someNode: { portletIds: ['someInlet'] },
+                    someNode: ['someInlet'],
                 }
 
                 const nodeImplementations: NodeImplementations = {

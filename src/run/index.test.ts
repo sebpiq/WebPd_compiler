@@ -46,17 +46,25 @@ describe('readMetadata', () => {
     const COMPILATION_SETTINGS: UserCompilationSettings = {
         io: {
             messageReceivers: {
-                node1: {
-                    portletIds: ['0'],
-                },
+                node1: ['0'],
             },
             messageSenders: {},
+        },
+        customMetadata: {
+            bla: 123,
+            blo: true,
+            bli: 'hello',
         },
     }
 
     const assertMetadataIsCorrect = (actual: EngineMetadata) => {
         assert.deepStrictEqual<EngineMetadata>(actual, {
             libVersion: packageInfo.version,
+            customMetadata: {
+                bla: 123,
+                blo: true,
+                bli: 'hello',
+            },
             settings: {
                 audio: {
                     blockSize: 0,
@@ -69,9 +77,7 @@ describe('readMetadata', () => {
                 },
                 io: {
                     messageReceivers: {
-                        node1: {
-                            portletIds: ['0'],
-                        },
+                        node1: ['0'],
                     },
                     messageSenders: {},
                 },
