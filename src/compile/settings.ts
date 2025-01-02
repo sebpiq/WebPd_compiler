@@ -24,8 +24,8 @@ import {
 } from './types'
 
 /** Asserts user provided settings are valid (or throws error) and sets default values. */
-export const validateSettings = (
-    userSettings: UserCompilationSettings,
+export const validateSettings = <CustomMetadata>(
+    userSettings: UserCompilationSettings<CustomMetadata>,
     target: CompilerTarget
 ): CompilationSettings => {
     const arrays = userSettings.arrays || {}
@@ -41,7 +41,7 @@ export const validateSettings = (
     if (![32, 64].includes(audio.bitDepth)) {
         throw new InvalidSettingsError(`"bitDepth" can be only 32 or 64`)
     }
-    const metadata = userSettings.customMetadata || {}
+    const customMetadata = userSettings.customMetadata || {}
 
     return {
         audio,
@@ -49,7 +49,7 @@ export const validateSettings = (
         io,
         debug,
         target,
-        customMetadata: metadata,
+        customMetadata,
     }
 }
 

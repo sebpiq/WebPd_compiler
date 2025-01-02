@@ -43,7 +43,11 @@ describe('readMetadata', () => {
             }),
         },
     }
-    const COMPILATION_SETTINGS: UserCompilationSettings = {
+    const COMPILATION_SETTINGS: UserCompilationSettings<{
+        bla: number
+        blo: boolean
+        bli: string
+    }> = {
         io: {
             messageReceivers: {
                 node1: ['0'],

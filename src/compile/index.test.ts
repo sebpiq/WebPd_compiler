@@ -26,7 +26,7 @@ describe('compile', () => {
         audio: {
             channelCount: { in: 2, out: 2 },
             bitDepth: 32,
-        },
+        }
     }
 
     const COMPILER_SETTINGS_JS: UserCompilationSettings = {

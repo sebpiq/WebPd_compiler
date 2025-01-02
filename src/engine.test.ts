@@ -28,7 +28,6 @@ import {
     GlobalDefinitions,
     UserCompilationSettings,
     IoMessageSpecs,
-    CustomMetadata,
 } from './compile/types'
 import { Engine, Message, SoundFileInfo, EngineMetadata } from './run/types'
 import { makeGraph } from './dsp-graph/test-helpers'
@@ -48,11 +47,11 @@ import { FsNamespaceAll } from './stdlib/fs/types'
 import { CommonsNamespaceAll } from './stdlib/commons/types'
 
 describe('Engine', () => {
-    interface EngineTestSettings {
+    interface EngineTestSettings{
         graph?: DspGraph.Graph
         nodeImplementations?: NodeImplementations
         injectedDependencies?: Array<GlobalDefinitions>
-        settings?: UserCompilationSettings
+        settings?: UserCompilationSettings<any>
     }
 
     const initializeEngineTest = async <

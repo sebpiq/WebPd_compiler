@@ -44,11 +44,11 @@ interface CompilationFailure {
 
 type CompilationResult = CompilationSuccess | CompilationFailure
 
-export default (
+export default <CustomMetadata>(
     graph: DspGraph.Graph,
     nodeImplementations: NodeImplementations,
     target: CompilerTarget,
-    compilationSettings: UserCompilationSettings
+    compilationSettings: UserCompilationSettings<CustomMetadata>
 ): CompilationResult => {
     const settings = validateSettings(compilationSettings, target)
     const { precompiledCode, variableNamesIndex } = precompile({

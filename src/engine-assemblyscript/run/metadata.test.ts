@@ -24,16 +24,18 @@ import { compileAssemblyscript } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
 import { readMetadata } from './metadata'
 import compile from '../../compile'
-import { NodeImplementations } from '../../compile/types'
+import {
+    NodeImplementations,
+    UserCompilationSettings,
+} from '../../compile/types'
 import { makeGraph } from '../../dsp-graph/test-helpers'
 import { AnonFunc, Var } from '../../ast/declare'
-import { makeSettings } from '../../compile/test-helpers'
 
 describe('metadata', () => {
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
             // ARRANGE
-            const compilationSettings = makeSettings({
+            const compilationSettings: UserCompilationSettings = {
                 audio: {
                     bitDepth: 32,
                     channelCount: { in: 11, out: 22 },
@@ -46,7 +48,7 @@ describe('metadata', () => {
                         node1: ['0'],
                     },
                 },
-            })
+            }
 
             const graph = makeGraph({
                 node1: {
@@ -59,7 +61,7 @@ describe('metadata', () => {
             const nodeImplementations: NodeImplementations = {
                 DUMMY: {
                     messageReceivers: (_, { msg }) => ({
-                        '0': AnonFunc([ Var(msg.Message, `m`) ])``,
+                        '0': AnonFunc([Var(msg.Message, `m`)])``,
                     }),
                 },
             }
@@ -89,14 +91,14 @@ describe('metadata', () => {
                 customMetadata: {},
                 settings: {
                     audio: {
-                        ...compilationSettings.audio,
+                        ...compilationSettings.audio!,
                         blockSize: 0,
                         sampleRate: 0,
                     },
                     io: {
                         messageReceivers:
-                            compilationSettings.io.messageReceivers,
-                        messageSenders: compilationSettings.io.messageSenders,
+                            compilationSettings.io!.messageReceivers!,
+                        messageSenders: compilationSettings.io!.messageSenders!,
                     },
                 },
                 compilation: {

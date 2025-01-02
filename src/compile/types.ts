@@ -27,17 +27,7 @@ import { CommonsNamespacePublic } from '../stdlib/commons/types'
 import { CoreNamespacePublic } from '../stdlib/core/types'
 import { MsgNamespacePublic } from '../stdlib/msg/types'
 import { SkedNamespacePublic } from '../stdlib/sked/types'
-
-export type CustomMetadataValue =
-    | boolean
-    | string
-    | number
-    | Array<CustomMetadataValue>
-    | CustomMetadata
-
-export type CustomMetadata = {
-    [key: string]: CustomMetadataValue
-}
+import { CustomMetadataType, JSONCompatible } from '../types'
 
 export type IoMessageSpecs = {
     [nodeId: DspGraph.NodeId]: Array<DspGraph.PortletId>
@@ -53,7 +43,7 @@ export interface AudioSettings {
     bitDepth: 32 | 64
 }
 
-export interface UserCompilationSettings {
+export interface UserCompilationSettings<CustomMetadata=undefined> {
     audio?: AudioSettings
     arrays?: DspGraph.Arrays
     io?: {
@@ -61,7 +51,7 @@ export interface UserCompilationSettings {
         messageSenders?: IoMessageSpecs
     }
     debug?: boolean
-    customMetadata?: CustomMetadata
+    customMetadata?: JSONCompatible<CustomMetadata>
 }
 
 export interface CompilationSettings {
@@ -73,7 +63,7 @@ export interface CompilationSettings {
         messageSenders: IoMessageSpecs
     }
     debug: boolean
-    customMetadata: CustomMetadata
+    customMetadata: CustomMetadataType
 }
 
 interface GlobalDefinitionsLocalContext<Keys extends string> {

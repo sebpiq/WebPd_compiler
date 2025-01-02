@@ -26,7 +26,7 @@ import { AstSequence, AstElement, Code } from '../ast/types'
 import { CompilationSettings } from './types'
 import { proxyAsReadOnlyIndex } from './proxies'
 
-type PartialSettings = Partial<CompilationSettings>
+type PartialSettings = Omit<Partial<CompilationSettings>, 'customMetadata'>
 
 type PartialPrecompilationInput = Partial<
     Omit<PrecompilationInput, 'settings'> & { settings: PartialSettings }
