@@ -27,7 +27,7 @@ import precompileDependencies, {
     instantiateAndDedupeDependencies,
 } from './dependencies'
 import { Class, Func, Sequence, ast } from '../../ast/declare'
-import { makeGraph } from '../../dsp-graph/test-helpers'
+import { makeGraph } from '../../test-helpers/graph-test-helpers'
 import { PrecompiledCode } from './types'
 import { makePrecompilation } from '../test-helpers'
 

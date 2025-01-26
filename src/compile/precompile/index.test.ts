@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import assert from 'assert'
-import { makeGraph } from '../../dsp-graph/test-helpers'
+import { makeGraph } from '../../test-helpers/graph-test-helpers'
 import precompile from '.'
 import { NodeImplementations } from '../types'
 import { ColdDspGroup, DspGroup } from './types'

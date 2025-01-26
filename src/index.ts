@@ -21,9 +21,11 @@ export { default as default } from './compile'
 export {
     UserCompilationSettings as CompilationSettings,
     NodeImplementations,
+    NodeImplementation,
     CompilerTarget,
     AudioSettings,
     VariableNamesIndex,
+    GlobalDefinitions,
 } from './compile/types'
 export { Code } from './ast/types'
 export {
@@ -49,3 +51,4 @@ export {
     AnonFunc,
     Sequence,
 } from './ast/declare'
+export { VariableName, AstElement } from './ast/types'

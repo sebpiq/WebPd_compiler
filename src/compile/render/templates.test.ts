@@ -19,7 +19,7 @@
  */
 
 import assert from 'assert'
-import { makeGraph } from '../../dsp-graph/test-helpers'
+import { makeGraph } from '../../test-helpers/graph-test-helpers'
 import {
     AnonFunc,
     Class,

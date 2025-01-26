@@ -19,7 +19,7 @@
  */
 import assert from 'assert'
 import { Func, Var } from '../../ast/declare'
-import { makeGraph } from '../../dsp-graph/test-helpers'
+import { makeGraph } from '../../test-helpers/graph-test-helpers'
 import { makePrecompilation } from '../test-helpers'
 import {
     precompileSignalOutlet,

@@ -30,7 +30,7 @@ import {
     IoMessageSpecs,
 } from './compile/types'
 import { Engine, Message, SoundFileInfo, EngineMetadata } from './run/types'
-import { makeGraph } from './dsp-graph/test-helpers'
+import { makeGraph } from './test-helpers/graph-test-helpers'
 import { nodeDefaults } from './dsp-graph/graph-helpers'
 import { getFloatArrayType } from './run/run-helpers'
 import {

@@ -18,13 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { commonsArrays } from './stdlib/commons/commons'
-import { fsReadSoundFile } from './stdlib/fs/fs'
-import { DspGraph } from './dsp-graph'
-import { nodeDefaults } from './dsp-graph/graph-helpers'
-import * as nodeImplementationsTestHelpers from './test-helpers-node-implementations'
-import { CompilerTarget, NodeImplementation } from './compile/types'
-import { AnonFunc, Var, ast } from './ast/declare'
+import { commonsArrays } from '../stdlib/commons/commons'
+import { fsReadSoundFile } from '../stdlib/fs/fs'
+import { DspGraph } from '../dsp-graph'
+import { nodeDefaults } from '../dsp-graph/graph-helpers'
+import * as testHelpers from './node-implementations-test-helpers'
+import { CompilerTarget, NodeImplementation } from '../compile/types'
+import { AnonFunc, Var, ast } from '../ast/declare'
 
 const TEST_PARAMETERS: Array<{ target: CompilerTarget }> = [
     { target: 'javascript' },
@@ -47,7 +47,7 @@ describe('test-helpers-node-implementations', () => {
                     outlets: { '0': { id: '0', type: 'signal' } },
                 }
 
-                await nodeImplementationsTestHelpers.assertNodeOutput(
+                await testHelpers.assertNodeOutput(
                     {
                         bitDepth: 32,
                         target,
@@ -84,7 +84,7 @@ describe('test-helpers-node-implementations', () => {
                     outlets: { '0': { id: '0', type: 'message' } },
                 }
 
-                await nodeImplementationsTestHelpers.assertNodeOutput(
+                await testHelpers.assertNodeOutput(
                     {
                         bitDepth: 64,
                         target,
@@ -121,7 +121,7 @@ describe('test-helpers-node-implementations', () => {
                     outlets: { '0': { id: '0', type: 'message' } },
                 }
 
-                await nodeImplementationsTestHelpers.assertNodeOutput(
+                await testHelpers.assertNodeOutput(
                     {
                         bitDepth: 32,
                         target,
@@ -163,7 +163,7 @@ describe('test-helpers-node-implementations', () => {
                     inlets: { '0': { id: '0', type: 'message' } },
                 }
 
-                await nodeImplementationsTestHelpers.assertNodeOutput(
+                await testHelpers.assertNodeOutput(
                     {
                         bitDepth: 64,
                         target,
@@ -208,7 +208,7 @@ describe('test-helpers-node-implementations', () => {
                     inlets: { '0': { id: '0', type: 'message' } },
                 }
 
-                await nodeImplementationsTestHelpers.assertNodeOutput(
+                await testHelpers.assertNodeOutput(
                     {
                         bitDepth: 32,
                         target,

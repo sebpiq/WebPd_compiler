@@ -19,21 +19,21 @@
  */
 
 import assert from 'assert'
-import compile from './compile'
-import { round, createTestEngine } from './test-helpers'
+import compile from '../compile'
+import { round, createTestEngine } from './engine-test-helpers'
 import {
     NodeImplementations,
     CompilerTarget,
     NodeImplementation,
     AudioSettings,
-} from './compile/types'
-import { Signal, Message, FloatArray, Engine } from './run/types'
-import { mapArray } from './functional-helpers'
-import { getFloatArrayType } from './run/run-helpers'
-import { DspGraph } from './dsp-graph'
-import { nodeDefaults } from './dsp-graph/graph-helpers'
-import { commonsArrays } from './stdlib'
-import { AnonFunc, Class, Sequence, Var } from './ast/declare'
+} from '../compile/types'
+import { Signal, Message, FloatArray, Engine } from '../run/types'
+import { mapArray } from '../functional-helpers'
+import { getFloatArrayType } from '../run/run-helpers'
+import { DspGraph } from '../dsp-graph'
+import { nodeDefaults } from '../dsp-graph/graph-helpers'
+import { commonsArrays } from '../stdlib'
+import { AnonFunc, Class, Sequence, Var } from '../ast/declare'
 
 // ================================ TESTING NODE IMPLEMENTATIONS ================================ //
 interface NodeTestSettings<NodeArguments> {

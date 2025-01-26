@@ -19,7 +19,7 @@
  */
 import assert from 'assert'
 import { Class, Func, Sequence, Var } from '../../ast/declare'
-import { makeGraph } from '../../dsp-graph/test-helpers'
+import { makeGraph } from '../../test-helpers/graph-test-helpers'
 import { NodeImplementations } from '../types'
 import {
     STATE_CLASS_NAME,

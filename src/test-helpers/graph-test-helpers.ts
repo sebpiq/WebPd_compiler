@@ -19,11 +19,11 @@
  */
 
 import assert from 'assert'
-import { testGraphIntegrity, endpointsEqual } from './graph-helpers'
-import { getNode } from './getters'
-import { listSourceConnections } from './traversers'
-import { DspGraph } from './types'
-import { nodeDefaults } from './graph-helpers'
+import { testGraphIntegrity, endpointsEqual } from '../dsp-graph/graph-helpers'
+import { getNode } from '../dsp-graph/getters'
+import { listSourceConnections } from '../dsp-graph/traversers'
+import { DspGraph } from '../dsp-graph/types'
+import { nodeDefaults } from '../dsp-graph/graph-helpers'
 
 type GraphConnection = [
     DspGraph.ConnectionEndpoint,

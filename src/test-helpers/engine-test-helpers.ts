@@ -24,28 +24,29 @@ import {
     GlobalDefinitions,
     CompilationSettings,
     VariableNamesIndex,
-} from './compile/types'
-import { AstSequence, Code, AstFunc, VariableName } from './ast/types'
-import { ast, Sequence, Func, Var } from './ast/declare'
-import { BindingSpec, Engine } from './run/types'
+} from '../compile/types'
+import { AstSequence, Code, AstFunc, VariableName } from '../ast/types'
+import { ast, Sequence, Func, Var } from '../ast/declare'
+import { BindingSpec, Engine } from '../run/types'
 import { writeFile } from 'fs/promises'
-import { getMacros } from './compile/compile-helpers'
+import { getMacros } from '../compile/compile-helpers'
 import {
     compileAssemblyscript,
     wasmBufferToRawModule,
-} from './engine-assemblyscript/run/test-helpers'
-import { mapArray, renderSwitch } from './functional-helpers'
-import { compileRawModule } from './engine-javascript/run'
-import render from './compile/render'
+} from '../engine-assemblyscript/run/test-helpers'
+import { mapArray, renderSwitch } from '../functional-helpers'
+import { compileRawModule } from '../engine-javascript/run'
+import render from '../compile/render'
 import {
     collectAndDedupeExports,
     flattenDependencies,
     instantiateAndDedupeDependencies,
-} from './compile/precompile/dependencies'
+} from '../compile/precompile/dependencies'
 import {
     makePrecompilation,
-} from './compile/test-helpers'
-import { createAssemblyScriptWasmEngine, createJavaScriptEngine } from '.'
+} from '../compile/test-helpers'
+import { createEngine as createJavaScriptEngine } from '../engine-javascript/run'
+import { createEngine as createAssemblyScriptWasmEngine } from '../engine-assemblyscript/run'
 
 interface TestParameters {
     bitDepth: AudioSettings['bitDepth']

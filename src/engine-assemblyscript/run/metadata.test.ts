@@ -28,7 +28,7 @@ import {
     NodeImplementations,
     UserCompilationSettings,
 } from '../../compile/types'
-import { makeGraph } from '../../dsp-graph/test-helpers'
+import { makeGraph } from '../../test-helpers/graph-test-helpers'
 import { AnonFunc, Var } from '../../ast/declare'
 
 describe('metadata', () => {

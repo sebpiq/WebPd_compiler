@@ -31,7 +31,7 @@ import {
     listSourceNodes,
 } from './traversers'
 import { DspGraph } from './types'
-import { makeGraph } from './test-helpers'
+import { makeGraph } from '../test-helpers/graph-test-helpers'
 import { nodeDefaults } from './graph-helpers'
 
 describe('graph-traversal', () => {
