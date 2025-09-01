@@ -18,7 +18,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { buildMetadata } from '../../compile/render/metadata'
+import { buildMetadata, renderMetadata } from '../../compile/render/metadata'
 import templates from '../../compile/render/templates'
 import { AssemblyScriptWasmEngineCode } from './types'
 import render from '../../compile/render'
@@ -43,7 +43,7 @@ export default (renderInput: RenderInput): AssemblyScriptWasmEngineCode => {
 
     // prettier-ignore
     return render(macros, ast`
-        const metadata: string = '${JSON.stringify(metadata)}'
+        const metadata: string = '${renderMetadata(metadata)}'
 
         ${templates.dependencies(renderTemplateInput)}
         ${templates.nodeImplementationsCoreAndStateClasses(renderTemplateInput)}

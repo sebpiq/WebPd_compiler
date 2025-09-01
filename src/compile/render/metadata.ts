@@ -64,3 +64,22 @@ export const buildMetadata = ({
         },
     }
 }
+
+/** 
+ * Helper to render engine metadata as a JSON string (with escaped double quotes).
+ */
+export const renderMetadata = (metadata: EngineMetadata): string => {
+    const metadataJSON = JSON.stringify(metadata)
+    // Consider the following example:
+    // 
+    // Calling `JSON.stringify` on {"customMetadata":{"escapedString":"bla \"bla\" bla"}}
+    // Gives the following JSON : 
+    // {"customMetadata":{"escapedString":"bla \"bla\" bla"}}
+    // 
+    // When embedding that string inside source code, this becomes :
+    // `const metadata: string = '{"customMetadata":{"escapedString":"bla \"bla\" bla"}}'`
+    // 
+    // Unfortunately this doesn't work, because the `\"` sequence is simply a double
+    // quote character, therefore losing the JSON escaping.
+    return metadataJSON.replace(/\\"/g, '\\\\"')
+}

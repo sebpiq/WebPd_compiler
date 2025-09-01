@@ -123,5 +123,38 @@ describe('metadata', () => {
                 },
             })
         })
+
+        it('should read metadata with escaped characters', async () => {
+            // ARRANGE
+            const compilationSettings: UserCompilationSettings<{escapedString: string}> = {
+                customMetadata: {
+                    escapedString: "bla \"bla\" bla",
+                },
+            }
+            const graph = makeGraph({})
+            const nodeImplementations: NodeImplementations = {}
+
+            // ACT
+            const result = await compile(
+                graph,
+                nodeImplementations,
+                'assemblyscript',
+                compilationSettings
+            )
+
+            if (result.status !== 0) {
+                throw new Error(`Compilation failed ${result.status}`)
+            }
+            
+            const wasmBuffer = await compileAssemblyscript(
+                result.code,
+                64 // bit depth
+            )
+
+            const metadata = await readMetadata(wasmBuffer)
+
+            // ASSERT
+            assert.deepStrictEqual(metadata.customMetadata, {escapedString: 'bla "bla" bla'})
+        })
     })
 })
