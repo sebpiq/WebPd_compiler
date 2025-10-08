@@ -29,6 +29,7 @@ import { AudioSettings } from '../../compile/types'
 import {
     TEST_PARAMETERS,
     ascCodeToRawModule,
+    setAsc,
 } from '../../engine-assemblyscript/run/test-helpers'
 import { getFloatArrayType } from '../../run/run-helpers'
 import { core } from '../core/core'
@@ -47,6 +48,7 @@ import { CoreNamespaceAll } from '../core/types'
 import { MsgNamespaceAll } from './types'
 import { SkedNamespaceAll } from '../sked/types'
 import { proxyWithEngineNameMapping } from '../../run/run-helpers'
+import asc from 'assemblyscript/asc'
 
 describe('msg-bindings', () => {
     interface MsgTestRawModule {
@@ -143,6 +145,10 @@ describe('msg-bindings', () => {
             precompilation.variableNamesIndex
         ) as MsgTestRawModule & MsgRawModuleWithDependencies
     }
+
+    beforeAll(async () => {  
+        setAsc(asc)
+    })
 
     describe('lowerMessage', () => {
         it.each(TEST_PARAMETERS)(

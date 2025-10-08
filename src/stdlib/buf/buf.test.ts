@@ -22,8 +22,14 @@ import { AnonFunc, ConstVar, Var } from '../../ast/declare'
 import { runTestSuite } from '../../test-helpers'
 import { bufCore, bufPushPull, bufWriteRead } from './buf'
 import { core } from '../core/core'
+import { setAsc } from '../../engine-assemblyscript/run/test-helpers'
+import asc from 'assemblyscript/asc'
 
 describe('buf', () => {
+    beforeAll(() => {
+        setAsc(asc)
+    })
+
     // prettier-ignore
     runTestSuite(
         [

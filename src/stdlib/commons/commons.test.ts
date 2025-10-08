@@ -22,8 +22,14 @@ import { runTestSuite } from '../../test-helpers'
 import { commonsArrays, commonsWaitFrame } from './commons'
 import { core } from '../core/core'
 import { sked } from '../sked/sked'
+import { setAsc } from '../../engine-assemblyscript/run/test-helpers'
+import asc from 'assemblyscript/asc'
 
 describe('commons', () => {
+    beforeAll(() => {
+        setAsc(asc)
+    })
+
     // prettier-ignore
     runTestSuite(
         [

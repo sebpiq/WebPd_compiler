@@ -45,6 +45,8 @@ import { DspGraph } from './dsp-graph'
 import { FS_OPERATION_SUCCESS } from '.'
 import { FsNamespaceAll } from './stdlib/fs/types'
 import { CommonsNamespaceAll } from './stdlib/commons/types'
+import { setAsc } from './engine-assemblyscript/run/test-helpers'
+import asc from 'assemblyscript/asc'
 
 describe('Engine', () => {
     interface EngineTestSettings{
@@ -114,6 +116,10 @@ describe('Engine', () => {
 
         return engine
     }
+
+    beforeAll(() => {
+        setAsc(asc)
+    })
 
     describe('initialize/dspLoop', () => {
         it.each(

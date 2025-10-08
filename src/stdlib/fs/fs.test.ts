@@ -31,8 +31,14 @@ import { core } from '../core/core'
 import { msg } from '../msg/msg'
 import { Sequence, ConstVar, Func, Var, AnonFunc } from '../../ast/declare'
 import { FsNamespaceAll } from './types'
+import { setAsc } from '../../engine-assemblyscript/run/test-helpers'
+import asc from 'assemblyscript/asc'
 
 describe('fs', () => {
+    beforeAll(() => {
+        setAsc(asc)
+    })
+
     // prettier-ignore
     runTestSuite(
         [

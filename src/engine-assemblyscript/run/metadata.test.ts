@@ -20,7 +20,7 @@
 
 import packageInfo from '../../../package.json'
 import assert from 'assert'
-import { compileAssemblyscript } from './test-helpers'
+import { compileAssemblyscript, setAsc } from './test-helpers'
 import { EngineMetadata } from '../../run/types'
 import { readMetadata } from './metadata'
 import compile from '../../compile'
@@ -30,8 +30,14 @@ import {
 } from '../../compile/types'
 import { makeGraph } from '../../test-helpers/graph-test-helpers'
 import { AnonFunc, Var } from '../../ast/declare'
+import asc from 'assemblyscript/asc'
 
 describe('metadata', () => {
+
+    beforeAll(async () => {
+        setAsc(asc)
+    })
+
     describe('readMetadata', () => {
         it('should extract the metadata', async () => {
             // ARRANGE

@@ -52,3 +52,4 @@ export {
     Sequence,
 } from './ast/declare'
 export { VariableName, AstElement } from './ast/types'
+export * as testHelpers from './test-helpers'

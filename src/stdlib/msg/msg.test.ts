@@ -19,11 +19,17 @@
  */
 
 import { AnonFunc, ConstVar } from '../../ast/declare'
+import { setAsc } from '../../engine-assemblyscript/run/test-helpers'
 import { runTestSuite } from '../../test-helpers'
 import { core } from '../core/core'
 import { msg } from './msg'
+import asc from 'assemblyscript/asc'
 
 describe('msg', () => {
+    beforeAll(() => {
+        setAsc(asc)
+    })
+
     // prettier-ignore
     runTestSuite(
         [

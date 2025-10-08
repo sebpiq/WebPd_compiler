@@ -18,20 +18,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import asc from 'assemblyscript/asc'
 import { AudioSettings } from '../../compile/types'
 import { Code } from '../../ast/types'
 import { instantiateWasmModule } from './wasm-helpers'
 
 export const TEST_PARAMETERS = [
-    { bitDepth: 32 as AudioSettings['bitDepth'] },
-    // { bitDepth: 64 as AudioSettings['bitDepth'] },
+    // { bitDepth: 32 as AudioSettings['bitDepth'] },
+    { bitDepth: 64 as AudioSettings['bitDepth'] },
 ]
+
+let ASC: any = null
+
+/** 
+ * This function sets the assemblyscript compiler so that test helpers can use it. 
+ * We don't want to bundle assemblyscript because WebPd_compiler is only supposed
+ * to generate code, not compile it. Also, assemblyscript is quite heavy and causes
+ * problems with bundling. Therefore we leave it to the consumer to load it themselves.
+ */
+export const setAsc = (asc: any) => ASC = asc
 
 export const compileAssemblyscript = async (
     code: Code,
     bitDepth: AudioSettings['bitDepth']
 ): Promise<ArrayBuffer> => {
+    if (!ASC) {
+        throw new Error('Assemblyscript compiler not set. Please call setAsc(asc) first.')
+    }
     const options: any = {
         optimizeLevel: 3,
         runtime: 'incremental',
@@ -40,7 +52,7 @@ export const compileAssemblyscript = async (
     if (bitDepth === 32) {
         options.use = ['Math=NativeMathf']
     }
-    const { error, binary, stderr } = await asc.compileString(code, options)
+    const { error, binary, stderr } = await ASC.compileString(code, options)
     if (error) {
         throw new Error(stderr.toString())
     }

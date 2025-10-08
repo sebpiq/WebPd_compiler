@@ -9,8 +9,7 @@
     "author": "Sébastien Piquemal",
     "private": false,
     "files": [
-        "dist",
-        "src"
+        "dist"
     ],
     "scripts": {
         "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",

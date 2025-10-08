@@ -25,6 +25,8 @@ import { nodeDefaults } from '../dsp-graph/graph-helpers'
 import * as testHelpers from './node-implementations-test-helpers'
 import { CompilerTarget, NodeImplementation } from '../compile/types'
 import { AnonFunc, Var, ast } from '../ast/declare'
+import { setAsc } from '../engine-assemblyscript/run/test-helpers'
+import asc from 'assemblyscript/asc'
 
 const TEST_PARAMETERS: Array<{ target: CompilerTarget }> = [
     { target: 'javascript' },
@@ -32,6 +34,10 @@ const TEST_PARAMETERS: Array<{ target: CompilerTarget }> = [
 ]
 
 describe('test-helpers-node-implementations', () => {
+    beforeAll(() => {
+        setAsc(asc)
+    })
+
     describe('assertNodeOutput', () => {
         it.each(TEST_PARAMETERS)(
             'should work with signal inlets %s',

@@ -19,13 +19,15 @@
  */
 import packageInfo from '../../package.json'
 import assert from 'assert'
+import asc from 'assemblyscript/asc'
 import { makeGraph } from '../test-helpers/graph-test-helpers'
 import compile from '../compile'
-import { compileAssemblyscript } from '../engine-assemblyscript/run/test-helpers'
+import { compileAssemblyscript, setAsc } from '../engine-assemblyscript/run/test-helpers'
 import { readMetadata } from './index'
 import { AnonFunc, Var } from '../ast/declare'
 import { EngineMetadata } from './types'
 import { UserCompilationSettings, NodeImplementations } from '../compile/types'
+
 
 describe('readMetadata', () => {
     const GRAPH = makeGraph({
@@ -101,6 +103,10 @@ describe('readMetadata', () => {
             },
         })
     }
+
+    beforeAll(async () => {
+        setAsc(asc)
+    })
 
     it('should read metadata from wasm', async () => {
         const result = compile(

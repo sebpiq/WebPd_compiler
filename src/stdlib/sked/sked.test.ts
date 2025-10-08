@@ -18,11 +18,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import { Sequence, ConstVar, Func, Var, AnonFunc } from '../../ast/declare'
+import { setAsc } from '../../engine-assemblyscript/run/test-helpers'
 import { runTestSuite } from '../../test-helpers'
 import { core } from '../core/core'
 import { sked } from './sked'
+import asc from 'assemblyscript/asc'
 
 describe('sked', () => {
+    beforeAll(() => {
+        setAsc(asc)
+    })
+    
     // prettier-ignore
     runTestSuite(
         [

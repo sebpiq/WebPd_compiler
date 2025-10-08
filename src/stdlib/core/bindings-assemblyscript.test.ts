@@ -29,6 +29,7 @@ import { AudioSettings } from '../../compile/types'
 import {
     TEST_PARAMETERS,
     ascCodeToRawModule,
+    setAsc,
 } from '../../engine-assemblyscript/run/test-helpers'
 import { getFloatArrayType } from '../../run/run-helpers'
 import { core } from './core'
@@ -44,6 +45,7 @@ import { Code } from '../../ast/types'
 import { instantiateAndDedupeDependencies } from '../../compile/precompile/dependencies'
 import { CoreNamespaceAll } from './types'
 import { proxyWithEngineNameMapping } from '../../run/run-helpers'
+import asc from 'assemblyscript/asc'
 
 describe('core-bindings', () => {
     interface CoreTestRawModule {
@@ -115,6 +117,10 @@ describe('core-bindings', () => {
             precompilation.variableNamesIndex
         ) as CoreRawModuleWithDependencies & CoreTestRawModule
     }
+
+    beforeAll(async () => {
+        setAsc(asc)
+    })
 
     describe('readTypedArray', () => {
         it.each(TEST_PARAMETERS)(
