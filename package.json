@@ -2,7 +2,7 @@
     "name": "@webpd/compiler",
     "version": "0.2.2",
     "description": "WebPd compiler package",
-    "main": "./dist/src/index.js",
+    "main": "./dist/index.js",
     "types": "./dist/src/index.d.ts",
     "type": "module",
     "sideEffects": false,
@@ -16,10 +16,11 @@
         "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' npx jest --runInBand --config node_modules/@webpd/dev/configs/jest.js",
         "build:dist": "npx rollup --config configs/dist.rollup.mjs",
         "build:bindings": "npx rollup --config configs/bindings.rollup.mjs",
-        "build": "npm run clean; npm run build:dist; npm run build:bindings",
+        "build": "npm run clean && npm run build:dist && npm run build:bindings",
+        "build:dev:full": "npm run build",
         "clean": "rm -rf dist",
         "prettier": "prettier --write --config node_modules/@webpd/dev/configs/prettier.json",
-        "postpublish": "git tag -a v$(node -p \"require('./package.json').version\") -m \"Release $(node -p \"require('./package.json').version\")\" ; git push --tags"
+        "postpublish": "git tag -a v$(node -p \"require('./package.json').version\") -m \"Release $(node -p \"require('./package.json').version\")\" && git push --tags"
     },
     "repository": {
         "type": "git",
@@ -30,7 +31,7 @@
     },
     "homepage": "https://github.com/sebpiq/WebPd_compiler#readme",
     "devDependencies": {
-        "@webpd/dev": "github:sebpiq/WebPd_dev#v1",
+        "@webpd/dev": "github:sebpiq/WebPd_dev#v2",
         "assemblyscript": "^0.27.24"
     }
 }
